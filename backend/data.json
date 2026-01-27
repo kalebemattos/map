@@ -1,0 +1,115 @@
+{
+  "Angra dos Reis": {
+    "liderancas": [
+      {
+        "id": "l_1765980782981",
+        "nome": "fghgf",
+        "contato": "fghgf",
+        "observacao": "fghgf",
+        "foto": null,
+        "createdAt": "2025-12-17T14:13:02.981Z"
+      },
+      {
+        "id": "l_1765985326838",
+        "nome": "ddd",
+        "contato": "ddddddd",
+        "observacao": "dddddddddd",
+        "foto": null,
+        "createdAt": "2025-12-17T15:28:46.838Z"
+      }
+    ],
+    "observacoes": []
+  },
+  "Resende": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Quatis": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Barra Mansa": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Rio Claro": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Paraty": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Mangaratiba": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Itaguaí": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Rio de Janeiro": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Cardoso Moreira": {
+    "liderancas": [
+      {
+        "id": "l_1765911705762",
+        "nome": "kk",
+        "contato": "kk",
+        "foto": null,
+        "createdAt": "2025-12-16T19:01:45.762Z"
+      }
+    ],
+    "observacoes": []
+  },
+  "Itatiaia": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Volta Redonda": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Barra do Piraí": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Pinheiral": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Piraí": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Nova Iguaçu": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Mesquita": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Nilópolis": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Japeri": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Paracambi": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Rio das Flores": {
+    "liderancas": [],
+    "observacoes": []
+  },
+  "Valença": {
+    "liderancas": [],
+    "observacoes": []
+  }
+}

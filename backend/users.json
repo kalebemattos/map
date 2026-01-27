@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "usuario": "admin",
+    "senha": "1234",
+    "nome": "Administrador",
+    "perfil": "admin"
+  },
+  {
+    "id": 2,
+    "usuario": "costa",
+    "senha": "1234",
+    "nome": "Coord. Costa Verde",
+    "perfil": "coordenador",
+    "regioes": ["Costa Verde"]
+  }
+]

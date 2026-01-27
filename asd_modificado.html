@@ -1,0 +1,2252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Mapa de Lideranças RJ</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<style>
+  #total-geral-overlay {
+  position: absolute;
+  top: 70px;
+  left: 20px;
+  z-index: 1200;
+
+  background: rgba(255, 255, 255, 0.95);
+  padding: 10px 14px;
+  border-radius: 10px;
+
+  font-size: 15px;
+  font-weight: 700;
+  color: #020617;
+
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+}
+  .leaflet-interactive {
+  transition: fill-opacity 0.2s ease, stroke-width 0.2s ease;
+}
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #ffeeee;
+  }
+
+  /* layout: mapa + painel lateral fixo */
+  #map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 360px;
+  bottom: 0;
+
+  /* imagem de fundo */
+  background-image: url("img/map-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  /* acabamento premium */
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.15);
+}
+#map::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(245, 249, 255, 0.75);
+  z-index: 0;
+}
+
+/* garante que o Leaflet fique acima da imagem */
+#map > * {
+  position: relative;
+  z-index: 1;
+}
+
+  .sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 360px;
+  height: 100%;
+
+  background: linear-gradient(180deg, #ffffff, #f6f9ff);
+  border-left: 1px solid #e5e7eb;
+
+  box-shadow: -8px 0 24px rgba(0,0,0,0.12);
+  padding: 20px 18px;
+  overflow-y: auto;
+  z-index: 2000;
+}
+
+/* Scroll elegante */
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 4px;
+}
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+  
+  /* Aprimoramento: Faz a barra de rolagem aparecer apenas no hover (Chrome/Edge/Safari) */
+  .sidebar::-webkit-scrollbar {
+    width: 8px; /* Largura da barra */
+  }
+  .sidebar::-webkit-scrollbar-thumb {
+    background-color: transparent; /* Oculta a "bolinha" (thumb) por padrão */
+    border-radius: 4px;
+  }
+  .sidebar:hover::-webkit-scrollbar-thumb {
+    background-color: #ccc; /* Mostra a "bolinha" no hover */
+  }
+  /* Fim do aprimoramento */
+
+  /* 1. New Title Style */
+  .sidebar h2 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #020617;
+  letter-spacing: 0.5px;
+}
+.sidebar h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin: 0 0 10px 0;
+}
+
+  /* 2. City Card/Panel Styles */
+  .city-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+  
+  .subtitle {
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+  /* 3. Deputado List */
+  .deputado-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0 0;
+  font-size: 14px;
+}
+
+.deputado-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: #f8fafc;
+}
+
+.deputado-list li:nth-child(1) {
+  background: #eef2ff;
+}
+
+  .deputado-list .name {
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.deputado-list .votes {
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+  .city-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0047ab;
+    margin-bottom: 4px;
+  }
+
+  .votos {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 8px;
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 6px;
+  }
+
+  .hint {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 10px;
+  border-top: 1px dashed #cbd5f5;
+  padding-top: 6px;
+}
+
+  /* 4. Region Selector */
+  .region-selector h3 {
+    font-size: 15px;
+    color: #003366;
+    margin: 0 0 8px 0;
+    padding: 0 4px;
+  }
+  .region-selector select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+  }
+  
+  /* 5. Map Title Overlay */
+  .map-title-overlay {
+      position: absolute;
+      top: 20px;
+      left: 600px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      z-index: 1000;
+  }
+
+  .map-title-overlay h1 {
+      margin: 0;
+      font-size: 20px;
+      color: #003366;
+      font-weight: 700;
+  }
+
+  /* 6. Leaflet Overrides (Legend) */
+  #fixed-legend-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;   /* ✔ fica sempre visível */
+    z-index: 1000;
+}
+
+  .legend {
+    line-height: 18px;
+    color: #555;
+    background: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    font-size: 13px;
+    min-width: 150px;
+  }
+  .legend i {
+    width: 18px;
+    height: 18px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.8;
+  }
+
+  /* 7. City Labels */
+  .city-label {
+  position: absolute;
+  top: -12px;
+  left: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(15, 23, 42, 0.6);
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+  pointer-events: none;
+  text-align: center;
+  width: 120px;
+  line-height: 1.1;
+  opacity: 0.45;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.city-label.highlight {
+  opacity: 1 !important;
+  transform: scale(1.05);
+  color: #020617;
+}
+
+  .city-label.highlight {
+      opacity: 1 !important;
+      color: #003366;
+  }
+
+  .city-tooltip {
+      font-size: 14px;
+  }
+  
+  /* 8. Estilo customizado para o popup de bairro */
+  .leaflet-popup.bairro-popup .leaflet-popup-content-wrapper {
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.leaflet-popup-content {
+  font-size: 14px;
+}
+
+  /* 9. Logo */
+  .logo-container {
+    position: absolute;
+    bottom: 900px;
+    left: 20px;
+    z-index: 1000;
+  }
+  .logo-container img {
+    max-width: 150px;
+    height: auto;
+  }
+
+  /* 10. Estilo para a tela de bloqueio */
+  #blocker {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f2f6fb;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: #003366;
+  }
+  #blocker p {
+      font-size: 16px;
+      color: #888;
+      margin-top: 10px;
+  }
+  
+  /* ESTILOS DE MINIMIZAR RESTAURADOS */
+  .collapsible-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+  .collapsible-header h3 {
+      margin: 0;
+  }
+  .collapse-btn {
+  background: #1e3a8a;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+}
+  .content-hidden {
+      display: none;
+  }
+  #map-mode-overlay {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1200;
+}
+
+#toggleMapMode {
+  padding: 8px 14px;
+  background: #0047ab;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#toggleMapMode:hover {
+  background: #003366;
+}
+.comite-marker {
+  font-size: 22px;
+  color: #8e44ad;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+  transform: translateY(-2px);
+}
+.sidebar button {
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+}
+
+.sidebar button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+}
+.sidebar input,
+.sidebar select,
+.sidebar textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #cbd5f5;
+  font-size: 14px;
+  outline: none;
+}
+
+.sidebar input:focus,
+.sidebar select:focus,
+.sidebar textarea:focus {
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 3px rgba(30,58,138,0.15);
+}
+</style>
+</head>
+<body>
+
+<div id="blocker">
+    Aguardando login...
+    <p>Por favor, insira as credenciais quando solicitado.</p>
+</div>
+
+<div id="content-wrapper" style="display:none; height:100%; width:100%;"> 
+
+  <div id="map"></div>
+  <div id="total-geral-overlay">
+  📊 Expectativa Geral: —
+</div>
+  <div id="map-mode-overlay">
+  <button id="toggleMapMode">
+    🗳️ Votos válidos
+  </button>
+</div>
+  
+  <div class="map-title-overlay">
+    <h1>MAPA DE LIDERANÇAS</h1>
+  </div>
+  
+  <div class="sidebar">
+    <div class="subtitle" style="margin-top: 0;">Passe o mouse sobre um município no mapa para ver os 5 mais votados (2022).</div>
+  <div class="city-card">
+  <h3>🔍 Buscar cidade</h3>
+  <input
+    type="text"
+    id="city-search"
+    placeholder="Digite o nome da cidade..."
+  />
+  <div id="city-search-results"></div>
+</div>
+<div class="city-card">
+  <h3>👤 Buscar liderança</h3>
+  <input
+    type="text"
+    id="lideranca-search"
+    placeholder="Digite o nome da liderança..."
+  />
+  <div id="lideranca-search-results"></div>
+</div>
+    <div class="region-selector">
+      <h3>Filtrar por Região</h3>
+      <select id="regionSelect">
+        <option value="all">Mapa completo</option>
+        <option value="metropolitana">Metropolitana</option>
+        <option value="baixadasLitoraneas">Baixadas Litorâneas</option>
+        <option value="norteFluminense">Norte Fluminense</option>
+        <option value="noroesteFluminense">Noroeste Fluminense</option>
+        <option value="serrana">Serrana</option>
+        <option value="centroSulFluminense">Centro-Sul Fluminense</option>
+        <option value="medioParaiba">Médio Paraíba</option>
+        <option value="costaVerde">Costa Verde</option>
+      </select>
+    </div>
+    <div class="region-selector">
+      <div class="city-card" style="margin-top:15px;">
+  
+
+  
+
+  <button id="criar-regiao"
+          style="width:100%;padding:8px;background:#189918;color:#fff;border:none;border-radius:6px;">
+    Criar Região
+  </button>
+
+  <select id="regiao-personalizada-select"
+          style="width:100%;margin-top:10px;padding:6px;">
+    <option value=""></option>
+  </select>
+
+  <button id="modo-add-cidade"
+          style="width:100%;margin-top:6px;padding:8px;background:#0047ab;color:#fff;border:none;border-radius:6px;">
+    
+  </button>
+</div>
+  
+<div class="city-card">
+  <h3>📍 Comitê da Cidade</h3>
+
+  <button
+    id="toggle-comite"
+    style="
+      width:100%;
+      background:#8e44ad;
+      color:#fff;
+      border:none;
+      border-radius:6px;
+      padding:10px;
+      font-size:14px;
+      font-weight:600;
+    ">
+    📍 Adicionar comitê nesta cidade
+  </button>
+</div>
+</div>
+    <div id="liderancas-container" class="city-card">
+        <div class="collapsible-header">
+            <h3 style="margin-bottom:0;">
+                Lideranças Locais
+                <span id="liderancas-count" style="font-size:14px; font-weight:normal; color:#555;">(0 líderes)</span>
+            </h3>
+            <button class="collapse-btn" data-target="liderancas-content" data-state="expanded">Minimizar</button>
+        </div>
+        <div id="liderancas-content">
+          <div style="margin-bottom:10px;">
+  <label>Expectativa de votos da cidade</label>
+  
+  <input
+    id="expectativa-cidade"
+    type="number"
+    min="0"
+    style="width:100%;padding:6px;margin-top:4px;"
+  />
+  <button
+    id="salvar-expectativa-cidade"
+    style="width:100%;margin-top:6px;">
+    Salvar expectativa
+  </button>
+</div>
+
+    <div id="liderancas-list"></div>
+            <div style="margin-top:10px;">
+                <input id="lideranca-nome" type="text" placeholder="Nome" style="width:100%;margin-bottom:6px;padding:6px;">
+                <input id="lideranca-contato" type="text" placeholder="Contato" style="width:100%;margin-bottom:6px;padding:6px;">
+                <label for="lideranca-foto-file" style="display:block; font-size:12px; color:#555; margin-bottom: 4px;">Foto da Liderança (opcional):</label>
+                <input id="lideranca-foto-file" type="file" accept="image/*" style="width:100%;margin-bottom:6px;padding:6px;border:1px solid #ccc;border-radius:4px;">
+                <button id="add-lideranca" style="width:100%;padding:8px;background:#0047ab;color:white;border:none;border-radius:6px;">Adicionar Liderança</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="observacoes-container" class="city-card">
+        <div class="collapsible-header">
+            <h3 style="margin-bottom:0;">Observações (Notas)</h3>
+            <button class="collapse-btn" data-target="observacoes-content" data-state="expanded">Minimizar</button>
+        </div>
+        <div id="observacoes-content">
+            <div id="observacoes-list" style="margin-bottom: 10px;">
+                <p style="font-size:13px;color:#666;">Selecione um município para ver as observações.</p>
+            </div>
+            <div style="margin-top:10px;">
+                <textarea id="new-observacao-text" placeholder="Adicionar nova observação..." style="width:100%;min-height:50px;padding:6px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;"></textarea>
+                <button id="add-observacao" style="width:100%;padding:8px;background:#189918;color:white;border:none;border-radius:6px;margin-top:6px;">Adicionar Observação</button>
+            </div>
+        </div>
+    </div>
+  
+    
+  
+    <div id="city-info" class="city-card">
+      <div class="city-name">Passe o mouse no mapa</div>
+      <div class="votos">Votos válidos: —</div>
+      <ul class="deputado-list">
+        </ul>
+      <div class="hint">Dados oficiais – Eleição 2022</div>
+    </div>
+  <hr style="margin:16px 0;">
+<div id="city-info-federal" class="city-card">
+  <div class="city-name" id="city-name-federal">
+    Deputados Federais – 2022
+  </div>
+
+  <div class="votos" id="votos-federal">
+    Passe o mouse no mapa
+  </div>
+
+  <ul class="deputado-list" id="deputado-list-federal"></ul>
+
+  <div class="hint">
+    Dados oficiais – Eleição 2022
+  </div>
+</div>
+
+
+  
+
+  <div id="custom-region-edit" style="display:none;">
+    <label>Nome da região</label>
+    <input id="customRegionName" style="width:100%; margin-bottom:6px;">
+
+    <label>Cidades</label>
+    <div id="customRegionCities" style="background:#f7fbff;padding:6px;border-radius:6px;margin-bottom:6px;">
+      <small>Nenhuma cidade</small>
+    </div>
+
+    <h4>Líder da Região</h4>
+
+    <input id="customLeaderName" placeholder="Nome do líder" style="width:100%;margin-bottom:4px;">
+    <input id="customLeaderContact" placeholder="Contato" style="width:100%;margin-bottom:4px;">
+    <textarea id="customLeaderNotes" placeholder="Observações" style="width:100%;margin-bottom:4px;"></textarea>
+    <input id="customLeaderVotes" type="number" placeholder="Expectativa de votos" style="width:100%;margin-bottom:8px;">
+
+    <button id="salvarCustomRegionBtn" style="width:100%;">💾 Salvar</button>
+  </div>
+</div>
+    <div id="export-container" class="city-card" style="margin-top: 15px;">
+        <h3 style="margin-bottom:8px;">Exportar Dados</h3>
+        <button id="export-data-btn" style="width:100%;padding:8px;background:#003366;color:white;border:none;border-radius:6px;">Exportar Lideranças e Observações (CSV)</button>
+    </div>
+  
+  
+  </div>
+  
+  <div class="logo-container">
+    <img src="LOGO-LEO.png" alt="Logo">
+  </div>
+  
+  <div id="fixed-legend-container">
+      <div class="legend" id="legend-control">
+        <strong>Votos válidos</strong><br>
+      </div>
+  </div>
+<hr style="margin:16px 0;">
+
+<div id="custom-regions-panel">
+  
+
+
+
+  
+
+ 
+  </div>
+</div>
+</div> <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="auth.js"></script> 
+<script src="data.js"></script>
+<script src="deputadosFederais.js"></script>
+<script src="votosBairro.js"></script>
+<script>
+// =================================================================
+// 1. VARIÁVEIS GLOBAIS (Inicializadas a null para evitar erros de referência)
+// =================================================================
+let cidadeAtiva = null;
+let map = null;
+let deputadosVisible = true;
+let cidadeSelecionada = null;
+let layerSelecionada = null;
+let layerRJ = null;
+
+// ================================
+// REGIÕES PERSONALIZADAS
+// ================================
+ 
+// exemplo:
+// {
+//   "Região Norte Estratégica": {
+//       cidades: ["CAMPOS DOS GOYTACAZES", "MACAÉ"],
+//       lider: {
+//           nome: "João",
+//           contato: "2199999",
+//           expectativa_votos: 5000
+//       }
+//   }
+// }
+
+let regiaoEditando = null; // nome da região que está sendo editada
+let modoAdicionarCidade = false;
+const mapModes = ['validVotes', 'leaders', 'expectedVotes'];
+let currentMapModeIndex = 0;
+const cityNameEl = document.querySelector('.city-name');
+const votosEl = document.querySelector('.votos');
+const deputadoListEl = document.querySelector('.deputado-list');
+const cityInfoEl = document.getElementById('city-info');
+
+const layersPorCidade = {};
+const comiteMarkers = {};
+const citySearchInput = document.getElementById('city-search');
+const citySearchResults = document.getElementById('city-search-results');
+
+// =================================================================
+// 2. FUNÇÕES UTILITÁRIAS (Não dependem do mapa)
+// =================================================================
+function getTotalExpectativa(city) {
+  const c = dataCache[city];
+  if (!c) return 0;
+
+  const somaLiderancas = c.liderancas.reduce(
+    (s, l) => s + Number(l.expectativa_votos || 0),
+    0
+  );
+
+  return Number(c.expectativaCidade || 0) + somaLiderancas;
+}
+function calcularExpectativaTotalGeral() {
+  let total = 0;
+
+  Object.keys(dataCache).forEach(city => {
+    if (dataCache[city] && dataCache[city].liderancas) {
+      total += getTotalExpectativa(city);
+    }
+  });
+
+  return total;
+}
+function atualizarTotalGeralOverlay() {
+  const el = document.getElementById('total-geral-overlay');
+  if (!el) return;
+
+  const total = calcularExpectativaTotalGeral();
+
+  el.innerHTML = `📊 Expectativa Geral: ${total.toLocaleString('pt-BR')} votos`;
+}
+function getColor(votos) {
+  return votos > 500000 ? '#d73027' :
+         votos > 200000 ? '#fc8d59' :
+         votos > 100000 ? '#fee08b' :
+         votos > 50000  ? '#91cf60' :
+         votos > 10000  ? '#4575b4' :
+                           '#cce5ff';
+}
+function fmt(n) {
+  return (n === undefined || n === null) ? '—' : n.toLocaleString('pt-BR');
+}
+function getCityColor(cityData) {
+  const mode = mapModes[currentMapModeIndex];
+
+  if (mode === 'validVotes') {
+  return getColor(cityData.validVotes);
+}
+
+  if (mode === 'leaders') {
+    return colorByLeaders(cityData.leadersCount);
+  }
+
+  if (mode === 'expectedVotes') {
+    return colorByExpectedVotes(cityData.expectedVotes);
+  }
+
+  return '#ccc';
+}
+function colorByLeaders(count) {
+  if (count >= 20) return '#00441b';
+  if (count >= 10) return '#1b7837';
+  if (count >= 5)  return '#5aae61';
+  if (count >= 1)  return '#a6dba0';
+  return '#e5f5e0';
+}
+
+function colorByExpectedVotes(votes) {
+  if (votes >= 5000) return '#67000d';
+  if (votes >= 2000) return '#a50f15';
+  if (votes >= 1000) return '#cb181d';
+  if (votes >= 300)  return '#fb6a4a';
+  if (votes > 0)     return '#fcae91';
+  return '#fee5d9';
+}
+function atualizarBotaoComite(city) {
+  const btn = document.getElementById('toggle-comite');
+  if (!btn) return;
+
+  if (!city || !dataCache[city]) {
+    btn.disabled = true;
+    btn.innerText = '📍 Selecione uma cidade';
+    return;
+  }
+
+  btn.disabled = false;
+
+  if (dataCache[city].temComite) {
+    btn.innerText = '❌ Remover comitê da cidade';
+  } else {
+    btn.innerText = '📍 Adicionar comitê nesta cidade';
+  }
+}
+function updateSidebarDeputadosFederais(cityName) {
+  const listEl = document.getElementById('deputado-list-federal');
+  const cityEl = document.getElementById('city-name-federal');
+  const votosEl = document.getElementById('votos-federal');
+
+  listEl.innerHTML = '';
+
+  const normalized = normalizeCityName(cityName);
+
+  // cria um mapa normalizado -> original
+  const cityKey = Object.keys(deputadosFederaisByCity).find(
+    key => normalizeCityName(key) === normalized
+  );
+
+  if (!cityKey) {
+    votosEl.textContent = 'Sem dados para este município';
+    return;
+  }
+
+  const top5 = deputadosFederaisByCity[cityKey];
+
+  cityEl.textContent = cityName;
+  votosEl.textContent = 'Top 5 Deputados Federais – 2022';
+
+  top5.forEach((d, i) => {
+    const li = document.createElement('li');
+
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = `${i + 1}. ${d.name}`;
+
+    const votes = document.createElement('span');
+    votes.className = 'votes';
+    votes.textContent = fmt(d.votes);
+
+    li.appendChild(name);
+    li.appendChild(votes);
+    listEl.appendChild(li);
+  });
+}
+function normalizeCityName(name) {
+  return name
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+// =================================================================
+// COMUNICAÇÃO COM O BACKEND (Node.js/Express)
+// =================================================================
+const API_URL = 'http://localhost:3000/api/data';
+let dataCache = {}; // Cache dos dados carregados para acesso rápido
+
+// Função para buscar todos os dados (Lideranças e Observações) do servidor
+async function carregarTudo() {
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error(`Erro ${response.status}: ${response.statusText}`);
+        dataCache = await response.json();
+        Object.keys(dataCache).forEach(city => {
+  if (typeof dataCache[city].temComite !== 'boolean') {
+    dataCache[city].temComite = false;
+  }
+});
+        regioesPersonalizadas = dataCache.regioesPersonalizadas || {};
+atualizarSelectRegioesPersonalizadas();
+        console.log("Dados carregados do servidor.");
+    } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        alert('Falha ao carregar dados do servidor. Verifique se o Backend está rodando (npm start). Iniciando com dados vazios.');
+        dataCache = {};
+    }
+}
+
+// Função para salvar todos os dados no servidor (chamada a cada alteração)
+async function salvarTudo() {
+    try {
+        // Envia o cache de dados atualizado para o servidor
+        const response = await fetch(API_URL, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataCache)
+        });
+
+        if (!response.ok) throw new Error(`Erro ${response.status}: Falha ao salvar no servidor.`);
+        // console.log("Dados salvos no servidor.");
+        return true;
+    } catch (error) {
+        console.error("Erro ao salvar dados:", error);
+        alert('Erro ao salvar dados no servidor: ' + error.message);
+        return false;
+        atualizarTotalGeralOverlay();
+    }
+}
+
+// --- Funções de acesso por tipo (apenas manipulam o cache e chamam salvarTudo) ---
+
+function ensureCityData(city) {
+    if (!dataCache[city]) {
+        dataCache[city] = {
+  liderancas: [],
+  observacoes: [],
+  temComite: false
+};
+    }
+}
+
+// LIDERANÇAS
+function carregarLiderancas(city) {
+    if (!city) return [];
+    ensureCityData(city);
+    return dataCache[city].liderancas;
+}
+
+async function salvarLiderancas(city, data) {
+    if (!city) return;
+    ensureCityData(city);
+    dataCache[city].liderancas = data; 
+    await salvarTudo();
+}
+
+// OBSERVAÇÕES
+async function salvarObservacoes(city, data) {
+    if (!city) return false;
+
+    ensureCityData(city);
+    dataCache[city].observacoes = data;
+
+    return await salvarTudo();
+}
+function carregarObservacoes(city) {
+    if (!city) return [];
+    ensureCityData(city);
+    return dataCache[city].observacoes;
+}
+
+async function salvarTudo() {
+    try {
+        const response = await fetch('http://localhost:3000/api/data', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dataCache)
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('Erro HTTP ao salvar:', text);
+            return false;
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+            console.error('Servidor respondeu sem sucesso:', result);
+            return false;
+        }
+
+        return true;
+
+    } catch (error) {
+        console.error('Erro de rede ao salvar:', error);
+        return false;
+    }
+}
+
+// =================================================================
+// FIM COMUNICAÇÃO COM O BACKEND
+// =================================================================
+
+
+function createBairroTable(cityName) {
+    // 1. VERIFICAÇÃO INICIAL: O objeto de dados foi carregado?
+    if (typeof votosBairro === 'undefined') {
+        return `<p style="text-align:center;">Erro: A variável 'votosBairro' não foi carregada. Verifique se o arquivo votosBairro.js está no diretório correto e livre de erros de sintaxe (como codificação errada).</p>`;
+    }
+
+    // 2. NORMALIZAÇÃO DA CHAVE: Converte o nome da cidade para MAIÚSCULAS
+    const normalizedCityName = cityName.toUpperCase();
+
+    // 3. BUSCA NO OBJETO usando a chave padronizada
+    const data = votosBairro[normalizedCityName];
+
+    if (!data || data.length === 0) {
+        return `<p style="text-align:center;">Não há dados de voto por bairro para <b>${cityName}</b>.<br><small style="color:#0047ab;">Verifique se a chave ${normalizedCityName} existe e está em maiúsculas no seu votosBairro.js.</small></p>`;
+    }
+
+    let totalVotos = 0;
+    data.forEach(item => { totalVotos += item.votos; });
+    
+    // Ordena por votos em ordem decrescente
+    data.sort((a, b) => b.votos - a.votos);
+
+    let tableHtml = `<div style="max-height: 300px; overflow-y: auto;">
+        <h4 style="margin: 0 0 10px 0; color: #003366; text-align: center;">Votos Válidos por Bairro (${cityName})</h4>
+        <table style="width:100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+                <tr style="background-color: #f2f6fb;">
+                    <th style="padding: 6px; border: 1px solid #ddd; text-align: left;">Bairro</th>
+                    <th style="padding: 6px; border: 1px solid #ddd; text-align: right;">Votos</th>
+                    <th style="padding: 6px; border: 1px solid #ddd; text-align: right;">%</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+    data.forEach(item => {
+        const percent = ((item.votos / totalVotos) * 100).toFixed(1);
+        tableHtml += `
+            <tr>
+                <td style="padding: 6px; border: 1px solid #eee; white-space: nowrap;">${item.bairro}</td>
+                <td style="padding: 6px; border: 1px solid #eee; text-align: right;">${fmt(item.votos)}</td>
+                <td style="padding: 6px; border: 1px solid #eee; text-align: right; font-weight: bold;">${percent}%</td>
+            </tr>`;
+    });
+
+    tableHtml += `
+            </tbody>
+            <tfoot>
+                <tr style="background-color: #e8f9ff; font-weight: bold;">
+                    <td style="padding: 6px; border: 1px solid #ddd;">TOTAL</td>
+                    <td style="padding: 6px; border: 1px solid #ddd; text-align: right;">${fmt(totalVotos)}</td>
+                    <td style="padding: 6px; border: 1px solid #ddd; text-align: right;">100.0%</td>
+                </tr>
+            </tfoot>
+        </table>
+        </div>`;
+    return tableHtml;
+}
+
+function _updateSidebarDeputies(cityName, votos) {
+  const top5 = deputadosByCity[cityName];
+  cityNameEl.textContent = cityName;
+  votosEl.textContent = 'Votos válidos: ' + fmt(votos);
+
+  deputadoListEl.innerHTML = '';
+  if (!top5 || top5.length === 0) {
+    const li = document.createElement('li');
+    li.style.background = '#fff7f0';
+    li.textContent = 'Sem dados de deputados para esta cidade.';
+    deputadoListEl.appendChild(li);
+    return;
+  }
+
+  top5.forEach((d, idx) => {
+    const li = document.createElement('li');
+    if (idx === 0) li.style.background = '#eaf6ff';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'name';
+    nameSpan.textContent = (idx+1) + '. ' + d.name;
+
+    const votesSpan = document.createElement('span');
+    votesSpan.className = 'votes';
+    votesSpan.textContent = fmt(d.votes);
+
+    li.appendChild(nameSpan);
+    li.appendChild(votesSpan);
+    deputadoListEl.appendChild(li);
+  });
+}
+function restoreSidebarDefault() {
+  cidadeSelecionada = null;
+  cityNameEl.textContent = 'Passe o mouse no mapa';
+  votosEl.textContent = 'Votos válidos: —';
+  deputadoListEl.innerHTML = '';
+  const hintLi = document.createElement('li');
+  hintLi.textContent = 'Passe o mouse sobre um município para ver os 5 deputados mais votados (2022).';
+  hintLi.style.background = '#fff';
+  hintLi.style.color = '#666';
+  hintLi.style.fontSize = '13px';
+  deputadoListEl.appendChild(hintLi);
+  
+  if (typeof renderLiderancas === 'function') renderLiderancas(null);
+  if (typeof renderObservacoes === 'function') renderObservacoes(null);
+
+  // Reseta o estilo de todas as camadas do mapa, SE O MAPA ESTIVER INICIALIZADO
+  if (layerRJ) layerRJ.eachLayer(l => layerRJ.resetStyle(l));
+}
+function updateSidebar(cityName, votos) {
+  updateSidebarDeputadosFederais(cityName);
+  if (deputadosVisible) {
+      _updateSidebarDeputies(cityName, votos);
+      cityInfoEl.style.display = 'block';
+  } else {
+      cityNameEl.textContent = cityName;
+      votosEl.textContent = 'Votos válidos: ' + fmt(votos);
+      cityInfoEl.style.display = 'none';
+  }
+
+  renderLiderancas(cityName);
+  renderObservacoes(cityName);
+}
+
+
+
+async function renderLiderancas(city) {
+  
+  const list = document.getElementById('liderancas-list');
+  const countEl = document.getElementById('liderancas-count');
+  
+  if (!city) return;
+
+const cidadeData = dataCache[city] || {};
+
+document.getElementById('expectativa-cidade').value =
+  cidadeData.expectativaCidade || 0;
+
+// Soma de segurança (caso totalVotos não venha)
+const total = getTotalExpectativa(city);
+
+list.innerHTML = `
+  <div style="padding:10px;background:#eef3ff;border-radius:8px;">
+    <b style="font-size:15px;">TOTAL GERAL: ${total}</b>
+    <hr>
+    <div><b>Lideranças:</b> ${
+      total - (cidadeData.expectativaCidade || 0)
+    }</div>
+    <div><b>Cidade:</b> ${cidadeData.expectativaCidade || 0}</div>
+  </div>
+`;
+  document.getElementById('lideranca-nome').disabled = !city;
+  document.getElementById('lideranca-contato').disabled = !city;
+  document.getElementById('lideranca-foto-file').disabled = !city; 
+  document.getElementById('add-lideranca').disabled = !city;
+
+  if (!city) {
+      list.innerHTML = '<p style="font-size:13px;color:#666;">Selecione um município para visualizar e adicionar lideranças.</p>';
+      if (countEl) countEl.textContent = '(0 líderes)';
+      return;
+  }
+  
+  const liderancas = carregarLiderancas(city);
+  console.log(liderancas);
+
+  if (countEl) {
+      const count = liderancas.length;
+      countEl.textContent = `(${count} líder${count !== 1 ? 'es' : ''})`;
+  }
+
+  if (liderancas.length === 0) {
+      list.innerHTML = '<p style="font-size:13px;color:#666;">Nenhuma liderança cadastrada.</p>';
+      return;
+  }
+  liderancas.forEach((l, i) => {
+  const div = document.createElement('div');
+  div.style.display = 'flex';
+  div.style.justifyContent = 'space-between';
+  div.style.alignItems = 'center';
+  div.style.background = '#f7fbff';
+  div.style.padding = '6px 8px';
+  div.style.borderRadius = '6px';
+  div.style.marginBottom = '4px';
+
+  let fotoSrc = null;
+  if (l.foto) {
+    fotoSrc = l.foto.startsWith('http')
+      ? l.foto
+      : `http://localhost:3000${l.foto}`;
+  }
+
+  const photoHtml = fotoSrc
+    ? `<img src="${fotoSrc}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid #ccc;">`
+    : `<div style="width:40px;height:40px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;">👤</div>`;
+
+  div.innerHTML = `
+  <div style="display:flex; align-items:center; gap:8px; flex-grow:1;">
+    ${photoHtml}
+    <div>
+      <strong>${l.nome}</strong><br>
+      <small>${l.contato || ''}</small><br>
+      <small style="color:#0047ab;">
+        <b>Expectativa:</b> ${l.expectativa_votos || 0} votos
+      </small>
+    </div>
+  </div>
+  <div style="display:flex; gap:6px;">
+    <button class="edit-btn" style="background:none;border:none;font-size:16px;cursor:pointer;">✏️</button>
+    <button class="delete-btn" style="background:none;border:none;color:#c00;font-size:16px;cursor:pointer;">🗑️</button>
+  </div>
+`;
+
+  const editBtn = div.querySelector('.edit-btn');
+const btn = div.querySelector('.delete-btn');
+editBtn.addEventListener('click', async () => {
+  const novoNome = prompt('Nome da liderança:', l.nome);
+  if (novoNome === null) return;
+
+  const novoContato = prompt('Contato:', l.contato || '');
+  if (novoContato === null) return;
+
+  const novosVotos = prompt(
+    'Expectativa de votos:',
+    l.expectativa_votos ?? 0
+  );
+  if (novosVotos === null) return;
+
+  try {
+    const res = await fetch(
+      `http://localhost:3000/api/liderancas/${l.id}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: novoNome,
+          contato: novoContato,
+          expectativa_votos: Number(novosVotos)
+        })
+      }
+    );
+
+    if (!res.ok) {
+      alert('Erro ao editar liderança');
+      return;
+    }
+
+    await carregarTudo();
+    atualizarTotalGeralOverlay();
+    renderLiderancas(city);
+
+  } catch (err) {
+    console.error(err);
+    alert('Erro de conexão ao editar');
+  }
+});
+btn.addEventListener('click', async () => {
+  if (!confirm(`Excluir a liderança "${l.nome}"?`)) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/liderancas/${l.id}`,
+      { method: 'DELETE' }
+    );
+
+    if (!response.ok) {
+      alert('Erro ao excluir liderança no servidor');
+      return;
+    }
+
+    // Recarrega dados do backend
+    await carregarTudo();
+    atualizarTotalGeralOverlay();
+
+    // Atualiza painel
+    renderLiderancas(city);
+
+  } catch (err) {
+    console.error(err);
+    alert('Erro de conexão ao excluir liderança');
+  }
+});
+
+  list.appendChild(div);
+});
+}
+
+function atualizarSelectRegioesPersonalizadas() {
+  const select = document.getElementById('customRegionSelect');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">— Selecione uma região —</option>';
+
+  Object.keys(regioesPersonalizadas).forEach(id => {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = regioesPersonalizadas[id].nome;
+    select.appendChild(opt);
+  });
+}
+function renderObservacoes(city) {
+    const listEl = document.getElementById('observacoes-list');
+    const addBtn = document.getElementById('add-observacao');
+    const textarea = document.getElementById('new-observacao-text');
+
+    listEl.innerHTML = '';
+    
+    if (!city) {
+        listEl.innerHTML = '<p style="font-size:13px;color:#666;">Selecione um município para ver as observações.</p>';
+        addBtn.disabled = true;
+        textarea.disabled = true;
+        textarea.placeholder = "Selecione um município primeiro.";
+        return;
+    }
+    
+    addBtn.disabled = false;
+    textarea.disabled = false;
+    textarea.placeholder = "Adicionar nova observação...";
+
+    const observacoes = carregarObservacoes(city);
+    
+    if (observacoes.length === 0) {
+        listEl.innerHTML = '<p style="font-size:13px;color:#666;">Nenhuma observação cadastrada para ' + city + '.</p>';
+        return;
+    }
+
+    observacoes.forEach((obs, i) => {
+        const div = document.createElement('div');
+        div.style.marginBottom = '8px';
+        div.style.padding = '8px';
+        div.style.borderLeft = '4px solid #0047ab';
+        div.style.background = '#f2f6fb';
+        div.style.borderRadius = '4px';
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.alignItems = 'flex-start';
+
+        const textSpan = document.createElement('span');
+        textSpan.style.whiteSpace = 'pre-wrap';
+        textSpan.style.flexGrow = 1;
+        textSpan.style.marginRight = '10px';
+        textSpan.textContent = obs.text;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'x';
+        deleteBtn.style.background = '#c00';
+        deleteBtn.style.color = 'white';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.borderRadius = '4px';
+        deleteBtn.style.padding = '2px 6px';
+        deleteBtn.style.cursor = 'pointer';
+        deleteBtn.title = 'Remover Observação';
+        
+        deleteBtn.addEventListener('click', async () => {
+            const data = carregarObservacoes(city);
+            data.splice(i, 1);
+            await salvarObservacoes(city, data); // Salva no servidor
+            renderObservacoes(city);
+        });
+        
+        div.appendChild(textSpan);
+        div.appendChild(deleteBtn);
+        listEl.appendChild(div);
+    });
+}
+
+function exportData() {
+    // A função de exportação agora lê os dados do cache (dataCache), que é a fonte única de verdade
+    if (typeof dataCache === 'undefined' || Object.keys(dataCache).length === 0) {
+        alert("Não há dados de lideranças e observações para exportar. Por favor, adicione alguns dados primeiro.");
+        return;
+    }
+    
+    const header = [
+        "Municipio", 
+        "Liderancas (Nome/Contato/Foto_Status)",
+        "Observacoes"
+    ].join(','); 
+    
+    let csvContent = header + "\n";
+    
+    // Combina municípios do cache de dados e dos votos válidos para garantir a cobertura
+    const allKnownCities = new Set([...Object.keys(votosValidos), ...Object.keys(dataCache)]);
+
+    Array.from(allKnownCities).sort().forEach(city => {
+        // Garante que o objeto da cidade exista para evitar erros de leitura
+        ensureCityData(city); 
+        
+        const leaders = dataCache[city].liderancas
+            .map(l => {
+                // START: AJUSTE 2 APLICADO AQUI
+                const fotoStatus = l.foto
+                  ? '[Foto via Upload - URL]' 
+                  
+                  : 'N/A';
+                // END: AJUSTE 2 APLICADO AQUI
+                
+                // Remove vírgulas internas para evitar quebra de coluna
+                const cleanedName = l.nome.replace(/,/g, ''); 
+                const cleanedContact = l.contato.replace(/,/g, ''); 
+                return `${cleanedName} (${cleanedContact}) (Foto: ${fotoStatus})`;
+            }) 
+            .join('; ');
+        
+        // Substitui quebras de linha e remove vírgulas para formato CSV
+        const obs = dataCache[city].observacoes
+            .map(o => o.text.replace(/[\n\r]/g, ' ').replace(/,/g, ''))
+            .join(' | '); 
+
+        const rowData = [
+            `"${city}"`, 
+            `"${leaders}"`, 
+            `"${obs}"`
+        ];
+        
+        csvContent += rowData.join(',') + "\n";
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'liderancas_e_observacoes_rj.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    alert('Os dados de lideranças e observações foram exportados para um arquivo CSV. Verifique sua pasta de downloads.');
+}
+function initLegend() {
+  const div = document.getElementById('legend-control');
+  const grades = [0, 10000, 20000, 50000, 100000, 200000, 500000];
+  let html = '<strong>Votos válidos</strong><br>';
+  for (let i = 0; i < grades.length; i++) {
+    html += '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+            grades[i].toLocaleString('pt-BR') +
+            (grades[i + 1] ? '&ndash;' + grades[i + 1].toLocaleString('pt-BR') + '<br>' : '+');
+  }
+  div.innerHTML = html;
+}
+function selecionarCidade(nome, layer) {
+  cidadeSelecionada = nome;
+  layerSelecionada = layer;
+  layerRJ.eachLayer(l => {
+    const n = l.feature.properties.NM_MUN || l.feature.properties.name;
+    // Reseta o estilo de todas as camadas, exceto a clicada
+    if (l !== layer) {
+      const votos = votosValidos[n] || 0;
+      l.setStyle({ 
+          weight: 1, 
+          color: "#0047ab", 
+          fillColor: getColor(votos), 
+          fillOpacity: 0.8 
+      });
+    }
+  });
+
+  // Estilo para a camada CLICADA
+  layer.setStyle({
+  weight: 3.5,
+  color: "#020617",
+  fillOpacity: 1
+});
+}
+function updateLegendByMode() {
+  const div = document.getElementById('legend-control');
+  const mode = mapModes[currentMapModeIndex];
+
+  if (mode === 'validVotes') {
+    initLegend();
+    return;
+  }
+
+  if (mode === 'leaders') {
+    div.innerHTML = `
+      <strong>Lideranças</strong><br>
+      <i style="background:#00441b"></i> 20+<br>
+      <i style="background:#1b7837"></i> 10–19<br>
+      <i style="background:#5aae61"></i> 5–9<br>
+      <i style="background:#a6dba0"></i> 1–4<br>
+      <i style="background:#e5f5e0"></i> 0
+    `;
+  }
+
+  if (mode === 'expectedVotes') {
+    div.innerHTML = `
+      <strong>Expectativa de votos</strong><br>
+      <i style="background:#67000d"></i> 5000+<br>
+      <i style="background:#a50f15"></i> 2000–4999<br>
+      <i style="background:#cb181d"></i> 1000–1999<br>
+      <i style="background:#fb6a4a"></i> 300–999<br>
+      <i style="background:#fcae91"></i> 1–299<br>
+      <i style="background:#fee5d9"></i> 0
+    `;
+  }
+}
+function toggleDeputiesDisplay() {
+    deputadosVisible = !deputadosVisible;
+    if (deputadosVisible) {
+        cityInfoEl.style.display = 'block';
+        toggleBtn.textContent = 'Desligar';
+    } else {
+        cityInfoEl.style.display = 'none';
+        toggleBtn.textContent = 'Ligar';
+    }
+    if (cidadeSelecionada) {
+        updateSidebar(cidadeSelecionada, votosValidos[cidadeSelecionada] || 0);
+    } else {
+        restoreSidebarDefault();
+    }
+}
+function toggleCollapse(btn) {
+    const targetId = btn.getAttribute('data-target');
+    const targetContent = document.getElementById(targetId);
+    const state = btn.getAttribute('data-state');
+
+    if (!targetContent) return;
+
+    if (state === 'expanded') {
+        targetContent.classList.add('content-hidden');
+        btn.textContent = 'Expandir';
+        btn.setAttribute('data-state', 'collapsed');
+        btn.style.background = '#189918';
+    } else {
+        targetContent.classList.remove('content-hidden');
+        btn.textContent = 'Minimizar';
+        btn.setAttribute('data-state', 'expanded');
+        btn.style.background = '#0047ab';
+    }
+}
+document.getElementById('add-lideranca').addEventListener('click', async () => {
+    const nome = document.getElementById('lideranca-nome').value.trim();
+    const contato = document.getElementById('lideranca-contato').value.trim();
+    const fileInput = document.getElementById('lideranca-foto-file');
+    const city = cidadeSelecionada;
+
+    if (!nome || !contato || !city) {
+        alert('Selecione uma cidade e preencha o Nome e o Contato.');
+        return;
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('cidade', city);
+        formData.append('nome', nome);
+        formData.append('contato', contato);
+
+        if (fileInput.files.length > 0) {
+            formData.append('foto', fileInput.files[0]);
+        }
+
+        const response = await fetch('http://localhost:3000/api/liderancas', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Erro ao salvar liderança');
+        }
+
+        // 🔄 Recarrega tudo do backend (data.json)
+        await carregarTudo();
+        atualizarTotalGeralOverlay();
+
+        // 🧠 Atualiza sidebar com a fonte correta (backend)
+        renderLiderancas(city);
+
+        // Limpa formulário
+        document.getElementById('lideranca-nome').value = '';
+        document.getElementById('lideranca-contato').value = '';
+        fileInput.value = '';
+
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar liderança no servidor.');
+    }
+});
+document.getElementById('add-observacao').addEventListener('click', async () => {
+    const text = document.getElementById('new-observacao-text').value.trim();
+    const city = cidadeSelecionada;
+
+    if (!text || !city) {
+        alert('Selecione uma cidade e preencha a observação.');
+        return;
+    }
+
+    // 1️⃣ Lê do cache (data.json carregado)
+    const data = carregarObservacoes(city);
+
+    // 2️⃣ Adiciona observação
+    data.push({
+        text,
+        createdAt: new Date().toISOString()
+    });
+
+    // 3️⃣ Salva TUDO no mesmo data.json
+    const ok = await salvarObservacoes(city, data);
+
+    if (!ok) {
+        alert('Erro ao salvar observação no servidor.');
+        return;
+    }
+
+    document.getElementById('new-observacao-text').value = '';
+    renderObservacoes(city);
+});
+document.getElementById('novaRegiaoBtn')?.addEventListener('click', () => {
+  const nome = prompt('Nome da região');
+  if (!nome) return;
+
+  const id = nome.toLowerCase().replace(/\s+/g, '_');
+
+  regioesPersonalizadas[id] = {
+    nome,
+    cidades: [],
+    lider: {
+      nome: '',
+      contato: '',
+      observacoes: '',
+      expectativa_votos: 0
+    }
+  };
+
+  dataCache.regioesPersonalizadas = regioesPersonalizadas;
+  salvarTudo();
+  atualizarSelectRegioesPersonalizadas();
+});
+document.getElementById('customRegionSelect')?.addEventListener('change', e => {
+  const id = e.target.value;
+  const panel = document.getElementById('custom-region-edit');
+destacarRegiaoPersonalizada(r.cidades);
+  if (!id) {
+    panel.style.display = 'none';
+    regiaoPersonalizadaAtiva = null;
+    return;
+  }
+
+  regiaoPersonalizadaAtiva = id;
+  const r = regioesPersonalizadas[id];
+
+  panel.style.display = 'block';
+  document.getElementById('customRegionName').value = r.nome;
+  document.getElementById('customLeaderName').value = r.lider.nome;
+  document.getElementById('customLeaderContact').value = r.lider.contato;
+  document.getElementById('customLeaderNotes').value = r.lider.observacoes;
+  document.getElementById('customLeaderVotes').value = r.lider.expectativa_votos;
+
+  renderCidadesRegiao(r.cidades);
+});
+function renderCidadesRegiao(cidades) {
+  const box = document.getElementById('customRegionCities');
+  box.innerHTML = '';
+
+  if (!cidades.length) {
+    box.innerHTML = '<small>Nenhuma cidade</small>';
+    return;
+  }
+
+  cidades.forEach(c => {
+    const div = document.createElement('div');
+    div.textContent = c;
+    box.appendChild(div);
+  });
+}
+document.getElementById('salvarCustomRegionBtn')?.addEventListener('click', () => {
+  if (!regiaoPersonalizadaAtiva) return;
+
+  const r = regioesPersonalizadas[regiaoPersonalizadaAtiva];
+  r.nome = document.getElementById('customRegionName').value;
+  r.lider = {
+    nome: document.getElementById('customLeaderName').value,
+    contato: document.getElementById('customLeaderContact').value,
+    observacoes: document.getElementById('customLeaderNotes').value,
+    expectativa_votos: Number(document.getElementById('customLeaderVotes').value || 0)
+  };
+
+  dataCache.regioesPersonalizadas = regioesPersonalizadas;
+  salvarTudo();
+  atualizarSelectRegioesPersonalizadas();
+});
+document
+  .getElementById('salvar-expectativa-cidade')
+  .addEventListener('click', async () => {
+
+    if (!cidadeSelecionada) {
+      alert('Selecione uma cidade');
+      return;
+    }
+
+    const valor = Number(
+      document.getElementById('expectativa-cidade').value || 0
+    );
+
+    await fetch('http://localhost:3000/api/expectativa-cidade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cidade: cidadeSelecionada,
+        valor
+      })
+    });
+
+    await carregarTudo();
+    atualizarTotalGeralOverlay();
+    renderLiderancas(cidadeSelecionada);
+});
+// ADICIONA LISTENER PARA OS BOTÕES DE MINIMIZAR RESTAURADO
+document.querySelectorAll('.collapse-btn').forEach(btn => {
+  
+  const criarRegiaoBtn = document.getElementById('criar-regiao');
+const regiaoSelect = document.getElementById('regiao-personalizada-select');
+const modoAddCidadeBtn = document.getElementById('modo-add-cidade');
+
+
+criarRegiaoBtn.addEventListener('click', () => {
+  const nome = document.getElementById('nova-regiao-nome').value.trim();
+  if (!nome) {
+    alert('Digite o nome da região');
+    return;
+  }
+
+  if (regioesPersonalizadas[nome]) {
+    alert('Região já existe');
+    return;
+  }
+
+  regioesPersonalizadas[nome] = {
+    cidades: [],
+    lider: {
+      nome: '',
+      contato: '',
+      expectativa_votos: 0
+    }
+  };
+
+  atualizarSelectRegioes();
+  document.getElementById('nova-regiao-nome').value = '';
+});
+
+function atualizarSelectRegioes() {
+  regiaoSelect.innerHTML = '<option value="">Selecione uma região</option>';
+  Object.keys(regioesPersonalizadas).forEach(nome => {
+    const opt = document.createElement('option');
+    opt.value = nome;
+    opt.textContent = nome;
+    regiaoSelect.appendChild(opt);
+  });
+}
+modoAddCidadeBtn.addEventListener('click', () => {
+  const nome = regiaoSelect.value;
+  if (!nome) {
+    alert('Selecione uma região');
+    return;
+  }
+
+  regiaoEditando = nome;
+  modoAdicionarCidade = true;
+  alert('Clique nas cidades do mapa para adicionar à região');
+});
+    btn.addEventListener('click', () => toggleCollapse(btn));
+});
+
+function initCitySearch() {
+  if (!citySearchInput) return;
+
+  citySearchInput.addEventListener('input', () => {
+    const term = normalizeCityName(citySearchInput.value);
+    citySearchResults.innerHTML = '';
+
+    if (term.length < 2) return;
+
+    const cidades = Object.keys(layersPorCidade)
+      .filter(c => normalizeCityName(c).includes(term))
+      .slice(0, 10);
+
+    if (cidades.length === 0) {
+      citySearchResults.innerHTML = '<small>Nenhuma cidade encontrada</small>';
+      return;
+    }
+
+    cidades.forEach(cidade => {
+      const div = document.createElement('div');
+      div.textContent = cidade;
+      div.style.cursor = 'pointer';
+      div.style.padding = '6px';
+      div.style.borderBottom = '1px solid #eee';
+
+      div.addEventListener('click', () => {
+        const layer = layersPorCidade[cidade];
+        if (!layer) return;
+
+        map.fitBounds(layer.getBounds(), { maxZoom: 9 });
+        selecionarCidade(cidade, layer);
+        updateSidebar(cidade, votosValidos[cidade] || 0);
+        atualizarBotaoComite(cidade);
+
+        citySearchResults.innerHTML = '';
+        citySearchInput.value = cidade;
+      });
+
+      citySearchResults.appendChild(div);
+    });
+  });
+}
+
+// =================================================================
+// 3. FUNÇÃO PRINCIPAL DE INICIALIZAÇÃO (Depende do DOM estar visível)
+// =================================================================
+function initializeMapAndApp() {
+    
+    /* ===== Inicializa o mapa SOMENTE AGORA (o container está visível) ===== */
+    map = L.map('map', {
+      zoomControl: true,
+      minZoom: 7,
+      maxZoom: 11,
+      attributionControl: false
+    }).setView([-22.5, -43.5], 7);
+    map.on('click', e => {
+  // Se clicar no fundo do mapa (não em um município)
+  if (!e.originalEvent.target.closest('.leaflet-interactive')) {
+    cidadeSelecionada = null;
+    layerSelecionada = null;
+    restoreSidebarDefault();
+  }
+});
+    // CORREÇÃO CRÍTICA: Informa ao Leaflet que o container mudou de tamanho.
+    map.invalidateSize(); 
+
+    initLegend();
+    restoreSidebarDefault();
+
+    /* ===== Carrega GeoJSON e desenha polígono + labels ===== */
+    const labelMarkers = [];
+    fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-33-mun.json")
+      .then(r => r.json())
+      .then(data => {
+        
+        layerRJ = L.geoJSON(data, {
+          style: feature => {
+            const nome = feature.properties.NM_MUN || feature.properties.name;
+            // ATENÇÃO: Se votosValidos for undefined, o data.js não carregou
+            const votos = votosValidos[nome] || 0; 
+            return {
+  color: "#1e3a8a",       // azul mais sofisticado
+  weight: 0.8,            // borda mais fina
+  fillOpacity: 0.85,
+  fillColor: getCityColor({
+    validVotes: votos,
+    leadersCount: (dataCache[nome]?.liderancas || []).length,
+    expectedVotes: getTotalExpectativa(nome)
+  })
+};
+
+          },
+          onEachFeature: (feature, layer) => {
+            const nomeCidade =
+  feature.properties.NM_MUN || feature.properties.name;
+
+layersPorCidade[nomeCidade] = layer;
+            const nome = feature.properties.NM_MUN || feature.properties.name || "Sem nome";
+            const votos = votosValidos[nome] || 0;
+
+            /* Cria marcador fixo com nome */
+            const center = layer.getBounds().getCenter();
+            const label = L.marker(center, {
+              icon: L.divIcon({
+                className: 'city-label',
+                html: nome,
+                iconSize: [120, 24],
+                iconAnchor: [60, 12]
+              }),
+              interactive: false
+            }).addTo(map);
+
+            labelMarkers.push({ nome, marker: label });
+
+            /* Tooltip dinâmica */
+            layer.bindTooltip(`
+  <b>${nome}</b><br>
+  Expectativa total: ${getTotalExpectativa(nome)}
+`);
+
+           /* Eventos hover, click e NOVO dblclick */
+            layer.on({
+              mouseover: e => {
+  // 🚫 Se já existe cidade selecionada, hover NÃO faz nada
+  if (cidadeSelecionada !== null) return;
+
+  const nomeAtual = e.target.feature.properties.NM_MUN || e.target.feature.properties.name;
+  const lbl = labelMarkers.find(l => l.nome === nomeAtual);
+  if (lbl && lbl.marker._icon) lbl.marker._icon.classList.remove("highlight");
+
+  e.target.setStyle({
+  weight: 2.5,
+  color: "#0f172a",
+  fillOpacity: 0.95
+});
+  updateSidebar(nome, votosValidos[nome] || 0);
+},
+              mouseout: e => {
+  const nomeAtual = e.target.feature.properties.NM_MUN || e.target.feature.properties.name;
+  const lbl = labelMarkers.find(l => l.nome === nomeAtual);
+  if (lbl && lbl.marker._icon) lbl.marker._icon.classList.remove("highlight");
+                
+                if (cidadeSelecionada !== null) {
+    layerRJ.resetStyle(e.target);
+    return;
+  }
+
+// comportamento normal quando não há seleção
+  layerRJ.resetStyle(e.target);
+  restoreSidebarDefault();
+},
+              click: e => {
+  const nome = e.target.feature.properties.NM_MUN || e.target.feature.properties.name;
+
+  // 👉 SE ESTIVER EM MODO DE ADIÇÃO DE REGIÃO
+  if (modoAdicionarCidade && regiaoEditando) {
+    const lista = regioesPersonalizadas[regiaoEditando].cidades;
+
+    if (!lista.includes(nome)) {
+      lista.push(nome);
+      alert(`${nome} adicionada à região "${regiaoEditando}"`);
+    } else {
+      alert(`${nome} já está nessa região`);
+    }
+
+    return; // NÃO executa seleção normal
+  }
+
+  // 👉 comportamento NORMAL (o que já existia)
+  const votos = votosValidos[nome] || 0;
+  cidadeSelecionada = nome;
+  selecionarCidade(nome, layer);
+  updateSidebar(nome, votos);
+  atualizarBotaoComite(nome);
+},
+
+              // Implementação do dblclick 
+              dblclick: e => {
+                  const nome = e.target.feature.properties.NM_MUN || e.target.feature.properties.name || "Sem nome";
+                  const tableHtml = createBairroTable(nome);
+                  
+                  // Centraliza o popup/tooltip no centro do polígono clicado e abre
+                  e.target.bindPopup(tableHtml, {
+                      maxWidth: 500,
+                      maxHeight: 350, 
+                      closeButton: true,
+                      className: 'bairro-popup'
+                  }).openPopup(e.latlng); // Abre o popup no local do clique duplo
+              }
+            });
+          }
+        }).addTo(map);
+
+        const bounds = layerRJ.getBounds();
+        map.fitBounds(bounds);
+        map.setMaxBounds(bounds.pad(0.2));
+initCitySearch();
+initLiderancaSearch();
+
+        map.on('zoomend moveend', () => {
+          layerRJ.eachLayer(layer => {
+            const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name;
+            const lblObj = labelMarkers.find(l => l.nome === nome);
+            if (lblObj) {
+              const c = layer.getBounds().getCenter();
+              lblObj.marker.setLatLng(c);
+            }
+          });
+        });
+      })
+      .catch(err => {
+        console.error("Erro ao carregar GeoJSON:", err);
+      });
+
+    // ===== Filtrar por região (Adiciona o listener após o mapa ser inicializado) =====
+    document.getElementById('regionSelect').addEventListener('change', (e) => {
+        const key = e.target.value;
+        // ATENÇÃO: Se regions for undefined, o data.js não carregou
+        const munNames = regions[key]; 
+        if (!layerRJ) return;
+
+        layerRJ.eachLayer(layer => {
+            const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name;
+            const el = layer.getElement && layer.getElement();
+            if (!munNames || munNames.includes(nome)) {
+                layer.setStyle({ fillOpacity: 0.8, opacity: 1 });
+                if (el) el.style.pointerEvents = 'auto';
+            } else {
+                layer.setStyle({ fillOpacity: 0.12, opacity: 0.12 });
+                if (el) el.style.pointerEvents = 'none';
+            }
+        });
+// ================================
+// FILTRO POR REGIÃO PERSONALIZADA
+// ================================
+regiaoSelect.addEventListener('change', () => {
+  const nome = regiaoSelect.value;
+  if (!nome || !regioesPersonalizadas[nome]) return;
+
+  const cidades = regioesPersonalizadas[nome].cidades;
+
+  layerRJ.eachLayer(layer => {
+    const cityName =
+      layer.feature.properties.NM_MUN ||
+      layer.feature.properties.name;
+
+    if (cidades.includes(cityName)) {
+      layer.setStyle({ fillOpacity: 0.8, opacity: 1 });
+    } else {
+      layer.setStyle({ fillOpacity: 0.1, opacity: 0.1 });
+    }
+  });
+});
+        document.querySelectorAll('.city-label').forEach(el => {
+            const name = el.innerText && el.innerText.trim();
+            if (!munNames || munNames.includes(name)) el.style.opacity = 0.5;
+            else el.style.opacity = 0.15;
+        });
+
+        if (key === 'all') {
+            document.querySelectorAll('.city-label').forEach(el => el.style.opacity = 0.5);
+            layerRJ.eachLayer(layer => {
+                const elsv = layer.getElement && layer.getElement();
+                layer.setStyle({ fillOpacity: 0.8, opacity: 1 });
+                if (elsv) elsv.style.pointerEvents = 'auto';
+            });
+        }
+    });
+}
+function limparSelecaoMapa() {
+  Object.values(layersPorCidade).forEach(layer => {
+    layer.setStyle({
+      weight: 1,
+      color: '#3388ff',
+      fillOpacity: 0.2
+    });
+  });
+}
+function destacarRegiaoPersonalizada(cidades) {
+  limparSelecaoMapa();
+
+  cidades.forEach(nome => {
+    const layer = layersPorCidade[nome];
+    if (!layer) return;
+
+    layer.setStyle({
+      weight: 3,
+      color: '#e63946',
+      fillOpacity: 0.6
+    });
+  });
+}
+// =================================================================
+// 4. LÓGICA DE INÍCIO DA PÁGINA (IIFE)
+// =================================================================
+(async function() { // ATENÇÃO: A função foi alterada para 'async'
+    const contentWrapper = document.getElementById('content-wrapper');
+    const blocker = document.getElementById('blocker');
+    
+    // Tenta fazer o login
+    if (fazerLogin()) {
+        // 1. CARREGA DADOS DO BACKEND ANTES DE INICIAR O MAPA
+        await carregarTudo(); 
+        atualizarTotalGeralOverlay();
+
+        // 2. Se o login for bem-sucedido:
+        contentWrapper.style.display = 'block';
+        blocker.style.display = 'none';
+        
+        // 3. Chama a função que inicializa o mapa
+        initializeMapAndApp(); 
+        
+    } else {
+        // Se falhar:
+        blocker.innerHTML = "Acesso Negado. Recarregue a página para tentar novamente.";
+    }
+})();
+async function carregarDadosMapa() {
+  const res = await fetch('http://localhost:3000/api/data');
+  const data = await res.json();
+  return data;
+}
+function repaintMap() {
+  if (!layerRJ) return;
+
+  layerRJ.eachLayer(layer => {
+    const nome =
+      layer.feature.properties.NM_MUN ||
+      layer.feature.properties.name;
+
+    const cityData = {
+      validVotes: votosValidos[nome] || 0,
+      leadersCount: (dataCache[nome]?.liderancas || []).length,
+      expectedVotes: getTotalExpectativa(nome)
+    };
+
+    layer.setStyle({
+      fillColor: getCityColor(cityData),
+      fillOpacity: 0.8,
+      color: '#0047ab',
+      weight: 1
+    });
+  });
+
+  updateLegendByMode();
+}
+function atualizarIconeComite(city) {
+  if (!layerRJ) return;
+
+  const layer = layersPorCidade[city];
+  if (!layer) return;
+
+  // Remove se existir
+  if (comiteMarkers[city]) {
+    map.removeLayer(comiteMarkers[city]);
+    delete comiteMarkers[city];
+  }
+
+  // Se não tem comitê, acabou
+  if (!dataCache[city]?.temComite) return;
+
+  const center = layer.getBounds().getCenter();
+
+  const marker = L.marker(center, {
+    icon: L.divIcon({
+      className: 'comite-marker',
+      html: '🏠',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    }),
+    interactive: false
+  }).addTo(map);
+
+  comiteMarkers[city] = marker;
+}
+
+document.getElementById('toggleMapMode').addEventListener('click', () => {
+  currentMapModeIndex =
+    (currentMapModeIndex + 1) % mapModes.length;
+
+  const mode = mapModes[currentMapModeIndex];
+  const btn = document.getElementById('toggleMapMode');
+
+  if (mode === 'validVotes') {
+    btn.innerText = '🗳️ Votos válidos';
+  } else if (mode === 'leaders') {
+    btn.innerText = '👥 Lideranças';
+  } else if (mode === 'expectedVotes') {
+    btn.innerText = '📊 Expectativa de votos';
+  }
+
+  repaintMap();
+});
+document.getElementById('toggle-comite').addEventListener('click', async () => {
+  if (!cidadeSelecionada) {
+    alert('Selecione uma cidade no mapa');
+    return;
+  }
+
+  ensureCityData(cidadeSelecionada);
+
+  dataCache[cidadeSelecionada].temComite =
+    !dataCache[cidadeSelecionada].temComite;
+
+  await salvarTudo();
+
+  atualizarBotaoComite(cidadeSelecionada);
+  atualizarIconeComite(cidadeSelecionada);
+});
+citySearchInput.addEventListener('input', () => {
+  const term = citySearchInput.value
+    .trim()
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  citySearchResults.innerHTML = '';
+
+  if (term.length < 2) return;
+
+  const cidades = Object.keys(layersPorCidade);
+
+  const filtradas = cidades.filter(c =>
+    c
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .includes(term)
+  );
+
+  filtradas.slice(0, 8).forEach(cidade => {
+    const div = document.createElement('div');
+    div.textContent = cidade;
+    div.style.padding = '6px 8px';
+    div.style.cursor = 'pointer';
+    div.style.borderBottom = '1px solid #eee';
+
+    div.addEventListener('click', () => {
+      selecionarCidadeBuscada(cidade);
+      citySearchResults.innerHTML = '';
+      citySearchInput.value = cidade;
+    });
+
+    citySearchResults.appendChild(div);
+  });
+});
+function selecionarCidadeBuscada(nomeCidade) {
+  const layer = layersPorCidade[nomeCidade];
+  if (!layer) return;
+
+  const votos = votosValidos[nomeCidade] || 0;
+
+  cidadeSelecionada = nomeCidade;
+  layerSelecionada = layer;
+
+  // Centraliza no mapa
+  map.fitBounds(layer.getBounds(), { maxZoom: 10 });
+
+  // Usa sua lógica já existente de seleção
+  selecionarCidade(nomeCidade, layer);
+  updateSidebar(nomeCidade, votos);
+  atualizarBotaoComite(nomeCidade);
+}
+const liderancaSearchInput = document.getElementById('lideranca-search');
+const liderancaSearchResults = document.getElementById('lideranca-search-results');
+
+function initLiderancaSearch() {
+  if (!liderancaSearchInput) return;
+
+  liderancaSearchInput.addEventListener('input', () => {
+    const term = normalizeCityName(liderancaSearchInput.value);
+    liderancaSearchResults.innerHTML = '';
+
+    if (term.length < 2) return;
+
+    const resultados = [];
+
+    Object.keys(dataCache).forEach(city => {
+      const liderancas = dataCache[city]?.liderancas || [];
+
+      liderancas.forEach(l => {
+        const nome = normalizeCityName(l.nome || '');
+        const contato = normalizeCityName(l.contato || '');
+
+        if (nome.includes(term) || contato.includes(term)) {
+          resultados.push({
+            cidade: city,
+            lideranca: l
+          });
+        }
+      });
+    });
+
+    if (resultados.length === 0) {
+      liderancaSearchResults.innerHTML = '<small>Nenhuma liderança encontrada</small>';
+      return;
+    }
+
+    resultados.slice(0, 10).forEach(r => {
+      const div = document.createElement('div');
+      div.style.padding = '6px';
+      div.style.cursor = 'pointer';
+      div.style.borderBottom = '1px solid #eee';
+
+      div.innerHTML = `
+        <strong>${r.lideranca.nome}</strong><br>
+        <small>${r.cidade} • ${r.lideranca.contato || ''}</small>
+      `;
+
+      div.addEventListener('click', () => {
+        const layer = layersPorCidade[r.cidade];
+        if (!layer) return;
+
+        map.fitBounds(layer.getBounds(), { maxZoom: 9 });
+        selecionarCidade(r.cidade, layer);
+        updateSidebar(r.cidade, votosValidos[r.cidade] || 0);
+
+        // destaca visualmente a liderança
+        setTimeout(() => {
+          const cards = document.querySelectorAll('#liderancas-list > div');
+          cards.forEach(c => {
+            if (c.innerText.includes(r.lideranca.nome)) {
+              c.style.background = '#fff7cc';
+              c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          });
+        }, 300);
+
+        liderancaSearchResults.innerHTML = '';
+        liderancaSearchInput.value = r.lideranca.nome;
+      });
+
+      liderancaSearchResults.appendChild(div);
+    });
+  });
+}
+
+</script>
+
+</body>
+</html>

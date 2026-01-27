@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de Lideranças</title>
+
+<style>
+:root {
+  --primary:#0047ab;
+  --primary-dark:#003580;
+  --danger:#c62828;
+  --bg:#f2f6fb;
+  --card:#ffffff;
+  --text:#1f2937;
+  --muted:#6b7280;
+  --border:#e5e7eb;
+  --radius:12px;
+}
+
+* {
+  box-sizing:border-box;
+}
+
+body {
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  background:var(--bg);
+  margin:0;
+  padding:16px;
+  color:var(--text);
+}
+
+h2 {
+  text-align:center;
+  color:var(--primary);
+  margin-bottom:20px;
+}
+
+h3 {
+  margin-top:0;
+  color:#111827;
+}
+
+.card {
+  background:var(--card);
+  padding:16px;
+  border-radius:var(--radius);
+  margin-bottom:16px;
+  box-shadow:0 8px 20px rgba(0,0,0,.06);
+}
+
+label {
+  font-weight:600;
+  font-size:14px;
+  margin-bottom:4px;
+  display:block;
+}
+
+small {
+  color:var(--muted);
+}
+
+input, select {
+  width:100%;
+  padding:11px 12px;
+  margin:6px 0 12px;
+  font-size:15px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  outline:none;
+  transition:.2s;
+}
+
+input:focus, select:focus {
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(0,71,171,.15);
+}
+
+button {
+  width:100%;
+  padding:12px;
+  font-size:15px;
+  font-weight:600;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:var(--primary);
+  color:#fff;
+  transition:.2s;
+}
+
+button:hover {
+  background:var(--primary-dark);
+}
+
+button.secondary {
+  background:#6b7280;
+}
+
+button.secondary:hover {
+  background:#4b5563;
+}
+
+button.danger {
+  background:var(--danger);
+}
+
+button.danger:hover {
+  background:#9b1c1c;
+}
+
+.hidden {
+  display:none;
+}
+
+.actions {
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+}
+
+.actions button {
+  flex:1;
+  padding:8px;
+  font-size:14px;
+}
+
+.lideranca {
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+
+.lideranca:last-child {
+  border-bottom:none;
+}
+
+.lideranca img {
+  max-width:90px;
+  border-radius:8px;
+  margin-top:8px;
+}
+
+#lista-liderancas > div:first-child {
+  margin-bottom:14px;
+}
+
+/* LOGIN */
+#login-card {
+  max-width:380px;
+  margin:60px auto;
+}
+
+/* PAINEL */
+#panel {
+  max-width:900px;
+  margin:0 auto;
+}
+
+/* RESPONSIVO */
+@media (min-width:768px) {
+  .card {
+    padding:20px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<h2>Painel de Lideranças</h2>
+
+<!-- LOGIN -->
+<div id="login-card" class="card">
+  <h3>Login</h3>
+  <input id="login-user" placeholder="Usuário">
+  <input id="login-pass" type="password" placeholder="Senha">
+  <button id="login-btn">Entrar</button>
+  <small id="login-error"></small>
+</div>
+
+<!-- PAINEL -->
+<div id="panel" class="hidden">
+
+  <div class="card">
+    <strong>Usuário:</strong> <span id="user-name"></span><br>
+    <button id="logout-btn" class="danger">Sair</button>
+  </div>
+
+  <!-- FORMULÁRIO -->
+  <div class="card">
+    <h3 id="form-title">Nova Liderança</h3>
+
+    <label>Buscar cidade</label>
+    <input id="buscaCidade" placeholder="Digite o nome da cidade">
+
+    <label>Região</label>
+    <select id="regiao"></select>
+
+    <label>Cidade</label>
+    <select id="cidade"></select>
+
+    <label>Nome</label>
+    <input id="nome">
+
+    <label>Contato</label>
+    <input id="contato">
+    <label>Expectativa de votos</label>
+<input id="expectativa_votos" type="number" min="0" placeholder="Ex: 150">
+
+    <label>Foto</label>
+    <input type="file" id="foto" accept="image/jpeg,image/png">
+
+    <button id="salvar-btn">Salvar</button>
+    <button id="cancelar-btn" class="secondary hidden">Cancelar edição</button>
+  </div>
+<!-- EXPECTATIVA DA CIDADE -->
+<div class="card">
+  <h3>Expectativa da cidade</h3>
+
+  <label>Expectativa de votos da cidade</label>
+  <input
+    id="expectativa-cidade"
+    type="number"
+    min="0"
+    placeholder="Ex: 12000"
+  >
+
+  <button id="salvar-expectativa-cidade">
+    Salvar expectativa da cidade
+  </button>
+</div>
+  <!-- LISTAGEM -->
+  <div class="card">
+    <h3>Lideranças da cidade selecionada</h3>
+    <div id="lista-liderancas">
+      <small>Selecione uma cidade</small>
+    </div>
+  </div>
+
+</div>
+
+<!-- DEPENDÊNCIA (NÃO ALTERAR) -->
+<script src="../data.js"></script>
+
+<script>
+/* ================= CONFIG ================= */
+const API = 'http://localhost:3000';
+let editandoId = null;
+
+/* ================= ELEMENTOS ================= */
+const expectativaCidadeInput = document.getElementById('expectativa-cidade');
+const salvarExpectativaCidadeBtn = document.getElementById('salvar-expectativa-cidade');
+const loginCard = document.getElementById('login-card');
+const panel = document.getElementById('panel');
+const loginUser = document.getElementById('login-user');
+const loginPass = document.getElementById('login-pass');
+const loginError = document.getElementById('login-error');
+const userName = document.getElementById('user-name');
+
+const buscaCidade = document.getElementById('buscaCidade');
+const regiao = document.getElementById('regiao');
+const cidade = document.getElementById('cidade');
+const nome = document.getElementById('nome');
+const contato = document.getElementById('contato');
+const fotoInput = document.getElementById('foto');
+const lista = document.getElementById('lista-liderancas');
+const formTitle = document.getElementById('form-title');
+const cancelarBtn = document.getElementById('cancelar-btn');
+
+/* ================= LOGIN ================= */
+document.getElementById('login-btn').onclick = login;
+document.getElementById('logout-btn').onclick = logout;
+document.getElementById('salvar-btn').onclick = salvar;
+cancelarBtn.onclick = cancelarEdicao;
+
+async function login(){
+  loginError.textContent = '';
+  try {
+    const res = await fetch(API + '/api/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        usuario: loginUser.value.trim(),
+        senha: loginPass.value.trim()
+      })
+    });
+    if(!res.ok) throw new Error();
+    const user = await res.json();
+    localStorage.setItem('user', JSON.stringify(user));
+    iniciarPainel();
+  } catch {
+    loginError.textContent = 'Usuário ou senha inválidos';
+  }
+}
+
+function logout(){
+  localStorage.removeItem('user');
+  location.reload();
+}
+
+function iniciarPainel(){
+  const user = JSON.parse(localStorage.getItem('user'));
+  if(!user) return;
+  loginCard.classList.add('hidden');
+  panel.classList.remove('hidden');
+  userName.textContent = user.usuario || 'admin';
+}
+
+/* ================= INIT ================= */
+document.addEventListener('DOMContentLoaded', () => {
+  initRegioes();
+
+  buscaCidade.addEventListener('input', filtrarCidades);
+  regiao.addEventListener('change', carregarCidadesPorRegiao);
+  cidade.addEventListener('change', carregarLiderancas);
+
+  iniciarPainel();
+});
+
+/* ================= REGIÕES / CIDADES ================= */
+let todasCidades = [];
+
+function initRegioes(){
+  regiao.innerHTML = '<option value="">Selecione</option>';
+  cidade.innerHTML = '<option value="">Selecione</option>';
+  todasCidades = [];
+
+  Object.keys(regions).forEach(r => {
+    if(!Array.isArray(regions[r])) return; // ignora all:null
+    const o = document.createElement('option');
+    o.value = r;
+    o.textContent = r.replace(/([A-Z])/g,' $1');
+    regiao.appendChild(o);
+    regions[r].forEach(c => todasCidades.push(c));
+  });
+}
+
+function carregarCidadesPorRegiao(){
+  cidade.innerHTML = '<option value="">Selecione</option>';
+  buscaCidade.value = '';
+  if(!regiao.value) return;
+
+  regions[regiao.value].forEach(c => {
+    const o = document.createElement('option');
+    o.value = c;
+    o.textContent = c;
+    cidade.appendChild(o);
+  });
+}
+
+function filtrarCidades(){
+  const termo = buscaCidade.value.toLowerCase();
+  cidade.innerHTML = '<option value="">Selecione</option>';
+  regiao.value = '';
+  if(!termo) return;
+
+  todasCidades
+    .filter(c => c.toLowerCase().includes(termo))
+    .forEach(c => {
+      const o = document.createElement('option');
+      o.value = c;
+      o.textContent = c;
+      cidade.appendChild(o);
+    });
+}
+
+/* ================= LISTAGEM ================= */
+async function carregarLiderancas(){
+  if(!cidade.value){
+    lista.innerHTML = '<small>Selecione uma cidade</small>';
+    expectativaCidadeInput.value = '';
+    return;
+  }
+
+  lista.innerHTML = 'Carregando...';
+
+  const res = await fetch(API + '/api/data');
+  const data = await res.json();
+  const bloco = data[cidade.value];
+
+  if(!bloco){
+    lista.innerHTML = '<small>Nenhum dado para esta cidade</small>';
+    expectativaCidadeInput.value = 0;
+    return;
+  }
+
+  // 🔹 expectativa da cidade
+  const expectativaCidade = Number(bloco.expectativaCidade || 0);
+  expectativaCidadeInput.value = expectativaCidade;
+
+  // 🔹 soma das lideranças
+  const somaLiderancas = bloco.liderancas.reduce(
+    (s, l) => s + Number(l.expectativa_votos || 0),
+    0
+  );
+
+  // 🔹 TOTAL GERAL
+  const totalGeral = expectativaCidade + somaLiderancas;
+
+  // 🔹 RESUMO
+  lista.innerHTML = `
+  <div style="
+    margin-bottom:14px;
+    padding:14px;
+    background:linear-gradient(135deg,#e0ebff,#f5f9ff);
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,.05);
+  ">
+      <div><b>Cidade:</b> ${expectativaCidade}</div>
+      <div><b>Lideranças:</b> ${somaLiderancas}</div>
+      <hr>
+      <div style="font-size:20px;color:#0047ab">
+        <b>TOTAL GERAL:</b> ${totalGeral}
+      </div>
+    </div>
+  `;
+
+  if(!bloco.liderancas.length){
+    lista.innerHTML += '<small>Nenhuma liderança nesta cidade</small>';
+    return;
+  }
+
+  // 🔹 LISTA DE LIDERANÇAS
+  bloco.liderancas.forEach(l => {
+    const div = document.createElement('div');
+    div.className = 'lideranca';
+    div.innerHTML = `
+      <strong>${l.nome}</strong><br>
+      <small><b>Expectativa:</b> ${l.expectativa_votos || 0}</small><br>
+      ${l.contato ? `<small>${l.contato}</small><br>` : ''}
+      ${l.foto ? `<img src="${l.foto}">` : ''}
+      <div class="actions">
+        <button onclick="editar('${l.id}','${l.nome}','${l.contato||''}')">Editar</button>
+        <button class="danger" onclick="excluir('${l.id}')">Excluir</button>
+      </div>
+    `;
+    lista.appendChild(div);
+  });
+}
+
+
+/* ================= EDITAR ================= */
+function editar(id,nomeVal,contatoVal){
+  editandoId = id;
+  nome.value = nomeVal;
+  contato.value = contatoVal;
+  formTitle.textContent = 'Editar liderança';
+  cancelarBtn.classList.remove('hidden');
+}
+
+function cancelarEdicao(){
+  editandoId = null;
+  nome.value = '';
+  contato.value = '';
+  fotoInput.value = '';
+  formTitle.textContent = 'Nova Liderança';
+  cancelarBtn.classList.add('hidden');
+}
+
+/* ================= SALVAR ================= */
+async function salvar(){
+  if(!cidade.value || !nome.value){
+    alert('Cidade e nome são obrigatórios');
+    return;
+  }
+
+  const votosInput = document.getElementById('expectativa_votos');
+
+  if(!votosInput){
+    alert('Campo de expectativa de votos não encontrado');
+    return;
+  }
+
+  const expectativa = Number(votosInput.value) || 0;
+
+  const fd = new FormData();
+  fd.append('cidade', cidade.value);
+  fd.append('nome', nome.value.trim());
+  fd.append('contato', contato.value.trim());
+  fd.append('expectativa_votos', expectativa);
+
+  if(fotoInput.files.length){
+    fd.append('foto', fotoInput.files[0]);
+  }
+
+  if(editandoId){
+    await fetch(API + '/api/liderancas/' + editandoId, {
+      method:'PUT',
+      body: fd
+    });
+  } else {
+    await fetch(API + '/api/liderancas', {
+      method:'POST',
+      body: fd
+    });
+  }
+
+  votosInput.value = '';
+  cancelarEdicao();
+  carregarLiderancas();
+}
+salvarExpectativaCidadeBtn.onclick = async () => {
+  if (!cidade.value) {
+    alert('Selecione uma cidade');
+    return;
+  }
+
+  const valor = Number(expectativaCidadeInput.value || 0);
+
+  await fetch(API + '/api/expectativa-cidade', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      cidade: cidade.value,
+      valor
+    })
+  });
+
+  carregarLiderancas();
+};
+/* ================= EXCLUIR ================= */
+async function excluir(id){
+  if(!confirm('Excluir liderança?')) return;
+  await fetch(API + '/api/liderancas/' + id, { method:'DELETE' });
+  carregarLiderancas();
+}
+</script>
+
+</body>
+</html>
