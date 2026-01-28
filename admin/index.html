@@ -180,6 +180,22 @@ button.danger:hover {
 
 <!-- PAINEL -->
 <div id="panel" class="hidden">
+<!-- GASTOS DA LIDERANÇA -->
+<div class="card" id="gastos-card" style="display:none;">
+  <h3>Gastos da liderança</h3>
+
+  <div id="listaGastos"></div>
+
+  <input type="number" id="valorGasto" placeholder="Valor gasto (R$)" step="0.01">
+  <input type="text" id="descricaoGasto" placeholder="Descrição (opcional)">
+
+  <button onclick="salvarGasto()">Adicionar gasto</button>
+
+  <p>
+    <b>Total gasto:</b> R$
+    <span id="totalGasto">0,00</span>
+  </p>
+</div>
 
   <div class="card">
     <strong>Usuário:</strong> <span id="user-name"></span><br>
@@ -246,7 +262,7 @@ button.danger:hover {
 /* ================= CONFIG ================= */
 const API = 'https://map-backend-j88s.onrender.com';
 let editandoId = null;
-
+let liderancaSelecionadaId = null;
 /* ================= ELEMENTOS ================= */
 const expectativaCidadeInput = document.getElementById('expectativa-cidade');
 const salvarExpectativaCidadeBtn = document.getElementById('salvar-expectativa-cidade');
@@ -442,11 +458,16 @@ async function carregarLiderancas(){
 /* ================= EDITAR ================= */
 function editar(id,nomeVal,contatoVal){
   editandoId = id;
+  liderancaSelecionadaId = id;
+
   nome.value = nomeVal;
   contato.value = contatoVal;
   formTitle.textContent = 'Editar liderança';
   cancelarBtn.classList.remove('hidden');
+
+  carregarGastos(id);
 }
+
 
 function cancelarEdicao(){
   editandoId = null;
@@ -524,6 +545,61 @@ async function excluir(id){
   await fetch(API + '/api/liderancas/' + id, { method:'DELETE' });
   carregarLiderancas();
 }
+async function carregarGastos(liderancaId) {
+  document.getElementById('gastos-card').style.display = 'block';
+
+  const res = await fetch(API + `/api/gastos/${liderancaId}`);
+  const gastos = await res.json();
+
+  document.getElementById('listaGastos').innerHTML =
+    gastos.map(g => `
+      <div style="border-bottom:1px solid #ddd; padding:4px 0">
+        R$ ${Number(g.valor).toFixed(2)} - ${g.descricao || ''}
+        <br>
+        <small>${new Date(g.data).toLocaleString()} — ${g.usuario}</small>
+      </div>
+    `).join('');
+
+  const totalRes = await fetch(API + `/api/gastos-total/${liderancaId}`);
+  const total = await totalRes.json();
+
+  document.getElementById('totalGasto').innerText =
+    Number(total.total).toFixed(2);
+}
+async function salvarGasto() {
+  if (!liderancaSelecionadaId) {
+    alert('Selecione uma liderança');
+    return;
+  }
+
+  const valor = document.getElementById('valorGasto').value;
+  const descricao = document.getElementById('descricaoGasto').value;
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  if (!valor) {
+    alert('Informe o valor');
+    return;
+  }
+
+  await fetch(API + '/api/gastos', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      lideranca_id: liderancaSelecionadaId,
+      valor,
+      descricao,
+      usuario: user.usuario
+    })
+  });
+
+  document.getElementById('valorGasto').value = '';
+  document.getElementById('descricaoGasto').value = '';
+
+  carregarGastos(liderancaSelecionadaId);
+}
+
 </script>
 
 </body>
