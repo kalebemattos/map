@@ -150,8 +150,8 @@ app.post('/api/liderancas', upload.single('foto'), async (req, res) => {
       nome,
       contato: contato || '',
       foto: req.file
-        ? `http://localhost:3000/uploads/${req.file.filename}`
-        : null,
+  ? `/uploads/${req.file.filename}`
+  : null,
       createdAt: new Date().toISOString()
     };
 
@@ -216,7 +216,7 @@ app.put('/api/liderancas/:id', upload.single('foto'), async (req, res) => {
 
     let foto = atual.foto;
     if (req.file) {
-      foto = `http://localhost:3000/uploads/${req.file.filename}`;
+      foto = `/uploads/${req.file.filename}`;
     }
 
     await db.run(
