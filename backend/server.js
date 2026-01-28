@@ -72,7 +72,16 @@ async function ensureExpectativaTable() {
     );
   `);
 }
-
+await db.exec(`
+  CREATE TABLE IF NOT EXISTS gastos_lideranca (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lideranca_id INTEGER,
+    valor REAL,
+    descricao TEXT,
+    data TEXT,
+    usuario TEXT
+  )
+`);
 // salvar / atualizar expectativa da cidade
 app.post('/api/expectativa-cidade', async (req, res) => {
   const { cidade, valor } = req.body;
