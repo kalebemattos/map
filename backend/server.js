@@ -72,16 +72,7 @@ async function ensureExpectativaTable() {
     );
   `);
 }
-await db.exec(`
-  CREATE TABLE IF NOT EXISTS gastos_lideranca (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    lideranca_id INTEGER,
-    valor REAL,
-    descricao TEXT,
-    data TEXT,
-    usuario TEXT
-  )
-`);
+
 // salvar / atualizar expectativa da cidade
 app.post('/api/expectativa-cidade', async (req, res) => {
   const { cidade, valor } = req.body;
@@ -121,40 +112,6 @@ app.get('/api/data', async (req, res) => {
       liderancas: []
     };
   });
-// =======================
-// GASTOS POR LIDERANÇA
-// =======================
-
-// adicionar gasto
-app.post('/api/gastos', async (req, res) => {
-  const { lideranca_id, valor, descricao, usuario } = req.body;
-  const data = new Date().toISOString();
-
-  await db.run(
-    'INSERT INTO gastos_lideranca (lideranca_id, valor, descricao, data, usuario) VALUES (?, ?, ?, ?, ?)',
-    [lideranca_id, valor, descricao, data, usuario]
-  );
-
-  res.json({ ok: true });
-});
-
-// listar gastos da liderança
-app.get('/api/gastos/:lideranca_id', async (req, res) => {
-  const rows = await db.all(
-    'SELECT * FROM gastos_lideranca WHERE lideranca_id = ? ORDER BY id DESC',
-    [req.params.lideranca_id]
-  );
-  res.json(rows);
-});
-
-// total gasto da liderança
-app.get('/api/gastos-total/:lideranca_id', async (req, res) => {
-  const row = await db.get(
-    'SELECT SUM(valor) as total FROM gastos_lideranca WHERE lideranca_id = ?',
-    [req.params.lideranca_id]
-  );
-  res.json({ total: row.total || 0 });
-});
 
   // lideranças
   liderancas.forEach(row => {
@@ -176,6 +133,43 @@ app.get('/api/gastos-total/:lideranca_id', async (req, res) => {
   });
 
   res.json(data);
+});
+// =======================
+// GASTOS POR LIDERANÇA
+// =======================
+
+// adicionar gasto
+app.post('/api/gastos', async (req, res) => {
+  const db = await dbPromise;
+  const { lideranca_id, valor, descricao, usuario } = req.body;
+  const data = new Date().toISOString();
+
+  await db.run(
+    'INSERT INTO gastos_lideranca (lideranca_id, valor, descricao, data, usuario) VALUES (?, ?, ?, ?, ?)',
+    [lideranca_id, valor, descricao, data, usuario]
+  );
+
+  res.json({ ok: true });
+});
+
+// listar gastos da liderança
+app.get('/api/gastos/:lideranca_id', async (req, res) => {
+  const db = await dbPromise;
+  const rows = await db.all(
+    'SELECT * FROM gastos_lideranca WHERE lideranca_id = ? ORDER BY id DESC',
+    [req.params.lideranca_id]
+  );
+  res.json(rows);
+});
+
+// total gasto da liderança
+app.get('/api/gastos-total/:lideranca_id', async (req, res) => {
+  const db = await dbPromise;
+  const row = await db.get(
+    'SELECT SUM(valor) as total FROM gastos_lideranca WHERE lideranca_id = ?',
+    [req.params.lideranca_id]
+  );
+  res.json({ total: row.total || 0 });
 });
 
 /* ================= CRIAR LIDERANÇA ================= */
