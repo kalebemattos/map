@@ -428,7 +428,7 @@ async function carregarLiderancas(){
       <strong>${l.nome}</strong><br>
       <small><b>Expectativa:</b> ${l.expectativa_votos || 0}</small><br>
       ${l.contato ? `<small>${l.contato}</small><br>` : ''}
-      ${l.foto ? `<img src="${l.foto}">` : ''}
+      ${l.foto ? `<img src="https://map-backend-j88s.onrender.com${l.foto}">` : ''}
       <div class="actions">
         <button onclick="editar('${l.id}','${l.nome}','${l.contato||''}')">Editar</button>
         <button class="danger" onclick="excluir('${l.id}')">Excluir</button>
