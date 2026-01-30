@@ -236,7 +236,7 @@ app.delete('/api/liderancas/:id', async (req, res) => {
 });
 
 /* ================= EDITAR LIDERANÇA ================= */
-app.put('/api/liderancas/:id', upload.single('foto'), async (req, res) => {
+app.put('/api/liderancas/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { cidade, nome, contato, expectativa_votos } = req.body;
@@ -252,9 +252,7 @@ app.put('/api/liderancas/:id', upload.single('foto'), async (req, res) => {
     }
 
     let foto = atual.foto;
-    if (req.file) {
-      foto = `/uploads/${req.file.filename}`;
-    }
+    
 
     await db.run(
       `
