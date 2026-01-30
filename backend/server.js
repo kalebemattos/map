@@ -283,6 +283,30 @@ app.put('/api/liderancas/:id', upload.single('foto'), async (req, res) => {
 /* ================= START ================= */
 (async () => {
   const db = await dbPromise;
+// garantir tabela liderancas
+await db.exec(`
+  CREATE TABLE IF NOT EXISTS liderancas (
+    id TEXT PRIMARY KEY,
+    cidade TEXT,
+    nome TEXT,
+    contato TEXT,
+    foto TEXT,
+    expectativa_votos INTEGER DEFAULT 0,
+    createdAt TEXT
+  )
+`);
+
+// garantir tabela gastos_lideranca
+await db.exec(`
+  CREATE TABLE IF NOT EXISTS gastos_lideranca (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lideranca_id TEXT,
+    valor REAL,
+    descricao TEXT,
+    data TEXT,
+    usuario TEXT
+  )
+`);
 
   // garantir coluna expectativa_votos
   const cols = await db.all(`PRAGMA table_info(liderancas);`);
