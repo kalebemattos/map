@@ -1218,7 +1218,19 @@ btn.addEventListener('click', async () => {
     }
 
     // Recarrega dados do backend
-    await carregarTudo();
+    await fetch(
+  `https://map-backend-j88s.onrender.com/api/liderancas/${l.id}`,
+  {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nome: novoNome,
+      contato: novoContato,
+      expectativa_votos: Number(novosVotos)
+    })
+  }
+);
+
     atualizarTotalGeralOverlay();
 
     // Atualiza painel
