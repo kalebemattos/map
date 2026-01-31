@@ -250,16 +250,17 @@ app.put('/api/liderancas/:id', upload.single('foto'), async (req, res) => {
     const { id } = req.params;
     const { cidade, nome, contato, expectativa_votos } = req.body;
 
+const atual = await dbGet(
+  'SELECT * FROM liderancas WHERE id = $1',
+  [id]
+);
+
 let foto = atual.foto;
 
 if (req.file) {
   foto = `/uploads/${req.file.filename}`;
 }
 
-    const atual = await dbGet(
-      'SELECT * FROM liderancas WHERE id = $1',
-      [id]
-    );
 
     
     
