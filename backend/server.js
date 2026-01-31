@@ -250,19 +250,18 @@ app.put('/api/liderancas/:id', upload.single('foto'), async (req, res) => {
     const { id } = req.params;
     const { cidade, nome, contato, expectativa_votos } = req.body;
 
-    if (req.file) {
+let foto = atual.foto;
+
+if (req.file) {
   foto = `/uploads/${req.file.filename}`;
 }
+
     const atual = await dbGet(
       'SELECT * FROM liderancas WHERE id = $1',
       [id]
     );
 
-    if (!atual) {
-      return res.status(404).json({ error: 'Liderança não encontrada' });
-    }
-
-    let foto = atual.foto;
+    
     
 
     await dbRun(
@@ -288,4 +287,6 @@ WHERE id = $6
     res.status(500).json({ error: 'Erro ao editar liderança' });
   }
 });
-
+app.listen(PORT, () => {
+  console.log(`✅ Backend rodando em http://localhost:${PORT}`);
+});
