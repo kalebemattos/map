@@ -63,7 +63,7 @@ app.post('/api/login', async (req, res) => {
   
 
   const found = await dbGet(
-    'SELECT * FROM users WHERE usuario = ? AND senha = ?',
+    'SELECT * FROM users WHERE usuario = $1 AND senha = $2',
     [usuario, senha]
   );
 
@@ -80,16 +80,8 @@ app.post('/api/login', async (req, res) => {
 ===================================================== */
 
 // cria tabela se não existir
-async function ensureExpectativaTable() {
-  
-  await dbRun(`
-    CREATE TABLE IF NOT EXISTS expectativa_cidade (
-      cidade TEXT PRIMARY KEY,
-      expectativa INTEGER DEFAULT 0
-    );
-  `);
-}
 
+  
 // salvar / atualizar expectativa da cidade
 app.post('/api/expectativa-cidade', async (req, res) => {
   const { cidade, valor } = req.body;
@@ -103,7 +95,7 @@ app.post('/api/expectativa-cidade', async (req, res) => {
   await dbRun(
     `
     INSERT INTO expectativa_cidade (cidade, expectativa)
-    VALUES (?, ?)
+    VALUES ($1, $2)
     ON CONFLICT(cidade)
     DO UPDATE SET expectativa = excluded.expectativa
     `,
@@ -162,7 +154,7 @@ app.post('/api/gastos', async (req, res) => {
   const data = new Date().toISOString();
 
   await dbRun(
-    'INSERT INTO gastos_lideranca (lideranca_id, valor, descricao, data, usuario) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO gastos_lideranca (lideranca_id, valor, descricao, data, usuario) VALUES ($1, $2, $3, $4, $5)',
     [lideranca_id, valor, descricao, data, usuario]
   );
 
@@ -173,7 +165,7 @@ app.post('/api/gastos', async (req, res) => {
 app.get('/api/gastos/:lideranca_id', async (req, res) => {
   
   const rows = await dbAll(
-    'SELECT * FROM gastos_lideranca WHERE lideranca_id = ? ORDER BY id DESC',
+    'SELECT * FROM gastos_lideranca WHERE lideranca_id = $1 ORDER BY id DESC',
     [req.params.lideranca_id]
   );
   res.json(rows);
@@ -183,7 +175,7 @@ app.get('/api/gastos/:lideranca_id', async (req, res) => {
 app.get('/api/gastos-total/:lideranca_id', async (req, res) => {
   
   const row = await dbGet(
-    'SELECT SUM(valor) as total FROM gastos_lideranca WHERE lideranca_id = ?',
+    'SELECT SUM(valor) as total FROM gastos_lideranca WHERE lideranca_id = $1',
     [req.params.lideranca_id]
   );
   res.json({ total: row.total || 0 });
@@ -215,7 +207,7 @@ app.post('/api/liderancas', upload.single('foto'), async (req, res) => {
       `
       INSERT INTO liderancas
       (id, cidade, nome, contato, foto, expectativa_votos, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       `,
       [
         lideranca.id,
@@ -242,7 +234,7 @@ app.delete('/api/liderancas/:id', async (req, res) => {
     const { id } = req.params;
 
     
-    await dbRun('DELETE FROM liderancas WHERE id = ?', [id]);
+    await dbRun('DELETE FROM liderancas WHERE id = $1', [id]);
 
     res.json({ success: true });
 
@@ -260,7 +252,7 @@ app.put('/api/liderancas/:id', async (req, res) => {
 
     
     const atual = await dbGet(
-      'SELECT * FROM liderancas WHERE id = ?',
+      'SELECT * FROM liderancas WHERE id = $1',
       [id]
     );
 
@@ -274,8 +266,8 @@ app.put('/api/liderancas/:id', async (req, res) => {
     await dbRun(
       `
       UPDATE liderancas
-      SET cidade = ?, nome = ?, contato = ?, foto = ?, expectativa_votos = ?
-      WHERE id = ?
+      SET cidade = $1, nome = $2, contato = $3, foto = $4, expectativa_votos = $5
+      WHERE id = $1
       `,
       [
         cidade || atual.cidade,
@@ -295,45 +287,3 @@ app.put('/api/liderancas/:id', async (req, res) => {
   }
 });
 
-/* ================= START ================= */
-(async () => {
-  
-// garantir tabela liderancas
-await dbRun(`
-  CREATE TABLE IF NOT EXISTS liderancas (
-    id TEXT PRIMARY KEY,
-    cidade TEXT,
-    nome TEXT,
-    contato TEXT,
-    foto TEXT,
-    expectativa_votos INTEGER DEFAULT 0,
-    createdAt TEXT
-  )
-`);
-
-
-
-  // garantir coluna expectativa_votos
-  const cols = await dbAll(`PRAGMA table_info(liderancas);`);
-  const hasExpectativa = cols.some(c => c.name === 'expectativa_votos');
-
-  if (!hasExpectativa) {
-    await dbRun(`
-      ALTER TABLE liderancas
-      ADD COLUMN expectativa_votos INTEGER DEFAULT 0;
-    `);
-  }
-
-  // garantir tabela expectativa_cidade
-  await ensureExpectativaTable();
-
-  // índice
-  await dbRun(`
-    CREATE INDEX IF NOT EXISTS idx_liderancas_cidade
-    ON liderancas (cidade);
-  `);
-
-  app.listen(PORT, () => {
-    console.log(`✅ Backend rodando em http://localhost:${PORT}`);
-  });
-})();
