@@ -1,17 +1,29 @@
 const { Pool } = require('pg');
-const dbPromise = require('./database');
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
+async function dbAll(sql, params = []) {
+  const r = await pool.query(sql, params);
+  return r.rows;
+}
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+async function dbGet(sql, params = []) {
+  const r = await pool.query(sql, params);
+  return r.rows[0];
+}
+
+async function dbRun(sql, params = []) {
+  await pool.query(sql, params);
+}
 
 /* ================= CONFIG ================= */
 app.use(cors());
@@ -48,9 +60,9 @@ app.post('/api/login', async (req, res) => {
     return res.status(400).json({ error: 'Dados incompletos' });
   }
 
-  const db = await dbPromise;
+  
 
-  const found = await db.get(
+  const found = await dbGet(
     'SELECT * FROM users WHERE usuario = ? AND senha = ?',
     [usuario, senha]
   );
@@ -69,8 +81,8 @@ app.post('/api/login', async (req, res) => {
 
 // cria tabela se não existir
 async function ensureExpectativaTable() {
-  const db = await dbPromise;
-  await db.exec(`
+  
+  await dbRun(`
     CREATE TABLE IF NOT EXISTS expectativa_cidade (
       cidade TEXT PRIMARY KEY,
       expectativa INTEGER DEFAULT 0
@@ -86,9 +98,9 @@ app.post('/api/expectativa-cidade', async (req, res) => {
     return res.status(400).json({ error: 'Cidade não informada' });
   }
 
-  const db = await dbPromise;
+  
 
-  await db.run(
+  await dbRun(
     `
     INSERT INTO expectativa_cidade (cidade, expectativa)
     VALUES (?, ?)
@@ -103,10 +115,10 @@ app.post('/api/expectativa-cidade', async (req, res) => {
 
 /* ================= BUSCAR DATA (MAPA + PAINEL) ================= */
 app.get('/api/data', async (req, res) => {
-  const db = await dbPromise;
+  
 
-  const liderancas = await db.all('SELECT * FROM liderancas');
-  const expectativas = await db.all('SELECT * FROM expectativa_cidade');
+  const liderancas = await dbAll('SELECT * FROM liderancas');
+  const expectativas = await dbAll('SELECT * FROM expectativa_cidade');
 
   const data = {};
 
@@ -145,11 +157,11 @@ app.get('/api/data', async (req, res) => {
 
 // adicionar gasto
 app.post('/api/gastos', async (req, res) => {
-  const db = await dbPromise;
+  
   const { lideranca_id, valor, descricao, usuario } = req.body;
   const data = new Date().toISOString();
 
-  await db.run(
+  await dbRun(
     'INSERT INTO gastos_lideranca (lideranca_id, valor, descricao, data, usuario) VALUES (?, ?, ?, ?, ?)',
     [lideranca_id, valor, descricao, data, usuario]
   );
@@ -159,8 +171,8 @@ app.post('/api/gastos', async (req, res) => {
 
 // listar gastos da liderança
 app.get('/api/gastos/:lideranca_id', async (req, res) => {
-  const db = await dbPromise;
-  const rows = await db.all(
+  
+  const rows = await dbAll(
     'SELECT * FROM gastos_lideranca WHERE lideranca_id = ? ORDER BY id DESC',
     [req.params.lideranca_id]
   );
@@ -169,8 +181,8 @@ app.get('/api/gastos/:lideranca_id', async (req, res) => {
 
 // total gasto da liderança
 app.get('/api/gastos-total/:lideranca_id', async (req, res) => {
-  const db = await dbPromise;
-  const row = await db.get(
+  
+  const row = await dbGet(
     'SELECT SUM(valor) as total FROM gastos_lideranca WHERE lideranca_id = ?',
     [req.params.lideranca_id]
   );
@@ -197,9 +209,9 @@ app.post('/api/liderancas', upload.single('foto'), async (req, res) => {
       createdAt: new Date().toISOString()
     };
 
-    const db = await dbPromise;
+    
 
-    await db.run(
+    await dbRun(
       `
       INSERT INTO liderancas
       (id, cidade, nome, contato, foto, expectativa_votos, createdAt)
@@ -229,8 +241,8 @@ app.delete('/api/liderancas/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const db = await dbPromise;
-    await db.run('DELETE FROM liderancas WHERE id = ?', [id]);
+    
+    await dbRun('DELETE FROM liderancas WHERE id = ?', [id]);
 
     res.json({ success: true });
 
@@ -246,8 +258,8 @@ app.put('/api/liderancas/:id', async (req, res) => {
     const { id } = req.params;
     const { cidade, nome, contato, expectativa_votos } = req.body;
 
-    const db = await dbPromise;
-    const atual = await db.get(
+    
+    const atual = await dbGet(
       'SELECT * FROM liderancas WHERE id = ?',
       [id]
     );
@@ -259,7 +271,7 @@ app.put('/api/liderancas/:id', async (req, res) => {
     let foto = atual.foto;
     
 
-    await db.run(
+    await dbRun(
       `
       UPDATE liderancas
       SET cidade = ?, nome = ?, contato = ?, foto = ?, expectativa_votos = ?
@@ -285,9 +297,9 @@ app.put('/api/liderancas/:id', async (req, res) => {
 
 /* ================= START ================= */
 (async () => {
-  const db = await dbPromise;
+  
 // garantir tabela liderancas
-await db.exec(`
+await dbRun(`
   CREATE TABLE IF NOT EXISTS liderancas (
     id TEXT PRIMARY KEY,
     cidade TEXT,
@@ -300,7 +312,7 @@ await db.exec(`
 `);
 
 // garantir tabela gastos_lideranca
-await db.exec(`
+await dbRun(`
   CREATE TABLE IF NOT EXISTS gastos_lideranca (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     lideranca_id TEXT,
@@ -312,11 +324,11 @@ await db.exec(`
 `);
 
   // garantir coluna expectativa_votos
-  const cols = await db.all(`PRAGMA table_info(liderancas);`);
+  const cols = await dbAll(`PRAGMA table_info(liderancas);`);
   const hasExpectativa = cols.some(c => c.name === 'expectativa_votos');
 
   if (!hasExpectativa) {
-    await db.exec(`
+    await dbRun(`
       ALTER TABLE liderancas
       ADD COLUMN expectativa_votos INTEGER DEFAULT 0;
     `);
@@ -326,7 +338,7 @@ await db.exec(`
   await ensureExpectativaTable();
 
   // índice
-  await db.exec(`
+  await dbRun(`
     CREATE INDEX IF NOT EXISTS idx_liderancas_cidade
     ON liderancas (cidade);
   `);
