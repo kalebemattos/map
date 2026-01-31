@@ -6,7 +6,7 @@ const path = require('path');
 const multer = require('multer');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -245,12 +245,14 @@ app.delete('/api/liderancas/:id', async (req, res) => {
 });
 
 /* ================= EDITAR LIDERANÇA ================= */
-app.put('/api/liderancas/:id', async (req, res) => {
+app.put('/api/liderancas/:id', upload.single('foto'), async (req, res) => {
   try {
     const { id } = req.params;
     const { cidade, nome, contato, expectativa_votos } = req.body;
 
-    
+    if (req.file) {
+  foto = `/uploads/${req.file.filename}`;
+}
     const atual = await dbGet(
       'SELECT * FROM liderancas WHERE id = $1',
       [id]
@@ -266,17 +268,17 @@ app.put('/api/liderancas/:id', async (req, res) => {
     await dbRun(
       `
       UPDATE liderancas
-      SET cidade = $1, nome = $2, contato = $3, foto = $4, expectativa_votos = $5
-      WHERE id = $1
+SET cidade = $1, nome = $2, contato = $3, foto = $4, expectativa_votos = $5
+WHERE id = $6
       `,
       [
-        cidade || atual.cidade,
-        nome || atual.nome,
-        contato || atual.contato,
-        foto,
-        Number(expectativa_votos ?? atual.expectativa_votos),
-        id
-      ]
+  cidade || atual.cidade,
+  nome || atual.nome,
+  contato || atual.contato,
+  foto,
+  Number(expectativa_votos ?? atual.expectativa_votos),
+  id
+]
     );
 
     res.json({ success: true });
