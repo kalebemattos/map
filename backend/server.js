@@ -1,9 +1,14 @@
+const { Pool } = require('pg');
 const dbPromise = require('./database');
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
