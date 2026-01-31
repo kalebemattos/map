@@ -288,6 +288,25 @@ WHERE id = $6
     res.status(500).json({ error: 'Erro ao editar liderança' });
   }
 });
+
+app.get('/api/data', async (req, res) => {
+  try {
+    const liderancas = await dbAll('SELECT * FROM liderancas');
+    const gastos = await dbAll('SELECT * FROM gastos_lideranca');
+    const observacoes = await dbAll('SELECT * FROM observacoes');
+
+    res.json({
+      liderancas,
+      gastos,
+      observacoes
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao carregar dados' });
+  }
+});
+
+
 app.listen(PORT, () => {
   console.log(`✅ Backend rodando em http://localhost:${PORT}`);
 });
