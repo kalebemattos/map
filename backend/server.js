@@ -15,6 +15,9 @@ async function dbAll(sql, params = []) {
   const r = await pool.query(sql, params);
   return r.rows;
 }
+pool.query('select current_database(), inet_server_addr()')
+  .then(r => console.log('DB:', r.rows))
+  .catch(e => console.error('DB ERR', e));
 
 async function dbGet(sql, params = []) {
   const r = await pool.query(sql, params);
