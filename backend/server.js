@@ -311,17 +311,7 @@ await dbRun(`
   )
 `);
 
-// garantir tabela gastos_lideranca
-await dbRun(`
-  CREATE TABLE IF NOT EXISTS gastos_lideranca (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    lideranca_id TEXT,
-    valor REAL,
-    descricao TEXT,
-    data TEXT,
-    usuario TEXT
-  )
-`);
+
 
   // garantir coluna expectativa_votos
   const cols = await dbAll(`PRAGMA table_info(liderancas);`);
