@@ -890,7 +890,8 @@ async function carregarTudo() {
 // EXPECTATIVA DA CIDADE
 // =====================
 try {
-  const res = await fetch(`${API_URL}/api/expectativa-cidade-todas`);
+  const res = await fetch(`${API_URL}/expectativa-cidade-todas`)
+
   const expectativas = await res.json();
 
   if (Array.isArray(expectativas)) {
