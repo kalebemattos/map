@@ -835,41 +835,58 @@ let dataCache = {}; // Cache dos dados carregados para acesso rápido
 async function carregarTudo() {
   dataCache = {};
 
-  // lideranças
-  const resL = await fetch(`${API_URL}/liderancas`);
-  const liderancasPorCidade = await resL.json();
+  // =====================
+  // LIDERANÇAS
+  // =====================
+  try {
+    const resL = await fetch(`${API_URL}/liderancas`);
+    const liderancasPorCidade = await resL.json();
 
-  liderancasPorCidade.forEach(c => {
-    if (!dataCache[c.cidade]) {
-      dataCache[c.cidade] = {
-        liderancas: [],
-        observacoes: [],
-        expectativaCidade: 0,
-        temComite: false
-      };
+    if (Array.isArray(liderancasPorCidade)) {
+      liderancasPorCidade.forEach(c => {
+        if (!dataCache[c.cidade]) {
+          dataCache[c.cidade] = {
+            liderancas: [],
+            observacoes: [],
+            expectativaCidade: 0,
+            temComite: false
+          };
+        }
+        dataCache[c.cidade].liderancas = c.liderancas || [];
+      });
     }
-    dataCache[c.cidade].liderancas = c.liderancas;
-  });
+  } catch (e) {
+    console.error('Erro ao carregar lideranças:', e);
+  }
 
-  // observações
-  const resO = await fetch(`${API_URL}/observacoes`);
-  const observacoesPorCidade = await resO.json();
+  // =====================
+  // OBSERVAÇÕES (não pode quebrar o mapa)
+  // =====================
+  try {
+    const resO = await fetch(`${API_URL}/observacoes`);
+    const observacoesPorCidade = await resO.json();
 
-  observacoesPorCidade.forEach(c => {
-    if (!dataCache[c.cidade]) {
-      dataCache[c.cidade] = {
-        liderancas: [],
-        observacoes: [],
-        expectativaCidade: 0,
-        temComite: false
-      };
+    if (Array.isArray(observacoesPorCidade)) {
+      observacoesPorCidade.forEach(c => {
+        if (!dataCache[c.cidade]) {
+          dataCache[c.cidade] = {
+            liderancas: [],
+            observacoes: [],
+            expectativaCidade: 0,
+            temComite: false
+          };
+        }
+        dataCache[c.cidade].observacoes = c.observacoes || [];
+      });
+    } else {
+      console.warn('Observações inválidas, ignorando:', observacoesPorCidade);
     }
-    dataCache[c.cidade].observacoes = c.observacoes;
-  });
+  } catch (e) {
+    console.error('Erro ao carregar observações:', e);
+  }
 
-  console.log('Cache FINAL:', dataCache);
+  console.log('Cache carregado (blindado):', dataCache);
 }
-
 
 
 
@@ -1180,10 +1197,15 @@ if (!response.ok) {
 }
 
 // 🔄 ATUALIZA CACHE E MAPA
-await carregarTudo();
-repaintMap();
+try {
+  await carregarTudo();
+} catch (e) {
+  console.error('Erro no carregarTudo (ignorado):', e);
+}
+
 atualizarTotalGeralOverlay();
-renderLiderancas(city);
+initializeMapAndApp();
+
 
 
   } catch (err) {
