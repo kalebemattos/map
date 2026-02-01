@@ -329,6 +329,12 @@ app.get('/api/data', async (req, res) => {
     res.status(500).json({ error: 'Erro ao carregar dados' });
   }
 });
+app.get('/api/expectativa-cidade-todas', async (req, res) => {
+  const rows = await dbAll(
+    'SELECT cidade, expectativa FROM expectativa_cidade'
+  );
+  res.json(rows);
+});
 
 app.listen(PORT, () => {
   console.log(`✅ Backend rodando em http://localhost:${PORT}`);

@@ -886,6 +886,31 @@ async function carregarTudo() {
   }
 
   console.log('Cache carregado (blindado):', dataCache);
+  // =====================
+// EXPECTATIVA DA CIDADE
+// =====================
+try {
+  const res = await fetch(`${API_URL}/api/expectativa-cidade-todas`);
+  const expectativas = await res.json();
+
+  if (Array.isArray(expectativas)) {
+    expectativas.forEach(e => {
+      if (!dataCache[e.cidade]) {
+        dataCache[e.cidade] = {
+          liderancas: [],
+          observacoes: [],
+          expectativaCidade: 0,
+          temComite: false
+        };
+      }
+
+      dataCache[e.cidade].expectativaCidade = Number(e.expectativa || 0);
+    });
+  }
+} catch (e) {
+  console.error('Erro ao carregar expectativas:', e);
+}
+
 }
 
 
