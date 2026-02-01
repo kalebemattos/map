@@ -107,7 +107,20 @@ app.post('/api/expectativa-cidade', async (req, res) => {
 
   res.json({ success: true });
 });
+app.get('/api/expectativa-cidade', async (req, res) => {
+  const { cidade } = req.query;
 
+  if (!cidade) {
+    return res.status(400).json({ error: 'Cidade não informada' });
+  }
+
+  const row = await dbGet(
+    'SELECT expectativa FROM expectativa_cidade WHERE cidade = $1',
+    [cidade]
+  );
+
+  res.json({ valor: row?.expectativa || 0 });
+});
 
 
 // =======================
