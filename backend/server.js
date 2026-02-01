@@ -149,10 +149,15 @@ Object.values(data).forEach(cidade => {
   cidade.liderancas.forEach(l => todasLiderancas.push(l));
 });
 
+const { rows: observacoes } = await pool.query('SELECT * FROM observacoes');
+const { rows: gastos } = await pool.query('SELECT * FROM gastos_lideranca');
+
 res.json({
   liderancas: todasLiderancas,
-  expectativas: data
+  observacoes,
+  gastos
 });
+
 
   } catch (err) {
     console.error('ERRO /api/data:', err);
