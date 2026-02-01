@@ -95,7 +95,7 @@ app.post('/api/expectativa-cidade', async (req, res) => {
 
   
 
-  await dbRun(
+  await pool.query(
     `
     INSERT INTO expectativa_cidade (cidade, expectativa)
     VALUES ($1, $2)
@@ -111,18 +111,18 @@ app.post('/api/expectativa-cidade', async (req, res) => {
 /* ================= BUSCAR DATA (MAPA + PAINEL) ================= */
 app.get('/api/data', async (req, res) => {
   try {
-    const liderancas = await dbAll('SELECT * FROM liderancas');
+    const { rows: liderancas } = await pool.query('SELECT * FROM liderancas');
     // const expectativas = await dbAll('SELECT * FROM expectativa_cidade');
 
     const data = {};
 
   // expectativas da cidade
-  expectativas.forEach(row => {
-    data[row.cidade] = {
-      expectativaCidade: Number(row.expectativa || 0),
-      liderancas: []
-    };
-  });
+  //expectativas.forEach(row => {
+   // data[row.cidade] = {
+     // expectativaCidade: Number(row.expectativa || 0),
+      //liderancas: []
+   // };
+  //});
 
   // lideranças
   liderancas.forEach(row => {
@@ -169,7 +169,7 @@ app.post('/api/gastos', async (req, res) => {
   const { lideranca_id, valor, descricao, usuario } = req.body;
   const data = new Date().toISOString();
 
-  await dbRun(
+  await pool.query(
     'INSERT INTO gastos_lideranca (lideranca_id, valor, descricao, data, usuario) VALUES ($1, $2, $3, $4, $5)',
     [lideranca_id, valor, descricao, data, usuario]
   );
@@ -180,7 +180,7 @@ app.post('/api/gastos', async (req, res) => {
 // listar gastos da liderança
 app.get('/api/gastos/:lideranca_id', async (req, res) => {
   
-  const rows = await dbAll(
+  const rows = await pool.query(
     'SELECT * FROM gastos_lideranca WHERE lideranca_id = $1 ORDER BY id DESC',
     [req.params.lideranca_id]
   );
@@ -219,7 +219,7 @@ app.post('/api/liderancas', upload.single('foto'), async (req, res) => {
 
     
 
-    await dbRun(
+    await pool.query(
       `
       INSERT INTO liderancas
       (id, cidade, nome, contato, foto, expectativa_votos, createdAt)
@@ -250,7 +250,7 @@ app.delete('/api/liderancas/:id', async (req, res) => {
     const { id } = req.params;
 
     
-    await dbRun('DELETE FROM liderancas WHERE id = $1', [id]);
+    await pool.query('DELETE FROM liderancas WHERE id = $1', [id]);
 
     res.json({ success: true });
 
@@ -281,7 +281,7 @@ if (req.file) {
     
     
 
-    await dbRun(
+    await pool.query(
       `
       UPDATE liderancas
 SET cidade = $1, nome = $2, contato = $3, foto = $4, expectativa_votos = $5
