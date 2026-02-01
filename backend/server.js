@@ -304,9 +304,9 @@ app.get('/api/data', async (req, res) => {
       observacoes
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao carregar dados' });
-  }
+  console.error('ERRO REAL /api/data:', err);
+  res.status(500).json({ error: err.message });
+}
 });
 
 
