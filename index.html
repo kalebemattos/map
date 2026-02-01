@@ -828,50 +828,15 @@ function normalizeCityName(name) {
 // =================================================================
 // COMUNICAÇÃO COM O BACKEND (Node.js/Express)
 // =================================================================
-const API_URL = 'https://map-backend-j88s.onrender.com/api/data';
+const API_URL = 'https://map-backend-j88s.onrender.com/api';
 let dataCache = {}; // Cache dos dados carregados para acesso rápido
 
 // Função para buscar todos os dados (Lideranças e Observações) do servidor
-async function carregarTudo() {
-    try {
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error(`Erro ${response.status}: ${response.statusText}`);
-        dataCache = await response.json();
-        Object.keys(dataCache).forEach(city => {
-  if (typeof dataCache[city].temComite !== 'boolean') {
-    dataCache[city].temComite = false;
-  }
-});
-        regioesPersonalizadas = dataCache.regioesPersonalizadas || {};
-atualizarSelectRegioesPersonalizadas();
-        console.log("Dados carregados do servidor.");
-    } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-        alert('Falha ao carregar dados do servidor. Verifique se o Backend está rodando (npm start). Iniciando com dados vazios.');
-        dataCache = {};
-    }
-}
 
-// Função para salvar todos os dados no servidor (chamada a cada alteração)
-async function salvarTudo() {
-    try {
-        // Envia o cache de dados atualizado para o servidor
-        const response = await fetch(API_URL, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dataCache)
-        });
 
-        if (!response.ok) throw new Error(`Erro ${response.status}: Falha ao salvar no servidor.`);
-        // console.log("Dados salvos no servidor.");
-        return true;
-    } catch (error) {
-        console.error("Erro ao salvar dados:", error);
-        alert('Erro ao salvar dados no servidor: ' + error.message);
-        return false;
-        atualizarTotalGeralOverlay();
-    }
-}
+
+
+
 
 // --- Funções de acesso por tipo (apenas manipulam o cache e chamam salvarTudo) ---
 
@@ -896,7 +861,7 @@ async function salvarLiderancas(city, data) {
     if (!city) return;
     ensureCityData(city);
     dataCache[city].liderancas = data; 
-    await salvarTudo();
+    
 }
 
 // OBSERVAÇÕES
@@ -906,7 +871,7 @@ async function salvarObservacoes(city, data) {
     ensureCityData(city);
     dataCache[city].observacoes = data;
 
-    return await salvarTudo();
+    
 }
 function carregarObservacoes(city) {
     if (!city) return [];
@@ -914,36 +879,6 @@ function carregarObservacoes(city) {
     return dataCache[city].observacoes;
 }
 
-async function salvarTudo() {
-    try {
-        const response = await fetch('https://map-backend-j88s.onrender.com/api/data', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(dataCache)
-        });
-
-        if (!response.ok) {
-            const text = await response.text();
-            console.error('Erro HTTP ao salvar:', text);
-            return false;
-        }
-
-        const result = await response.json();
-
-        if (!result.success) {
-            console.error('Servidor respondeu sem sucesso:', result);
-            return false;
-        }
-
-        return true;
-
-    } catch (error) {
-        console.error('Erro de rede ao salvar:', error);
-        return false;
-    }
-}
 
 // =================================================================
 // FIM COMUNICAÇÃO COM O BACKEND
@@ -1176,25 +1111,15 @@ editBtn.addEventListener('click', async () => {
   if (novosVotos === null) return;
 
   try {
-    const res = await fetch(
-      `https://map-backend-j88s.onrender.com/api/data`,
-      {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nome: novoNome,
-          contato: novoContato,
-          expectativa_votos: Number(novosVotos)
-        })
-      }
-    );
+    
 
-    if (!res.ok) {
-      alert('Erro ao editar liderança');
-      return;
-    }
+    //if (!res.ok) {
+      //alert('Erro ao editar liderança');
+      //return;
+    //}
 
-    await carregarTudo();
+    
+    repaintMap();
     atualizarTotalGeralOverlay();
     renderLiderancas(city);
 
@@ -1207,10 +1132,9 @@ btn.addEventListener('click', async () => {
   if (!confirm(`Excluir a liderança "${l.nome}"?`)) return;
 
   try {
-    const response = await fetch(
-      `https://map-backend-j88s.onrender.com/api/data`,
-      { method: 'DELETE' }
-    );
+    const response = await fetch(`${API_URL}/liderancas/${l.id}`, {
+  method: 'DELETE'
+});
 
     if (!response.ok) {
       alert('Erro ao excluir liderança no servidor');
@@ -1521,7 +1445,7 @@ document.getElementById('add-lideranca').addEventListener('click', async () => {
         }
 
         // 🔄 Recarrega tudo do backend (data.json)
-        await carregarTudo();
+        
         atualizarTotalGeralOverlay();
 
         // 🧠 Atualiza sidebar com a fonte correta (backend)
@@ -1653,16 +1577,9 @@ document
       document.getElementById('expectativa-cidade').value || 0
     );
 
-    await fetch('https://map-backend-j88s.onrender.com/api/data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        cidade: cidadeSelecionada,
-        valor
-      })
-    });
+    
 
-    await carregarTudo();
+    
     atualizarTotalGeralOverlay();
     renderLiderancas(cidadeSelecionada);
 });
@@ -2024,7 +1941,7 @@ function destacarRegiaoPersonalizada(cidades) {
     // Tenta fazer o login
     if (fazerLogin()) {
         // 1. CARREGA DADOS DO BACKEND ANTES DE INICIAR O MAPA
-        await carregarTudo(); 
+        
         atualizarTotalGeralOverlay();
 
         // 2. Se o login for bem-sucedido:
@@ -2039,11 +1956,7 @@ function destacarRegiaoPersonalizada(cidades) {
         blocker.innerHTML = "Acesso Negado. Recarregue a página para tentar novamente.";
     }
 })();
-async function carregarDadosMapa() {
-  const res = await fetch('https://map-backend-j88s.onrender.com/api/data');
-  const data = await res.json();
-  return data;
-}
+
 function repaintMap() {
   if (!layerRJ) return;
 
@@ -2126,7 +2039,7 @@ document.getElementById('toggle-comite').addEventListener('click', async () => {
   dataCache[cidadeSelecionada].temComite =
     !dataCache[cidadeSelecionada].temComite;
 
-  await salvarTudo();
+  
 
   atualizarBotaoComite(cidadeSelecionada);
   atualizarIconeComite(cidadeSelecionada);
