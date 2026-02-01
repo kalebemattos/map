@@ -304,6 +304,26 @@ app.get('/api/observacoes', async (req, res) => {
     res.status(500).json({ error: 'Erro ao buscar observações' });
   }
 });
+app.post('/api/observacoes', async (req, res) => {
+  try {
+    const { cidade, text } = req.body;
+
+    if (!cidade || !text) {
+      return res.status(400).json({ error: 'Dados incompletos' });
+    }
+
+    await pool.query(
+      'INSERT INTO observacoes (cidade, text) VALUES ($1, $2)',
+      [cidade, text]
+    );
+
+    res.json({ ok: true });
+
+  } catch (err) {
+    console.error('Erro ao salvar observação:', err);
+    res.status(500).json({ error: 'Erro ao salvar observação' });
+  }
+});
 
 /* ================= COMPATIBILIDADE FRONT ANTIGO ================= */
 app.put('/api/data', async (req, res) => {
