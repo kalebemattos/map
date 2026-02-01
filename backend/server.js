@@ -110,12 +110,11 @@ app.post('/api/expectativa-cidade', async (req, res) => {
 
 /* ================= BUSCAR DATA (MAPA + PAINEL) ================= */
 app.get('/api/data', async (req, res) => {
-  
+  try {
+    const liderancas = await dbAll('SELECT * FROM liderancas');
+    const expectativas = await dbAll('SELECT * FROM expectativa_cidade');
 
-  const liderancas = await dbAll('SELECT * FROM liderancas');
-  const expectativas = await dbAll('SELECT * FROM expectativa_cidade');
-
-  const data = {};
+    const data = {};
 
   // expectativas da cidade
   expectativas.forEach(row => {
@@ -144,7 +143,21 @@ app.get('/api/data', async (req, res) => {
     });
   });
 
-  res.json(data);
+  const todasLiderancas = [];
+
+Object.values(data).forEach(cidade => {
+  cidade.liderancas.forEach(l => todasLiderancas.push(l));
+});
+
+res.json({
+  liderancas: todasLiderancas,
+  expectativas: data
+});
+
+  } catch (err) {
+    console.error('ERRO /api/data:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 // =======================
 // GASTOS POR LIDERANÇA
@@ -292,22 +305,7 @@ WHERE id = $6
   }
 });
 
-app.get('/api/data', async (req, res) => {
-  try {
-    const liderancas = await dbAll('SELECT * FROM liderancas');
-    const gastos = await dbAll('SELECT * FROM gastos_lideranca');
-    const observacoes = await dbAll('SELECT * FROM observacoes');
 
-    res.json({
-      liderancas,
-      gastos,
-      observacoes
-    });
-  } catch (err) {
-  console.error('ERRO REAL /api/data:', err);
-  res.status(500).json({ error: err.message });
-}
-});
 
 
 app.listen(PORT, () => {
