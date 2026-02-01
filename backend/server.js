@@ -112,7 +112,7 @@ app.post('/api/expectativa-cidade', async (req, res) => {
 app.get('/api/data', async (req, res) => {
   try {
     const liderancas = await dbAll('SELECT * FROM liderancas');
-    const expectativas = await dbAll('SELECT * FROM expectativa_cidade');
+    // const expectativas = await dbAll('SELECT * FROM expectativa_cidade');
 
     const data = {};
 
