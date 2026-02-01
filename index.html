@@ -832,6 +832,24 @@ const API_URL = 'https://map-backend-j88s.onrender.com/api';
 let dataCache = {}; // Cache dos dados carregados para acesso rápido
 
 // Função para buscar todos os dados (Lideranças e Observações) do servidor
+async function carregarTudo() {
+  try {
+    const res = await fetch(`${API_URL}/data`);
+
+    if (!res.ok) {
+      throw new Error(`Erro ${res.status}`);
+    }
+
+    const json = await res.json();
+    dataCache = json || {};
+
+    console.log('Dados carregados do servidor:', dataCache);
+
+  } catch (err) {
+    console.error('Erro ao carregar dados:', err);
+    dataCache = {};
+  }
+}
 
 
 
@@ -1941,7 +1959,7 @@ function destacarRegiaoPersonalizada(cidades) {
     // Tenta fazer o login
     if (fazerLogin()) {
         // 1. CARREGA DADOS DO BACKEND ANTES DE INICIAR O MAPA
-        
+        await carregarTudo();
         atualizarTotalGeralOverlay();
 
         // 2. Se o login for bem-sucedido:
