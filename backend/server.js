@@ -305,6 +305,40 @@ WHERE id = $6
   }
 });
 
+app.put('/api/data', async (req, res) => {
+  try {
+    const { liderancas, observacoes } = req.body;
+
+    // salva lideranças
+    if (Array.isArray(liderancas)) {
+      for (const l of liderancas) {
+        await pool.query(
+          `INSERT INTO liderancas (id, cidade, nome, contato, foto, expectativa_votos)
+           VALUES ($1,$2,$3,$4,$5,$6)
+           ON CONFLICT (id) DO UPDATE SET
+             cidade = EXCLUDED.cidade,
+             nome = EXCLUDED.nome,
+             contato = EXCLUDED.contato,
+             foto = EXCLUDED.foto,
+             expectativa_votos = EXCLUDED.expectativa_votos`,
+          [
+            l.id,
+            l.cidade,
+            l.nome,
+            l.contato,
+            l.foto,
+            l.expectativa_votos || 0
+          ]
+        );
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('ERRO PUT /api/data:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 
