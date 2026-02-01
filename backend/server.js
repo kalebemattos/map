@@ -264,7 +264,11 @@ WHERE id = $6
 /* ================= BUSCAR LIDERANÇAS ================= */
 app.get('/api/liderancas', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM liderancas ORDER BY createdAt DESC');
+    const result = await pool.query(`
+      SELECT cidade, json_agg(l.*) AS liderancas
+      FROM liderancas l
+      GROUP BY cidade
+    `);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -272,16 +276,22 @@ app.get('/api/liderancas', async (req, res) => {
   }
 });
 
+
 /* ================= BUSCAR OBSERVAÇÕES ================= */
 app.get('/api/observacoes', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM observacoes ORDER BY id DESC');
+    const result = await pool.query(`
+      SELECT cidade, json_agg(o.*) AS observacoes
+      FROM observacoes o
+      GROUP BY cidade
+    `);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erro ao buscar observações' });
   }
 });
+
 /* ================= COMPATIBILIDADE FRONT ANTIGO ================= */
 app.put('/api/data', async (req, res) => {
   try {
