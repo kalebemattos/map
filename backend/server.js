@@ -108,62 +108,8 @@ app.post('/api/expectativa-cidade', async (req, res) => {
   res.json({ success: true });
 });
 
-/* ================= BUSCAR DATA (MAPA + PAINEL) ================= */
-app.get('/api/data', async (req, res) => {
-  try {
-    const { rows: liderancas } = await pool.query('SELECT * FROM liderancas');
-    // const expectativas = await dbAll('SELECT * FROM expectativa_cidade');
-
-    const data = {};
-
-  // expectativas da cidade
-  //expectativas.forEach(row => {
-   // data[row.cidade] = {
-     // expectativaCidade: Number(row.expectativa || 0),
-      //liderancas: []
-   // };
-  //});
-
-  // lideranças
-  liderancas.forEach(row => {
-    if (!data[row.cidade]) {
-      data[row.cidade] = {
-        expectativaCidade: 0,
-        liderancas: []
-      };
-    }
-
-    data[row.cidade].liderancas.push({
-      id: row.id,
-      nome: row.nome,
-      contato: row.contato,
-      foto: row.foto,
-      expectativa_votos: Number(row.expectativa_votos || 0),
-      createdAt: row.createdAt
-    });
-  });
-
-  const todasLiderancas = [];
-
-Object.values(data).forEach(cidade => {
-  cidade.liderancas.forEach(l => todasLiderancas.push(l));
-});
-
-const { rows: observacoes } = await pool.query('SELECT * FROM observacoes');
-const { rows: gastos } = await pool.query('SELECT * FROM gastos_lideranca');
-
-res.json({
-  liderancas: todasLiderancas,
-  observacoes,
-  gastos
-});
 
 
-  } catch (err) {
-    console.error('ERRO /api/data:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
 // =======================
 // GASTOS POR LIDERANÇA
 // =======================
@@ -310,42 +256,42 @@ WHERE id = $6
   }
 });
 
-app.put('/api/data', async (req, res) => {
+
+
+
+
+
+/* ================= BUSCAR LIDERANÇAS ================= */
+app.get('/api/liderancas', async (req, res) => {
   try {
-    const { liderancas, observacoes } = req.body;
-
-    // salva lideranças
-    if (Array.isArray(liderancas)) {
-      for (const l of liderancas) {
-        await pool.query(
-          `INSERT INTO liderancas (id, cidade, nome, contato, foto, expectativa_votos)
-           VALUES ($1,$2,$3,$4,$5,$6)
-           ON CONFLICT (id) DO UPDATE SET
-             cidade = EXCLUDED.cidade,
-             nome = EXCLUDED.nome,
-             contato = EXCLUDED.contato,
-             foto = EXCLUDED.foto,
-             expectativa_votos = EXCLUDED.expectativa_votos`,
-          [
-            l.id,
-            l.cidade,
-            l.nome,
-            l.contato,
-            l.foto,
-            l.expectativa_votos || 0
-          ]
-        );
-      }
-    }
-
-    res.json({ success: true });
+    const result = await pool.query('SELECT * FROM liderancas ORDER BY createdAt DESC');
+    res.json(result.rows);
   } catch (err) {
-    console.error('ERRO PUT /api/data:', err);
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao buscar lideranças' });
   }
 });
 
-
+/* ================= BUSCAR OBSERVAÇÕES ================= */
+app.get('/api/observacoes', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM observacoes ORDER BY id DESC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao buscar observações' });
+  }
+});
+/* ================= COMPATIBILIDADE FRONT ANTIGO ================= */
+app.put('/api/data', async (req, res) => {
+  try {
+    // o front manda tudo, mas agora salvamos individualmente
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao salvar data' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`✅ Backend rodando em http://localhost:${PORT}`);
