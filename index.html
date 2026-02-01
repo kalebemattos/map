@@ -1453,22 +1453,21 @@ document.getElementById('add-lideranca').addEventListener('click', async () => {
 
     try {
         const formData = new FormData();
-        formData.append('cidade', city);
-        formData.append('nome', nome);
-        formData.append('contato', contato);
+formData.append('cidade', city);
+formData.append('nome', novoNome);
+formData.append('contato', novoContato);
+formData.append('expectativa_votos', novosVotos);
 
-        if (fileInput.files.length > 0) {
-            formData.append('foto', fileInput.files[0]);
-        }
+const res = await fetch(`${API_URL}/liderancas/${l.id}`, {
+  method: 'PUT',
+  body: formData
+});
 
-        const response = await fetch('https://map-backend-j88s.onrender.com/api/liderancas', {
-            method: 'POST',
-            body: formData
-        });
+if (!res.ok) {
+  alert('Erro ao editar liderança');
+  return;
+}
 
-        if (!response.ok) {
-            throw new Error('Erro ao salvar liderança');
-        }
 
         // 🔄 Recarrega tudo do backend
 await carregarTudo();
@@ -1594,25 +1593,35 @@ document.getElementById('salvarCustomRegionBtn')?.addEventListener('click', () =
   salvarTudo();
   atualizarSelectRegioesPersonalizadas();
 });
-document
-  .getElementById('salvar-expectativa-cidade')
+document.getElementById('salvar-expectativa-cidade')
   .addEventListener('click', async () => {
 
-    if (!cidadeSelecionada) {
-      alert('Selecione uma cidade');
-      return;
-    }
+  if (!cidadeSelecionada) return alert('Selecione uma cidade');
 
-    const valor = Number(
-      document.getElementById('expectativa-cidade').value || 0
-    );
+  const valor = Number(
+    document.getElementById('expectativa-cidade').value || 0
+  );
 
-    
+  const res = await fetch(`${API_URL}/expectativa-cidade`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      cidade: cidadeSelecionada,
+      valor
+    })
+  });
 
-    
-    atualizarTotalGeralOverlay();
-    renderLiderancas(cidadeSelecionada);
+  if (!res.ok) {
+    alert('Erro ao salvar expectativa');
+    return;
+  }
+
+  await carregarTudo();
+  repaintMap();
+  atualizarTotalGeralOverlay();
+  renderLiderancas(cidadeSelecionada);
 });
+
 // ADICIONA LISTENER PARA OS BOTÕES DE MINIMIZAR RESTAURADO
 document.querySelectorAll('.collapse-btn').forEach(btn => {
   
