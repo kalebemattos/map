@@ -32,7 +32,7 @@ async function dbRun(sql, params = []) {
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(express.static(__dirname));
 /* ================= PATHS ================= */
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
