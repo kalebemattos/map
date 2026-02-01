@@ -302,6 +302,20 @@ app.put('/api/data', async (req, res) => {
     res.status(500).json({ error: 'Erro ao salvar data' });
   }
 });
+app.get('/api/data', async (req, res) => {
+  try {
+    const liderancas = await pool.query('SELECT * FROM liderancas');
+    const observacoes = await pool.query('SELECT * FROM observacoes');
+
+    res.json({
+      liderancas: liderancas.rows,
+      observacoes: observacoes.rows
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao carregar dados' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`✅ Backend rodando em http://localhost:${PORT}`);
