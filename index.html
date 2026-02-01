@@ -833,22 +833,41 @@ let dataCache = {}; // Cache dos dados carregados para acesso rápido
 
 // Função para buscar todos os dados (Lideranças e Observações) do servidor
 async function carregarTudo() {
-  try {
-    const res = await fetch(`${API_URL}/data`);
+  dataCache = {};
 
-    if (!res.ok) {
-      throw new Error(`Erro ${res.status}`);
+  // lideranças
+  const resL = await fetch(`${API_URL}/liderancas`);
+  const liderancasPorCidade = await resL.json();
+
+  liderancasPorCidade.forEach(c => {
+    if (!dataCache[c.cidade]) {
+      dataCache[c.cidade] = {
+        liderancas: [],
+        observacoes: [],
+        expectativaCidade: 0,
+        temComite: false
+      };
     }
+    dataCache[c.cidade].liderancas = c.liderancas;
+  });
 
-    const json = await res.json();
-    dataCache = json || {};
+  // observações
+  const resO = await fetch(`${API_URL}/observacoes`);
+  const observacoesPorCidade = await resO.json();
 
-    console.log('Dados carregados do servidor:', dataCache);
+  observacoesPorCidade.forEach(c => {
+    if (!dataCache[c.cidade]) {
+      dataCache[c.cidade] = {
+        liderancas: [],
+        observacoes: [],
+        expectativaCidade: 0,
+        temComite: false
+      };
+    }
+    dataCache[c.cidade].observacoes = c.observacoes;
+  });
 
-  } catch (err) {
-    console.error('Erro ao carregar dados:', err);
-    dataCache = {};
-  }
+  console.log('Cache FINAL:', dataCache);
 }
 
 
@@ -1137,9 +1156,10 @@ editBtn.addEventListener('click', async () => {
     //}
 
     
-    repaintMap();
-    atualizarTotalGeralOverlay();
-    renderLiderancas(city);
+    await carregarTudo();
+repaintMap();
+atualizarTotalGeralOverlay();
+renderLiderancas(city);
 
   } catch (err) {
     console.error(err);
@@ -1154,29 +1174,17 @@ btn.addEventListener('click', async () => {
   method: 'DELETE'
 });
 
-    if (!response.ok) {
-      alert('Erro ao excluir liderança no servidor');
-      return;
-    }
+if (!response.ok) {
+  alert('Erro ao excluir liderança no servidor');
+  return;
+}
 
-    // Recarrega dados do backend
-    await fetch(
-  `https://map-backend-j88s.onrender.com/api/liderancas/${l.id}`,
-  {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      nome: novoNome,
-      contato: novoContato,
-      expectativa_votos: Number(novosVotos)
-    })
-  }
-);
+// 🔄 ATUALIZA CACHE E MAPA
+await carregarTudo();
+repaintMap();
+atualizarTotalGeralOverlay();
+renderLiderancas(city);
 
-    atualizarTotalGeralOverlay();
-
-    // Atualiza painel
-    renderLiderancas(city);
 
   } catch (err) {
     console.error(err);
@@ -1462,12 +1470,16 @@ document.getElementById('add-lideranca').addEventListener('click', async () => {
             throw new Error('Erro ao salvar liderança');
         }
 
-        // 🔄 Recarrega tudo do backend (data.json)
-        
-        atualizarTotalGeralOverlay();
+        // 🔄 Recarrega tudo do backend
+await carregarTudo();
 
-        // 🧠 Atualiza sidebar com a fonte correta (backend)
-        renderLiderancas(city);
+// 🔄 Recalcula e redesenha mapa
+repaintMap();
+atualizarTotalGeralOverlay();
+
+// 🧠 Atualiza sidebar com dados atualizados
+renderLiderancas(city);
+
 
         // Limpa formulário
         document.getElementById('lideranca-nome').value = '';

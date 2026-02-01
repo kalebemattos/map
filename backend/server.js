@@ -135,7 +135,7 @@ app.get('/api/gastos/:lideranca_id', async (req, res) => {
     'SELECT * FROM gastos_lideranca WHERE lideranca_id = $1 ORDER BY id DESC',
     [req.params.lideranca_id]
   );
-  res.json(rows);
+  res.json(rows.rows);
 });
 
 // total gasto da liderança
