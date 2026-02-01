@@ -256,7 +256,7 @@ button.danger:hover {
 </div>
 
 <!-- DEPENDÊNCIA (NÃO ALTERAR) -->
-<script src="../data.js"></script>
+
 
 <script>
 /* ================= CONFIG ================= */
@@ -381,8 +381,8 @@ function filtrarCidades(){
 }
 
 /* ================= LISTAGEM ================= */
-async function carregarLiderancas(){
-  if(!cidade.value){
+async function carregarLiderancas() {
+  if (!cidade.value) {
     lista.innerHTML = '<small>Selecione uma cidade</small>';
     expectativaCidadeInput.value = '';
     return;
@@ -390,69 +390,69 @@ async function carregarLiderancas(){
 
   lista.innerHTML = 'Carregando...';
 
-  const res = await fetch(API + '/api/data');
-  const data = await res.json();
-  const bloco = data[cidade.value];
+  // 🔹 Busca lideranças agrupadas
+  const res = await fetch(API + '/api/liderancas');
+  const cidades = await res.json();
 
-  if(!bloco){
-    lista.innerHTML = '<small>Nenhum dado para esta cidade</small>';
+  const blocoCidade = cidades.find(c => c.cidade === cidade.value);
+
+  if (!blocoCidade) {
+    lista.innerHTML = '<small>Nenhuma liderança nesta cidade</small>';
     expectativaCidadeInput.value = 0;
     return;
   }
 
-  // 🔹 expectativa da cidade
-  const expectativaCidade = Number(bloco.expectativaCidade || 0);
+  const liderancas = blocoCidade.liderancas || [];
+
+  // 🔹 Busca expectativa da cidade
+  const resExp = await fetch(API + '/api/expectativa-cidade?cidade=' + encodeURIComponent(cidade.value));
+  let expectativaCidade = 0;
+
+  if (resExp.ok) {
+    const j = await resExp.json();
+    expectativaCidade = Number(j.valor || 0);
+  }
+
   expectativaCidadeInput.value = expectativaCidade;
 
-  // 🔹 soma das lideranças
-  const somaLiderancas = bloco.liderancas.reduce(
+  const somaLiderancas = liderancas.reduce(
     (s, l) => s + Number(l.expectativa_votos || 0),
     0
   );
 
-  // 🔹 TOTAL GERAL
   const totalGeral = expectativaCidade + somaLiderancas;
 
-  // 🔹 RESUMO
   lista.innerHTML = `
-  <div style="
-    margin-bottom:14px;
-    padding:14px;
-    background:linear-gradient(135deg,#e0ebff,#f5f9ff);
-    border-radius:12px;
-    box-shadow:0 4px 10px rgba(0,0,0,.05);
-  ">
+    <div style="margin-bottom:14px;padding:14px;background:#eef3ff;border-radius:12px;">
       <div><b>Cidade:</b> ${expectativaCidade}</div>
       <div><b>Lideranças:</b> ${somaLiderancas}</div>
       <hr>
-      <div style="font-size:20px;color:#0047ab">
-        <b>TOTAL GERAL:</b> ${totalGeral}
-      </div>
+      <div style="font-size:20px;color:#0047ab"><b>TOTAL:</b> ${totalGeral}</div>
     </div>
   `;
 
-  if(!bloco.liderancas.length){
-    lista.innerHTML += '<small>Nenhuma liderança nesta cidade</small>';
+  if (!liderancas.length) {
+    lista.innerHTML += '<small>Nenhuma liderança cadastrada</small>';
     return;
   }
 
-  // 🔹 LISTA DE LIDERANÇAS
-  bloco.liderancas.forEach(l => {
+  liderancas.forEach(l => {
     const div = document.createElement('div');
     div.className = 'lideranca';
     div.innerHTML = `
       <strong>${l.nome}</strong><br>
       <small><b>Expectativa:</b> ${l.expectativa_votos || 0}</small><br>
       ${l.contato ? `<small>${l.contato}</small><br>` : ''}
-      ${l.foto ? `<img src="https://map-backend-j88s.onrender.com${l.foto}">` : ''}
+      ${l.foto ? `<img src="${API}${l.foto}">` : ''}
       <div class="actions">
-        <button onclick="editar('${l.id}','${l.nome}','${l.contato||''}')">Editar</button>
+        <button onclick="editar('${l.id}','${l.nome}','${l.contato || ''}')">Editar</button>
         <button class="danger" onclick="excluir('${l.id}')">Excluir</button>
       </div>
     `;
     lista.appendChild(div);
   });
 }
+
 
 
 /* ================= EDITAR ================= */
@@ -539,6 +539,7 @@ salvarExpectativaCidadeBtn.onclick = async () => {
 
   carregarLiderancas();
 };
+
 /* ================= EXCLUIR ================= */
 async function excluir(id){
   if(!confirm('Excluir liderança?')) return;
