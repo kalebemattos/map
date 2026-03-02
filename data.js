@@ -167,3 +167,80 @@ const regions = {
     "Angra dos Reis","Paraty","Mangaratiba"
   ]
 };
+/* ===== Líderes por Região (Objeto Completo) ===== */
+
+const lideresRegiao = {
+  metropolitana: [
+    {
+      nome: "João Silva",
+      contato: "21 99999-9999",
+      foto: "img/lideres/joao.jpg"
+    },
+    {
+      nome: "Mariana Alves",
+      contato: "21 88888-8888",
+      foto: "img/lideres/mariana.jpg"
+    }
+  ],
+
+  baixadasLitoraneas: [
+    {
+      nome: "Beatriz Santos",
+      contato: "22 91111-2222",
+      foto: "img/lideres/beatriz.jpg"
+    }
+  ],
+
+  norteFluminense: [
+    {
+      nome: "Carlos Souza",
+      contato: "22 97777-7777",
+      foto: "img/lideres/carlos.jpg"
+    }
+  ],
+
+  noroesteFluminense: [
+    {
+      nome: "Antônio Ferreira",
+      contato: "22 93333-4444",
+      foto: "img/lideres/antonio.jpg"
+    }
+  ],
+
+  serrana: [
+    {
+      nome: "Ricardo Mendes",
+      contato: "24 95555-5555",
+      foto: "img/lideres/ricardo.jpg"
+    }
+  ],
+
+  centroSulFluminense: [
+    {
+      nome: "Fernanda Lima",
+      contato: "24 92222-3333",
+      foto: "img/lideres/fernanda.jpg"
+    }
+  ],
+
+  medioParaiba: [
+    {
+      nome: "Paulo Roberto",
+      contato: "24 94444-5555",
+      foto: "img/lideres/paulo.jpg"
+    },
+    {
+      nome: "Sônia Guimarães",
+      contato: "24 96666-7777",
+      foto: "img/lideres/sonia.jpg"
+    }
+  ],
+
+  costaVerde: [
+    {
+      nome: "Lucas Oliveira",
+      contato: "24 98888-9999",
+      foto: "img/lideres/lucas.jpg"
+    }
+  ]
+};
