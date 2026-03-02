@@ -1102,7 +1102,7 @@ if (!usuario || !senha || !nivel || !regiao_vinculada) {
     error: 'Usuario, senha, nivel e regiao_vinculada são obrigatórios'
   });
 }
-const niveisPermitidos = ['dono', 'admin', 'visualizador'];
+const niveisPermitidos = ['dono', 'admin', 'visualizador', 'lider_regiao'];
 
 if (!niveisPermitidos.includes(nivel)) {
   return res.status(400).json({
@@ -1180,7 +1180,51 @@ app.get('/api/validar-token', auth, async (req, res) => {
     res.status(401).json({ error: 'Token inválido' });
   }
 });
+/* ================= LÍDER DA REGIÃO ================= */
+app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
+  try {
 
+    const { regiao } = req.params;
+
+    let row;
+
+    if (req.user.nivel === 'dono') {
+      // Dono pode consultar qualquer região
+      row = await dbGet(
+        `SELECT id, nome, usuario, regiao_vinculada
+         FROM usuarios
+         WHERE nivel = 'lider_regiao'
+         AND regiao_vinculada = $1
+         LIMIT 1`,
+        [regiao]
+      );
+    } else {
+      // Outros só podem consultar a própria região
+      if (req.user.regiao !== regiao) {
+        return res.status(403).json({ error: 'Acesso negado' });
+      }
+
+      row = await dbGet(
+        `SELECT id, nome, usuario, regiao_vinculada
+         FROM usuarios
+         WHERE nivel = 'lider_regiao'
+         AND regiao_vinculada = $1
+         LIMIT 1`,
+        [regiao]
+      );
+    }
+
+    if (!row) {
+      return res.json(null);
+    }
+
+    res.json(row);
+
+  } catch (err) {
+    console.error('Erro ao buscar líder da região:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
 /* ================= KEEP ALIVE (RENDER) ================= */
 app.get('/ping', (req, res) => {
   res.status(200).send('pong');
