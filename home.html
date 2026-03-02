@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Prisma Gestão Política</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --primary:#0f172a;
+  --accent:#2563eb;
+  --accent2:#7c3aed;
+  --text:#0f172a;
+  --muted:#64748b;
+  --radius:18px;
+}
+
+*{box-sizing:border-box}
+
+/* 🎯 1) BODY COM FUNDO LOCAL FIXO */
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  min-height:100vh;
+
+  background: url('./assets/banner.jpg') no-repeat center center fixed;
+  background-size: cover;
+
+  display:flex;
+  flex-direction:column;
+}
+
+/* 🎯 2) OVERLAY ESCURO ELEGANTE */
+.overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(15,23,42,0.65);
+  z-index:-1;
+}
+
+/* CABEÇALHO */
+.top-image{
+  height:240px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+
+.top-content{
+  position:relative;
+  color:#fff;
+  text-align:center;
+  z-index:2;
+}
+
+.top-content h1{
+  margin:0;
+  font-size:32px;
+  font-weight:800;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.top-content p{
+  margin-top:10px;
+  font-size:15px;
+  color:#cbd5e1;
+}
+
+/* 🎯 4) CENTRALIZAR TUDO NO MEIO DA TELA */
+.main{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:40px 20px;
+}
+
+/* GRID CENTRALIZADO */
+.container{
+  width:100%;
+  max-width:1100px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:30px;
+}
+
+/* 🎯 3) CARDS PREMIUM (GLASS EFFECT) */
+.card{
+  background:rgba(255,255,255,0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px); /* Suporte para Safari */
+  border-radius:var(--radius);
+  padding:24px;
+  box-shadow:0 15px 40px rgba(0,0,0,0.35);
+  display:flex;
+  flex-direction:column;
+  text-align:center;
+  transition:.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.card:hover{
+  transform:translateY(-8px);
+  background:rgba(255,255,255,1);
+  box-shadow:0 20px 50px rgba(0,0,0,0.45);
+}
+
+.card h2{
+  margin:0;
+  font-size:18px;
+  font-weight:700;
+  color: var(--primary);
+}
+
+.card p{
+  font-size:14px;
+  color:var(--muted);
+  margin:15px 0 25px;
+  flex:1;
+  line-height: 1.5;
+}
+
+.card a{
+  text-decoration:none;
+  padding:12px;
+  border-radius:12px;
+  font-weight:600;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;
+  transition:.3s;
+}
+
+.card a:hover{
+  opacity:.9;
+  transform:scale(1.03);
+}
+
+#card-gestao-usuarios{
+  border:2px solid var(--accent);
+}
+
+footer{
+  text-align:center;
+  padding:20px;
+  font-size:13px;
+  color:#cbd5e1;
+}
+</style>
+</head>
+
+<body>
+
+<div class="overlay"></div>
+
+<section class="top-image">
+  <div class="top-content">
+    <h1>Prisma Gestão Política</h1>
+    <p>Inteligência estratégica para campanhas e mandatos</p>
+  </div>
+</section>
+
+<section class="main">
+  <div class="container">
+
+    <div class="card">
+      <h2>🗺️ Mapa Estratégico</h2>
+      <p>Visualização interativa de municípios, lideranças e dados eleitorais organizados por região.</p>
+      <a href="./">Abrir Mapa</a>
+    </div>
+
+    <div class="card">
+      <h2>👥 Painel Administrativo</h2>
+      <p>Cadastro e gerenciamento completo das lideranças com controle estratégico.</p>
+      <a href="./admin/">Abrir Painel</a>
+    </div>
+
+    <div class="card">
+      <h2>📋 Lista Completa</h2>
+      <p>Consulta rápida com busca inteligente por nome, cidade ou contato.</p>
+      <a href="./liderancas.html">Ver Lideranças</a>
+    </div>
+
+    <div class="card">
+      <h2>📊 Análise Eleitoral</h2>
+      <p>Dashboard avançado com ranking, comparativos e histórico por ano.</p>
+      <a href="./analise/">Abrir Análise</a>
+    </div>
+
+    <div class="card" id="card-gestao-usuarios" style="display:none;">
+      <h2>🛡️ Gestão de Acessos</h2>
+      <p>Controle níveis de permissão e segurança da plataforma.</p>
+      <a href="./usuarios.html">Configurar Usuários</a>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+© 2026 Prisma Gestão Política
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user && user.nivel === 'dono') {
+    const adminCard = document.getElementById('card-gestao-usuarios');
+    if(adminCard) adminCard.style.display = 'flex';
+  }
+});
+</script>
+
+</body>
+</html>

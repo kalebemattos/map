@@ -1,0 +1,9 @@
+id,usuario,senha_hash,nome,criado_em,nivel,regiao_vinculada
+0c7077a2-3f32-4a16-b0a4-87533726db1d,tiao,$2b$10$JXJm3.hRUpKY.lAuZ6WuWuGHaBut2iu3MPjgFI5lHnsy6WweCu7Zq,tiao,2026-02-05 14:25:49.862598,lider_regiao,metropolitana
+0dc7c979-a86b-4d6a-9b11-9ff22c107806,kalebemattos,$2b$10$$2b$10$s1TcIf/G7MJBgwHgFtDlcul6MuUktNqnoU1T4Gx3VVPFTfxvStp8q,kalebemattos,2026-02-01 23:06:41.437897,visualizador,
+114b26c9-eae7-4ea8-8926-838a9bc47918,cristovao,$2b$10$8CzYuEkPuKS77CLM.XPMEenY32aVudBvW.uih.VWqcDvE1nICio.q,cristovao,2026-02-05 14:26:19.464482,administrador,metropolitana
+7677300c-5849-4083-a7b5-bce78836ba81,leo,$2b$10$EXEMPLOHASHAQUI,Léo,2026-02-01 22:44:16.592949,visualizador,
+adf56aa4-c7cf-4600-9732-b180f0ca8ecf,marllon,$2b$10$Z3dEBTlkwrNiagkPjev2yebwb5.d6rEw10Eei8nGQoWiyW35mMA7i,marllon,2026-02-03 13:45:12.745297,visualizador,
+dd86c55d-bdb9-4996-9cf4-cabb1f60793b,lea,$2b$10$36555,Léa,2026-02-01 22:56:20.72431,visualizador,
+e8db64cf-8b8f-49c0-9883-1a3e7bcb597c,kalebe,$2b$10$af5hkNDddSbMdG5DoPzd8ulAlQSSKqr3ndypR3/54geJPxB8pLJDC,kalebe mattos,2026-02-01 23:19:40.475235,dono,
+f859a3e1-89e8-40cb-b02c-80d1b9e9be82,luiz.,$2b$10$nRxVHb4InUUpO09GpDlcMene9MRAfkLaXaDix.iI8Oa3p.aMARYi2,luiz,2026-02-05 14:25:05.062764,visualizador,

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestão de Usuários</title>
+    <style>
+        /* DESIGN DO SITE (Copiado do estilo do mapa para manter a identidade) */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f2f6fb;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+            width: 100%;
+            max-width: 500px;
+        }
+        h2, h3 { color: #1e3a8a; margin-top: 0; }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #cbd5f5;
+            box-sizing: border-box;
+        }
+        button {
+            background: #1e3a8a;
+            color: white;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #0047ab; }
+        
+        /* Estilos para a lista de usuários */
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            background: #f8fafc;
+            margin-bottom: 8px;
+            border-radius: 8px;
+        }
+        .user-info { display: flex; flex-direction: column; }
+        .user-nivel { font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase; }
+        .btn-del {
+            background: #c62828;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: auto; /* Não ocupa a linha toda na lista */
+        }
+        .btn-del:hover { background: #b71c1c; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Cadastrar Novo Usuário</h2>
+        <input id="u_nome" placeholder="Nome Completo">
+        <input id="u_user" placeholder="Login">
+        <input id="u_pass" type="password" placeholder="Senha">
+        
+        <label>Nível de Acesso</label>
+        <select id="u_nivel" onchange="toggleRegiao()">
+            <option value="visualizador">Visualizador</option>
+            <option value="lider_regiao">Líder de Região</option>
+            <option value="administrador">Administrador</option>
+            <option value="dono">Dono</option>
+        </select>
+
+        <div id="div_regiao" style="display:none;">
+            <label>Vincular à Região</label>
+            <select id="u_regiao"></select>
+        </div>
+
+        <button onclick="salvarUsuario()">Criar Usuário</button>
+    </div>
+
+    <div class="card">
+        <h3>Usuários Cadastrados</h3>
+        <div id="lista-usuarios">Carregando usuários...</div>
+    </div>
+
+    <script src="./data.js"></script>
+    <script>
+        function verificarPermissao() {
+    const user = JSON.parse(localStorage.getItem('user'));
+    const token = localStorage.getItem('token');
+
+    if (!token || !user || user.nivel !== 'dono') {
+        alert("Acesso restrito.");
+        location.href = "index.html";
+    }
+}
+
+verificarPermissao();
+
+        const API = 'https://map-backend-j88s.onrender.com';
+        const API_URL = 'https://map-backend-j88s.onrender.com/api';
+
+async function apiFetch(endpoint, options = {}) {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        alert("Sessão expirada.");
+        location.href = "index.html"; // ou página de login
+        throw new Error("Sem token");
+    }
+
+    const res = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token,
+            ...(options.headers || {})
+        }
+    });
+
+    if (res.status === 401 || res.status === 403) {
+        alert("Acesso negado.");
+        location.href = "index.html";
+        throw new Error("Sem permissão");
+    }
+
+    return res;
+}
+
+
+        function toggleRegiao() {
+            const nivel = document.getElementById('u_nivel').value;
+            const div = document.getElementById('div_regiao');
+            div.style.display = (nivel === 'lider_regiao') ? 'block' : 'none';
+
+            if (nivel === 'lider_regiao' && document.getElementById('u_regiao').options.length === 0) {
+                const select = document.getElementById('u_regiao');
+                Object.keys(regions).forEach(r => {
+                    if (r === 'all') return;
+                    const opt = document.createElement('option');
+                    opt.value = r;
+                    opt.textContent = r;
+                    select.appendChild(opt);
+                });
+            }
+        }
+
+        async function salvarUsuario() {
+            const dados = {
+                nome: document.getElementById('u_nome').value,
+                usuario: document.getElementById('u_user').value,
+                senha: document.getElementById('u_pass').value,
+                nivel: document.getElementById('u_nivel').value,
+                regiao_vinculada: document.getElementById('u_regiao').value
+            };
+
+            const res = await apiFetch('/usuarios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+
+            if (res.ok) {
+                alert("Usuário cadastrado!");
+                carregarUsuarios();
+            } else {
+                alert("Erro ao cadastrar.");
+            }
+        }
+
+        async function carregarUsuarios() {
+            try {
+                const res = await apiFetch('/usuarios');
+                const usuarios = await res.json();
+                const lista = document.getElementById('lista-usuarios');
+                
+                if (usuarios.length === 0) {
+                    lista.innerHTML = "Nenhum usuário encontrado.";
+                    return;
+                }
+
+                lista.innerHTML = usuarios.map(u => `
+                    <div class="user-item">
+                        <div class="user-info">
+                            <strong>${u.nome}</strong>
+                            <span class="user-nivel">${u.nivel} ${u.regiao_vinculada ? ' - ' + u.regiao_vinculada : ''}</span>
+                        </div>
+                        <button class="btn-del" onclick="excluirUsuario(${u.id})">Excluir</button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                document.getElementById('lista-usuarios').innerHTML = "Erro ao carregar lista.";
+            }
+        }
+
+        async function excluirUsuario(id) {
+            if (!confirm("Deseja realmente excluir este usuário?")) return;
+
+            try {
+                const res = await apiFetch(`/usuarios/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    alert("Usuário removido!");
+                    carregarUsuarios();
+                } else {
+                    alert("Erro ao excluir usuário.");
+                }
+            } catch (err) {
+                console.error("Erro na conexão:", err);
+            }
+        }
+
+        carregarUsuarios();
+    </script>
+</body>
+</html>
