@@ -172,75 +172,75 @@ const regions = {
 const lideresRegiao = {
   metropolitana: [
     {
-      nome: "João Silva",
-      contato: "21 99999-9999",
-      foto: "img/lideres/joao.jpg"
+      nome: "Léo Marmoraria",
+      contato: "",
+      foto: "img/lideres/Léo Marmoraria.jpg"
     },
     {
-      nome: "Mariana Alves",
-      contato: "21 88888-8888",
-      foto: "img/lideres/mariana.jpg"
+      //nome: "Mariana Alves",
+      //contato: "21 88888-8888",
+      //foto: "img/lideres/mariana.jpg"
     }
   ],
 
   baixadasLitoraneas: [
     {
-      nome: "Beatriz Santos",
-      contato: "22 91111-2222",
-      foto: "img/lideres/beatriz.jpg"
+      nome: "Zé Antonio",
+      contato: "24 99991-4802",
+      foto: "img/lideres/Zé Antonio.jpg"
     }
   ],
 
   norteFluminense: [
     {
-      nome: "Carlos Souza",
-      contato: "22 97777-7777",
-      foto: "img/lideres/carlos.jpg"
+      nome: "Marllon Jesus",
+      contato: "24 99988-0848",
+      foto: "img/lideres/Marllon Jesus.jpg"
     }
   ],
 
   noroesteFluminense: [
     {
-      nome: "Antônio Ferreira",
-      contato: "22 93333-4444",
-      foto: "img/lideres/antonio.jpg"
+      nome: "Hilton",
+      contato: "",
+      foto: "img/lideres/Hilton.jpg"
     }
   ],
 
   serrana: [
     {
-      nome: "Ricardo Mendes",
-      contato: "24 95555-5555",
-      foto: "img/lideres/ricardo.jpg"
+      nome: "Ziquinho",
+      contato: "",
+      foto: "img/lideres/Ziquinho.jpg"
     }
   ],
 
   centroSulFluminense: [
     {
-      nome: "Fernanda Lima",
-      contato: "24 92222-3333",
-      foto: "img/lideres/fernanda.jpg"
+      nome: "Dr. Renan",
+      contato: "",
+      foto: "img/lideres/Dr. Renan.jpg"
     }
   ],
 
   medioParaiba: [
     {
-      nome: "Paulo Roberto",
-      contato: "24 94444-5555",
-      foto: "img/lideres/paulo.jpg"
+      nome: "Glauco",
+      contato: "",
+      foto: "img/lideres/Glauco.jpg"
     },
     {
-      nome: "Sônia Guimarães",
-      contato: "24 96666-7777",
-      foto: "img/lideres/sonia.jpg"
+      nome: "Flavinho",
+      contato: "",
+      foto: "img/lideres/Flavinho.jpg"
     }
   ],
 
   costaVerde: [
     {
-      nome: "Lucas Oliveira",
-      contato: "24 98888-9999",
-      foto: "img/lideres/lucas.jpg"
+      nome: "Aurelio Marques",
+      contato: "",
+      foto: "img/lideres/Aurelio Marques.jpg"
     }
   ]
 };
