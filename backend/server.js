@@ -366,7 +366,7 @@ app.get('/api/expectativa-cidade', auth,
 /* ================= GASTOS POR LIDERANÇA ================= */
 app.post('/api/gastos',
   auth,
-  allow('admin', 'dono'),
+  allow('admin', 'dono', 'lider_regiao'),
   async (req, res) => {
 
   try {
@@ -503,7 +503,7 @@ app.get('/api/gastos-total/:lideranca_id', auth, async (req, res) => {
 app.post('/api/liderancas',
   createLiderancaLimiter,
   auth,
-  allow('admin', 'dono'),
+  allow('admin', 'dono', 'lider_regiao'),
   upload.single('foto'),
   async (req, res) => {
 
@@ -611,7 +611,7 @@ await registrarAuditoria(
 /* ================= EXCLUIR LIDERANÇA ================= */
 app.delete('/api/liderancas/:id',
   auth,
-  allow('admin', 'dono'),
+  allow('admin', 'dono', 'lider_regiao'),
   async (req, res) => {
 
   try {
@@ -652,7 +652,7 @@ await registrarAuditoria(
 /* ================= EDITAR LIDERANÇA ================= */
 app.put('/api/liderancas/:id',
   auth,
-  allow('admin', 'dono'),
+  allow('admin', 'dono', 'lider_regiao'),
   upload.single('foto'),
   async (req, res) => {
 
@@ -857,7 +857,7 @@ app.get('/api/observacoes', auth, async (req, res) => {
 
 app.post('/api/observacoes',
   auth,
-  allow('admin', 'dono'),
+  allow('admin', 'dono', 'lider_regiao'),
   async (req, res) => {
   try {
     const { cidade, text } = req.body;
@@ -876,7 +876,7 @@ app.post('/api/observacoes',
 
 app.delete('/api/observacoes/:id',
   auth,
-  allow('admin', 'dono'),
+  allow('admin', 'dono', 'lider_regiao'),
   async (req, res) => {
   try {
     const { id } = req.params;
@@ -956,7 +956,7 @@ app.get('/api/expectativa-cidade-todas', auth, async (req, res) => {
 
 app.post('/api/pins',
   auth,
-  allow('admin', 'dono'),
+  allow('admin', 'dono', 'lider_regiao'),
   async (req, res) => {
 
   const { cidade, tipo, lat, lng, descricao } = req.body;
@@ -1011,7 +1011,7 @@ app.get('/api/pins', auth, async (req, res) => {
 
 app.delete('/api/pins/:id',
   auth,
-  allow('admin', 'dono'),
+  allow('admin', 'dono', 'lider_regiao'),
   async (req, res) => {
   const id = req.params.id;
 
@@ -1039,7 +1039,7 @@ res.json({ ok: true });
 
 app.put('/api/pins/:id',
   auth,
-  allow('admin', 'dono'),
+  allow('admin', 'dono', 'lider_regiao'),
   async (req, res) => {
 
   const { id } = req.params;
