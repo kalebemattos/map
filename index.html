@@ -2057,7 +2057,10 @@ async function carregarTudo() {
 
     if (Array.isArray(liderancasPorCidade)) {
       liderancasPorCidade.forEach(c => {
-        if (!dataCache[c.cidade]) {
+
+  const cidade = normalizeCityName(c.cidade);
+
+  if (!dataCache[cidade]) {
           dataCache[c.cidade] = {
             liderancas: [],
             observacoes: [],
@@ -2065,7 +2068,7 @@ async function carregarTudo() {
             temComite: false
           };
         }
-        dataCache[c.cidade].liderancas = c.liderancas || [];
+        dataCache[cidade].liderancas = c.liderancas || [];
       });
     }
   } catch (e) {
@@ -2081,7 +2084,7 @@ try {
 
   if (Array.isArray(lista)) {
     lista.forEach(item => {
-      const cidade = item.cidade;
+      const cidade = normalizeCityName(item.cidade);
 
       if (!dataCache[cidade]) {
         dataCache[cidade] = {
@@ -2114,7 +2117,9 @@ try {
 
   if (Array.isArray(expectativas)) {
     expectativas.forEach(e => {
-      if (!dataCache[e.cidade]) {
+
+  const cidade = normalizeCityName(e.cidade);
+      if (!dataCache[cidade]) {
         dataCache[e.cidade] = {
           liderancas: [],
           observacoes: [],
@@ -2123,7 +2128,7 @@ try {
         };
       }
 
-      dataCache[e.cidade].expectativaCidade = Number(e.expectativa || 0);
+      dataCache[cidade].expectativaCidade = Number(e.expectativa || 0);
     });
   }
 } catch (e) {
@@ -3194,7 +3199,9 @@ function initializeMapAndApp() {
         
         layerRJ = L.geoJSON(data, {
           style: feature => {
-            const nome = feature.properties.NM_MUN || feature.properties.name;
+            const nome = normalizeCityName(
+  feature.properties.NM_MUN || feature.properties.name
+);
             // ATENÇÃO: Se votosValidos for undefined, o data.js não carregou
             const votos = votosValidos[nome] || 0; 
             return {
@@ -3763,6 +3770,13 @@ toggleSidebarBtn.addEventListener('click', () => {
 </div>
 
 <script>
+  function normalizarCidade(nome) {
+  return nome
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
 document.addEventListener('DOMContentLoaded', () => {
   const toggleBtn = document.getElementById('toggleSidebarBtn');
   const sidebar = document.querySelector('.sidebar');
@@ -3846,7 +3860,7 @@ function abrirModalPin() {
             tipo: key,
             lat: novoPinLatLng.lat,
             lng: novoPinLatLng.lng,
-            cidade: cidadeSelecionada || ''
+            cidade: normalizeCityName(cidadeSelecionada || '')
           })
         });
 
