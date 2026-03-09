@@ -3434,33 +3434,34 @@ window.iniciarAplicacao = async function () {
   atualizarTotalGeralOverlay();
   initializeMapAndApp();
   await carregarPins();
-
   initLiderancaSearch();
 
-  // 🔒 trava filtro de região para líder
   const usuario = JSON.parse(localStorage.getItem('user'));
 
   if (usuario && usuario.nivel === 'lider_regiao') {
 
     const regionSelect = document.getElementById('regionSelect');
 
-    if (regionSelect) {
+    const regiao =
+      usuario.regiao_vinculada ||
+      usuario.regiao ||
+      usuario.region;
 
-      regionSelect.value = usuario.regiao_vinculada;
+    if (regionSelect && regiao) {
 
-      // dispara o filtro depois que o mapa existe
+      regionSelect.value = regiao;
+
+      regionSelect.dispatchEvent(new Event('change'));
+
       setTimeout(() => {
-        regionSelect.dispatchEvent(new Event('change'));
-      }, 200);
+        regionSelect.disabled = true;
+      }, 100);
 
-      regionSelect.disabled = true;
     }
 
   }
 
 };
-
-
 
 function limparSelecaoMapa() {
   Object.values(layersPorCidade).forEach(layer => {
@@ -3656,35 +3657,7 @@ function initLiderancaSearch() {
   });
 }
 
-const usuarioLogado = JSON.parse(localStorage.getItem('user'));
 
-if (usuarioLogado.nivel === 'visualizador') {
-    // Esconde o botão de salvar do painel
-    if(document.getElementById('salvar-btn')) {
-        document.getElementById('salvar-btn').style.display = 'none';
-    }
-    // Esconde os botões de excluir na lista de lideranças
-    const botoesExcluir = document.querySelectorAll('.danger');
-    botoesExcluir.forEach(btn => btn.style.display = 'none');
-}
-
-if (usuarioLogado && usuarioLogado.nivel === 'lider_regiao') {
-
-  const regionSelect = document.getElementById('regionSelect');
-
-  if (regionSelect) {
-
-    // seleciona automaticamente a região do líder
-    regionSelect.value = usuarioLogado.regiao_vinculada;
-
-    // aplica o filtro no mapa
-    regionSelect.dispatchEvent(new Event('change'));
-
-    // trava o seletor
-    regionSelect.disabled = true;
-  }
-
-}
 function abrirModal(l) {
   const div = document.getElementById('modal-conteudo');
 
