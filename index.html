@@ -3645,13 +3645,22 @@ if (usuarioLogado.nivel === 'visualizador') {
     botoesExcluir.forEach(btn => btn.style.display = 'none');
 }
 
-if (usuarioLogado.nivel === 'lider_regiao') {
-    // Trava a busca apenas para a região dele
-    const campoRegiao = document.getElementById('regiao');
-    if(campoRegiao) {
-        campoRegiao.value = usuarioLogado.regiao_vinculada;
-        campoRegiao.disabled = true; // Não deixa ele mudar
-    }
+if (usuarioLogado && usuarioLogado.nivel === 'lider_regiao') {
+
+  const regionSelect = document.getElementById('regionSelect');
+
+  if (regionSelect) {
+
+    // seleciona automaticamente a região do líder
+    regionSelect.value = usuarioLogado.regiao_vinculada;
+
+    // aplica o filtro no mapa
+    regionSelect.dispatchEvent(new Event('change'));
+
+    // trava o seletor
+    regionSelect.disabled = true;
+  }
+
 }
 function abrirModal(l) {
   const div = document.getElementById('modal-conteudo');
