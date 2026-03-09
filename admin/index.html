@@ -460,14 +460,20 @@ function iniciarPainel(){
   }
   
   if (user.nivel === 'lider_regiao') {
-    const campoRegiao = document.getElementById('regiao');
-    if(campoRegiao) {
-        campoRegiao.value = user.regiao_vinculada;
-        campoRegiao.disabled = true;
-    }
-  }
-}
 
+  const campoRegiao = document.getElementById('regiao');
+
+  if (campoRegiao) {
+
+    campoRegiao.value = user.regiao;
+    campoRegiao.disabled = true;
+
+    carregarCidadesPorRegiao();
+
+  }
+
+}
+}
 /* ================= INIT ================= */
 document.addEventListener('DOMContentLoaded', () => {
   initRegioes();
