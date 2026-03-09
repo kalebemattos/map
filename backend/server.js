@@ -919,7 +919,7 @@ app.get('/api/data', auth, async (req, res) => {
       observacoesQuery = 'SELECT * FROM observacoes';
     } else {
       liderancasQuery = 'SELECT * FROM liderancas WHERE LOWER(regiao) = LOWER($1)';
-      observacoesQuery = 'SELECT * FROM observacoes WHERE LOWER(regiao) = LOWER($1)';
+observacoesQuery = 'SELECT * FROM observacoes WHERE LOWER(regiao) = LOWER($1)';
       params = [req.user.regiao];
     }
 
@@ -945,7 +945,7 @@ app.get('/api/expectativa-cidade-todas', auth, async (req, res) => {
   if (req.user.nivel === 'dono') {
     query = 'SELECT cidade, expectativa FROM expectativa_cidade';
   } else {
-    query = 'SELECT cidade, expectativa FROM expectativa_cidade WHERE regiao = $1';
+    query = 'SELECT cidade, expectativa FROM expectativa_cidade WHERE LOWER(regiao) = LOWER($1)';
     params = [req.user.regiao];
   }
 
