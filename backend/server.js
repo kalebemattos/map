@@ -798,21 +798,11 @@ app.get('/api/liderancas', auth, async (req, res) => {
     let query;
     let params = [];
 
-    if (req.user.nivel === 'dono') {
-      query = `
-        SELECT cidade, json_agg(l.*) AS liderancas
-        FROM liderancas l
-        GROUP BY cidade
-      `;
-    } else {
-      query = `
-        SELECT cidade, json_agg(l.*) AS liderancas
-        FROM liderancas l
-        WHERE LOWER(l.regiao) = LOWER($1)
-        GROUP BY cidade
-      `;
-      params = [req.user.regiao];
-    }
+    query = `
+SELECT cidade, json_agg(l.*) AS liderancas
+FROM liderancas l
+GROUP BY cidade
+`;
 
     const result = await pool.query(query, params);
     res.json(result.rows);
@@ -830,21 +820,11 @@ app.get('/api/observacoes', auth, async (req, res) => {
     let query;
     let params = [];
 
-    if (req.user.nivel === 'dono') {
-      query = `
-        SELECT cidade, json_agg(o.*) AS observacoes
-        FROM observacoes o
-        GROUP BY cidade
-      `;
-    } else {
-      query = `
-        SELECT cidade, json_agg(o.*) AS observacoes
-        FROM observacoes o
-        WHERE LOWER(o.regiao) = LOWER($1)
-        GROUP BY cidade
-      `;
-      params = [req.user.regiao];
-    }
+    query = `
+SELECT cidade, json_agg(o.*) AS observacoes
+FROM observacoes o
+GROUP BY cidade
+`;
 
     const result = await pool.query(query, params);
     res.json(result.rows);
@@ -919,7 +899,7 @@ app.get('/api/data', auth, async (req, res) => {
       observacoesQuery = 'SELECT * FROM observacoes';
     } else {
       liderancasQuery = 'SELECT * FROM liderancas WHERE LOWER(regiao) = LOWER($1)';
-observacoesQuery = 'SELECT * FROM observacoes WHERE LOWER(regiao) = LOWER($1)';
+      observacoesQuery = 'SELECT * FROM observacoes WHERE LOWER(regiao) = LOWER($1)';
       params = [req.user.regiao];
     }
 
@@ -942,12 +922,10 @@ app.get('/api/expectativa-cidade-todas', auth, async (req, res) => {
   let query;
   let params = [];
 
-  if (req.user.nivel === 'dono') {
-    query = 'SELECT cidade, expectativa FROM expectativa_cidade';
-  } else {
-    query = 'SELECT cidade, expectativa FROM expectativa_cidade WHERE LOWER(regiao) = LOWER($1)';
-    params = [req.user.regiao];
-  }
+  query = `
+SELECT cidade, expectativa
+FROM expectativa_cidade
+`;
 
   const rows = await dbAll(query, params);
   res.json(rows);
@@ -993,12 +971,9 @@ app.get('/api/pins', auth, async (req, res) => {
     let query;
     let params = [];
 
-    if (req.user.nivel === 'dono') {
-      query = 'SELECT * FROM pins';
-    } else {
-      query = 'SELECT * FROM pins WHERE regiao = $1';
-      params = [req.user.regiao];
-    }
+    query = `
+SELECT * FROM pins
+`;
 
     const r = await pool.query(query, params);
     res.json(r.rows);
