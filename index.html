@@ -3443,9 +3443,9 @@ window.iniciarAplicacao = async function () {
     const regionSelect = document.getElementById('regionSelect');
 
     const regiao =
-  usuario.regiao ||
-  usuario.regiao_vinculada ||
-  usuario.region;
+      usuario.regiao_vinculada ||
+      usuario.regiao ||
+      usuario.region;
 
     if (regionSelect && regiao) {
 
