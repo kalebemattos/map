@@ -756,7 +756,7 @@ if (
     release=$7,
     foto=$8,
     cidade=$9
-  WHERE id=$10 AND regiao=$11
+  WHERE id=$10 AND LOWER(regiao)=LOWER($11)
   `,
   [
     nome,
