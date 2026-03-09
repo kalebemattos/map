@@ -2736,18 +2736,6 @@ function initLegend() {
 function selecionarCidade(nome, layer) {
 
   const user = JSON.parse(localStorage.getItem('user'));
-
-  // 🔒 BLOQUEIO PARA LÍDER DE REGIÃO
-  if (user && user.nivel === 'lider_regiao') {
-
-    const cidadesPermitidas = regions[user.regiao_vinculada];
-
-    if (!cidadesPermitidas || !cidadesPermitidas.includes(nome)) {
-      return; // impede selecionar cidade fora da região
-    }
-
-  }
-
   if (user && user.nivel === 'visualizador') {
     console.log("Acesso apenas leitura para: " + nome);
   }
@@ -2773,7 +2761,7 @@ function selecionarCidade(nome, layer) {
         opacity: 0.12
       });
 
-      return;
+      return; // importante
     }
 
     // Cidade clicada
@@ -2801,7 +2789,6 @@ function selecionarCidade(nome, layer) {
     }
 
   });
-
 }
 
 function updateLegendByMode() {
@@ -3440,10 +3427,7 @@ regiaoSelect.addEventListener('change', () => {
 
 // 🔐 BOOT GLOBAL DA APLICAÇÃO (USADO PELO auth.js)
 window.iniciarAplicacao = async function () {
-
   console.log('[BOOT] iniciarAplicacao chamada');
-
-  const user = JSON.parse(localStorage.getItem('user'));
 
   await carregarTudo();
   atualizarTotalGeralOverlay();
@@ -3451,25 +3435,6 @@ window.iniciarAplicacao = async function () {
   await carregarPins();
 
   initLiderancaSearch();
-
-  // 🔒 SE FOR LÍDER DE REGIÃO
-  if (user && user.nivel === 'lider_regiao') {
-
-    regiaoAtiva = user.regiao_vinculada;
-
-    const select = document.getElementById('regionSelect');
-
-    if (select) {
-      select.value = regiaoAtiva;
-      select.disabled = true;
-    }
-
-    setTimeout(() => {
-  aplicarFiltroRegiaoUsuario(regiaoAtiva);
-}, 800);
-
-  }
-
 };
 
 
@@ -3501,47 +3466,7 @@ function destacarRegiaoPersonalizada(cidades) {
 // 4. LÓGICA DE INÍCIO DA PÁGINA (IIFE)
 // =================================================================
 
-// ======================================
-// TRAVAR MAPA NA REGIÃO DO USUÁRIO
-// ======================================
 
-function aplicarFiltroRegiaoUsuario(regiao) {
-
-  const cidadesDaRegiao = regions[regiao];
-
-  if (!layerRJ || !cidadesDaRegiao) return;
-
-  layerRJ.eachLayer(layer => {
-
-    const nome =
-      layer.feature.properties.NM_MUN ||
-      layer.feature.properties.name;
-
-    const el = layer.getElement && layer.getElement();
-
-    if (cidadesDaRegiao.includes(nome)) {
-
-      layer.setStyle({
-        fillOpacity: 0.8,
-        opacity: 1
-      });
-
-      if (el) el.style.pointerEvents = 'auto';
-
-    } else {
-
-      layer.setStyle({
-        fillOpacity: 0.08,
-        opacity: 0.08
-      });
-
-      if (el) el.style.pointerEvents = 'none';
-
-    }
-
-  });
-
-}
 
 function repaintMap() {
   if (!layerRJ) return;
