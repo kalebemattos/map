@@ -3441,21 +3441,16 @@ window.iniciarAplicacao = async function () {
   if (usuario && usuario.nivel === 'lider_regiao') {
 
     const regionSelect = document.getElementById('regionSelect');
-
-    const regiao =
-  usuario.regiao ||
-  usuario.regiao_vinculada ||
-  usuario.region;
+    const regiao = usuario.regiao;
 
     if (regionSelect && regiao) {
 
+      // aplica região
       regionSelect.value = regiao;
-
       regionSelect.dispatchEvent(new Event('change'));
 
-      setTimeout(() => {
-        regionSelect.disabled = true;
-      }, 100);
+      // trava seletor
+      regionSelect.disabled = true;
 
     }
 
