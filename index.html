@@ -3427,6 +3427,7 @@ regiaoSelect.addEventListener('change', () => {
 
 // 🔐 BOOT GLOBAL DA APLICAÇÃO (USADO PELO auth.js)
 window.iniciarAplicacao = async function () {
+
   console.log('[BOOT] iniciarAplicacao chamada');
 
   await carregarTudo();
@@ -3435,6 +3436,28 @@ window.iniciarAplicacao = async function () {
   await carregarPins();
 
   initLiderancaSearch();
+
+  // 🔒 trava filtro de região para líder
+  const usuario = JSON.parse(localStorage.getItem('user'));
+
+  if (usuario && usuario.nivel === 'lider_regiao') {
+
+    const regionSelect = document.getElementById('regionSelect');
+
+    if (regionSelect) {
+
+      regionSelect.value = usuario.regiao_vinculada;
+
+      // dispara o filtro depois que o mapa existe
+      setTimeout(() => {
+        regionSelect.dispatchEvent(new Event('change'));
+      }, 200);
+
+      regionSelect.disabled = true;
+    }
+
+  }
+
 };
 
 
