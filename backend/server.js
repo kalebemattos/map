@@ -354,7 +354,7 @@ app.get('/api/expectativa-cidade', auth,
     query = 'SELECT expectativa FROM expectativa_cidade WHERE cidade = $1';
     params = [cidade];
   } else {
-    query = 'SELECT expectativa FROM expectativa_cidade WHERE cidade = $1 AND regiao = $2';
+    query = 'SELECT expectativa FROM expectativa_cidade WHERE cidade = $1 AND LOWER(regiao) = LOWER($2)';
     params = [cidade, req.user.regiao];
   }
 
@@ -808,7 +808,7 @@ app.get('/api/liderancas', auth, async (req, res) => {
       query = `
         SELECT cidade, json_agg(l.*) AS liderancas
         FROM liderancas l
-        WHERE l.regiao = $1
+        WHERE LOWER(l.regiao) = LOWER($1)
         GROUP BY cidade
       `;
       params = [req.user.regiao];
@@ -840,7 +840,7 @@ app.get('/api/observacoes', auth, async (req, res) => {
       query = `
         SELECT cidade, json_agg(o.*) AS observacoes
         FROM observacoes o
-        WHERE o.regiao = $1
+        WHERE LOWER(o.regiao) = LOWER($1)
         GROUP BY cidade
       `;
       params = [req.user.regiao];
@@ -918,8 +918,8 @@ app.get('/api/data', auth, async (req, res) => {
       liderancasQuery = 'SELECT * FROM liderancas';
       observacoesQuery = 'SELECT * FROM observacoes';
     } else {
-      liderancasQuery = 'SELECT * FROM liderancas WHERE regiao = $1';
-      observacoesQuery = 'SELECT * FROM observacoes WHERE regiao = $1';
+      liderancasQuery = 'SELECT * FROM liderancas WHERE LOWER(regiao) = LOWER($1)';
+      observacoesQuery = 'SELECT * FROM observacoes WHERE LOWER(regiao) = LOWER($1)';
       params = [req.user.regiao];
     }
 
