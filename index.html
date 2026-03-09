@@ -2057,10 +2057,7 @@ async function carregarTudo() {
 
     if (Array.isArray(liderancasPorCidade)) {
       liderancasPorCidade.forEach(c => {
-
-  const cidade = normalizeCityName(c.cidade);
-
-  if (!dataCache[cidade]) {
+        if (!dataCache[c.cidade]) {
           dataCache[c.cidade] = {
             liderancas: [],
             observacoes: [],
@@ -2068,7 +2065,7 @@ async function carregarTudo() {
             temComite: false
           };
         }
-        dataCache[cidade].liderancas = c.liderancas || [];
+        dataCache[c.cidade].liderancas = c.liderancas || [];
       });
     }
   } catch (e) {
@@ -2084,7 +2081,7 @@ try {
 
   if (Array.isArray(lista)) {
     lista.forEach(item => {
-      const cidade = normalizeCityName(item.cidade);
+      const cidade = item.cidade;
 
       if (!dataCache[cidade]) {
         dataCache[cidade] = {
@@ -2117,9 +2114,7 @@ try {
 
   if (Array.isArray(expectativas)) {
     expectativas.forEach(e => {
-
-  const cidade = normalizeCityName(e.cidade);
-      if (!dataCache[cidade]) {
+      if (!dataCache[e.cidade]) {
         dataCache[e.cidade] = {
           liderancas: [],
           observacoes: [],
@@ -2128,7 +2123,7 @@ try {
         };
       }
 
-      dataCache[cidade].expectativaCidade = Number(e.expectativa || 0);
+      dataCache[e.cidade].expectativaCidade = Number(e.expectativa || 0);
     });
   }
 } catch (e) {
@@ -3199,9 +3194,7 @@ function initializeMapAndApp() {
         
         layerRJ = L.geoJSON(data, {
           style: feature => {
-            const nome = normalizeCityName(
-  feature.properties.NM_MUN || feature.properties.name
-);
+            const nome = feature.properties.NM_MUN || feature.properties.name;
             // ATENÇÃO: Se votosValidos for undefined, o data.js não carregou
             const votos = votosValidos[nome] || 0; 
             return {
@@ -3448,16 +3441,21 @@ window.iniciarAplicacao = async function () {
   if (usuario && usuario.nivel === 'lider_regiao') {
 
     const regionSelect = document.getElementById('regionSelect');
-    const regiao = usuario.regiao;
+
+    const regiao =
+  usuario.regiao ||
+  usuario.regiao_vinculada ||
+  usuario.region;
 
     if (regionSelect && regiao) {
 
-      // aplica região
       regionSelect.value = regiao;
+
       regionSelect.dispatchEvent(new Event('change'));
 
-      // trava seletor
-      regionSelect.disabled = true;
+      setTimeout(() => {
+        regionSelect.disabled = true;
+      }, 100);
 
     }
 
@@ -3770,13 +3768,6 @@ toggleSidebarBtn.addEventListener('click', () => {
 </div>
 
 <script>
-  function normalizarCidade(nome) {
-  return nome
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-}
 document.addEventListener('DOMContentLoaded', () => {
   const toggleBtn = document.getElementById('toggleSidebarBtn');
   const sidebar = document.querySelector('.sidebar');
@@ -3860,7 +3851,7 @@ function abrirModalPin() {
             tipo: key,
             lat: novoPinLatLng.lat,
             lng: novoPinLatLng.lng,
-            cidade: normalizeCityName(cidadeSelecionada || '')
+            cidade: cidadeSelecionada || ''
           })
         });
 
