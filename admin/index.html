@@ -432,7 +432,7 @@ async function login(){
     if(!res.ok) throw new Error();
     const data = await res.json();
 
-localStorage.setItem('token', data.token);
+localStorage.setItem('token', data.accessToken);
 localStorage.setItem('user', JSON.stringify(data.user));
     iniciarPainel();
   } catch {
