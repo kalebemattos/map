@@ -3159,7 +3159,7 @@ function initializeMapAndApp() {
       minZoom: 7,
       maxZoom: 11,
       attributionControl: false
-    }).setView([-23.0, -44.3], 12);
+    }).setView([-23.01, -44.32], 11);
     pinsLayer = L.layerGroup().addTo(map);
 
     map.on('click', function (e) {
@@ -3214,10 +3214,16 @@ function initializeMapAndApp() {
           },
           onEachFeature: (feature, layer) => {
             const nomeCidade =
-  feature.properties.NM_MUN || feature.properties.name;
+  feature.properties.CD_SETOR || 
+  feature.properties.NM_MUN || 
+  feature.properties.name;
 
 layersPorCidade[nomeCidade] = layer;
-            const nome = feature.properties.NM_MUN || feature.properties.name || "Sem nome";
+            const nome =
+  feature.properties.CD_SETOR ||
+  feature.properties.NM_MUN ||
+  feature.properties.name ||
+  "Setor";
             const votos = votosValidos[nome] || 0;
 
             /* Cria marcador fixo com nome */
@@ -3326,7 +3332,11 @@ if (modoAdicionarPin) {
 
               // Implementação do dblclick 
               dblclick: e => {
-                  const nome = e.target.feature.properties.NM_MUN || e.target.feature.properties.name || "Sem nome";
+                  const nome =
+  feature.properties.CD_SETOR ||
+  feature.properties.NM_MUN ||
+  feature.properties.name ||
+  "Setor";
                   const tableHtml = createBairroTable(nome);
                   
                   // Centraliza o popup/tooltip no centro do polígono clicado e abre
