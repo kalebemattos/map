@@ -1,0 +1,3945 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Mapa de Lideranças RJ</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<style>
+  
+  .leaflet-interactive {
+  transition: fill-opacity 0.2s ease, stroke-width 0.2s ease;
+}
+  html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #ffeeee;
+  overflow: hidden; /* 🔒 trava o scroll da página */
+}
+
+
+  /* layout: mapa + painel lateral fixo */
+  #map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 360px;
+  bottom: 0;
+
+  /* imagem de fundo */
+  background-image: url("img/map-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  /* acabamento premium */
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.15);
+}
+#map::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(245, 249, 255, 0.75);
+  z-index: 0;
+}
+
+/* garante que o Leaflet fique acima da imagem */
+#map > * {
+  position: relative;
+  z-index: 1;
+}
+
+  .sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 360px;
+  height: 100%;
+
+  display: flex;              /* ✅ PASSO CRÍTICO */
+  flex-direction: column;     /* ✅ PASSO CRÍTICO */
+
+  background: linear-gradient(180deg, #ffffff, #f6f9ff);
+  border-left: 1px solid #e5e7eb;
+  box-shadow: -8px 0 24px rgba(0,0,0,0.12);
+
+  overflow: hidden;           /* 🔒 trava scroll geral */
+  z-index: 2000;
+
+  transition: transform 0.3s ease;
+}
+
+/* ============================= */
+/* TOGGLE SIDEBAR */
+/* ============================= */
+
+/* ============================= */
+/* SIDEBAR – BASE + TOGGLE */
+/* ============================= */
+
+
+
+/* Sidebar fechada */
+.sidebar.closed {
+  transform: translateX(100%);
+}
+
+/* Mapa quando sidebar fecha */
+body.sidebar-closed #map {
+  right: 0;
+}
+
+/* ============================= */
+/* ESTRUTURA INTERNA */
+/* ============================= */
+
+.sidebar-header {
+  padding: 18px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.sidebar-body {
+  flex: 1;
+  overflow-y: auto;   /* ✅ ÚNICO scroll permitido */
+  padding: 16px 18px;
+}
+
+
+/* ============================= */
+/* SCROLL APENAS NO BODY */
+/* ============================= */
+
+.sidebar-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar-body::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 4px;
+}
+
+.sidebar-body:hover::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+}
+
+.sidebar-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ============================= */
+/* TÍTULOS */
+/* ============================= */
+
+.sidebar h2 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #020617;
+  letter-spacing: 0.5px;
+}
+
+.sidebar h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin: 0 0 10px 0;
+}
+
+/* ============================= */
+/* CARDS */
+/* ============================= */
+
+.city-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+/* ============================= */
+/* LISTAS DE DEPUTADOS */
+/* ============================= */
+
+.deputado-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0 0;
+  font-size: 14px;
+}
+
+.deputado-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: #f8fafc;
+}
+
+.deputado-list li:nth-child(1) {
+  background: #eef2ff;
+}
+
+.deputado-list .name {
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.deputado-list .votes {
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+/* ============================= */
+/* INFO CIDADE */
+/* ============================= */
+
+.city-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0047ab;
+  margin-bottom: 4px;
+}
+
+.votos {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed #ccc;
+  padding-bottom: 6px;
+}
+
+.hint {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 10px;
+  border-top: 1px dashed #cbd5f5;
+  padding-top: 6px;
+}
+
+/* ============================= */
+/* FILTRO REGIONAL */
+/* ============================= */
+
+.region-selector h3 {
+  font-size: 15px;
+  color: #003366;
+  margin: 0 0 8px 0;
+}
+
+.region-selector select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  margin-bottom: 15px;
+  box-sizing: border-box;
+}
+
+  
+  /* 5. Map Title Overlay */
+  .map-title-overlay {
+      position: absolute;
+      top: 20px;
+      left: 600px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      z-index: 1000;
+  }
+
+  .map-title-overlay h1 {
+      margin: 0;
+      font-size: 20px;
+      color: #003366;
+      font-weight: 700;
+  }
+
+  /* 6. Leaflet Overrides (Legend) */
+  #fixed-legend-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;   /* ✔ fica sempre visível */
+    z-index: 1000;
+}
+
+  .legend {
+    line-height: 18px;
+    color: #555;
+    background: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    font-size: 13px;
+    min-width: 150px;
+  }
+  .legend i {
+    width: 18px;
+    height: 18px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.8;
+  }
+
+  /* 7. City Labels */
+  .city-label {
+  position: absolute;
+  top: -12px;
+  left: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(15, 23, 42, 0.6);
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+  pointer-events: none;
+  text-align: center;
+  width: 120px;
+  line-height: 1.1;
+  opacity: 0.45;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.city-label.highlight {
+  opacity: 1 !important;
+  transform: scale(1.05);
+  color: #020617;
+}
+
+  .city-label.highlight {
+      opacity: 1 !important;
+      color: #003366;
+  }
+
+  .city-tooltip {
+      font-size: 14px;
+  }
+  
+  /* 8. Estilo customizado para o popup de bairro */
+  .leaflet-popup.bairro-popup .leaflet-popup-content-wrapper {
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.leaflet-popup-content {
+  font-size: 14px;
+}
+
+  /* 9. Logo */
+  .logo-container {
+    position: absolute;
+    bottom: 900px;
+    left: 20px;
+    z-index: 1000;
+  }
+  .logo-container img {
+    max-width: 150px;
+    height: auto;
+  }
+
+  /* 10. Estilo para a tela de bloqueio */
+  #blocker {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f2f6fb;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: #003366;
+  }
+  #blocker p {
+      font-size: 16px;
+      color: #888;
+      margin-top: 10px;
+  }
+  
+  /* ESTILOS DE MINIMIZAR RESTAURADOS */
+  .collapsible-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+  .collapsible-header h3 {
+      margin: 0;
+  }
+  .collapse-btn {
+  background: #1e3a8a;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+}
+  .content-hidden {
+      display: none;
+  }
+ 
+
+
+
+
+.comite-marker {
+  font-size: 22px;
+  color: #8e44ad;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+  transform: translateY(-2px);
+}
+.pin-type-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.pin-type-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid #cbd5f5;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.pin-type-btn.active {
+  color: #fff;
+  border-color: transparent;
+}
+
+.pin-type-btn:hover {
+  transform: translateY(-1px);
+}
+
+.sidebar button {
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+}
+
+.sidebar button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+}
+.sidebar input,
+.sidebar select,
+.sidebar textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #cbd5f5;
+  font-size: 14px;
+  outline: none;
+}
+
+.sidebar input:focus,
+.sidebar select:focus,
+.sidebar textarea:focus {
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 3px rgba(30,58,138,0.15);
+}
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 10000; /* MAIS ALTO QUE MAPA E SIDEBAR */
+}
+
+.modal-card {
+  background: #ffffff;
+  width: 92%;
+  max-width: 580px;
+  border-radius: 20px;
+  padding: 24px 26px;
+  position: relative;
+  box-shadow:
+    0 30px 60px rgba(0,0,0,0.35),
+    0 10px 20px rgba(0,0,0,0.2);
+
+  animation: modalIn 0.25s ease;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.modal-close:hover {
+  background: #e2e8f0;
+}
+
+/* ============================= */
+/* FOTO DA LIDERANÇA – BLINDADA */
+/* ============================= */
+
+.lideranca-foto {
+  width: 40px;
+  height: 40px;
+
+  min-width: 40px;
+  max-width: 40px;
+  min-height: 40px;
+  max-height: 40px;
+
+  flex: 0 0 40px;          /* trava no flex */
+  box-sizing: border-box;
+
+  border-radius: 50%;
+  overflow: hidden;
+
+  background: #e5e7eb;
+  border: 1px solid #cbd5f5;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lideranca-foto {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  min-height: 40px;
+  max-height: 40px;
+
+  flex: 0 0 40px;   /* 🔴 ISSO É O QUE FALTAVA */
+  box-sizing: border-box;
+
+  border-radius: 50%;
+  overflow: hidden;
+
+  background: #e5e7eb;
+  border: 1px solid #cbd5f5;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lideranca-foto img {
+  width: 100% !important;
+  height: 100% !important;
+
+  max-width: 100% !important;
+  max-height: 100% !important;
+
+  min-width: 100% !important;
+  min-height: 100% !important;
+
+  object-fit: cover !important;
+  object-position: center !important;
+
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
+
+.lideranca-foto span {
+  font-size: 18px;
+}
+/* ============================= */
+/* POPUP DE LIDERANÇA – NOVO UI */
+/* ============================= */
+
+.lideranca-popup {
+  width: 260px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.popup-header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.popup-foto {
+  width: 56px;
+  height: 56px;
+
+  min-width: 56px;
+  min-height: 56px;
+  max-width: 56px;
+  max-height: 56px;
+
+  flex: 0 0 56px;   /* 🔴 ISSO É O QUE FALTAVA */
+
+  border-radius: 8px;
+  overflow: hidden;
+
+  background: #e5e7eb;
+  border: 1px solid #cbd5f5;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+}
+
+
+.popup-foto img {
+  width: 100%;
+  height: 100%;
+
+  min-width: 100%;
+  min-height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+
+  object-fit: cover;
+  object-position: center;
+
+  display: block;
+}
+
+.popup-foto span {
+  font-size: 24px;
+}
+
+
+
+
+.popup-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-nome {
+  font-size: 15px;
+  color: #020617;
+}
+
+.popup-cidade {
+  font-size: 12px;
+  color: #475569;
+}
+
+.popup-body {
+  font-size: 13px;
+  color: #334155;
+  border-top: 1px dashed #cbd5f5;
+  padding-top: 6px;
+}
+
+.popup-body div {
+  margin-bottom: 4px;
+}
+
+.popup-descricao {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #475569;
+}
+/* ============================= */
+/* FOTO NO MODAL DE LIDERANÇA    */
+/* ============================= */
+
+.modal-conteudo-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.modal-foto {
+  width: 96px;
+  height: 96px;
+
+  min-width: 96px;
+  max-width: 96px;
+  min-height: 96px;
+  max-height: 96px;
+
+  border-radius: 50%;
+  overflow: hidden;
+
+  background: #e5e7eb;
+  border: 2px solid #cbd5f5;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 96px;
+}
+
+.modal-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.modal-foto.sem-foto {
+  font-size: 40px;
+}
+/* ============================= */
+/* POPUP (MODAL) DE LIDERANÇA */
+/* ============================= */
+
+.lideranca-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.lideranca-modal-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.lideranca-modal-foto {
+  width: 72px;
+  height: 72px;
+
+  border-radius: 12px;
+  overflow: hidden;
+
+  background: #e5e7eb;
+  border: 1px solid #cbd5f5;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lideranca-modal-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lideranca-modal-foto span {
+  font-size: 28px;
+}
+
+.lideranca-modal-title h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #020617;
+}
+
+.lideranca-modal-title p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #475569;
+}
+
+.lideranca-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-metric {
+  background: #eef3ff;
+  border-radius: 12px;
+  padding: 14px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-metric span {
+  font-size: 13px;
+  color: #475569;
+}
+
+.modal-metric strong {
+  font-size: 20px;
+  color: #1e3a8a;
+}
+
+.modal-section label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.modal-section textarea {
+  width: 100%;
+  min-height: 80px;
+  margin-top: 6px;
+  padding: 10px;
+
+  border-radius: 10px;
+  border: 1px solid #cbd5f5;
+  font-size: 14px;
+}
+
+/* FOOTER */
+.lideranca-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-primary {
+  background: #0047ab;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: #f1f5f9;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.modal-nome {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.2;
+}
+.modal-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+}
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.modal-grid > div {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #334155;
+}
+
+.modal-grid strong {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+.modal-release {
+  background: #f1f5f9;
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.modal-release strong {
+  font-size: 13px;
+  color: #475569;
+}
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* ========================= */
+/* SEARCH UI (BUSCA MODERNA) */
+/* ========================= */
+
+.search-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #020617;
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  background: #f8fafc;
+  border: 1px solid #cbd5f5;
+  border-radius: 12px;
+  padding: 10px 12px;
+
+  transition: all 0.2s ease;
+}
+
+.search-input-wrapper:focus-within {
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 3px rgba(30,58,138,0.15);
+  background: #ffffff;
+}
+
+.search-icon {
+  font-size: 18px;
+  opacity: 0.7;
+}
+
+.search-input-wrapper input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  width: 100%;
+}
+
+/* RESULTADOS */
+.search-results {
+  margin-top: 6px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.search-result-item {
+  padding: 10px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s ease;
+}
+
+.search-result-item:hover {
+  background: #eef3ff;
+}
+
+.search-result-item small {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+}
+#toggleSidebarBtn {
+  position: absolute;
+  top: 20px;
+  right: 380px; /* alinhado com sidebar aberta */
+  z-index: 2500;
+
+  background: #0047ab;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+
+  font-size: 18px;
+  cursor: pointer;
+
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  transition: all 0.3s ease;
+}
+
+body.sidebar-closed #toggleSidebarBtn {
+  right: 20px; /* encosta quando sidebar fecha */
+}
+
+#toggleSidebarBtn:hover {
+  background: #003366;
+  transform: translateY(-1px);
+}
+/* ============================= */
+/* MAP CONTROLS – LADO ESQUERDO */
+/* ============================= */
+
+#map-controls {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1500;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.control-card {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(6px);
+  border-radius: 14px;
+  padding: 12px;
+  min-width: 180px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.control-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #020617;
+  margin-bottom: 8px;
+}
+
+.control-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0047ab;
+}
+
+.control-group {
+  display: flex;
+  gap: 6px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid #cbd5f5;
+  background: #f8fafc;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-btn.active {
+  background: #0047ab;
+  color: #fff;
+  border-color: #0047ab;
+}
+
+.icon-btn {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: 999px;
+  border: 1px solid #cbd5f5;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.icon-btn.active {
+  background: #1e3a8a;
+  color: #fff;
+}
+/* ============================= */
+/* MOBILE AJUSTES */
+/* ============================= */
+
+@media (max-width: 768px) {
+
+  /* SIDEBAR VIRA FULLSCREEN */
+  .sidebar {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .sidebar.closed {
+    transform: translateX(100%);
+  }
+
+  /* BOTÃO ☰ SEMPRE VISÍVEL */
+  #toggleSidebarBtn {
+    top: 12px;
+    left: 12px;
+    right: auto;
+    z-index: 3000;
+  }
+
+  /* CONTROLES DO MAPA MAIS COMPACTOS */
+  #map-controls {
+    top: auto;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .control-card {
+    min-width: auto;
+    padding: 10px;
+  }
+
+  .control-title {
+    display: none; /* economiza espaço */
+  }
+
+  .control-value {
+    font-size: 14px;
+  }
+
+  .mode-btn {
+    font-size: 11px;
+    padding: 6px;
+  }
+
+  .icon-btn {
+    padding: 8px;
+  }
+}
+#mobileControlsBtn {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  #mobileControlsBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 2000;
+
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+
+    background: #0047ab;
+    color: #fff;
+    font-size: 22px;
+    border: none;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  }
+
+  #map-controls {
+    display: none;
+  }
+
+  #map-controls.mobile-open {
+    display: flex;
+  }
+}
+.pin-popup {
+  width: 240px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.pin-popup h4 {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  color: #020617;
+}
+
+.pin-popup small {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.pin-popup textarea {
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid #cbd5f5;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.pin-popup-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.pin-btn {
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pin-btn.save {
+  background: #0047ab;
+  color: #fff;
+}
+
+.pin-btn.delete {
+  background: #e53935;
+  color: #fff;
+}
+
+</style>
+</head>
+<body>
+<div id="login-modal" style="
+  position: fixed;
+  inset: 0;
+  background: rgba(2,6,23,0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+">
+  <div style="
+    width: 340px;
+    background: linear-gradient(180deg, #ffffff, #f8fafc);
+    border-radius: 18px;
+    padding: 24px 22px;
+    box-shadow:
+      0 30px 60px rgba(0,0,0,0.25),
+      0 8px 20px rgba(0,0,0,0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  ">
+
+    <!-- TÍTULO -->
+    <div style="text-align:center;">
+      <h2 style="
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: #020617;
+      ">
+        Acesso ao Sistema
+      </h2>
+      <p style="
+        margin: 6px 0 0;
+        font-size: 13px;
+        color: #64748b;
+      ">
+        Mapa de Lideranças
+      </p>
+    </div>
+
+    <!-- INPUT USUÁRIO -->
+    <div>
+      <label style="
+        display:block;
+        font-size:12px;
+        font-weight:600;
+        color:#334155;
+        margin-bottom:4px;
+      ">Usuário</label>
+
+      <input
+        id="login-user"
+        placeholder="Digite seu usuário"
+        style="
+          width:90%;
+          padding:11px 12px;
+          border-radius:10px;
+          border:1px solid #cbd5f5;
+          font-size:14px;
+          outline:none;
+          transition: all .2s;
+        "
+        onfocus="this.style.borderColor='#1e3a8a';this.style.boxShadow='0 0 0 3px rgba(30,58,138,.15)'"
+        onblur="this.style.borderColor='#cbd5f5';this.style.boxShadow='none'"
+      >
+    </div>
+
+    <!-- INPUT SENHA -->
+    <div>
+      <label style="
+        display:block;
+        font-size:12px;
+        font-weight:600;
+        color:#334155;
+        margin-bottom:4px;
+      ">Senha</label>
+
+      <input
+        id="login-pass"
+        type="password"
+        placeholder="Digite sua senha"
+        style="
+          width:90%;
+          padding:11px 12px;
+          border-radius:10px;
+          border:1px solid #cbd5f5;
+          font-size:14px;
+          outline:none;
+          transition: all .2s;
+        "
+        onfocus="this.style.borderColor='#1e3a8a';this.style.boxShadow='0 0 0 3px rgba(30,58,138,.15)'"
+        onblur="this.style.borderColor='#cbd5f5';this.style.boxShadow='none'"
+      >
+    </div>
+
+    <!-- ERRO -->
+    <div
+      id="login-error"
+      style="
+        display:none;
+        background:#fee2e2;
+        color:#b91c1c;
+        font-size:13px;
+        padding:8px 10px;
+        border-radius:8px;
+        text-align:center;
+      ">
+      Usuário ou senha inválidos
+    </div>
+
+    <!-- BOTÃO -->
+    <button
+      id="login-btn"
+      style="
+        margin-top:6px;
+        width:100%;
+        padding:12px;
+        border:none;
+        border-radius:12px;
+        background: linear-gradient(135deg, #0047ab, #003580);
+        color:#fff;
+        font-size:14px;
+        font-weight:700;
+        cursor:pointer;
+        box-shadow: 0 8px 18px rgba(0,71,171,.35);
+        transition: all .2s;
+      "
+      onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 12px 26px rgba(0,71,171,.45)'"
+      onmouseout="this.style.transform='none';this.style.boxShadow='0 8px 18px rgba(0,71,171,.35)'"
+    >
+      Entrar
+    </button>
+
+  </div>
+</div>
+
+
+<div id="blocker">
+    Aguardando login...
+    <p>Por favor, insira as credenciais quando solicitado.</p>
+</div>
+
+<div id="content-wrapper" style="display:none; height:100%; width:100%;"> 
+
+  <div id="map"></div>
+  <div id="map-controls">
+    <button id="mobileControlsBtn">⚙️</button>
+
+
+  <!-- EXPECTATIVA GERAL -->
+  <div class="control-card">
+    <div class="control-title">📊 Expectativa Geral</div>
+    <div id="total-geral-overlay" class="control-value">
+      —
+    </div>
+  </div>
+
+  <!-- VISUALIZAÇÃO DO MAPA -->
+  <div class="control-card">
+    <div class="control-title">🗳️ Visualização</div>
+    <div class="control-group">
+      <button class="mode-btn active" data-mode="validVotes">Votos</button>
+      <button class="mode-btn" data-mode="expectedVotes">Expectativa</button>
+      <button class="mode-btn" data-mode="leaders">Lideranças</button>
+    </div>
+  </div>
+
+  <!-- PINS -->
+  <div class="control-card">
+    <div class="control-title">📍 Pins</div>
+    <div class="control-group">
+      <button id="togglePins" class="icon-btn active">ON</button>
+      <button id="addPinBtn" class="icon-btn">＋</button>
+    </div>
+  </div>
+
+</div>
+
+  
+<button id="toggleSidebarBtn" title="Abrir / Fechar painel">
+  ☰
+</button>
+
+
+
+  
+  
+</div>
+  
+  <div class="map-title-overlay">
+    <h1>MAPA DE LIDERANÇAS</h1>
+  </div>
+  
+  <div class="sidebar">
+
+  <!-- ========================= -->
+  <!-- HEADER FIXO -->
+  <!-- ========================= -->
+  <div class="sidebar-header">
+    <div class="subtitle" style="margin-top: 0;">
+      Passe o mouse sobre um município no mapa para ver os 5 mais votados (2022).
+    </div>
+  </div>
+
+
+  <!-- ========================= -->
+  <!-- CORPO SCROLLÁVEL -->
+  <!-- ========================= -->
+  <div class="sidebar-body">
+<!-- LÍDER DA REGIÃO -->
+<div id="lider-regiao-card" class="city-card"
+     style="display:none;background:#eef3ff;border:1px solid #cbd5f5;">
+
+  <div style="display:flex;align-items:center;gap:12px;">
+
+    <div id="lider-regiao-foto"
+     style="
+  width:60px;
+  height:60px;
+  border-radius:12px;
+  background:#fff;
+  border:2px solid #0047ab;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  overflow:hidden;
+">
+  👤
+</div>
+
+    <div>
+      <h3 style="margin:0;font-size:13px;color:#0047ab;">
+        LÍDER DA REGIÃO
+      </h3>
+
+      <div id="lider-regiao-nome"
+           style="font-weight:700;font-size:16px;">
+      </div>
+
+      <div id="lider-regiao-contato"
+           style="font-size:13px;color:#475569;">
+      </div>
+
+      <div id="lider-regiao-votos"
+           style="font-weight:700;color:#1e3a8a;margin-top:4px;">
+      </div>
+    </div>
+
+  </div>
+</div>
+    <!-- BUSCAR CIDADE -->
+    <div class="city-card search-card">
+      <label class="search-label">Buscar cidade</label>
+      <div class="search-input-wrapper">
+        <span class="search-icon">🏙️</span>
+        <input
+          type="text"
+          id="city-search"
+          placeholder="Digite o nome da cidade..."
+          autocomplete="off"
+        />
+      </div>
+      <div id="city-search-results" class="search-results"></div>
+    </div>
+
+    <!-- BUSCAR LIDERANÇA -->
+    <div class="city-card search-card">
+      <label class="search-label">Buscar liderança</label>
+      <div class="search-input-wrapper">
+        <span class="search-icon">👤</span>
+        <input
+          type="text"
+          id="lideranca-search"
+          placeholder="Digite o nome da liderança..."
+          autocomplete="off"
+        />
+      </div>
+      <div id="lideranca-search-results" class="search-results"></div>
+    </div>
+
+    <!-- FILTRO REGIÃO -->
+    <div class="city-card">
+      <h3>Filtrar por Região</h3>
+      <select id="regionSelect">
+        <option value="all">Mapa completo</option>
+        <option value="metropolitana">Metropolitana</option>
+        <option value="baixadasLitoraneas">Baixadas Litorâneas</option>
+        <option value="norteFluminense">Norte Fluminense</option>
+        <option value="noroesteFluminense">Noroeste Fluminense</option>
+        <option value="serrana">Serrana</option>
+        <option value="centroSulFluminense">Centro-Sul Fluminense</option>
+        <option value="medioParaiba">Médio Paraíba</option>
+        <option value="costaVerde">Costa Verde</option>
+      </select>
+    </div>
+
+    
+
+    <!-- LIDERANÇAS -->
+    <div id="liderancas-container" class="city-card">
+      <div class="collapsible-header">
+        <h3 style="margin-bottom:0;">
+          Lideranças Locais
+          <span id="liderancas-count" style="font-size:14px;font-weight:normal;color:#555;">
+            (0 líderes)
+          </span>
+        </h3>
+        <button class="collapse-btn" data-target="liderancas-content" data-state="expanded">
+          Minimizar
+        </button>
+      </div>
+
+      <div id="liderancas-content">
+        <div style="margin-bottom:10px;">
+          <label>Expectativa de votos da cidade</label>
+          <input
+            id="expectativa-cidade"
+            type="number"
+            min="0"
+            style="width:100%;padding:6px;margin-top:4px;"
+          />
+          <button id="salvar-expectativa-cidade" style="width:100%;margin-top:6px;">
+            Salvar expectativa
+          </button>
+        </div>
+
+        <div id="liderancas-list"></div>
+
+        <div style="margin-top:10px;">
+          <input id="lideranca-nome" type="text" placeholder="Nome" style="width:100%;margin-bottom:6px;padding:6px;">
+          <input id="lideranca-contato" type="text" placeholder="Contato" style="width:100%;margin-bottom:6px;padding:6px;">
+          <label for="lideranca-foto-file" style="display:block;font-size:12px;color:#555;margin-bottom:4px;">
+            Foto da Liderança (opcional)
+          </label>
+          <input id="lideranca-foto-file" type="file" accept="image/*" style="width:100%;margin-bottom:6px;">
+          <button id="add-lideranca" style="width:100%;padding:8px;background:#0047ab;color:white;border:none;border-radius:6px;">
+            Adicionar Liderança
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OBSERVAÇÕES -->
+    <div id="observacoes-container" class="city-card">
+      <div class="collapsible-header">
+        <h3 style="margin-bottom:0;">Observações (Notas)</h3>
+        <button class="collapse-btn" data-target="observacoes-content" data-state="expanded">
+          Minimizar
+        </button>
+      </div>
+
+      <div id="observacoes-content">
+        <div id="observacoes-list" style="margin-bottom:10px;">
+          <p style="font-size:13px;color:#666;">
+            Selecione um município para ver as observações.
+          </p>
+        </div>
+
+        <textarea
+          id="new-observacao-text"
+          placeholder="Adicionar nova observação..."
+          style="width:100%;min-height:50px;padding:6px;"
+        ></textarea>
+
+        <button
+          id="add-observacao"
+          style="width:100%;padding:8px;background:#189918;color:white;border:none;border-radius:6px;margin-top:6px;">
+          Adicionar Observação
+        </button>
+      </div>
+    </div>
+
+    <!-- CÉLIA JORDÃO -->
+    <div id="celia-jordao-card" class="city-card" style="display:none;background:#fff9db;border:1px solid #fcc419;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:50px;height:50px;border-radius:50%;background:#fff;border:2px solid #fcc419;display:flex;align-items:center;justify-content:center;">
+          👩‍💼
+        </div>
+        <div>
+          <h3 style="margin:0;color:#856404;font-size:14px;">VOTAÇÃO CÉLIA JORDÃO</h3>
+          <div id="celia-votos-display" style="font-weight:800;color:#e67e22;font-size:18px;">
+            0 votos
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFO CIDADE -->
+    <div id="city-info" class="city-card">
+      <div class="city-name">Passe o mouse no mapa</div>
+      <div class="votos">Votos válidos: —</div>
+      <ul class="deputado-list"></ul>
+      <div class="hint">Dados oficiais – Eleição 2022</div>
+    </div>
+
+    <div id="city-info-federal" class="city-card">
+      <div class="city-name" id="city-name-federal">
+        Deputados Federais – 2022
+      </div>
+      <div class="votos" id="votos-federal">Passe o mouse no mapa</div>
+      <ul class="deputado-list" id="deputado-list-federal"></ul>
+      <div class="hint">Dados oficiais – Eleição 2022</div>
+    </div>
+
+  </div>
+</div>
+
+
+  
+
+  
+  
+  
+  </div>
+  
+  <div class="logo-container">
+    <img src="LOGO-LEO.png" alt="Logo">
+  </div>
+  
+  <div id="fixed-legend-container">
+      <div class="legend" id="legend-control">
+        <strong>Votos válidos</strong><br>
+      </div>
+  </div>
+
+
+<div id="custom-regions-panel">
+  
+
+
+
+  
+
+ 
+  </div>
+</div>
+</div> <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="auth.js"></script> 
+<script src="data.js"></script>
+<script src="deputadosFederais.js"></script>
+<script src="votosBairro.js"></script>
+<script src="votosCelia.js"></script> <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+// =================================================================
+// 1. VARIÁVEIS GLOBAIS (Inicializadas a null para evitar erros de referência)
+// =================================================================
+
+
+
+
+async function apiFetch(endpoint, options = {}) {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    localStorage.clear();
+    location.reload();
+    throw new Error('Sem token');
+  }
+
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + token,
+      ...(options.headers || {})
+    }
+  });
+
+  if (res.status === 401) {
+    localStorage.clear();
+    location.reload();
+    throw new Error('Token inválido');
+  }
+
+  return res;
+}
+
+
+
+
+let cidadeAtiva = null;
+let map = null;
+let deputadosVisible = true;
+let cidadeSelecionada = null;
+let layerSelecionada = null;
+let layerRJ = null;
+let pinsLayer = null;
+let pinsVisiveis = true;
+let modoAdicionarPin = false;
+let novoPinLatLng = null;
+let regiaoAtiva = 'all';
+
+
+// ================================
+// REGIÕES PERSONALIZADAS
+// ================================
+ 
+// exemplo:
+// {
+//   "Região Norte Estratégica": {
+//       cidades: ["CAMPOS DOS GOYTACAZES", "MACAÉ"],
+//       lider: {
+//           nome: "João",
+//           contato: "2199999",
+//           expectativa_votos: 5000
+//       }
+//   }
+// }
+
+let regiaoEditando = null; // nome da região que está sendo editada
+let modoAdicionarCidade = false;
+const mapModes = ['validVotes', 'leaders', 'expectedVotes'];
+let currentMapModeIndex = 0;
+const cityNameEl = document.querySelector('.city-name');
+const votosEl = document.querySelector('.votos');
+const deputadoListEl = document.querySelector('.deputado-list');
+const cityInfoEl = document.getElementById('city-info');
+
+const layersPorCidade = {};
+
+const citySearchInput = document.getElementById('city-search');
+const citySearchResults = document.getElementById('city-search-results');
+
+
+// =================================================================
+// 2. FUNÇÕES UTILITÁRIAS (Não dependem do mapa)
+// =================================================================
+function getTotalExpectativa(city) {
+  const c = dataCache[city];
+  if (!c) return 0;
+
+  const somaLiderancas = c.liderancas.reduce(
+    (s, l) => s + Number(l.expectativa_votos || 0),
+    0
+  );
+
+  return Number(c.expectativaCidade || 0) + somaLiderancas;
+}
+function calcularExpectativaTotalGeral() {
+  let total = 0;
+
+  Object.keys(dataCache).forEach(city => {
+    if (dataCache[city] && dataCache[city].liderancas) {
+      total += getTotalExpectativa(city);
+    }
+  });
+
+  return total;
+}
+function atualizarTotalGeralOverlay() {
+  const el = document.getElementById('total-geral-overlay');
+  if (!el) return;
+
+  const total = calcularExpectativaTotalGeral();
+
+  el.textContent = total.toLocaleString('pt-BR') + ' votos';
+
+}
+function getColor(votos) {
+  return votos > 500000 ? '#d73027' :
+         votos > 200000 ? '#fc8d59' :
+         votos > 100000 ? '#fee08b' :
+         votos > 50000  ? '#91cf60' :
+         votos > 10000  ? '#4575b4' :
+                           '#cce5ff';
+}
+function fmt(n) {
+  return (n === undefined || n === null) ? '—' : n.toLocaleString('pt-BR');
+}
+function getCityColor(cityData) {
+  const mode = mapModes[currentMapModeIndex];
+
+  if (mode === 'validVotes') {
+  return getColor(cityData.validVotes);
+}
+
+  if (mode === 'leaders') {
+    return colorByLeaders(cityData.leadersCount);
+  }
+
+  if (mode === 'expectedVotes') {
+    return colorByExpectedVotes(cityData.expectedVotes);
+  }
+
+  return '#ccc';
+}
+function colorByLeaders(count) {
+  if (count >= 20) return '#00441b';
+  if (count >= 10) return '#1b7837';
+  if (count >= 5)  return '#5aae61';
+  if (count >= 1)  return '#a6dba0';
+  return '#e5f5e0';
+}
+
+function colorByExpectedVotes(votes) {
+  if (votes >= 5000) return '#67000d';
+  if (votes >= 2000) return '#a50f15';
+  if (votes >= 1000) return '#cb181d';
+  if (votes >= 300)  return '#fb6a4a';
+  if (votes > 0)     return '#fcae91';
+  return '#fee5d9';
+}
+
+function updateSidebarDeputadosFederais(cityName) {
+  const listEl = document.getElementById('deputado-list-federal');
+  const cityEl = document.getElementById('city-name-federal');
+  const votosEl = document.getElementById('votos-federal');
+
+  listEl.innerHTML = '';
+
+  const normalized = normalizeCityName(cityName);
+
+  // cria um mapa normalizado -> original
+  const cityKey = Object.keys(deputadosFederaisByCity).find(
+    key => normalizeCityName(key) === normalized
+  );
+
+  if (!cityKey) {
+    votosEl.textContent = 'Sem dados para este município';
+    return;
+  }
+
+  const top5 = deputadosFederaisByCity[cityKey];
+
+  cityEl.textContent = cityName;
+  votosEl.textContent = 'Top 5 Deputados Federais – 2022';
+
+  top5.forEach((d, i) => {
+    const li = document.createElement('li');
+
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = `${i + 1}. ${d.name}`;
+
+    const votes = document.createElement('span');
+    votes.className = 'votes';
+    votes.textContent = fmt(d.votes);
+
+    li.appendChild(name);
+    li.appendChild(votes);
+    listEl.appendChild(li);
+  });
+const user = JSON.parse(localStorage.getItem('user'));
+  if (user && user.nivel === 'visualizador') {
+    // Desativa campos de texto e botões
+    if(document.getElementById('lideranca-nome')) document.getElementById('lideranca-nome').disabled = true;
+    if(document.getElementById('new-observacao-text')) document.getElementById('new-observacao-text').disabled = true;
+    if(document.getElementById('add-lideranca')) document.getElementById('add-lideranca').style.display = 'none';
+    if(document.getElementById('add-observacao')) document.getElementById('add-observacao').style.display = 'none';
+    if(document.getElementById('salvar-expectativa-cidade')) document.getElementById('salvar-expectativa-cidade').style.display = 'none';
+  }
+}
+function normalizeCityName(name) {
+  return name
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+const PIN_TYPES = {
+  comite: { label: 'Comitê', color: '#8e44ad' }, // 🔥 NOVO
+  base_forte: { label: 'Base Forte', color: '#0057ff' },
+  lideranca_regional: { label: 'Liderança', color: '#00a650' },
+  expansao: { label: 'Expansão', color: '#ffd500' },
+  agenda: { label: 'Agenda', color: '#6ec6ff' },
+  risco: { label: 'Risco', color: '#e53935' }
+};
+
+
+function corDoPin(tipo) {
+  switch (tipo) {
+    case 'comite': return '#8e44ad'; // 🔥 AQUI
+    case 'base_forte': return '#0057ff';
+    case 'lideranca_regional': return '#00a650';
+    case 'expansao': return '#ffd500';
+    case 'agenda': return '#6ec6ff';
+    case 'risco': return '#e53935';
+    default: return '#555';
+  }
+}
+
+async function carregarPins() {
+   if (!map || !pinsLayer) return; // 🔥 proteção
+  pinsLayer.clearLayers();
+
+  const res = await apiFetch('/pins');
+  const pins = await res.json();
+
+  pins.forEach(p => {
+  let marker;
+
+  if (p.tipo === 'comite') {
+    marker = L.marker([p.lat, p.lng], {
+      icon: L.divIcon({
+        className: '',
+        html: '<div style="font-size:24px;">🏠</div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      })
+    });
+  } else {
+    marker = L.circleMarker([p.lat, p.lng], {
+      radius: 8,
+      color: corDoPin(p.tipo),
+      fillOpacity: 0.9
+    });
+  }
+
+  // 🔥 AQUI É A CORREÇÃO
+  marker.bindPopup(`
+  <div class="pin-popup">
+    <h4>${PIN_TYPES[p.tipo]?.label || 'Pin'}</h4>
+    <small>${p.cidade || ''}</small>
+
+    <textarea
+      class="pin-note-input"
+      data-pin-id="${p.id}"
+      placeholder="Observações do pin..."
+    >${p.descricao || ''}</textarea>
+
+    <div class="pin-popup-actions">
+      <button
+        class="pin-btn save"
+        data-save-pin="${p.id}">
+        Salvar
+      </button>
+
+      <button
+        class="pin-btn delete"
+        data-delete-pin="${p.id}">
+        Remover
+      </button>
+    </div>
+  </div>
+`);
+
+
+
+  pinsLayer.addLayer(marker);
+});
+
+
+  if (pinsVisiveis) {
+    pinsLayer.addTo(map);
+  }
+}
+document.addEventListener('click', async (e) => {
+
+  // =====================
+  // SALVAR OBSERVAÇÃO
+  // =====================
+  const saveBtn = e.target.closest('[data-save-pin]');
+  if (saveBtn) {
+
+    const pinId = saveBtn.dataset.savePin;
+
+    const textarea = document.querySelector(
+      `.pin-note-input[data-pin-id="${pinId}"]`
+    );
+
+    const descricao = textarea.value;
+
+    try {
+      await apiFetch(`/pins/${pinId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ descricao })
+      });
+
+      await carregarPins();
+      alert('Observação salva');
+
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar');
+    }
+
+    return;
+  }
+
+  // =====================
+  // REMOVER PIN
+  // =====================
+  const deleteBtn = e.target.closest('[data-delete-pin]');
+  if (deleteBtn) {
+
+    const pinId = deleteBtn.dataset.deletePin;
+
+    if (!confirm('Remover este pin?')) return;
+
+    try {
+      await apiFetch(`/pins/${pinId}`, {
+        method: 'DELETE'
+      });
+
+      await carregarPins();
+
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao remover');
+    }
+
+    return;
+  }
+
+});
+
+
+// =================================================================
+// COMUNICAÇÃO COM O BACKEND (Node.js/Express)
+// =================================================================
+
+let dataCache = {}; // Cache dos dados carregados para acesso rápido
+
+// Função para buscar todos os dados (Lideranças e Observações) do servidor
+async function carregarTudo() {
+  dataCache = {};
+
+  // =====================
+  // LIDERANÇAS
+  // =====================
+  try {
+    const resL = await apiFetch('/liderancas');
+
+    const liderancasPorCidade = await resL.json();
+
+    if (Array.isArray(liderancasPorCidade)) {
+      liderancasPorCidade.forEach(c => {
+        if (!dataCache[c.cidade]) {
+          dataCache[c.cidade] = {
+            liderancas: [],
+            observacoes: [],
+            expectativaCidade: 0,
+            temComite: false
+          };
+        }
+        dataCache[c.cidade].liderancas = c.liderancas || [];
+      });
+    }
+  } catch (e) {
+    console.error('Erro ao carregar lideranças:', e);
+  }
+
+  // =====================
+// OBSERVAÇÕES (FIX FINAL)
+// =====================
+try {
+  const resO = await apiFetch('/observacoes');
+  const lista = await resO.json();
+
+  if (Array.isArray(lista)) {
+    lista.forEach(item => {
+      const cidade = item.cidade;
+
+      if (!dataCache[cidade]) {
+        dataCache[cidade] = {
+          liderancas: [],
+          observacoes: [],
+          expectativaCidade: 0,
+          temComite: false
+        };
+      }
+
+      dataCache[cidade].observacoes = Array.isArray(item.observacoes)
+        ? item.observacoes
+        : [];
+    });
+  }
+} catch (e) {
+  console.error('Erro ao carregar observações:', e);
+}
+
+
+  console.log('Cache carregado (blindado):', dataCache);
+  // =====================
+// EXPECTATIVA DA CIDADE
+// =====================
+try {
+  const res = await apiFetch('/expectativa-cidade-todas');
+
+
+  const expectativas = await res.json();
+
+  if (Array.isArray(expectativas)) {
+    expectativas.forEach(e => {
+      if (!dataCache[e.cidade]) {
+        dataCache[e.cidade] = {
+          liderancas: [],
+          observacoes: [],
+          expectativaCidade: 0,
+          temComite: false
+        };
+      }
+
+      dataCache[e.cidade].expectativaCidade = Number(e.expectativa || 0);
+    });
+  }
+} catch (e) {
+  console.error('Erro ao carregar expectativas:', e);
+}
+
+}
+
+
+
+
+
+// --- Funções de acesso por tipo (apenas manipulam o cache e chamam salvarTudo) ---
+
+function ensureCityData(city) {
+    if (!dataCache[city]) {
+        dataCache[city] = {
+  liderancas: [],
+  observacoes: [],
+  temComite: false
+};
+    }
+}
+
+// LIDERANÇAS
+function carregarLiderancas(city) {
+    if (!city) return [];
+    ensureCityData(city);
+    return dataCache[city].liderancas;
+}
+
+async function salvarLiderancas(city, data) {
+    if (!city) return;
+    ensureCityData(city);
+    dataCache[city].liderancas = data; 
+    
+}
+
+// OBSERVAÇÕES
+async function salvarObservacoes(city, data) {
+    if (!city) return false;
+
+    ensureCityData(city);
+    dataCache[city].observacoes = data;
+
+    
+}
+function carregarObservacoes(city) {
+    if (!city) return [];
+    ensureCityData(city);
+    return dataCache[city].observacoes;
+}
+
+
+// =================================================================
+// FIM COMUNICAÇÃO COM O BACKEND
+// =================================================================
+
+
+function createBairroTable(cityName) {
+    // 1. VERIFICAÇÃO INICIAL: O objeto de dados foi carregado?
+    if (typeof votosBairro === 'undefined') {
+        return `<p style="text-align:center;">Erro: A variável 'votosBairro' não foi carregada. Verifique se o arquivo votosBairro.js está no diretório correto e livre de erros de sintaxe (como codificação errada).</p>`;
+    }
+
+    // 2. NORMALIZAÇÃO DA CHAVE: Converte o nome da cidade para MAIÚSCULAS
+    const normalizedCityName = cityName.toUpperCase();
+
+    // 3. BUSCA NO OBJETO usando a chave padronizada
+    const data = votosBairro[normalizedCityName];
+
+    if (!data || data.length === 0) {
+        return `<p style="text-align:center;">Não há dados de voto por bairro para <b>${cityName}</b>.<br><small style="color:#0047ab;">Verifique se a chave ${normalizedCityName} existe e está em maiúsculas no seu votosBairro.js.</small></p>`;
+    }
+
+    let totalVotos = 0;
+    data.forEach(item => { totalVotos += item.votos; });
+    
+    // Ordena por votos em ordem decrescente
+    data.sort((a, b) => b.votos - a.votos);
+
+    let tableHtml = `<div style="max-height: 300px; overflow-y: auto;">
+        <h4 style="margin: 0 0 10px 0; color: #003366; text-align: center;">Votos Válidos por Bairro (${cityName})</h4>
+        <table style="width:100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+                <tr style="background-color: #f2f6fb;">
+                    <th style="padding: 6px; border: 1px solid #ddd; text-align: left;">Bairro</th>
+                    <th style="padding: 6px; border: 1px solid #ddd; text-align: right;">Votos</th>
+                    <th style="padding: 6px; border: 1px solid #ddd; text-align: right;">%</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+    data.forEach(item => {
+        const percent = ((item.votos / totalVotos) * 100).toFixed(1);
+        tableHtml += `
+            <tr>
+                <td style="padding: 6px; border: 1px solid #eee; white-space: nowrap;">${item.bairro}</td>
+                <td style="padding: 6px; border: 1px solid #eee; text-align: right;">${fmt(item.votos)}</td>
+                <td style="padding: 6px; border: 1px solid #eee; text-align: right; font-weight: bold;">${percent}%</td>
+            </tr>`;
+    });
+
+    tableHtml += `
+            </tbody>
+            <tfoot>
+                <tr style="background-color: #e8f9ff; font-weight: bold;">
+                    <td style="padding: 6px; border: 1px solid #ddd;">TOTAL</td>
+                    <td style="padding: 6px; border: 1px solid #ddd; text-align: right;">${fmt(totalVotos)}</td>
+                    <td style="padding: 6px; border: 1px solid #ddd; text-align: right;">100.0%</td>
+                </tr>
+            </tfoot>
+        </table>
+        </div>`;
+    return tableHtml;
+}
+
+function _updateSidebarDeputies(cityName, votos) {
+  const top5 = deputadosByCity[cityName];
+  cityNameEl.textContent = cityName;
+  votosEl.textContent = 'Votos válidos: ' + fmt(votos);
+
+  deputadoListEl.innerHTML = '';
+  if (!top5 || top5.length === 0) {
+    const li = document.createElement('li');
+    li.style.background = '#fff7f0';
+    li.textContent = 'Sem dados de deputados para esta cidade.';
+    deputadoListEl.appendChild(li);
+    return;
+  }
+
+  top5.forEach((d, idx) => {
+    const li = document.createElement('li');
+    if (idx === 0) li.style.background = '#eaf6ff';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'name';
+    nameSpan.textContent = (idx+1) + '. ' + d.name;
+
+    const votesSpan = document.createElement('span');
+    votesSpan.className = 'votes';
+    votesSpan.textContent = fmt(d.votes);
+
+    li.appendChild(nameSpan);
+    li.appendChild(votesSpan);
+    deputadoListEl.appendChild(li);
+  });
+}
+function restoreSidebarDefault() {
+  cidadeSelecionada = null;
+  cityNameEl.textContent = 'Passe o mouse no mapa';
+  votosEl.textContent = 'Votos válidos: —';
+  deputadoListEl.innerHTML = '';
+  const hintLi = document.createElement('li');
+  hintLi.textContent = 'Passe o mouse sobre um município para ver os 5 deputados mais votados (2022).';
+  hintLi.style.background = '#fff';
+  hintLi.style.color = '#666';
+  hintLi.style.fontSize = '13px';
+  deputadoListEl.appendChild(hintLi);
+  
+  if (typeof renderLiderancas === 'function') renderLiderancas(null);
+  if (typeof renderObservacoes === 'function') renderObservacoes(null);
+
+  // 🔒 Só reseta tudo se NÃO houver região ativa
+if (layerRJ && regiaoAtiva === 'all') {
+  layerRJ.eachLayer(l => layerRJ.resetStyle(l));
+}
+
+  if (document.getElementById('celia-jordao-card')) {
+    document.getElementById('celia-jordao-card').style.display = 'none';
+  }
+}
+
+function updateSidebar(cityName, votos) {
+  updateSidebarDeputadosFederais(cityName);
+  if (deputadosVisible) {
+      _updateSidebarDeputies(cityName, votos);
+      cityInfoEl.style.display = 'block';
+  } else {
+      cityNameEl.textContent = cityName;
+      votosEl.textContent = 'Votos válidos: ' + fmt(votos);
+      cityInfoEl.style.display = 'none';
+  }
+const normalized = normalizeCityName(cityName);
+  const vCelia = votosCeliaJordao[normalized] || 0;
+  const cardCelia = document.getElementById('celia-jordao-card');
+  const displayCelia = document.getElementById('celia-votos-display');
+
+  if (cardCelia && displayCelia) {
+    cardCelia.style.display = 'block';
+    displayCelia.textContent = fmt(vCelia) + ' votos';
+  }
+  renderLiderancas(cityName);
+  renderObservacoes(cityName);
+  const user = JSON.parse(localStorage.getItem('user'));
+if (user && user.nivel === 'visualizador') {
+    // Esconde botões de ação
+    document.getElementById('add-lideranca').style.display = 'none';
+    document.getElementById('add-observacao').style.display = 'none';
+    document.getElementById('salvar-expectativa-cidade').style.display = 'none';
+    document.getElementById('toggle-comite').style.display = 'none';
+    document.getElementById('addPinBtn').style.display = 'none';
+    
+    // Esconde os campos de entrada para não confundir o usuário
+    document.getElementById('lideranca-nome').style.display = 'none';
+    document.getElementById('lideranca-contato').style.display = 'none';
+    document.getElementById('lideranca-foto-file').style.display = 'none';
+    document.getElementById('new-observacao-text').style.display = 'none';
+}
+}
+
+
+
+async function renderLiderancas(city) {
+  const list = document.getElementById('liderancas-list');
+  const countEl = document.getElementById('liderancas-count');
+  
+  // 1. Pega o usuário para saber se aplica a trava
+  const user = JSON.parse(localStorage.getItem('user'));
+  const isVisualizador = user && user.nivel === 'visualizador';
+  
+  if (!city) return;
+
+  const cidadeData = dataCache[city] || {};
+  document.getElementById('expectativa-cidade').value = cidadeData.expectativaCidade || 0;
+
+  const total = getTotalExpectativa(city);
+
+  // 2. Renderiza o cabeçalho de totais (Mantive exatamente como o seu original)
+  list.innerHTML = `
+    <div style="padding:10px;background:#eef3ff;border-radius:8px;">
+      <b style="font-size:15px;">TOTAL GERAL: ${total}</b>
+      <hr>
+      <div><b>Lideranças:</b> ${total - (cidadeData.expectativaCidade || 0)}</div>
+      <div><b>Cidade:</b> ${cidadeData.expectativaCidade || 0}</div>
+    </div>
+  `;
+
+  // Travas nos inputs da sidebar (Desativa se for visualizador)
+  document.getElementById('lideranca-nome').disabled = !city || isVisualizador;
+  document.getElementById('lideranca-contato').disabled = !city || isVisualizador;
+  document.getElementById('lideranca-foto-file').disabled = !city || isVisualizador; 
+  document.getElementById('add-lideranca').disabled = !city || isVisualizador;
+  
+  // Esconde os botões de salvar se for visualizador
+  if (isVisualizador) {
+      document.getElementById('add-lideranca').style.display = 'none';
+      document.getElementById('salvar-expectativa-cidade').style.display = 'none';
+  }
+
+  const liderancas = carregarLiderancas(city);
+
+  if (countEl) {
+      const count = liderancas.length;
+      countEl.textContent = `(${count} líder${count !== 1 ? 'es' : ''})`;
+  }
+
+  if (liderancas.length === 0) {
+      list.innerHTML += '<p style="font-size:13px;color:#666;">Nenhuma liderança cadastrada.</p>';
+      return;
+  }
+
+  liderancas.forEach((l, i) => {
+    const div = document.createElement('div');
+    div.addEventListener('dblclick', () => {
+  abrirModal(l);
+});
+
+    div.style = "display:flex; justify-content:space-between; align-items:center; background:#f7fbff; padding:6px 8px; border-radius:6px; margin-bottom:4px;";
+
+    // Lógica da Foto (Exatamente como a sua original)
+    let fotoSrc = l.foto ? l.foto : null;
+    const photoHtml = `
+  <div class="lideranca-foto">
+    ${
+      fotoSrc
+        ? `<img 
+             src="${fotoSrc}" 
+             alt="Foto da liderança"
+             style="
+               width:40px;
+               height:40px;
+               max-width:40px;
+               max-height:40px;
+               min-width:40px;
+               min-height:40px;
+               object-fit:cover;
+               border-radius:50%;
+               display:block;
+             "
+           >`
+        : `<span>👤</span>`
+    }
+  </div>
+`;
+
+
+    // 3. TRAVA DE BOTÕES: Se for visualizador, o HTML dos botões fica VAZIO
+    const botoesAcao = isVisualizador ? '' : `
+      <div style="display:flex; gap:6px;">
+        <button class="edit-btn" style="background:none;border:none;font-size:16px;cursor:pointer;">✏️</button>
+        <button class="delete-btn" style="background:none;border:none;color:#c00;font-size:16px;cursor:pointer;">🗑️</button>
+      </div>
+    `;
+
+    div.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px; flex-grow:1; min-width:0;">
+
+        ${photoHtml}
+        <div>
+          <strong>${l.nome}</strong><br>
+          <small>${l.contato || ''}</small><br>
+          <small style="color:#0047ab;">
+            <b>Expectativa:</b> ${l.expectativa_votos || 0} votos
+          </small>
+        </div>
+      </div>
+      ${botoesAcao}
+    `;
+
+    // 4. Só adiciona os eventos de click se os botões existirem (Se NÃO for visualizador)
+    if (!isVisualizador) {
+        const editBtn = div.querySelector('.edit-btn');
+        const deleteBtn = div.querySelector('.delete-btn');
+
+        editBtn.addEventListener('click', async () => {
+  const novoNome = prompt('Nome da liderança:', l.nome);
+  if (novoNome === null) return;
+
+  const novoContato = prompt('Contato:', l.contato || '');
+  const novosVotos = prompt('Expectativa de votos:', l.expectativa_votos ?? 0);
+
+  try {
+    await apiFetch(`/liderancas/${l.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        nome: novoNome,
+        contato: novoContato,
+        expectativa_votos: Number(novosVotos)
+      })
+    });
+
+    await carregarTudo();
+    repaintMap();
+    atualizarTotalGeralOverlay();
+    renderLiderancas(city);
+
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao salvar liderança no servidor');
+  }
+});
+
+
+        deleteBtn.addEventListener('click', async () => {
+            if (!confirm(`Excluir a liderança "${l.nome}"?`)) return;
+            await apiFetch(`/liderancas/${l.id}`, {
+  method: 'DELETE'
+});
+
+            await carregarTudo();
+            repaintMap();
+            atualizarTotalGeralOverlay();
+            renderLiderancas(city);
+        });
+    }
+
+    list.appendChild(div);
+  });
+}
+document.getElementById('add-lideranca').onclick = async function () {
+
+
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user && user.nivel === 'visualizador') {
+      alert('Acesso Negado.');
+      return;
+    }
+
+    if (!cidadeSelecionada) {
+      alert('Selecione uma cidade');
+      return;
+    }
+
+    const nome = document.getElementById('lideranca-nome').value.trim();
+    const contato = document.getElementById('lideranca-contato').value.trim();
+    const fotoFile = document.getElementById('lideranca-foto-file').files[0];
+
+    if (!nome) {
+      alert('Informe o nome da liderança');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('nome', nome);
+    formData.append('contato', contato);
+    formData.append('cidade', cidadeSelecionada);
+    formData.append('expectativa_votos', 0);
+
+    if (fotoFile) {
+      formData.append('foto', fotoFile);
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await apiFetch('/liderancas', {
+  method: 'POST',
+  headers: {
+    Authorization: 'Bearer ' + localStorage.getItem('token')
+  },
+  body: formData
+});
+
+      if (!response.ok) {
+        const erro = await response.text();
+        console.error(erro);
+        alert('Erro ao adicionar liderança');
+        return;
+      }
+
+      document.getElementById('lideranca-nome').value = '';
+      document.getElementById('lideranca-contato').value = '';
+      document.getElementById('lideranca-foto-file').value = '';
+
+      await carregarTudo();
+      repaintMap();
+      atualizarTotalGeralOverlay();
+      renderLiderancas(cidadeSelecionada);
+
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao conectar com o servidor');
+    }
+};
+
+
+function renderObservacoes(city) {
+    const listEl = document.getElementById('observacoes-list');
+    const addBtn = document.getElementById('add-observacao');
+    const textarea = document.getElementById('new-observacao-text');
+    
+    // Adicionado para a trava
+    const user = JSON.parse(localStorage.getItem('user'));
+    const isVisualizador = user && user.nivel === 'visualizador';
+
+    listEl.innerHTML = '';
+    
+    if (!city) {
+        listEl.innerHTML = '<p style="font-size:13px;color:#666;">Selecione um município para ver as observações.</p>';
+        if (addBtn) addBtn.disabled = true;
+        if (textarea) {
+            textarea.disabled = true;
+            textarea.placeholder = "Selecione um município primeiro.";
+        }
+        return;
+    }
+    
+    // Trava de input
+    if (isVisualizador) {
+        if (addBtn) addBtn.style.display = 'none';
+        if (textarea) textarea.style.display = 'none';
+    } else {
+        if (addBtn) {
+            addBtn.style.display = 'block';
+            addBtn.disabled = false;
+        }
+        if (textarea) {
+            textarea.style.display = 'block';
+            textarea.disabled = false;
+            textarea.placeholder = "Adicionar nova observação...";
+        }
+    }
+
+    const observacoes = dataCache[city]?.observacoes || [];
+
+    if (observacoes.length === 0) {
+        listEl.innerHTML = '<p style="font-size:13px;color:#666;">Nenhuma observação cadastrada para ' + city + '.</p>';
+        return;
+    }
+
+    observacoes.forEach((obs, i) => {
+        const div = document.createElement('div');
+        div.style.marginBottom = '8px';
+        div.style.padding = '8px';
+        div.style.borderLeft = '4px solid #0047ab';
+        div.style.background = '#f2f6fb';
+        div.style.borderRadius = '4px';
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.alignItems = 'flex-start';
+
+        const textSpan = document.createElement('span');
+        textSpan.style.whiteSpace = 'pre-wrap';
+        textSpan.style.flexGrow = 1;
+        textSpan.style.marginRight = '10px';
+        textSpan.textContent = obs.text;
+
+        div.appendChild(textSpan);
+
+        // Trava do botão de excluir
+        if (!isVisualizador) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '🗑️';
+            deleteBtn.style.background = '#c00';
+            deleteBtn.style.color = 'white';
+            deleteBtn.style.border = 'none';
+            deleteBtn.style.borderRadius = '4px';
+            deleteBtn.style.padding = '2px 6px';
+            deleteBtn.style.cursor = 'pointer';
+
+            deleteBtn.onclick = async () => {
+                if (!confirm("Deseja excluir esta observação?")) return;
+               const res = await apiFetch(`/observacoes/${obs.id}`, {
+    method: 'DELETE'
+});
+
+
+
+
+                if (!res.ok) {
+                    alert('Erro ao excluir observação');
+                    return;
+                }
+
+                await carregarTudo();
+                renderObservacoes(city);
+            };
+            div.appendChild(deleteBtn);
+        }
+
+        listEl.appendChild(div);
+    });
+}
+
+function exportData() {
+    // A função de exportação agora lê os dados do cache (dataCache), que é a fonte única de verdade
+    if (typeof dataCache === 'undefined' || Object.keys(dataCache).length === 0) {
+        alert("Não há dados de lideranças e observações para exportar. Por favor, adicione alguns dados primeiro.");
+        return;
+    }
+    
+    const header = [
+        "Municipio", 
+        "Liderancas (Nome/Contato/Foto_Status)",
+        "Observacoes"
+    ].join(','); 
+    
+    let csvContent = header + "\n";
+    
+    // Combina municípios do cache de dados e dos votos válidos para garantir a cobertura
+    const allKnownCities = new Set([...Object.keys(votosValidos), ...Object.keys(dataCache)]);
+
+    Array.from(allKnownCities).sort().forEach(city => {
+        // Garante que o objeto da cidade exista para evitar erros de leitura
+        ensureCityData(city); 
+        
+        const leaders = dataCache[city].liderancas
+            .map(l => {
+                // START: AJUSTE 2 APLICADO AQUI
+                const fotoStatus = l.foto
+                  ? '[Foto via Upload - URL]' 
+                  
+                  : 'N/A';
+                // END: AJUSTE 2 APLICADO AQUI
+                
+                // Remove vírgulas internas para evitar quebra de coluna
+             
+                return `${cleanedName} (${cleanedContact}) (Foto: ${fotoStatus})`;
+            }) 
+            .join('; ');
+        
+        // Substitui quebras de linha e remove vírgulas para formato CSV
+        const obs = dataCache[city].observacoes
+            .map(o => o.text.replace(/[\n\r]/g, ' ').replace(/,/g, ''))
+            .join(' | '); 
+
+        const rowData = [
+            `"${city}"`, 
+            `"${leaders}"`, 
+            `"${obs}"`
+        ];
+        
+        csvContent += rowData.join(',') + "\n";
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'liderancas_e_observacoes_rj.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    alert('Os dados de lideranças e observações foram exportados para um arquivo CSV. Verifique sua pasta de downloads.');
+}
+function initLegend() {
+  const div = document.getElementById('legend-control');
+  const grades = [0, 10000, 20000, 50000, 100000, 200000, 500000];
+  let html = '<strong>Votos válidos</strong><br>';
+  for (let i = 0; i < grades.length; i++) {
+    html += '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+            grades[i].toLocaleString('pt-BR') +
+            (grades[i + 1] ? '&ndash;' + grades[i + 1].toLocaleString('pt-BR') + '<br>' : '+');
+  }
+  div.innerHTML = html;
+}
+function selecionarCidade(nome, layer) {
+
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user && user.nivel === 'visualizador') {
+    console.log("Acesso apenas leitura para: " + nome);
+  }
+
+  cidadeSelecionada = nome;
+  layerSelecionada = layer;
+
+  const munNames = regions[regiaoAtiva];
+
+  layerRJ.eachLayer(l => {
+
+    const n =
+      l.feature.properties.NM_MUN ||
+      l.feature.properties.name;
+
+    const votos = votosValidos[n] || 0;
+
+    // 🔒 Se existe região ativa e cidade NÃO pertence
+    if (regiaoAtiva !== 'all' && munNames && !munNames.includes(n)) {
+
+      l.setStyle({
+        fillOpacity: 0.12,
+        opacity: 0.12
+      });
+
+      return; // importante
+    }
+
+    // Cidade clicada
+    if (l === layer) {
+
+      l.setStyle({
+        weight: 3.5,
+        color: "#020617",
+        fillOpacity: 1
+      });
+
+    } else {
+
+      l.setStyle({
+        weight: 0.8,
+        color: "#1e3a8a",
+        fillColor: getCityColor({
+          validVotes: votos,
+          leadersCount: (dataCache[n]?.liderancas || []).length,
+          expectedVotes: getTotalExpectativa(n)
+        }),
+        fillOpacity: 0.8
+      });
+
+    }
+
+  });
+}
+
+function updateLegendByMode() {
+  const div = document.getElementById('legend-control');
+  const mode = mapModes[currentMapModeIndex];
+
+  if (mode === 'validVotes') {
+    initLegend();
+    return;
+  }
+
+  if (mode === 'leaders') {
+    div.innerHTML = `
+      <strong>Lideranças</strong><br>
+      <i style="background:#00441b"></i> 20+<br>
+      <i style="background:#1b7837"></i> 10–19<br>
+      <i style="background:#5aae61"></i> 5–9<br>
+      <i style="background:#a6dba0"></i> 1–4<br>
+      <i style="background:#e5f5e0"></i> 0
+    `;
+  }
+
+  if (mode === 'expectedVotes') {
+    div.innerHTML = `
+      <strong>Expectativa de votos</strong><br>
+      <i style="background:#67000d"></i> 5000+<br>
+      <i style="background:#a50f15"></i> 2000–4999<br>
+      <i style="background:#cb181d"></i> 1000–1999<br>
+      <i style="background:#fb6a4a"></i> 300–999<br>
+      <i style="background:#fcae91"></i> 1–299<br>
+      <i style="background:#fee5d9"></i> 0
+    `;
+  }
+}
+function toggleDeputiesDisplay() {
+    deputadosVisible = !deputadosVisible;
+    if (deputadosVisible) {
+        cityInfoEl.style.display = 'block';
+        toggleBtn.textContent = 'Desligar';
+    } else {
+        cityInfoEl.style.display = 'none';
+        toggleBtn.textContent = 'Ligar';
+    }
+    if (cidadeSelecionada) {
+        updateSidebar(cidadeSelecionada, votosValidos[cidadeSelecionada] || 0);
+    } else {
+        restoreSidebarDefault();
+        
+    }
+}
+function toggleCollapse(btn) {
+    const targetId = btn.getAttribute('data-target');
+    const targetContent = document.getElementById(targetId);
+    const state = btn.getAttribute('data-state');
+
+    if (!targetContent) return;
+
+    if (state === 'expanded') {
+        targetContent.classList.add('content-hidden');
+        btn.textContent = 'Expandir';
+        btn.setAttribute('data-state', 'collapsed');
+        btn.style.background = '#189918';
+    } else {
+        targetContent.classList.remove('content-hidden');
+        btn.textContent = 'Minimizar';
+        btn.setAttribute('data-state', 'expanded');
+        btn.style.background = '#0047ab';
+    }
+}
+document.getElementById('add-lideranca').onclick = async function () {
+
+
+  const nome = document.getElementById('lideranca-nome').value.trim();
+  const contato = document.getElementById('lideranca-contato').value.trim();
+  const fileInput = document.getElementById('lideranca-foto-file');
+  const city = cidadeSelecionada;
+
+  if (!nome || !contato || !city) {
+    alert('Selecione uma cidade e preencha o Nome e o Contato.');
+    return;
+  }
+
+  try {
+
+    const formData = new FormData();
+    formData.append('cidade', city);
+    formData.append('nome', nome);
+    formData.append('contato', contato);
+    formData.append(
+      'expectativa_votos',
+      Number(document.getElementById('expectativa_votos')?.value || 0)
+    );
+
+    if (fileInput.files.length > 0) {
+      formData.append('foto', fileInput.files[0]);
+    }
+
+    const response = await apiFetch('/liderancas', {
+
+      method: 'POST',
+      headers: {
+  Authorization: 'Bearer ' + localStorage.getItem('token')
+},
+      body: formData
+    });
+
+    if (!response.ok) {
+      const erro = await response.text();
+      console.error('Erro backend:', erro);
+      alert('Erro ao adicionar liderança');
+      return;
+    }
+
+    // 🔄 Atualiza dados
+    await carregarTudo();
+    repaintMap();
+    atualizarTotalGeralOverlay();
+    renderLiderancas(city);
+
+    // 🧹 Limpa formulário
+    document.getElementById('lideranca-nome').value = '';
+    document.getElementById('lideranca-contato').value = '';
+    const votosInput = document.getElementById('expectativa_votos');
+    if (votosInput) votosInput.value = '';
+    fileInput.value = '';
+
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao conectar com o servidor.');
+  }
+
+};
+
+
+document.getElementById('add-observacao').addEventListener('click', async () => {
+
+  const text = document.getElementById('new-observacao-text').value.trim();
+  const city = cidadeSelecionada;
+
+  if (!text || !city) {
+    alert('Selecione uma cidade e preencha a observação.');
+    return;
+  }
+
+  try {
+
+    const response = await apiFetch('/observacoes', {
+      method: 'POST',
+      body: JSON.stringify({
+        cidade: city,
+        text: text
+      })
+    });
+
+    if (!response.ok) {
+      const erro = await response.text();
+      console.error('Erro backend:', erro);
+      alert('Erro ao salvar observação no servidor.');
+      return;
+    }
+
+    document.getElementById('new-observacao-text').value = '';
+
+    await carregarTudo();
+    renderObservacoes(city);
+
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao conectar com o servidor.');
+  }
+
+});
+
+document.getElementById('customRegionSelect')?.addEventListener('change', e => {
+  const id = e.target.value;
+  const panel = document.getElementById('custom-region-edit');
+destacarRegiaoPersonalizada(r.cidades);
+  if (!id) {
+    panel.style.display = 'none';
+    regiaoPersonalizadaAtiva = null;
+    return;
+  }
+
+  regiaoPersonalizadaAtiva = id;
+  const r = regioesPersonalizadas[id];
+
+  panel.style.display = 'block';
+  document.getElementById('customRegionName').value = r.nome;
+  document.getElementById('customLeaderName').value = r.lider.nome;
+  document.getElementById('customLeaderContact').value = r.lider.contato;
+  document.getElementById('customLeaderNotes').value = r.lider.observacoes;
+  document.getElementById('customLeaderVotes').value = r.lider.expectativa_votos;
+
+  renderCidadesRegiao(r.cidades);
+});
+function renderCidadesRegiao(cidades) {
+  const box = document.getElementById('customRegionCities');
+  box.innerHTML = '';
+
+  if (!cidades.length) {
+    box.innerHTML = '<small>Nenhuma cidade</small>';
+    return;
+  }
+
+  cidades.forEach(c => {
+    const div = document.createElement('div');
+    div.textContent = c;
+    box.appendChild(div);
+  });
+}
+document.getElementById('salvarCustomRegionBtn')?.addEventListener('click', () => {
+  if (!regiaoPersonalizadaAtiva) return;
+
+  const r = regioesPersonalizadas[regiaoPersonalizadaAtiva];
+  r.nome = document.getElementById('customRegionName').value;
+  r.lider = {
+    nome: document.getElementById('customLeaderName').value,
+    contato: document.getElementById('customLeaderContact').value,
+    observacoes: document.getElementById('customLeaderNotes').value,
+    expectativa_votos: Number(document.getElementById('customLeaderVotes').value || 0)
+  };
+
+  dataCache.regioesPersonalizadas = regioesPersonalizadas;
+  salvarTudo();
+  atualizarSelectRegioesPersonalizadas();
+});
+
+document.getElementById('togglePins').onclick = () => {
+  pinsVisiveis = !pinsVisiveis;
+
+  if (pinsVisiveis) {
+    pinsLayer.addTo(map);
+    document.getElementById('togglePins').innerText = 'Pins: ON';
+  } else {
+    map.removeLayer(pinsLayer);
+    document.getElementById('togglePins').innerText = 'Pins: OFF';
+  }
+};
+document.getElementById('addPinBtn').onclick = () => {
+  modoAdicionarPin = !modoAdicionarPin;
+
+  document.getElementById('addPinBtn').innerText =
+    modoAdicionarPin ? 'Clique no mapa' : '+ Pin';
+};
+
+document.getElementById('salvar-expectativa-cidade')
+  .addEventListener('click', async () => {
+
+    // --- TRAVA PARA VISUALIZADOR ---
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user && user.nivel === 'visualizador') {
+      alert('Acesso Negado.');
+      return;
+    }
+    // --------------------------------
+
+    if (!cidadeSelecionada) {
+      alert('Selecione uma cidade');
+      return;
+    }
+
+    const valor = Number(
+      document.getElementById('expectativa-cidade').value || 0
+    );
+
+    try {
+
+      const response = await apiFetch('/expectativa-cidade', {
+  method: 'POST',
+  body: JSON.stringify({
+    cidade: cidadeSelecionada,
+    valor
+  })
+});
+
+
+      if (!response.ok) {
+        const erro = await response.text();
+        console.error('Erro backend:', erro);
+        alert('Erro ao salvar expectativa');
+        return;
+      }
+
+      // 🔄 Atualiza dados e interface
+      await carregarTudo();
+      repaintMap();
+      atualizarTotalGeralOverlay();
+      renderLiderancas(cidadeSelecionada);
+
+    } catch (err) {
+      console.error('Erro na requisição:', err);
+      alert('Erro ao conectar com o servidor.');
+    }
+
+});
+
+
+// ADICIONA LISTENER PARA OS BOTÕES DE MINIMIZAR RESTAURADO
+document.querySelectorAll('.collapse-btn').forEach(btn => {
+  
+
+function atualizarSelectRegioes() {
+  regiaoSelect.innerHTML = '<option value="">Selecione uma região</option>';
+  Object.keys(regioesPersonalizadas).forEach(nome => {
+    const opt = document.createElement('option');
+    opt.value = nome;
+    opt.textContent = nome;
+    regiaoSelect.appendChild(opt);
+  });
+}
+
+
+    btn.addEventListener('click', () => toggleCollapse(btn));
+});
+
+function initCitySearch() {
+  if (!citySearchInput) return;
+
+  citySearchInput.addEventListener('input', () => {
+    const term = normalizeCityName(citySearchInput.value);
+    citySearchResults.innerHTML = '';
+
+    if (term.length < 2) return;
+
+    const cidades = Object.keys(layersPorCidade)
+      .filter(c => normalizeCityName(c).includes(term))
+      .slice(0, 10);
+
+    if (cidades.length === 0) {
+      citySearchResults.innerHTML = '<small>Nenhuma cidade encontrada</small>';
+      return;
+    }
+
+    cidades.forEach(cidade => {
+      const div = document.createElement('div');
+      div.textContent = cidade;
+      div.style.cursor = 'pointer';
+      div.style.padding = '6px';
+      div.style.borderBottom = '1px solid #eee';
+
+      div.addEventListener('click', () => {
+        const layer = layersPorCidade[cidade];
+        if (!layer) return;
+
+        map.fitBounds(layer.getBounds(), { maxZoom: 9 });
+        selecionarCidade(cidade, layer);
+        updateSidebar(cidade, votosValidos[cidade] || 0);
+        
+
+        citySearchResults.innerHTML = '';
+        citySearchInput.value = cidade;
+      });
+
+      citySearchResults.appendChild(div);
+    });
+  });
+}
+
+// =================================================================
+// 3. FUNÇÃO PRINCIPAL DE INICIALIZAÇÃO (Depende do DOM estar visível)
+// =================================================================
+function initializeMapAndApp() {
+  if (map) return;
+    
+    /* ===== Inicializa o mapa SOMENTE AGORA (o container está visível) ===== */
+    map = L.map('map', {
+      zoomControl: true,
+      minZoom: 7,
+      maxZoom: 11,
+      attributionControl: false
+    }).setView([-23.0, -44.3], 12);
+    pinsLayer = L.layerGroup().addTo(map);
+
+    map.on('click', function (e) {
+
+  // Se clicou em um município (polígono), não limpa
+  if (e.originalEvent.target.closest('.leaflet-interactive')) return;
+
+  // 🔥 Clicou fora → limpa seleção
+  cidadeSelecionada = null;
+  layerSelecionada = null;
+
+  if (layerRJ) {
+    layerRJ.eachLayer(l => layerRJ.resetStyle(l));
+  }
+
+  restoreSidebarDefault();
+});
+
+
+
+    // CORREÇÃO CRÍTICA: Informa ao Leaflet que o container mudou de tamanho.
+    map.invalidateSize(); 
+
+    initLegend();
+    restoreSidebarDefault();
+
+    /* ===== Carrega GeoJSON e desenha polígono + labels ===== */
+    const labelMarkers = [];
+    fetch("geo/angra_setores.geojson")
+      .then(r => r.json())
+      .then(data => {
+        
+        layerRJ = L.geoJSON(data, {
+          style: feature => {
+            const nome =
+  feature.properties.CD_SETOR ||
+  feature.properties.name ||
+  "Setor";
+            // ATENÇÃO: Se votosValidos for undefined, o data.js não carregou
+            const votos = votosValidos[nome] || 0; 
+            return {
+  color: "#1e3a8a",       // azul mais sofisticado
+  weight: 0.8,            // borda mais fina
+  fillOpacity: 0.85,
+  fillColor: getCityColor({
+    validVotes: votos,
+    leadersCount: (dataCache[nome]?.liderancas || []).length,
+    expectedVotes: getTotalExpectativa(nome)
+  })
+};
+
+          },
+          onEachFeature: (feature, layer) => {
+            const nomeCidade =
+  feature.properties.NM_MUN || feature.properties.name;
+
+layersPorCidade[nomeCidade] = layer;
+            const nome = feature.properties.NM_MUN || feature.properties.name || "Sem nome";
+            const votos = votosValidos[nome] || 0;
+
+            /* Cria marcador fixo com nome */
+            const center = layer.getBounds().getCenter();
+            const label = L.marker(center, {
+              icon: L.divIcon({
+                className: 'city-label',
+                html: nome,
+                iconSize: [120, 24],
+                iconAnchor: [60, 12]
+              }),
+              interactive: false
+            }).addTo(map);
+
+            labelMarkers.push({ nome, marker: label });
+
+            /* Tooltip dinâmica */
+            layer.bindTooltip(`
+  <b>${nome}</b><br>
+  Expectativa total: ${getTotalExpectativa(nome)}
+`);
+
+           /* Eventos hover, click e NOVO dblclick */
+            layer.on({
+              mouseover: function (e) {
+
+  if (cidadeSelecionada) return;
+
+  const nome = e.target.feature.properties.NM_MUN || 
+               e.target.feature.properties.name;
+
+  const munNames = regions[regiaoAtiva];
+
+  // Se região ativa e cidade não pertence → ignora hover
+  if (regiaoAtiva !== 'all' && munNames && !munNames.includes(nome)) {
+    return;
+  }
+
+  e.target.setStyle({
+    weight: 2.5,
+    color: "#0f172a",
+    fillOpacity: 0.95
+  });
+
+  updateSidebar(nome, votosValidos[nome] || 0);
+},
+
+              mouseout: function (e) {
+
+  if (cidadeSelecionada) return;
+
+  const nome = e.target.feature.properties.NM_MUN || 
+               e.target.feature.properties.name;
+
+  const munNames = regions[regiaoAtiva];
+
+  if (regiaoAtiva !== 'all') {
+
+    if (munNames && munNames.includes(nome)) {
+      e.target.setStyle({
+        weight: 0.8,
+        color: "#1e3a8a",
+        fillOpacity: 0.8
+      });
+    } else {
+      e.target.setStyle({
+        fillOpacity: 0.12,
+        opacity: 0.12
+      });
+    }
+
+  } else {
+    layerRJ.resetStyle(e.target);
+  }
+
+  restoreSidebarDefault();
+},
+
+
+
+              click: e => {
+  const nome = e.target.feature.properties.NM_MUN || e.target.feature.properties.name;
+// ===============================
+// MODO ADICIONAR PIN (PRIORIDADE)
+// ===============================
+if (modoAdicionarPin) {
+  modoAdicionarPin = false;
+  document.getElementById('addPinBtn').innerText = '+ Pin';
+
+  novoPinLatLng = e.latlng;
+  abrirModalPin();
+
+  return;
+}
+
+
+ 
+
+  // 👉 comportamento NORMAL (o que já existia)
+  const votos = votosValidos[nome] || 0;
+  cidadeSelecionada = nome;
+  selecionarCidade(nome, layer);
+  updateSidebar(nome, votos);
+  
+},
+
+              // Implementação do dblclick 
+              dblclick: e => {
+                  const nome = e.target.feature.properties.NM_MUN || e.target.feature.properties.name || "Sem nome";
+                  const tableHtml = createBairroTable(nome);
+                  
+                  // Centraliza o popup/tooltip no centro do polígono clicado e abre
+                  e.target.bindPopup(tableHtml, {
+                      maxWidth: 500,
+                      maxHeight: 350, 
+                      closeButton: true,
+                      className: 'bairro-popup'
+                  }).openPopup(e.latlng); // Abre o popup no local do clique duplo
+              }
+            });
+          }
+        }).addTo(map);
+
+        const bounds = layerRJ.getBounds();
+        map.fitBounds(bounds);
+        map.setMaxBounds(bounds.pad(0.2));
+initCitySearch();
+initLiderancaSearch();
+carregarPins();
+
+
+        map.on('zoomend moveend', () => {
+          layerRJ.eachLayer(layer => {
+            const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name;
+            const lblObj = labelMarkers.find(l => l.nome === nome);
+            if (lblObj) {
+              const c = layer.getBounds().getCenter();
+              lblObj.marker.setLatLng(c);
+            }
+          });
+        });
+      })
+      .catch(err => {
+        console.error("Erro ao carregar GeoJSON:", err);
+      });
+
+    // ===== Filtrar por região (Adiciona o listener após o mapa ser inicializado) =====
+    document.getElementById('regionSelect').addEventListener('change', (e) => {
+        const key = e.target.value;
+        regiaoAtiva = key;
+        // 🔹 Controle do líder da região
+if (key !== 'all') {
+  mostrarLiderRegiao(key);
+} else {
+  document.getElementById('lider-regiao-card').style.display = 'none';
+}
+
+        // ATENÇÃO: Se regions for undefined, o data.js não carregou
+        const munNames = regions[key]; 
+        if (!layerRJ) return;
+
+        layerRJ.eachLayer(layer => {
+            const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name;
+            const el = layer.getElement && layer.getElement();
+            if (!munNames || munNames.includes(nome)) {
+                layer.setStyle({ fillOpacity: 0.8, opacity: 1 });
+                if (el) el.style.pointerEvents = 'auto';
+            } else {
+                layer.setStyle({ fillOpacity: 0.12, opacity: 0.12 });
+                if (el) el.style.pointerEvents = 'none';
+            }
+        });
+// ================================
+// FILTRO POR REGIÃO PERSONALIZADA
+// ================================
+regiaoSelect.addEventListener('change', () => {
+  const nome = regiaoSelect.value;
+  if (!nome || !regioesPersonalizadas[nome]) return;
+
+  const cidades = regioesPersonalizadas[nome].cidades;
+
+  layerRJ.eachLayer(layer => {
+    const cityName =
+      layer.feature.properties.NM_MUN ||
+      layer.feature.properties.name;
+
+    if (cidades.includes(cityName)) {
+      layer.setStyle({ fillOpacity: 0.8, opacity: 1 });
+    } else {
+      layer.setStyle({ fillOpacity: 0.1, opacity: 0.1 });
+    }
+  });
+});
+        document.querySelectorAll('.city-label').forEach(el => {
+            const name = el.innerText && el.innerText.trim();
+            if (!munNames || munNames.includes(name)) el.style.opacity = 0.5;
+            else el.style.opacity = 0.15;
+        });
+
+        if (key === 'all') {
+            document.querySelectorAll('.city-label').forEach(el => el.style.opacity = 0.5);
+            layerRJ.eachLayer(layer => {
+                const elsv = layer.getElement && layer.getElement();
+                layer.setStyle({ fillOpacity: 0.8, opacity: 1 });
+                if (elsv) elsv.style.pointerEvents = 'auto';
+            });
+        }
+    });
+}
+
+// 🔐 BOOT GLOBAL DA APLICAÇÃO (USADO PELO auth.js)
+window.iniciarAplicacao = async function () {
+
+  console.log('[BOOT] iniciarAplicacao chamada');
+
+  await carregarTudo();
+  atualizarTotalGeralOverlay();
+  initializeMapAndApp();
+  await carregarPins();
+  initLiderancaSearch();
+
+  const usuario = JSON.parse(localStorage.getItem('user'));
+
+  if (usuario && usuario.nivel === 'lider_regiao') {
+
+    const regionSelect = document.getElementById('regionSelect');
+
+    const regiao =
+      usuario.regiao_vinculada ||
+      usuario.regiao ||
+      usuario.region;
+
+    if (regionSelect && regiao) {
+
+      regionSelect.value = regiao;
+
+      regionSelect.dispatchEvent(new Event('change'));
+
+      setTimeout(() => {
+        regionSelect.disabled = true;
+      }, 100);
+
+    }
+
+  }
+
+};
+
+function limparSelecaoMapa() {
+  Object.values(layersPorCidade).forEach(layer => {
+    layer.setStyle({
+      weight: 1,
+      color: '#3388ff',
+      fillOpacity: 0.2
+    });
+  });
+}
+function destacarRegiaoPersonalizada(cidades) {
+  limparSelecaoMapa();
+
+  cidades.forEach(nome => {
+    const layer = layersPorCidade[nome];
+    if (!layer) return;
+
+    layer.setStyle({
+      weight: 3,
+      color: '#e63946',
+      fillOpacity: 0.6
+    });
+  });
+}
+// =================================================================
+// 4. LÓGICA DE INÍCIO DA PÁGINA (IIFE)
+// =================================================================
+
+
+
+function repaintMap() {
+  if (!layerRJ) return;
+
+  layerRJ.eachLayer(layer => {
+    const nome =
+      layer.feature.properties.NM_MUN ||
+      layer.feature.properties.name;
+
+    const cityData = {
+      validVotes: votosValidos[nome] || 0,
+      leadersCount: (dataCache[nome]?.liderancas || []).length,
+      expectedVotes: getTotalExpectativa(nome)
+    };
+
+    layer.setStyle({
+      fillColor: getCityColor(cityData),
+      fillOpacity: 0.8,
+      color: '#0047ab',
+      weight: 1
+    });
+  });
+
+  updateLegendByMode();
+}
+
+
+document.getElementById('toggleMapMode').addEventListener('click', () => {
+  currentMapModeIndex =
+    (currentMapModeIndex + 1) % mapModes.length;
+
+  const mode = mapModes[currentMapModeIndex];
+  const btn = document.getElementById('toggleMapMode');
+
+  if (mode === 'validVotes') {
+    btn.innerText = '🗳️ Votos válidos';
+  } else if (mode === 'leaders') {
+    btn.innerText = '👥 Lideranças';
+  } else if (mode === 'expectedVotes') {
+    btn.innerText = '📊 Expectativa de votos';
+  }
+
+  repaintMap();
+});
+
+citySearchInput.addEventListener('input', () => {
+  const term = citySearchInput.value
+    .trim()
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  citySearchResults.innerHTML = '';
+
+  if (term.length < 2) return;
+
+  const cidades = Object.keys(layersPorCidade);
+
+  const filtradas = cidades.filter(c =>
+    c
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .includes(term)
+  );
+
+  filtradas.slice(0, 8).forEach(cidade => {
+    const div = document.createElement('div');
+    div.textContent = cidade;
+    div.style.padding = '6px 8px';
+    div.style.cursor = 'pointer';
+    div.style.borderBottom = '1px solid #eee';
+
+    div.addEventListener('click', () => {
+      selecionarCidadeBuscada(cidade);
+      citySearchResults.innerHTML = '';
+      citySearchInput.value = cidade;
+    });
+
+    citySearchResults.appendChild(div);
+  });
+});
+function selecionarCidadeBuscada(nomeCidade) {
+  const layer = layersPorCidade[nomeCidade];
+  if (!layer) return;
+
+  const votos = votosValidos[nomeCidade] || 0;
+
+  cidadeSelecionada = nomeCidade;
+  layerSelecionada = layer;
+
+  // Centraliza no mapa
+  map.fitBounds(layer.getBounds(), { maxZoom: 10 });
+
+  // Usa sua lógica já existente de seleção
+  selecionarCidade(nomeCidade, layer);
+  updateSidebar(nomeCidade, votos);
+  
+}
+
+
+function initLiderancaSearch() {
+
+  const liderancaSearchInput = document.getElementById('lideranca-search');
+  const liderancaSearchResults = document.getElementById('lideranca-search-results');
+
+  if (!liderancaSearchInput || !liderancaSearchResults) return;
+
+  liderancaSearchInput.addEventListener('input', () => {
+
+    const term = normalizeCityName(liderancaSearchInput.value);
+    liderancaSearchResults.innerHTML = '';
+
+    if (term.length < 2) return;
+
+    const resultados = [];
+
+    Object.keys(dataCache).forEach(city => {
+      const liderancas = dataCache[city]?.liderancas || [];
+
+      liderancas.forEach(l => {
+        const nome = normalizeCityName(l.nome || '');
+        const contato = normalizeCityName(l.contato || '');
+
+        if (nome.includes(term) || contato.includes(term)) {
+          resultados.push({
+            cidade: city,
+            lideranca: l
+          });
+        }
+      });
+    });
+
+    if (resultados.length === 0) {
+      liderancaSearchResults.innerHTML =
+        '<div class="search-result-item">Nenhuma liderança encontrada</div>';
+      return;
+    }
+
+    resultados.slice(0, 10).forEach(r => {
+
+      const div = document.createElement('div');
+      div.className = 'search-result-item';
+
+      div.innerHTML = `
+        <strong>${r.lideranca.nome}</strong>
+        <small>${r.cidade} • ${r.lideranca.contato || ''}</small>
+      `;
+
+      div.addEventListener('click', () => {
+
+        const layer = layersPorCidade[r.cidade];
+        if (!layer) return;
+
+        map.fitBounds(layer.getBounds(), { maxZoom: 9 });
+        selecionarCidade(r.cidade, layer);
+        updateSidebar(r.cidade, votosValidos[r.cidade] || 0);
+
+        liderancaSearchResults.innerHTML = '';
+        liderancaSearchInput.value = r.lideranca.nome;
+      });
+
+      liderancaSearchResults.appendChild(div);
+    });
+  });
+}
+
+
+function abrirModal(l) {
+  const div = document.getElementById('modal-conteudo');
+
+  div.innerHTML = `
+    <div class="modal-conteudo-header">
+      ${
+        l.foto
+          ? `
+            <div class="modal-foto">
+              <img src="${l.foto}" alt="Foto da liderança">
+            </div>
+          `
+          : `
+            <div class="modal-foto sem-foto">
+              👤
+            </div>
+          `
+      }
+
+      <div>
+        <h2 class="modal-nome">${l.nome || '—'}</h2>
+        <div class="modal-sub">
+          ${cidadeSelecionada || '—'} • ID ${l.id ?? '-'}
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-grid">
+      <div>
+        <strong>Contato</strong><br>
+        ${l.contato || '—'}
+      </div>
+
+      <div>
+        <strong>Status</strong><br>
+        ${l.status || 'ativa'}
+      </div>
+
+      <div>
+        <strong>Expectativa de votos</strong><br>
+        ${l.expectativa_votos ?? 0}
+      </div>
+
+      <div>
+        <strong>Perfil</strong><br>
+        ${l.perfil || '—'}
+      </div>
+
+      <div>
+        <strong>Responsável</strong><br>
+        ${l.responsavel || '—'}
+      </div>
+    </div>
+
+    <div class="modal-release">
+      <strong>Release / Observações</strong><br><br>
+      ${l.release || '—'}
+    </div>
+  `;
+
+  document.getElementById('modal-lideranca').style.display = 'flex';
+}
+
+
+function fecharModal() {
+  document.querySelector('.modal-overlay').style.display = 'none';
+}
+
+document
+  .getElementById('modal-lideranca')
+  .addEventListener('click', (e) => {
+    if (e.target.id === 'modal-lideranca') {
+      fecharModal();
+    }
+  });
+const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+const sidebar = document.querySelector('.sidebar');
+
+let sidebarOpen = true;
+
+toggleSidebarBtn.addEventListener('click', () => {
+  sidebarOpen = !sidebarOpen;
+
+  if (sidebarOpen) {
+    sidebar.classList.remove('closed');
+    document.body.classList.remove('sidebar-closed');
+  } else {
+    sidebar.classList.add('closed');
+    document.body.classList.add('sidebar-closed');
+  }
+
+  // 🔥 força o Leaflet a recalcular o tamanho
+  if (map) {
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 310);
+  }
+});
+
+
+
+</script>
+<div id="modal-lideranca" class="modal-overlay">
+  <div class="modal-card">
+    <button class="modal-close" onclick="fecharModal()">✕</button>
+    <div id="modal-conteudo"></div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const toggleBtn = document.getElementById('toggleSidebarBtn');
+  const sidebar = document.querySelector('.sidebar');
+
+  if (!toggleBtn || !sidebar) {
+    console.error('Botão ou sidebar não encontrados');
+    return;
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    const fechado = sidebar.classList.toggle('closed');
+    document.body.classList.toggle('sidebar-closed', fechado);
+
+    // força o Leaflet a recalcular o tamanho
+    if (window.map && typeof map.invalidateSize === 'function') {
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 320);
+    }
+  });
+});
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn')
+      .forEach(b => b.classList.remove('active'));
+
+    btn.classList.add('active');
+
+    const mode = btn.dataset.mode;
+    currentMapModeIndex = mapModes.indexOf(mode);
+    repaintMap();
+  });
+});
+const mobileControlsBtn = document.getElementById('mobileControlsBtn');
+const mapControls = document.getElementById('map-controls');
+
+if (mobileControlsBtn && mapControls) {
+  mobileControlsBtn.addEventListener('click', () => {
+    mapControls.classList.toggle('mobile-open');
+  });
+}
+function abrirModalPin() {
+
+  const container = document.getElementById('pin-type-selector');
+  container.innerHTML = '';
+
+  Object.entries(PIN_TYPES).forEach(([key, cfg]) => {
+
+    const btn = document.createElement('button');
+
+    btn.textContent = cfg.label;
+
+    btn.style = `
+      padding:10px 14px;
+      border-radius:999px;
+      border:2px solid ${cfg.color};
+      background:#fff;
+      font-weight:700;
+      cursor:pointer;
+      transition:all .2s ease;
+    `;
+
+    btn.onmouseenter = () => {
+      btn.style.background = cfg.color;
+      btn.style.color = '#fff';
+    };
+
+    btn.onmouseleave = () => {
+      btn.style.background = '#fff';
+      btn.style.color = '#000';
+    };
+
+    btn.onclick = async () => {
+
+      try {
+
+        await apiFetch('/pins', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo: key,
+            lat: novoPinLatLng.lat,
+            lng: novoPinLatLng.lng,
+            cidade: cidadeSelecionada || ''
+          })
+        });
+
+        await carregarPins();
+        fecharModalPin();
+
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar pin');
+      }
+
+    };
+
+    container.appendChild(btn);
+  });
+
+  document.getElementById('modal-pin').style.display = 'flex';
+}
+function fecharModalPin() {
+  document.getElementById('modal-pin').style.display = 'none';
+  novoPinLatLng = null;
+}
+function mostrarLiderRegiao(regiaoKey) {
+
+  const lideres = lideresRegiao[regiaoKey];
+
+  const card = document.getElementById('lider-regiao-card');
+  const nomeEl = document.getElementById('lider-regiao-nome');
+  const contatoEl = document.getElementById('lider-regiao-contato');
+  const votosEl = document.getElementById('lider-regiao-votos');
+  const fotoEl = document.getElementById('lider-regiao-foto');
+
+  if (!lideres || lideres.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+
+  // Limpa conteúdo anterior
+  nomeEl.innerHTML = '';
+  contatoEl.innerHTML = '';
+  votosEl.innerHTML = '';
+
+  lideres.forEach((lider, index) => {
+
+    nomeEl.innerHTML += `
+      <div style="margin-top:${index ? '6px' : '0'};">
+        ${lider.nome}
+      </div>
+    `;
+
+    contatoEl.innerHTML += `
+      <div>
+        ${lider.contato || ''}
+      </div>
+    `;
+  });
+
+  // 🔥 FOTO DO PRIMEIRO LÍDER
+  const primeiraFoto = lideres[0].foto;
+
+  if (primeiraFoto) {
+    fotoEl.innerHTML = `
+      <img src="${primeiraFoto}"
+           style="width:100%;height:100%;object-fit:cover;">
+    `;
+  } else {
+    fotoEl.innerHTML = "👤";
+  }
+
+  card.style.display = 'block';
+}
+</script>
+<div id="modal-pin" class="modal-overlay" style="display:none;">
+  <div class="modal-card">
+
+    <button class="modal-close" onclick="fecharModalPin()">✕</button>
+
+    <h3 style="margin-top:0;">Escolher Tipo do Pin</h3>
+
+    <div id="pin-type-selector"
+         style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;">
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
