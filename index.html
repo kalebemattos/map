@@ -2188,8 +2188,8 @@ try {
       }
 
       dataCache[e.cidade].expectativaCidade = {
-  celia: Number(e.celia || 0),
-  fernando: Number(e.fernando || 0)
+  celia: Number(e.expectativa_celia || 0),
+fernando: Number(e.expectativa_fernando || 0)
 };
     });
   }
@@ -2429,7 +2429,10 @@ cidadeData.expectativaCidade?.fernando || 0;
       <b style="font-size:15px;">TOTAL GERAL: ${total}</b>
       <hr>
       <div><b>Lideranças:</b> ${total - (cidadeData.expectativaCidade || 0)}</div>
-      <div><b>Cidade:</b> ${cidadeData.expectativaCidade || 0}</div>
+      <div><b>Cidade:</b> ${
+  (cidadeData.expectativaCidade?.celia || 0) +
+  (cidadeData.expectativaCidade?.fernando || 0)
+}</div>
     </div>
   `;
 
@@ -3144,9 +3147,10 @@ document.getElementById('expectativa-cidade-fernando').value || 0
       const response = await apiFetch('/expectativa-cidade', {
   method: 'POST',
   body: JSON.stringify({
-    cidade: cidadeSelecionada,
-    valor
-  })
+  cidade: cidadeSelecionada,
+  celia: celia,
+  fernando: fernando
+})
 });
 
 

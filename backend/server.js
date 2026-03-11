@@ -932,7 +932,10 @@ app.get('/api/expectativa-cidade-todas', auth, async (req, res) => {
   let params = [];
 
   query = `
-SELECT cidade, expectativa
+SELECT
+cidade,
+expectativa_celia,
+expectativa_fernando
 FROM expectativa_cidade
 `;
 
