@@ -2394,6 +2394,8 @@ async function renderLiderancas(city) {
   }
 
   let liderancas = carregarLiderancas(city);
+  // ordenar por expectativa de votos (ranking)
+liderancas.sort((a, b) => (b.expectativa_votos || 0) - (a.expectativa_votos || 0));
 
 // FILTRO DE CAMPANHA
 if (filtroCampanha !== "todos") {
