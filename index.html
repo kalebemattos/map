@@ -1778,13 +1778,16 @@ const filtroCampanhaSelect = document.getElementById("filtro-campanha");
 if (filtroCampanhaSelect) {
   filtroCampanhaSelect.addEventListener("change", () => {
 
-    filtroCampanha = filtroCampanhaSelect.value;
+  filtroCampanha = filtroCampanhaSelect.value;
 
-    if (cidadeSelecionada) {
-      renderLiderancas(cidadeSelecionada);
-    }
+  if (cidadeSelecionada) {
+    renderLiderancas(cidadeSelecionada);
+  }
 
-  });
+  repaintMap();               // 🔥 repinta o mapa
+  atualizarTotalGeralOverlay(); // 🔥 atualiza totais
+
+});
 }
 const citySearchResults = document.getElementById('city-search-results');
 
