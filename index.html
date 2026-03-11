@@ -1527,6 +1527,11 @@ body.sidebar-closed #toggleSidebarBtn {
     </div>
 
     
+<select id="filtro-campanha">
+  <option value="todos">Todos</option>
+  <option value="fernando">Fernando Jordão</option>
+  <option value="celia">Célia Jordão</option>
+</select>
 
     <!-- LIDERANÇAS -->
     <div id="liderancas-container" class="city-card">
@@ -3613,6 +3618,14 @@ function initLiderancaSearch() {
       liderancas.forEach(l => {
         const nome = normalizeCityName(l.nome || '');
         const contato = normalizeCityName(l.contato || '');
+
+        if(
+ filtro === "todos" ||
+ lideranca.vinculo_politico === filtro ||
+ lideranca.vinculo_politico === "ambos"
+){
+ mostrarPin(lideranca)
+}
 
         if (nome.includes(term) || contato.includes(term)) {
           resultados.push({

@@ -509,15 +509,16 @@ app.post('/api/liderancas',
 
   try {
     const {
-      cidade,
-      nome,
-      contato,
-      expectativa_votos,
-      perfil,
-      responsavel,
-      status,
-      release
-    } = req.body;
+ nome,
+ contato,
+ cidade,
+ expectativa_votos,
+ perfil,
+ responsavel,
+ status,
+ release,
+ vinculo_politico
+} = req.body;
     if (!validarTexto(cidade, 120)) {
   return res.status(400).json({ error: 'Cidade inválida' });
 }
@@ -659,15 +660,16 @@ app.put('/api/liderancas/:id',
   try {
     const { id } = req.params;
     const {
-      cidade,
-      nome,
-      contato,
-      expectativa_votos,
-      perfil,
-      responsavel,
-      status,
-      release
-    } = req.body;
+ nome,
+ contato,
+ cidade,
+ expectativa_votos,
+ perfil,
+ responsavel,
+ status,
+ release,
+ vinculo_politico
+} = req.body;
     // 🔐 ===== VALIDAÇÃO =====
 
 if (!validarTexto(cidade, 120)) {
