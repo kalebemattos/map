@@ -578,21 +578,22 @@ if (expectativa_votos && !validarNumero(expectativa_votos, 0, 1000000)) {
     await pool.query(
   `
   INSERT INTO liderancas
-  (cidade, nome, contato, foto, expectativa_votos, perfil, responsavel, status, release, regiao)
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+(cidade, nome, contato, foto, expectativa_votos, perfil, responsavel, status, release, regiao, vinculo_politico)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
   `,
   [
-    cidade,
-    nome,
-    contato,
-    foto,
-    votos,
-    perfil || null,
-    responsavel || null,
-    status || 'ativa',
-    release || null,
-    req.user.regiao   // 🔥 AQUI
-  ]
+  cidade,
+  nome,
+  contato,
+  foto,
+  votos,
+  perfil || null,
+  responsavel || null,
+  status || 'ativa',
+  release || null,
+  req.user.regiao,
+  vinculo_politico || 'fernando'
+]
 );
 // 🔐 REGISTRA AUDITORIA AQUI
 await registrarAuditoria(
@@ -748,31 +749,33 @@ if (
     const result = await pool.query(
   `
   UPDATE liderancas
-  SET
-    nome=$1,
-    contato=$2,
-    expectativa_votos=$3,
-    perfil=$4,
-    responsavel=$5,
-    status=$6,
-    release=$7,
-    foto=$8,
-    cidade=$9
-  WHERE id=$10 AND LOWER(regiao)=LOWER($11)
+SET
+nome=$1,
+contato=$2,
+expectativa_votos=$3,
+perfil=$4,
+responsavel=$5,
+status=$6,
+release=$7,
+foto=$8,
+cidade=$9,
+vinculo_politico=$10
+WHERE id=$11 AND LOWER(regiao)=LOWER($12)
   `,
   [
-    nome,
-    contato,
-    votos,
-    perfil || null,
-    responsavel || null,
-    status || 'ativa',
-    release || null,
-    foto,
-    cidade,
-    id,
-    req.user.regiao   // 🔥 ESTE É O PARÂMETRO QUE FALTAVA
-  ]
+  nome,
+  contato,
+  votos,
+  perfil || null,
+  responsavel || null,
+  status || 'ativa',
+  release || null,
+  foto,
+  cidade,
+  vinculo_politico || 'fernando',
+  id,
+  req.user.regiao
+]
 );
 if (result.rowCount === 0) {
   return res.status(404).json({ error: 'Não encontrado ou sem permissão' });
