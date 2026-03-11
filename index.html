@@ -1726,6 +1726,7 @@ let pinsVisiveis = true;
 let modoAdicionarPin = false;
 let novoPinLatLng = null;
 let regiaoAtiva = 'all';
+let filtroCampanha = "todos";
 
 
 // ================================
@@ -1756,6 +1757,19 @@ const cityInfoEl = document.getElementById('city-info');
 const layersPorCidade = {};
 
 const citySearchInput = document.getElementById('city-search');
+const filtroCampanhaSelect = document.getElementById("filtro-campanha");
+
+if (filtroCampanhaSelect) {
+  filtroCampanhaSelect.addEventListener("change", () => {
+
+    filtroCampanha = filtroCampanhaSelect.value;
+
+    if (cidadeSelecionada) {
+      renderLiderancas(cidadeSelecionada);
+    }
+
+  });
+}
 const citySearchResults = document.getElementById('city-search-results');
 
 
@@ -2379,7 +2393,15 @@ async function renderLiderancas(city) {
       document.getElementById('salvar-expectativa-cidade').style.display = 'none';
   }
 
-  const liderancas = carregarLiderancas(city);
+  let liderancas = carregarLiderancas(city);
+
+// FILTRO DE CAMPANHA
+if (filtroCampanha !== "todos") {
+  liderancas = liderancas.filter(l =>
+    l.vinculo_politico === filtroCampanha ||
+    l.vinculo_politico === "ambos"
+  );
+}
 
   if (countEl) {
       const count = liderancas.length;
