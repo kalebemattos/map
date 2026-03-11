@@ -245,12 +245,7 @@ button.danger:hover {
   <small id="login-error"></small>
 </div>
 
-<label>Vínculo político</label>
-<select id="vinculo_politico">
-  <option value="fernando">Fernando Jordão</option>
-  <option value="celia">Célia Jordão</option>
-  <option value="ambos">Ambos</option>
-</select>
+
 
 <div id="panel" class="hidden">
 <div class="card" id="gastos-card" style="display:none;">
@@ -285,6 +280,13 @@ button.danger:hover {
 
     <label>Cidade</label>
     <select id="cidade"></select>
+
+<label>Candidato</label>
+<select id="vinculo_politico">
+  <option value="fernando">Fernando Jordão</option>
+  <option value="celia">Célia Jordão</option>
+  <option value="ambos">Ambos</option>
+</select>
 
     <label>Nome</label>
     <input id="nome">
@@ -703,6 +705,10 @@ async function salvar(){
   fd.append('responsavel', responsavelInput.value);
   fd.append('status', statusInput.value);
   fd.append('release', releaseInput.value);
+  fd.append(
+  'vinculo_politico',
+  document.getElementById('vinculo_politico').value
+);
 
   if(fotoInput.files.length){
     fd.append('foto', fotoInput.files[0]);
