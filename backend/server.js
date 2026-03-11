@@ -307,30 +307,31 @@ const novoAccessToken = jwt.sign(
 
 /* ================= EXPECTATIVA DA CIDADE ================= */
 app.post('/api/expectativa-cidade', auth, async (req, res) => {
-  const { cidade, valor } = req.body;
+  const { cidade, celia, fernando } = req.body;
 
-  if (!cidade) {
-    return res.status(400).json({ error: 'Cidade não informada' });
-  }
-
-  if (valor == null) {
-  return res.status(400).json({ error: 'Valor não informado' });
+if (!cidade) {
+  return res.status(400).json({ error: 'Cidade não informada' });
 }
 
-const valorNumerico = Number(valor);
-
-if (isNaN(valorNumerico)) {
-  return res.status(400).json({ error: 'Valor inválido' });
-}
+const celiaValor = Number(celia || 0);
+const fernandoValor = Number(fernando || 0);
 
 await pool.query(
-  `
-  INSERT INTO expectativa_cidade (cidade, expectativa, regiao)
-  VALUES ($1, $2, $3)
-  ON CONFLICT (cidade, regiao)
-  DO UPDATE SET expectativa = excluded.expectativa
-  `,
-  [cidade, valorNumerico, req.user.regiao]
+`
+INSERT INTO expectativa_cidade
+(cidade, expectativa_celia, expectativa_fernando, regiao)
+VALUES ($1,$2,$3,$4)
+ON CONFLICT (cidade, regiao)
+DO UPDATE SET
+expectativa_celia = excluded.expectativa_celia,
+expectativa_fernando = excluded.expectativa_fernando
+`,
+[
+cidade,
+celiaValor,
+fernandoValor,
+req.user.regiao
+]
 );
 
 res.json({ ok: true });
@@ -351,16 +352,19 @@ app.get('/api/expectativa-cidade', auth,
   let params;
 
   if (req.user.nivel === 'dono') {
-    query = 'SELECT expectativa FROM expectativa_cidade WHERE cidade = $1';
+    query = 'SELECT expectativa_celia, expectativa_fernando FROM expectativa_cidade WHERE cidade = $1';
     params = [cidade];
   } else {
-    query = 'SELECT expectativa FROM expectativa_cidade WHERE cidade = $1 AND LOWER(regiao) = LOWER($2)';
+    query = 'SELECT expectativa_celia, expectativa_fernando FROM expectativa_cidade WHERE cidade = $1 AND LOWER(regiao) = LOWER($2)';
     params = [cidade, req.user.regiao];
   }
 
   const row = await dbGet(query, params);
 
-  res.json({ valor: row?.expectativa || 0 });
+  res.json({
+  celia: row?.expectativa_celia || 0,
+  fernando: row?.expectativa_fernando || 0
+});
 });
 
 /* ================= GASTOS POR LIDERANÇA ================= */
