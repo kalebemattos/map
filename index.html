@@ -1223,7 +1223,41 @@ body.sidebar-closed #toggleSidebarBtn {
   background: #e53935;
   color: #fff;
 }
+#seletor-campanha{
+display:flex;
+flex-direction:column;
+gap:8px;
+margin-bottom:10px;
+}
 
+.campanha-opcao{
+display:flex;
+align-items:center;
+gap:8px;
+padding:8px 10px;
+border-radius:10px;
+cursor:pointer;
+background:#f8fafc;
+border:1px solid #e5e7eb;
+font-weight:600;
+}
+
+.campanha-opcao:hover{
+background:#eef3ff;
+}
+
+.campanha-opcao.ativa{
+background:#0047ab;
+color:white;
+border-color:#0047ab;
+}
+
+.campanha-opcao img{
+width:26px;
+height:26px;
+border-radius:50%;
+object-fit:cover;
+}
 </style>
 </head>
 <body>
@@ -1433,11 +1467,52 @@ body.sidebar-closed #toggleSidebarBtn {
   <!-- HEADER FIXO -->
   <!-- ========================= -->
   <div class="sidebar-header">
-    <div class="subtitle" style="margin-top: 0;">
-      Passe o mouse sobre um município no mapa para ver os 5 mais votados (2022).
+
+  <div id="seletor-campanha">
+
+    <div class="campanha-opcao ativa" data-campanha="ambos">
+      <img src="img/celia.jpg">
+      <img src="img/fernando.jpg">
+      <span>Ambos</span>
     </div>
+
+    <div class="campanha-opcao" data-campanha="celia">
+      <img src="img/celia.jpg">
+      <span>Célia Jordão</span>
+    </div>
+
+    <div class="campanha-opcao" data-campanha="fernando">
+      <img src="img/fernando.jpg">
+      <span>Fernando Jordão</span>
+    </div>
+
   </div>
 
+  <div class="subtitle" style="margin-top: 10px;">
+    Passe o mouse sobre um município no mapa para ver os 5 mais votados (2022).
+  </div>
+
+</div>
+
+  <div id="seletor-campanha">
+
+  <div class="campanha-opcao ativa" data-campanha="ambos">
+    <img src="img/celia.jpg">
+    <img src="img/fernando.jpg">
+    <span>Ambos</span>
+  </div>
+
+  <div class="campanha-opcao" data-campanha="celia">
+    <img src="img/celia.jpg">
+    <span>Célia Jordão</span>
+  </div>
+
+  <div class="campanha-opcao" data-campanha="fernando">
+    <img src="img/fernando.jpg">
+    <span>Fernando Jordão</span>
+  </div>
+
+</div>
 
   <!-- ========================= -->
   <!-- CORPO SCROLLÁVEL -->
@@ -1532,11 +1607,7 @@ body.sidebar-closed #toggleSidebarBtn {
     </div>
 
     
-<select id="filtro-campanha">
-  <option value="todos">Todos</option>
-  <option value="fernando">Fernando Jordão</option>
-  <option value="celia">Célia Jordão</option>
-</select>
+
 
     <!-- LIDERANÇAS -->
     <div id="liderancas-container" class="city-card">
@@ -1742,8 +1813,30 @@ let pinsVisiveis = true;
 let modoAdicionarPin = false;
 let novoPinLatLng = null;
 let regiaoAtiva = 'all';
-let filtroCampanha = "todos";
+let filtroCampanha = "ambos";
 
+document.querySelectorAll(".campanha-opcao")
+.forEach(el=>{
+
+  el.addEventListener("click",()=>{
+
+    document.querySelectorAll(".campanha-opcao")
+    .forEach(e=>e.classList.remove("ativa"));
+
+    el.classList.add("ativa");
+
+    filtroCampanha = el.dataset.campanha;
+
+    repaintMap();
+    atualizarTotalGeralOverlay();
+
+    if(cidadeSelecionada){
+      renderLiderancas(cidadeSelecionada);
+    }
+
+  });
+
+});
 
 // ================================
 // REGIÕES PERSONALIZADAS
@@ -2469,7 +2562,7 @@ cidadeData.expectativaCidade?.fernando || 0;
 liderancas.sort((a, b) => (b.expectativa_votos || 0) - (a.expectativa_votos || 0));
 
 // FILTRO DE CAMPANHA
-if (filtroCampanha !== "todos") {
+if (filtroCampanha !== "ambos"){
   liderancas = liderancas.filter(l =>
     l.vinculo_politico === filtroCampanha ||
     l.vinculo_politico === "ambos"
