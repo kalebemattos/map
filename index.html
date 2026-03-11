@@ -1381,9 +1381,14 @@ body.sidebar-closed #toggleSidebarBtn {
   <!-- EXPECTATIVA GERAL -->
   <div class="control-card">
     <div class="control-title">📊 Expectativa Geral</div>
-    <div id="total-geral-overlay" class="control-value">
-      —
-    </div>
+    <div id="total-geral-overlay-celia" class="control-value">
+—
+</div>
+
+<div id="total-geral-overlay-fernando" class="control-value"
+     style="margin-top:4px;color:#8b0000;">
+—
+</div>
   </div>
 
   <!-- VISUALIZAÇÃO DO MAPA -->
@@ -1835,12 +1840,20 @@ function calcularExpectativaTotalGeral() {
   return total;
 }
 function atualizarTotalGeralOverlay() {
-  const el = document.getElementById('total-geral-overlay');
-  if (!el) return;
 
-  const total = calcularExpectativaTotalGeral();
+  const elCelia = document.getElementById('total-geral-overlay-celia');
+  const elFernando = document.getElementById('total-geral-overlay-fernando');
 
-  el.textContent = total.toLocaleString('pt-BR') + ' votos';
+  if (!elCelia || !elFernando) return;
+
+  const totalCelia = calcularExpectativaTotalPor("celia");
+  const totalFernando = calcularExpectativaTotalPor("fernando");
+
+  elCelia.textContent =
+    "Célia: " + totalCelia.toLocaleString('pt-BR') + " votos";
+
+  elFernando.textContent =
+    "Fernando: " + totalFernando.toLocaleString('pt-BR') + " votos";
 
 }
 function getColor(votos) {
@@ -4019,6 +4032,39 @@ function mostrarLiderRegiao(regiaoKey) {
   }
 
   card.style.display = 'block';
+}
+function calcularExpectativaTotalPor(tipo) {
+
+  let total = 0;
+
+  Object.keys(dataCache).forEach(city => {
+
+    const c = dataCache[city];
+    if (!c) return;
+
+    // expectativa da cidade
+    total += Number(c.expectativaCidade?.[tipo] || 0);
+
+    // lideranças
+    (c.liderancas || []).forEach(l => {
+
+      if (tipo === "celia") {
+        if (l.vinculo_politico === "celia" || l.vinculo_politico === "ambos") {
+          total += Number(l.expectativa_votos || 0);
+        }
+      }
+
+      if (tipo === "fernando") {
+        if (l.vinculo_politico === "fernando" || l.vinculo_politico === "ambos") {
+          total += Number(l.expectativa_votos || 0);
+        }
+      }
+
+    });
+
+  });
+
+  return total;
 }
 </script>
 <div id="modal-pin" class="modal-overlay" style="display:none;">
