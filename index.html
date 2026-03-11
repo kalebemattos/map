@@ -1549,17 +1549,28 @@ body.sidebar-closed #toggleSidebarBtn {
 
       <div id="liderancas-content">
         <div style="margin-bottom:10px;">
-          <label>Expectativa de votos da cidade</label>
-          <input
-            id="expectativa-cidade"
-            type="number"
-            min="0"
-            style="width:100%;padding:6px;margin-top:4px;"
-          />
-          <button id="salvar-expectativa-cidade" style="width:100%;margin-top:6px;">
-            Salvar expectativa
-          </button>
-        </div>
+
+  <label>Expectativa Célia Jordão</label>
+  <input
+    id="expectativa-cidade-celia"
+    type="number"
+    min="0"
+    style="width:100%;padding:6px;margin-top:4px;"
+  />
+
+  <label style="margin-top:8px;">Expectativa Fernando Jordão</label>
+  <input
+    id="expectativa-cidade-fernando"
+    type="number"
+    min="0"
+    style="width:100%;padding:6px;margin-top:4px;"
+  />
+
+  <button id="salvar-expectativa-cidade" style="width:100%;margin-top:6px;">
+    Salvar expectativa
+  </button>
+
+</div>
 
         <div id="liderancas-list"></div>
 
@@ -1777,15 +1788,40 @@ const citySearchResults = document.getElementById('city-search-results');
 // 2. FUNÇÕES UTILITÁRIAS (Não dependem do mapa)
 // =================================================================
 function getTotalExpectativa(city) {
+
   const c = dataCache[city];
   if (!c) return 0;
 
-  const somaLiderancas = c.liderancas.reduce(
-    (s, l) => s + Number(l.expectativa_votos || 0),
-    0
-  );
+  let expectativaCidade = 0;
 
-  return Number(c.expectativaCidade || 0) + somaLiderancas;
+  if (filtroCampanha === "fernando") {
+    expectativaCidade = Number(c.expectativaCidade?.fernando || 0);
+  } else {
+    expectativaCidade = Number(c.expectativaCidade?.celia || 0);
+  }
+
+  const somaLiderancas = (c.liderancas || []).reduce((s, l) => {
+
+    if (filtroCampanha === "fernando") {
+      if (l.vinculo_politico === "fernando" || l.vinculo_politico === "ambos") {
+        return s + Number(l.expectativa_votos || 0);
+      }
+      return s;
+    }
+
+    if (filtroCampanha === "celia") {
+      if (l.vinculo_politico === "celia" || l.vinculo_politico === "ambos") {
+        return s + Number(l.expectativa_votos || 0);
+      }
+      return s;
+    }
+
+    return s + Number(l.expectativa_votos || 0);
+
+  }, 0);
+
+  return expectativaCidade + somaLiderancas;
+
 }
 function calcularExpectativaTotalGeral() {
   let total = 0;
@@ -2080,7 +2116,10 @@ async function carregarTudo() {
           dataCache[c.cidade] = {
             liderancas: [],
             observacoes: [],
-            expectativaCidade: 0,
+            expectativaCidade: {
+  celia: 0,
+  fernando: 0
+},
             temComite: false
           };
         }
@@ -2106,7 +2145,10 @@ try {
         dataCache[cidade] = {
           liderancas: [],
           observacoes: [],
-          expectativaCidade: 0,
+          expectativaCidade: {
+  celia: 0,
+  fernando: 0
+},
           temComite: false
         };
       }
@@ -2137,12 +2179,18 @@ try {
         dataCache[e.cidade] = {
           liderancas: [],
           observacoes: [],
-          expectativaCidade: 0,
+          expectativaCidade: {
+  celia: 0,
+  fernando: 0
+},
           temComite: false
         };
       }
 
-      dataCache[e.cidade].expectativaCidade = Number(e.expectativa || 0);
+      dataCache[e.cidade].expectativaCidade = {
+  celia: Number(e.celia || 0),
+  fernando: Number(e.fernando || 0)
+};
     });
   }
 } catch (e) {
@@ -2367,7 +2415,11 @@ async function renderLiderancas(city) {
   if (!city) return;
 
   const cidadeData = dataCache[city] || {};
-  document.getElementById('expectativa-cidade').value = cidadeData.expectativaCidade || 0;
+  document.getElementById('expectativa-cidade-celia').value =
+cidadeData.expectativaCidade?.celia || 0;
+
+document.getElementById('expectativa-cidade-fernando').value =
+cidadeData.expectativaCidade?.fernando || 0;
 
   const total = getTotalExpectativa(city);
 
@@ -3079,9 +3131,13 @@ document.getElementById('salvar-expectativa-cidade')
       return;
     }
 
-    const valor = Number(
-      document.getElementById('expectativa-cidade').value || 0
-    );
+    const celia = Number(
+document.getElementById('expectativa-cidade-celia').value || 0
+);
+
+const fernando = Number(
+document.getElementById('expectativa-cidade-fernando').value || 0
+);
 
     try {
 
