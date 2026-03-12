@@ -4,351 +4,809 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Painel de Lideranças</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
 :root {
-  --primary:#0047ab;
-  --primary-dark:#003580;
-  --danger:#c62828;
-  --bg:#f2f6fb;
-  --card:#ffffff;
-  --text:#1f2937;
-  --muted:#6b7280;
-  --border:#e5e7eb;
-  --radius:12px;
+  --blue-deep: #0d2d6b;
+  --blue-main: #1565c0;
+  --blue-light: #e8f0fe;
+  --green: #16a34a;
+  --green-light: #dcfce7;
+  --amber: #d97706;
+  --amber-light: #fef3c7;
+  --red: #dc2626;
+  --red-light: #fee2e2;
+  --slate-900: #0f172a;
+  --slate-700: #334155;
+  --slate-500: #64748b;
+  --slate-400: #94a3b8;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --slate-50: #f8fafc;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.12);
+  --shadow-xl: 0 20px 50px rgba(0,0,0,0.2);
+  --radius: 14px;
 }
 
-* {
-  box-sizing:border-box;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ✅ ESTILO DO BODY ATUALIZADO */
 body {
-  font-family: "Segoe UI", Roboto, Arial, sans-serif;
-  margin:0;
-  padding:16px;
-  color:var(--text);
-  min-height:100vh;
-
+  font-family: 'DM Sans', sans-serif;
+  color: var(--slate-700);
+  min-height: 100vh;
   background: url('./assets/background-admin.jpg') no-repeat center center fixed;
   background-size: cover;
+  background-color: #0d1b3e;
 }
 
-/* ✅ OVERLAY ESCURO */
-.bg-overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(15,23,42,0.70);
-  z-index:-1;
+.bg-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 18, 48, 0.75);
+  backdrop-filter: blur(2px);
+  z-index: 0;
 }
 
-h2 {
-  text-align:center;
-  color: #ffffff; /* Ajustado para contraste no fundo escuro */
-  margin-bottom:20px;
+/* ===== PAGE LAYOUT ===== */
+.page-wrap {
   position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
 }
 
-h3 {
-  margin-top:0;
-  color:#111827;
+/* ===== PAGE HEADER ===== */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-/* ✅ CARD PREMIUM COM BACKDROP FILTER */
-.card {
-  background: rgba(255,255,255,0.96);
+.page-header h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.3px;
+}
+
+.page-header p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.55);
+  margin-top: 2px;
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.1);
   backdrop-filter: blur(8px);
-  padding:16px;
-  border-radius:var(--radius);
-  margin-bottom:16px;
-  box-shadow:0 15px 35px rgba(0,0,0,.35);
-  position: relative;
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 8px 14px;
+  border-radius: 50px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.user-chip .user-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-main), #42a5f5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255,255,255,0.6);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--slate-900);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--blue-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+/* ===== FORM ELEMENTS ===== */
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 label {
-  font-weight:600;
-  font-size:14px;
-  margin-bottom:4px;
-  display:block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--slate-500);
+  display: block;
+  margin-bottom: 5px;
 }
 
-small {
-  color:var(--muted);
+input, select, textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 500;
+  border-radius: 9px;
+  border: 1.5px solid var(--slate-200);
+  background: var(--slate-50);
+  color: var(--slate-900);
+  outline: none;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  appearance: none;
 }
 
-input, select {
-  width:100%;
-  padding:11px 12px;
-  margin:6px 0 12px;
-  font-size:15px;
-  border-radius:8px;
-  border:1px solid var(--border);
-  outline:none;
-  transition:.2s;
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
 }
 
-input:focus, select:focus {
-  border-color:var(--primary);
-  box-shadow:0 0 0 3px rgba(0,71,171,.15);
+input:focus, select:focus, textarea:focus {
+  border-color: var(--blue-main);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(21,101,192,0.12);
 }
 
-button {
-  width:100%;
-  padding:12px;
-  font-size:15px;
-  font-weight:600;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  background:var(--primary);
-  color:#fff;
-  transition:.2s;
+input[type="file"] {
+  padding: 8px;
+  cursor: pointer;
+  background: white;
 }
 
-button:hover {
-  background:var(--primary-dark);
+textarea {
+  min-height: 80px;
+  resize: vertical;
+  line-height: 1.5;
 }
 
-button.secondary {
-  background:#6b7280;
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s;
+  letter-spacing: 0.2px;
 }
 
-button.secondary:hover {
-  background:#4b5563;
+.btn-full { width: 100%; }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
+  color: white;
+  box-shadow: 0 4px 14px rgba(21,101,192,0.35);
+}
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(21,101,192,0.4); }
+.btn-primary:active { transform: none; }
+
+.btn-secondary {
+  background: var(--slate-100);
+  color: var(--slate-700);
+  border: 1.5px solid var(--slate-200);
+}
+.btn-secondary:hover { background: var(--slate-200); }
+
+.btn-danger {
+  background: var(--red-light);
+  color: var(--red);
+  border: 1.5px solid #fca5a5;
+}
+.btn-danger:hover { background: var(--red); color: white; }
+
+.btn-success {
+  background: var(--green-light);
+  color: var(--green);
+  border: 1.5px solid #86efac;
+}
+.btn-success:hover { background: var(--green); color: white; }
+
+.btn-sm {
+  padding: 7px 13px;
+  font-size: 12px;
+  border-radius: 7px;
 }
 
-button.danger {
-  background:var(--danger);
+.btn-ghost {
+  background: transparent;
+  color: rgba(255,255,255,0.75);
+  border: 1.5px solid rgba(255,255,255,0.2);
 }
+.btn-ghost:hover { background: rgba(255,255,255,0.1); color: white; }
 
-button.danger:hover {
-  background:#9b1c1c;
-}
-
-.hidden {
-  display:none;
-}
-
+/* ===== ACTIONS ROW ===== */
 .actions {
-  display:flex;
-  gap:8px;
-  margin-top:8px;
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.actions .btn { flex: 1; min-width: 80px; }
+
+/* ===== STATS CARD ===== */
+.stats-summary {
+  background: linear-gradient(135deg, var(--blue-deep), #1976d2);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  color: white;
 }
 
-.actions button {
-  flex:1;
-  padding:8px;
-  font-size:14px;
+.stats-summary .stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
 }
 
+.stats-summary .stat-row:last-child { border-bottom: none; }
+
+.stats-summary .stat-row .stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.7);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.stats-summary .stat-row .stat-val {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: white;
+}
+
+.stats-summary .stat-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  margin-top: 6px;
+}
+
+.stats-summary .stat-total .label {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+}
+
+.stats-summary .stat-total .value {
+  font-family: 'Sora', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+/* ===== LIDERANCA ITEM ===== */
 .lideranca {
-  padding:12px 0;
-  border-bottom:1px solid var(--border);
+  background: var(--slate-50);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--slate-200);
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
-.lideranca:last-child {
-  border-bottom:none;
+.lideranca:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--slate-300);
 }
 
-.lideranca img {
-  max-width:90px;
-  border-radius:8px;
-  margin-top:8px;
+.lideranca-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
-#lista-liderancas > div:first-child {
-  margin-bottom:14px;
+.lideranca-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid var(--slate-200);
+  box-shadow: var(--shadow-sm);
 }
 
-/* LOGIN */
+.lideranca-avatar-ph {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #4338ca;
+  flex-shrink: 0;
+}
+
+.lideranca-info { flex: 1; min-width: 0; }
+
+.lideranca-nome {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--slate-900);
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.lideranca-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--slate-500);
+}
+
+.lideranca-meta span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badge-ativa { background: var(--green-light); color: var(--green); }
+.badge-pendente { background: var(--amber-light); color: var(--amber); }
+.badge-inativa { background: var(--red-light); color: var(--red); }
+.badge-celia { background: #dbeafe; color: #1d4ed8; }
+.badge-fernando { background: #fee2e2; color: #b91c1c; }
+.badge-ambos { background: #f0fdf4; color: #15803d; }
+
+/* ===== GASTOS CARD ===== */
+.gasto-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--slate-50);
+  border-radius: 9px;
+  margin-bottom: 8px;
+  border: 1px solid var(--slate-200);
+}
+
+.gasto-valor {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  color: var(--red);
+  font-size: 15px;
+}
+
+.gasto-desc {
+  font-size: 13px;
+  color: var(--slate-700);
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+.gasto-meta {
+  font-size: 11px;
+  color: var(--slate-400);
+  margin-top: 2px;
+}
+
+.total-gastos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--red-light);
+  border-radius: 10px;
+  margin-top: 12px;
+  border: 1px solid #fca5a5;
+}
+
+.total-gastos .label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--red);
+}
+
+.total-gastos .value {
+  font-family: 'Sora', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--red);
+}
+
+/* ===== EMPTY / LOADING STATES ===== */
+.state-msg {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--slate-400);
+}
+.state-msg .icon { font-size: 36px; margin-bottom: 10px; }
+.state-msg p { font-size: 14px; font-weight: 500; }
+
+/* ===== LOGIN ===== */
 #login-card {
-  max-width:380px;
-  margin:60px auto;
+  max-width: 380px;
+  margin: 80px auto;
+  padding: 40px 36px;
+  animation: fadeUp 0.4s ease;
 }
 
-/* PAINEL */
-#panel {
-  max-width:900px;
-  margin:0 auto;
+.login-logo {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto 20px;
+  box-shadow: 0 8px 20px rgba(21,101,192,0.35);
 }
 
-/* RESPONSIVO */
-@media (min-width:768px) {
-  .card {
-    padding:20px;
-  }
+#login-card h2 {
+  font-family: 'Sora', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--slate-900);
+  text-align: center;
+  margin-bottom: 4px;
 }
 
-/* 📱 BREAKPOINT MOBILE */
-@media (max-width: 768px) {
-  .lideranca {
-    background: #ffffff;
-    padding: 14px;
-    border-radius: 14px;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-    margin-bottom: 14px;
-    border-bottom: none;
-  }
+.login-subtitle {
+  font-size: 13px;
+  color: var(--slate-500);
+  text-align: center;
+  margin-bottom: 28px;
+}
 
-  .lideranca strong {
-    font-size: 16px;
-    display: block;
-    margin-bottom: 6px;
-  }
+#login-error {
+  display: block;
+  text-align: center;
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 10px;
+  min-height: 18px;
+}
 
-  .lideranca img {
-    max-width: 100%;
-    margin-top: 10px;
-  }
+/* ===== SECTION DIVIDER ===== */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 14px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--slate-400);
+}
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--slate-200);
+}
 
-  .lideranca small {
-    display: block;
-    margin-top: 4px;
-    font-size: 13px;
-    color: #374151;
-  }
+/* ===== CITY SELECT SEARCH ===== */
+.search-input-wrap {
+  position: relative;
+}
+.search-input-wrap svg {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--slate-400);
+  pointer-events: none;
+}
+.search-input-wrap input {
+  padding-left: 34px;
+}
 
-  .lideranca small b {
-    font-weight: 600;
-  }
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
 
-  .lideranca small:nth-of-type(3),
-  .lideranca small:nth-of-type(4) {
-    display: none;
-  }
+.anim { animation: fadeUp 0.3s ease both; }
 
-  .lideranca .actions {
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .lideranca .actions button {
-    width: 100%;
-    font-size: 14px;
-    padding: 10px;
-  }
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .form-row { grid-template-columns: 1fr; }
+  .actions { flex-direction: column; }
+  .actions .btn { flex: none; width: 100%; }
 }
 </style>
 </head>
 
 <body>
-
 <div class="bg-overlay"></div>
 
-<h2>Painel de Lideranças</h2>
-
+<!-- LOGIN -->
 <div id="login-card" class="card">
-  <h3>Login</h3>
-  <input id="login-user" placeholder="Usuário">
-  <input id="login-pass" type="password" placeholder="Senha">
-  <button id="login-btn">Entrar</button>
+  <div class="login-logo">🗺️</div>
+  <h2>Painel de Lideranças</h2>
+  <p class="login-subtitle">Entre com suas credenciais para continuar</p>
+  <div class="form-group">
+    <label>Usuário</label>
+    <input id="login-user" placeholder="Digite seu usuário" autocomplete="username">
+  </div>
+  <div class="form-group">
+    <label>Senha</label>
+    <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+  </div>
+  <button id="login-btn" class="btn btn-primary btn-full">Entrar</button>
   <small id="login-error"></small>
 </div>
 
+<!-- PANEL -->
+<div id="panel" class="hidden page-wrap">
 
-
-<div id="panel" class="hidden">
-<div class="card" id="gastos-card" style="display:none;">
-  <h3>Gastos da liderança</h3>
-
-  <div id="listaGastos"></div>
-
-  <input type="number" id="valorGasto" placeholder="Valor gasto (R$)" step="0.01">
-  <input type="text" id="descricaoGasto" placeholder="Descrição (opcional)">
-
-  <button id="btn-add-gasto" onclick="salvarGasto()">Adicionar gasto</button>
-
-  <p>
-    <b>Total gasto:</b> R$
-    <span id="totalGasto">0,00</span>
-  </p>
-</div>
-
-  <div class="card">
-    <strong>Usuário:</strong> <span id="user-name"></span><br>
-    <button id="logout-btn" class="danger">Sair</button>
+  <div class="page-header">
+    <div>
+      <h1>🗺️ Painel de Lideranças</h1>
+      <p>Gestão e cadastro de lideranças</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <div class="user-chip">
+        <div class="user-dot" id="user-initials">U</div>
+        <span id="user-name">Usuário</span>
+      </div>
+      <button id="logout-btn" class="btn btn-ghost btn-sm">Sair</button>
+    </div>
   </div>
 
-  <div class="card">
-    <h3 id="form-title">Nova Liderança</h3>
+  <!-- SELECTOR CARD -->
+  <div class="card anim">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="card-icon">🏙️</div>
+        Selecionar cidade
+      </div>
+    </div>
 
-    <label>Buscar cidade</label>
-    <input id="buscaCidade" placeholder="Digite o nome da cidade">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Região</label>
+        <select id="regiao"></select>
+      </div>
+      <div class="form-group">
+        <label>Buscar cidade</label>
+        <div class="search-input-wrap">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input id="buscaCidade" placeholder="Nome da cidade...">
+        </div>
+      </div>
+    </div>
 
-    <label>Região</label>
-    <select id="regiao"></select>
-
-    <label>Cidade</label>
-    <select id="cidade"></select>
-
-<label>Candidato</label>
-<select id="vinculo_politico">
-  <option value="fernando">Fernando Jordão</option>
-  <option value="celia">Célia Jordão</option>
-  <option value="ambos">Ambos</option>
-</select>
-
-    <label>Nome</label>
-    <input id="nome">
-
-    <label>Contato</label>
-    <input id="contato">
-    
-    <label>Expectativa de votos</label>
-    <input id="expectativa_votos" type="number" min="0" placeholder="Ex: 150">
-
-
-
-    <label>Perfil da liderança</label>
-    <input id="perfil" placeholder="Ex: comunitária, religiosa">
-    
-    <label>Responsável</label>
-    <input id="responsavel" placeholder="Quem acompanha">
-    
-    <label>Status</label>
-    <select id="status">
-      <option value="ativa">Ativa</option>
-      <option value="pendente">Pendente</option>
-      <option value="inativa">Inativa</option>
-    </select>
-    
-    <label>Release (observações internas)</label>
-    <input id="release" placeholder="Observações estratégicas">
-
-    <label>Foto</label>
-    <input type="file" id="foto" accept="image/jpeg,image/png">
-
-    <button id="salvar-btn">Salvar</button>
-    <button id="cancelar-btn" class="secondary hidden">Cancelar edição</button>
+    <div class="form-group">
+      <label>Cidade</label>
+      <select id="cidade"></select>
+    </div>
   </div>
 
-<div class="card">
-  <h3>Expectativa da cidade</h3>
+  <!-- FORM CARD -->
+  <div class="card anim" style="animation-delay:0.05s">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="card-icon" id="form-icon">➕</div>
+        <span id="form-title">Nova Liderança</span>
+      </div>
+      <button id="cancelar-btn" class="btn btn-secondary btn-sm hidden">✕ Cancelar edição</button>
+    </div>
 
-  <label>Expectativa de votos da cidade</label>
-  <input
-    id="expectativa-cidade"
-    type="number"
-    min="0"
-    placeholder="Ex: 12000"
-  >
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nome *</label>
+        <input id="nome" placeholder="Nome completo">
+      </div>
+      <div class="form-group">
+        <label>Contato</label>
+        <input id="contato" placeholder="(XX) XXXXX-XXXX">
+      </div>
+    </div>
 
-  <button id="salvar-expectativa-cidade">
-    Salvar expectativa da cidade
-  </button>
-</div>
-  <div class="card">
-    <h3>Lideranças da cidade selecionada</h3>
-    
-    <label>Mostrar apenas:</label>
-    <select id="filtro-status">
-      <option value="ativa">Ativas</option>
-      <option value="pendente">Pendentes</option>
-      <option value="todas">Todas (Inclui Inativas)</option>
-    </select>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Expectativa de votos</label>
+        <input id="expectativa_votos" type="number" min="0" placeholder="Ex: 150">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="status">
+          <option value="ativa">● Ativa</option>
+          <option value="pendente">◑ Pendente</option>
+          <option value="inativa">○ Inativa</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Perfil da liderança</label>
+        <input id="perfil" placeholder="Ex: comunitária, religiosa">
+      </div>
+      <div class="form-group">
+        <label>Responsável</label>
+        <input id="responsavel" placeholder="Quem acompanha">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Candidato</label>
+      <select id="vinculo_politico">
+        <option value="fernando">🔴 Fernando Jordão</option>
+        <option value="celia">🔵 Célia Jordão</option>
+        <option value="ambos">🟢 Ambos</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Release / Observações internas</label>
+      <textarea id="release" placeholder="Observações estratégicas sobre a liderança..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Foto</label>
+      <input type="file" id="foto" accept="image/jpeg,image/png">
+    </div>
+
+    <button id="salvar-btn" class="btn btn-primary btn-full">💾 Salvar liderança</button>
+  </div>
+
+  <!-- EXPECTATIVA CIDADE CARD -->
+  <div class="card anim" style="animation-delay:0.08s">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="card-icon">📊</div>
+        Expectativa da cidade
+      </div>
+    </div>
+    <div class="form-row" style="align-items:flex-end;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Votos esperados (cidade)</label>
+        <input id="expectativa-cidade" type="number" min="0" placeholder="Ex: 12000">
+      </div>
+      <div>
+        <button id="salvar-expectativa-cidade" class="btn btn-success" style="white-space:nowrap;">✓ Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GASTOS CARD -->
+  <div class="card anim" id="gastos-card" style="display:none;animation-delay:0.1s;">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="card-icon" style="background:#fee2e2;">💸</div>
+        Gastos da liderança
+      </div>
+    </div>
+
+    <div id="listaGastos"></div>
+
+    <div class="total-gastos" id="total-gastos-wrap">
+      <span class="label">Total gasto</span>
+      <span class="value">R$ <span id="totalGasto">0,00</span></span>
+    </div>
+
+    <div class="section-divider">Adicionar gasto</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Valor (R$)</label>
+        <input type="number" id="valorGasto" placeholder="0,00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Descrição (opcional)</label>
+        <input type="text" id="descricaoGasto" placeholder="Ex: material gráfico">
+      </div>
+    </div>
+    <button id="btn-add-gasto" class="btn btn-danger btn-full" onclick="salvarGasto()">+ Registrar gasto</button>
+  </div>
+
+  <!-- LIST CARD -->
+  <div class="card anim" style="animation-delay:0.12s;">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="card-icon">👥</div>
+        Lideranças da cidade
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <label style="text-transform:none;letter-spacing:0;font-size:12px;margin:0;color:var(--slate-500);">Filtrar:</label>
+        <select id="filtro-status" style="width:auto;padding:7px 28px 7px 10px;font-size:12px;">
+          <option value="ativa">Ativas</option>
+          <option value="pendente">Pendentes</option>
+          <option value="todas">Todas</option>
+        </select>
+      </div>
+    </div>
 
     <div id="lista-liderancas">
-      <small>Selecione uma cidade</small>
+      <div class="state-msg">
+        <div class="icon">🏙️</div>
+        <p>Selecione uma cidade para ver as lideranças</p>
+      </div>
     </div>
   </div>
 
@@ -356,21 +814,14 @@ button.danger:hover {
 
 <script src="./data.js"></script>
 
-
 <script>
-/* ================= CONFIG ================= */
+/* ===== CONFIG ===== */
 const API = 'https://map-backend-j88s.onrender.com';
+
 async function apiFetch(endpoint, options = {}) {
   const token = localStorage.getItem('token');
-
-  if (!token) {
-    alert('Sessão expirada');
-    logout();
-    throw new Error('Sem token');
-  }
-
+  if (!token) { alert('Sessão expirada'); logout(); throw new Error('Sem token'); }
   const isFormData = options.body instanceof FormData;
-
   const res = await fetch(API + endpoint, {
     ...options,
     headers: {
@@ -379,20 +830,14 @@ async function apiFetch(endpoint, options = {}) {
       ...(options.headers || {})
     }
   });
-
-  if (res.status === 401) {
-    logout();
-    throw new Error('Sessão expirada');
-  }
-
+  if (res.status === 401) { logout(); throw new Error('Sessão expirada'); }
   return res;
 }
-
 
 let editandoId = null;
 let liderancaSelecionadaId = null;
 
-/* ================= ELEMENTOS ================= */
+/* ===== DOM REFS ===== */
 const expectativaCidadeInput = document.getElementById('expectativa-cidade');
 const salvarExpectativaCidadeBtn = document.getElementById('salvar-expectativa-cidade');
 const loginCard = document.getElementById('login-card');
@@ -401,7 +846,6 @@ const loginUser = document.getElementById('login-user');
 const loginPass = document.getElementById('login-pass');
 const loginError = document.getElementById('login-error');
 const userName = document.getElementById('user-name');
-
 const buscaCidade = document.getElementById('buscaCidade');
 const regiao = document.getElementById('regiao');
 const cidade = document.getElementById('cidade');
@@ -412,231 +856,272 @@ const perfilInput = document.getElementById('perfil');
 const responsavelInput = document.getElementById('responsavel');
 const statusInput = document.getElementById('status');
 const releaseInput = document.getElementById('release');
-
 const fotoInput = document.getElementById('foto');
 const lista = document.getElementById('lista-liderancas');
 const formTitle = document.getElementById('form-title');
 const cancelarBtn = document.getElementById('cancelar-btn');
 
-/* ================= EVENTO FILTRO ================= */
-document.getElementById('filtro-status').addEventListener('change', () => {
-  carregarLiderancas(); 
-});
-
-/* ================= LOGIN ================= */
+/* ===== EVENTS ===== */
 document.getElementById('login-btn').onclick = login;
 document.getElementById('logout-btn').onclick = logout;
 document.getElementById('salvar-btn').onclick = salvar;
 cancelarBtn.onclick = cancelarEdicao;
+document.getElementById('filtro-status').addEventListener('change', carregarLiderancas);
 
-async function login(){
+// Enter no login
+document.getElementById('login-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+
+/* ===== LOGIN ===== */
+async function login() {
   loginError.textContent = '';
+  const btn = document.getElementById('login-btn');
+  btn.textContent = 'Entrando...';
+  btn.disabled = true;
   try {
     const res = await fetch(API + '/api/login', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         usuario: loginUser.value.trim(),
         senha: loginPass.value.trim()
       })
     });
-    if(!res.ok) throw new Error();
+    if (!res.ok) throw new Error();
     const data = await res.json();
-
-localStorage.setItem('token', data.accessToken);
-localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('token', data.accessToken);
+    localStorage.setItem('user', JSON.stringify(data.user));
     iniciarPainel();
   } catch {
     loginError.textContent = 'Usuário ou senha inválidos';
+    btn.textContent = 'Entrar';
+    btn.disabled = false;
   }
 }
 
-function logout(){
+function logout() {
   localStorage.removeItem('user');
   localStorage.removeItem('token');
   location.reload();
 }
 
-function iniciarPainel(){
+function iniciarPainel() {
   const user = JSON.parse(localStorage.getItem('user'));
-  if(!user) return;
+  if (!user) return;
   loginCard.classList.add('hidden');
   panel.classList.remove('hidden');
-  userName.textContent = user.nome || 'Usuário';
-  
+
+  const nomeDisplay = user.nome || user.usuario || 'Usuário';
+  userName.textContent = nomeDisplay;
+  const initials = nomeDisplay.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+  document.getElementById('user-initials').textContent = initials;
+
   if (user.nivel === 'visualizador') {
-      if(document.getElementById('salvar-btn')) document.getElementById('salvar-btn').style.display = 'none';
-      if(document.getElementById('salvar-expectativa-cidade')) document.getElementById('salvar-expectativa-cidade').style.display = 'none';
-      if(document.getElementById('btn-add-gasto')) document.getElementById('btn-add-gasto').style.display = 'none';
+    ['salvar-btn', 'salvar-expectativa-cidade', 'btn-add-gasto'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
   }
-  
+
   if (user.nivel === 'lider_regiao') {
-
-  const campoRegiao = document.getElementById('regiao');
-
-  if (campoRegiao) {
-
-    campoRegiao.value = user.regiao;
-    campoRegiao.disabled = true;
-
-    carregarCidadesPorRegiao();
-
+    const campoRegiao = document.getElementById('regiao');
+    if (campoRegiao) {
+      campoRegiao.value = user.regiao;
+      campoRegiao.disabled = true;
+      carregarCidadesPorRegiao();
+    }
   }
+}
 
-}
-}
-/* ================= INIT ================= */
+/* ===== INIT ===== */
 document.addEventListener('DOMContentLoaded', () => {
   initRegioes();
-
   buscaCidade.addEventListener('input', filtrarCidades);
   regiao.addEventListener('change', carregarCidadesPorRegiao);
   cidade.addEventListener('change', carregarLiderancas);
-
   iniciarPainel();
 });
 
-/* ================= REGIÕES / CIDADES ================= */
+/* ===== REGIÕES / CIDADES ===== */
 let todasCidades = [];
 
-function initRegioes(){
-  regiao.innerHTML = '<option value="">Selecione</option>';
-  cidade.innerHTML = '<option value="">Selecione</option>';
+function initRegioes() {
+  if (typeof regions === 'undefined') return;
+  regiao.innerHTML = '<option value="">Selecione a região</option>';
+  cidade.innerHTML = '<option value="">Selecione a cidade</option>';
   todasCidades = [];
-
   Object.keys(regions).forEach(r => {
-    if(!Array.isArray(regions[r])) return; 
+    if (!Array.isArray(regions[r])) return;
     const o = document.createElement('option');
     o.value = r;
-    o.textContent = r.replace(/([A-Z])/g,' $1');
+    o.textContent = r.replace(/([A-Z])/g, ' $1');
     regiao.appendChild(o);
     regions[r].forEach(c => todasCidades.push(c));
   });
 }
 
-function carregarCidadesPorRegiao(){
-  cidade.innerHTML = '<option value="">Selecione</option>';
+function carregarCidadesPorRegiao() {
+  cidade.innerHTML = '<option value="">Selecione a cidade</option>';
   buscaCidade.value = '';
-  if(!regiao.value) return;
-
+  if (!regiao.value || typeof regions === 'undefined') return;
   regions[regiao.value].forEach(c => {
     const o = document.createElement('option');
-    o.value = c;
-    o.textContent = c;
+    o.value = c; o.textContent = c;
     cidade.appendChild(o);
   });
 }
 
-function filtrarCidades(){
+function filtrarCidades() {
   const termo = buscaCidade.value.toLowerCase();
-  cidade.innerHTML = '<option value="">Selecione</option>';
+  cidade.innerHTML = '<option value="">Selecione a cidade</option>';
   regiao.value = '';
-  if(!termo) return;
-
-  todasCidades
-    .filter(c => c.toLowerCase().includes(termo))
-    .forEach(c => {
-      const o = document.createElement('option');
-      o.value = c;
-      o.textContent = c;
-      cidade.appendChild(o);
-    });
+  if (!termo) return;
+  todasCidades.filter(c => c.toLowerCase().includes(termo)).forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    cidade.appendChild(o);
+  });
 }
 
-/* ================= LISTAGEM ================= */
+/* ===== HELPERS ===== */
+function getInitials(nome) {
+  if (!nome) return '?';
+  const parts = nome.trim().split(' ');
+  return parts.length >= 2
+    ? parts[0][0] + parts[parts.length - 1][0]
+    : parts[0][0];
+}
+
+function badgeCampanha(v) {
+  if (v === 'celia') return '<span class="badge badge-celia">🔵 Célia</span>';
+  if (v === 'fernando') return '<span class="badge badge-fernando">🔴 Fernando</span>';
+  return '<span class="badge badge-ambos">🟢 Ambos</span>';
+}
+
+function badgeStatus(s) {
+  const st = s || 'ativa';
+  const map = {
+    ativa: 'badge-ativa',
+    pendente: 'badge-pendente',
+    inativa: 'badge-inativa'
+  };
+  const labels = { ativa: '● Ativa', pendente: '◑ Pendente', inativa: '○ Inativa' };
+  return `<span class="badge ${map[st] || 'badge-ativa'}">${labels[st] || st}</span>`;
+}
+
+/* ===== LISTAGEM ===== */
 async function carregarLiderancas() {
   if (!cidade.value) {
-    lista.innerHTML = '<small>Selecione uma cidade</small>';
+    lista.innerHTML = `<div class="state-msg"><div class="icon">🏙️</div><p>Selecione uma cidade</p></div>`;
     expectativaCidadeInput.value = '';
     return;
   }
 
-  lista.innerHTML = 'Carregando...';
+  lista.innerHTML = `<div class="state-msg"><div class="icon">⏳</div><p>Carregando...</p></div>`;
 
-  const res = await apiFetch('/api/liderancas')
+  const res = await apiFetch('/api/liderancas');
   const cidades = await res.json();
-
   const blocoCidade = cidades.find(c => c.cidade === cidade.value);
 
-  if (!blocoCidade) {
-    lista.innerHTML = '<small>Nenhuma liderança nesta cidade</small>';
-    expectativaCidadeInput.value = 0;
-    return;
-  }
-
-  let liderancas = blocoCidade.liderancas || [];
+  let liderancas = blocoCidade ? (blocoCidade.liderancas || []) : [];
   const filtroValue = document.getElementById('filtro-status').value;
-  
   if (filtroValue !== 'todas') {
     liderancas = liderancas.filter(l => (l.status || 'ativa') === filtroValue);
   }
 
-  const resExp = await apiFetch('/api/expectativa-cidade?cidade=' + encodeURIComponent(cidade.value));
-
   let expectativaCidade = 0;
-
+  const resExp = await apiFetch('/api/expectativa-cidade?cidade=' + encodeURIComponent(cidade.value));
   if (resExp.ok) {
     const j = await resExp.json();
     expectativaCidade = Number(j.valor || 0);
   }
-
   expectativaCidadeInput.value = expectativaCidade;
 
-  const somaLiderancas = liderancas.reduce(
-    (s, l) => s + Number(l.expectativa_votos || 0),
-    0
-  );
-
+  const somaLiderancas = liderancas.reduce((s, l) => s + Number(l.expectativa_votos || 0), 0);
   const totalGeral = expectativaCidade + somaLiderancas;
 
-  lista.innerHTML = `
-    <div style="margin-bottom:14px;padding:14px;background:#eef3ff;border-radius:12px;">
-      <div><b>Cidade:</b> ${expectativaCidade}</div>
-      <div><b>Lideranças (Filtradas):</b> ${somaLiderancas}</div>
-      <hr>
-      <div style="font-size:20px;color:#0047ab"><b>TOTAL:</b> ${totalGeral}</div>
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  lista.innerHTML = '';
+
+  // Stats summary
+  const statsDiv = document.createElement('div');
+  statsDiv.className = 'stats-summary';
+  statsDiv.innerHTML = `
+    <div class="stat-row">
+      <span class="stat-label">📊 Expectativa da cidade</span>
+      <span class="stat-val">${expectativaCidade.toLocaleString('pt-BR')}</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">👥 Lideranças (${filtroValue === 'todas' ? 'todas' : filtroValue})</span>
+      <span class="stat-val">${somaLiderancas.toLocaleString('pt-BR')}</span>
+    </div>
+    <div class="stat-total">
+      <span class="label">🗳️ TOTAL ESPERADO</span>
+      <span class="value">${totalGeral.toLocaleString('pt-BR')}</span>
     </div>
   `;
+  lista.appendChild(statsDiv);
 
-  if (!liderancas.length) {
-    lista.innerHTML += '<small>Nenhuma liderança encontrada com este filtro</small>';
+  if (!blocoCidade || !liderancas.length) {
+    const emp = document.createElement('div');
+    emp.className = 'state-msg';
+    emp.innerHTML = `<div class="icon">🔍</div><p>Nenhuma liderança encontrada</p>`;
+    lista.appendChild(emp);
     return;
   }
-
-  const user = JSON.parse(localStorage.getItem('user'));
 
   liderancas.forEach(l => {
     const div = document.createElement('div');
     div.className = 'lideranca';
-    
-    const alerta = (l.status === 'pendente') ? ' ⚠️' : '';
-    const tagInativa = (l.status === 'inativa') ? ' <small>(Inativa)</small>' : '';
+
+    const tel = (l.contato || '').replace(/\D/g, '');
+    const contatoHtml = tel
+      ? `<span>📱 <a href="https://wa.me/55${tel}" target="_blank" style="color:var(--blue-main);text-decoration:none;font-weight:600;">${l.contato}</a></span>`
+      : (l.contato ? `<span>📱 ${l.contato}</span>` : '');
+
+    const avatarHtml = l.foto
+      ? `<img src="${l.foto}" class="lideranca-avatar" alt="${l.nome}">`
+      : `<div class="lideranca-avatar-ph">${getInitials(l.nome)}</div>`;
 
     div.innerHTML = `
-      <strong>${l.nome}${alerta}${tagInativa}</strong><br>
-      <small><b>Expectativa:</b> ${l.expectativa_votos || 0}</small><br>
-      <small><b>Status:</b> ${l.status || 'ativa'}</small><br>
-      <small><b>Perfil:</b> ${l.perfil || ''}</small><br>
-      <small><b>Contato:</b> ${l.contato || ''}</small><br>
-      ${l.foto ? `<img src="${l.foto}">` : ''}
-      <div class="actions">
-        <button class="btn-edit" onclick="editarLiderancaCompleta('${l.id}','${l.nome}','${l.contato || ''}','${l.expectativa_votos || 0}','${l.perfil || ''}','${l.responsavel || ''}','${l.status || 'ativa'}','${l.release || ''}')">Editar</button>
-        <button class="danger btn-excluir" onclick="excluir('${l.id}')">Excluir</button>
+      <div class="lideranca-header">
+        ${avatarHtml}
+        <div class="lideranca-info">
+          <div class="lideranca-nome">
+            ${l.nome || '—'}
+            ${badgeStatus(l.status)}
+            ${badgeCampanha(l.vinculo_politico)}
+          </div>
+          <div class="lideranca-meta">
+            ${l.perfil ? `<span>🏷️ ${l.perfil}</span>` : ''}
+            <span>🗳️ ${(l.expectativa_votos || 0).toLocaleString('pt-BR')} votos</span>
+            ${contatoHtml}
+          </div>
+        </div>
+      </div>
+      ${l.release ? `<p style="font-size:13px;color:var(--slate-500);margin:6px 0 10px;padding:8px 10px;background:var(--slate-100);border-radius:8px;line-height:1.5;">${l.release}</p>` : ''}
+      <div class="actions" ${user.nivel === 'visualizador' ? 'style="display:none;"' : ''}>
+        <button class="btn btn-secondary btn-sm btn-edit" data-id="${l.id}">✏️ Editar</button>
+        <button class="btn btn-danger btn-sm btn-excluir" data-id="${l.id}">🗑 Excluir</button>
       </div>
     `;
+
+    // Store data on element for edit
+    div.querySelector('.btn-edit')?.addEventListener('click', () => {
+      editarLiderancaCompleta(l.id, l.nome, l.contato || '', l.expectativa_votos || 0, l.perfil || '', l.responsavel || '', l.status || 'ativa', l.release || '', l.vinculo_politico || 'ambos');
+    });
+    div.querySelector('.btn-excluir')?.addEventListener('click', () => excluir(l.id));
+
     lista.appendChild(div);
   });
-  
-  if (user && user.nivel === 'visualizador') {
-      document.querySelectorAll('.actions button').forEach(btn => btn.style.display = 'none');
-  }
-
 }
 
-/* ================= EDITAR ================= */
-function editarLiderancaCompleta(id, nomeVal, contatoVal, votosVal, perfilVal, respVal, statusVal, releaseVal){
+/* ===== EDITAR ===== */
+function editarLiderancaCompleta(id, nomeVal, contatoVal, votosVal, perfilVal, respVal, statusVal, releaseVal, vinculoVal) {
   const user = JSON.parse(localStorage.getItem('user'));
-  if(user.nivel === 'visualizador') return;
+  if (user.nivel === 'visualizador') return;
 
   editandoId = id;
   liderancaSelecionadaId = id;
@@ -648,14 +1133,19 @@ function editarLiderancaCompleta(id, nomeVal, contatoVal, votosVal, perfilVal, r
   responsavelInput.value = respVal;
   statusInput.value = statusVal;
   releaseInput.value = releaseVal;
+  document.getElementById('vinculo_politico').value = vinculoVal || 'ambos';
 
   formTitle.textContent = 'Editar liderança';
+  document.getElementById('form-icon').textContent = '✏️';
   cancelarBtn.classList.remove('hidden');
+
+  // Scroll to form
+  document.querySelector('[id="form-title"]').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   carregarGastos(id);
 }
 
-function cancelarEdicao(){
+function cancelarEdicao() {
   editandoId = null;
   nome.value = '';
   contato.value = '';
@@ -665,22 +1155,29 @@ function cancelarEdicao(){
   statusInput.value = 'ativa';
   releaseInput.value = '';
   fotoInput.value = '';
+  document.getElementById('vinculo_politico').value = 'fernando';
   formTitle.textContent = 'Nova Liderança';
+  document.getElementById('form-icon').textContent = '➕';
   cancelarBtn.classList.add('hidden');
+  document.getElementById('gastos-card').style.display = 'none';
 }
 
-/* ================= SALVAR ================= */
-async function salvar(){
+/* ===== SALVAR ===== */
+async function salvar() {
   const user = JSON.parse(localStorage.getItem('user'));
   if (user.nivel === 'visualizador') {
-      alert('Seu nível de acesso não permite salvar dados.');
-      return;
+    alert('Seu nível de acesso não permite salvar dados.');
+    return;
   }
 
-  if(!cidade.value || !nome.value){
+  if (!cidade.value || !nome.value.trim()) {
     alert('Cidade e nome são obrigatórios');
     return;
   }
+
+  const btn = document.getElementById('salvar-btn');
+  btn.textContent = 'Salvando...';
+  btn.disabled = true;
 
   const fd = new FormData();
   fd.append('cidade', cidade.value);
@@ -691,127 +1188,112 @@ async function salvar(){
   fd.append('responsavel', responsavelInput.value);
   fd.append('status', statusInput.value);
   fd.append('release', releaseInput.value);
-  fd.append(
-  'vinculo_politico',
-  document.getElementById('vinculo_politico').value
-);
+  fd.append('vinculo_politico', document.getElementById('vinculo_politico').value);
 
-  if(fotoInput.files.length){
-    fd.append('foto', fotoInput.files[0]);
+  if (fotoInput.files.length) fd.append('foto', fotoInput.files[0]);
+
+  try {
+    if (editandoId) {
+      await apiFetch('/api/liderancas/' + editandoId, { method: 'PUT', body: fd });
+    } else {
+      await apiFetch('/api/liderancas', { method: 'POST', body: fd });
+    }
+    cancelarEdicao();
+    carregarLiderancas();
+  } catch(e) {
+    alert('Erro ao salvar. Tente novamente.');
+  } finally {
+    btn.textContent = '💾 Salvar liderança';
+    btn.disabled = false;
   }
-
-  if(editandoId){
-    await apiFetch('/api/liderancas/' + editandoId, {
-  method:'PUT',
-  body: fd
-});
-  } else {
-    await apiFetch('/api/liderancas', {
-  method:'POST',
-  body: fd
-});
-
-  }
-
-  cancelarEdicao();
-  carregarLiderancas();
 }
 
 salvarExpectativaCidadeBtn.onclick = async () => {
   const user = JSON.parse(localStorage.getItem('user'));
-  if (user.nivel === 'visualizador') {
-      alert('Seu nível de acesso não permite salvar dados.');
-      return;
-  }
+  if (user.nivel === 'visualizador') { alert('Sem permissão.'); return; }
+  if (!cidade.value) { alert('Selecione uma cidade'); return; }
 
-  if (!cidade.value) {
-    alert('Selecione uma cidade');
-    return;
-  }
+  const btn = salvarExpectativaCidadeBtn;
+  btn.textContent = '...';
+  btn.disabled = true;
 
   const valor = Number(expectativaCidadeInput.value || 0);
-
   await apiFetch('/api/expectativa-cidade', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-      cidade: cidade.value,
-      valor
-    })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cidade: cidade.value, valor })
   });
 
+  btn.textContent = '✓ Salvo!';
+  setTimeout(() => { btn.textContent = '✓ Salvar'; btn.disabled = false; }, 1500);
   carregarLiderancas();
 };
 
-/* ================= EXCLUIR ================= */
-async function excluir(id){
+/* ===== EXCLUIR ===== */
+async function excluir(id) {
   const user = JSON.parse(localStorage.getItem('user'));
-  if (user.nivel === 'visualizador') {
-      alert('Seu nível de acesso não permite excluir dados.');
-      return;
-  }
-
-  if(!confirm('Excluir liderança?')) return;
- await apiFetch('/api/liderancas/' + id, {
-  method:'DELETE'
-});
-
+  if (user.nivel === 'visualizador') { alert('Sem permissão.'); return; }
+  if (!confirm('Tem certeza que deseja excluir esta liderança?')) return;
+  await apiFetch('/api/liderancas/' + id, { method: 'DELETE' });
   carregarLiderancas();
 }
 
+/* ===== GASTOS ===== */
 async function carregarGastos(liderancaId) {
   const user = JSON.parse(localStorage.getItem('user'));
-  document.getElementById('gastos-card').style.display = 'block';
+  const card = document.getElementById('gastos-card');
+  card.style.display = 'block';
 
   const res = await apiFetch(`/api/gastos/${liderancaId}`);
-
   const gastos = await res.json();
 
-  document.getElementById('listaGastos').innerHTML =
-    gastos.map(g => `
-      <div style="border-bottom:1px solid #ddd; padding:4px 0">
-        R$ ${Number(g.valor).toFixed(2)} - ${g.descricao || ''}
-        <br>
-        <small>${new Date(g.data).toLocaleString()} — ${g.usuario}</small>
+  const listaGastos = document.getElementById('listaGastos');
+  if (!gastos.length) {
+    listaGastos.innerHTML = `<div class="state-msg" style="padding:20px;"><div class="icon" style="font-size:24px;">💸</div><p>Nenhum gasto registrado</p></div>`;
+  } else {
+    listaGastos.innerHTML = gastos.map(g => `
+      <div class="gasto-item">
+        <div>
+          <div class="gasto-valor">R$ ${Number(g.valor).toFixed(2).replace('.', ',')}</div>
+          ${g.descricao ? `<div class="gasto-desc">${g.descricao}</div>` : ''}
+          <div class="gasto-meta">${new Date(g.data).toLocaleString('pt-BR')} — ${g.usuario}</div>
+        </div>
       </div>
     `).join('');
+  }
 
   const totalRes = await apiFetch(`/api/gastos-total/${liderancaId}`);
-
   const total = await totalRes.json();
+  document.getElementById('totalGasto').textContent = Number(total.total).toFixed(2).replace('.', ',');
 
-  document.getElementById('totalGasto').innerText =
-    Number(total.total).toFixed(2);
-    
-  if(user.nivel === 'visualizador') {
-      document.getElementById('valorGasto').style.display = 'none';
-      document.getElementById('descricaoGasto').style.display = 'none';
-      if(document.getElementById('btn-add-gasto')) document.getElementById('btn-add-gasto').style.display = 'none';
+  if (user.nivel === 'visualizador') {
+    ['valorGasto','descricaoGasto'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.parentElement.style.display = 'none';
+    });
+    const btnGasto = document.getElementById('btn-add-gasto');
+    if (btnGasto) btnGasto.style.display = 'none';
+    document.querySelector('.section-divider')?.remove();
   }
 }
 
 async function salvarGasto() {
   const user = JSON.parse(localStorage.getItem('user'));
   if (user.nivel === 'visualizador') return;
-
-  if (!liderancaSelecionadaId) {
-    alert('Selecione uma liderança');
-    return;
-  }
+  if (!liderancaSelecionadaId) { alert('Selecione uma liderança para editar primeiro'); return; }
 
   const valor = document.getElementById('valorGasto').value;
   const descricao = document.getElementById('descricaoGasto').value;
 
-  if (!valor) {
-    alert('Informe o valor');
-    return;
-  }
+  if (!valor) { alert('Informe o valor'); return; }
+
+  const btn = document.getElementById('btn-add-gasto');
+  btn.textContent = 'Salvando...';
+  btn.disabled = true;
 
   await apiFetch('/api/gastos', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       lideranca_id: liderancaSelecionadaId,
       valor,
@@ -822,10 +1304,11 @@ async function salvarGasto() {
 
   document.getElementById('valorGasto').value = '';
   document.getElementById('descricaoGasto').value = '';
+  btn.textContent = '+ Registrar gasto';
+  btn.disabled = false;
 
   carregarGastos(liderancaSelecionadaId);
 }
 </script>
-
 </body>
 </html>

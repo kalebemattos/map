@@ -1,418 +1,669 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <title>Análise Estratégica Estadual</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 
 <style>
-body{
-    font-family: 'Inter', 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg,#eef3f9,#f8fbff);
-    margin:0;
-    padding:40px;
-    color:#1e2a38;
+:root {
+  --blue-deep: #0d2d6b;
+  --blue-main: #1565c0;
+  --white: #ffffff;
+  --slate-900: #0f172a;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748b;
+  --slate-400: #94a3b8;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --slate-50: #f8fafc;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.14);
 }
 
-/* Container principal */
-.container{
-    max-width:1450px;
-    margin:auto;
-    background:rgba(255,255,255,0.85);
-    backdrop-filter: blur(14px);
-    padding:40px;
-    border-radius:22px;
-    box-shadow:
-        0 30px 60px rgba(0,0,0,0.06),
-        inset 0 1px 0 rgba(255,255,255,0.4);
-    transition: all .4s ease;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  background: url('../assets/banner.jpg') no-repeat center center fixed;
+  background-size: cover;
+  background-color: #071426;
+  color: var(--slate-700);
 }
 
-h2{
-    font-weight:600;
-    letter-spacing:-0.5px;
-    margin-bottom:25px;
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(6,14,38,0.88) 0%, rgba(10,26,60,0.82) 50%, rgba(13,45,107,0.72) 100%);
+  z-index: 0;
 }
 
-.top-controls{
-    display:flex;
-    flex-wrap:wrap;
-    gap:15px;
-    margin-bottom:30px;
+.noise {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  pointer-events: none;
 }
 
-select,input{
-    padding:12px 14px;
-    border-radius:12px;
-    border:1px solid #e3e8ef;
-    min-width:220px;
-    background:#fff;
-    box-shadow:0 4px 12px rgba(0,0,0,0.04);
-    transition:all .25s ease;
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+  animation: fadeUp 0.4s ease both;
 }
 
-select:hover,input:hover{
-    transform:translateY(-2px);
-    box-shadow:0 8px 18px rgba(0,0,0,0.08);
+/* ===== TOP NAV ===== */
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-select:focus,input:focus{
-    outline:none;
-    border-color:#3a7bd5;
-    box-shadow:0 0 0 3px rgba(58,123,213,0.15);
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.card-candidato{
-    display:none;
-    align-items:center;
-    gap:25px;
-    margin:30px 0;
-    padding:25px 30px;
-    border-radius:18px;
-    background:linear-gradient(135deg,#ffffff,#f5f9ff);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.06);
-    animation: fadeSlide .4s ease;
+.nav-logo {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, var(--blue-main), #42a5f5);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 4px 12px rgba(21,101,192,0.45);
 }
 
-.card-candidato img{
-    width:130px;
-    height:130px;
-    border-radius:50%;
-    object-fit:cover;
-    border:5px solid white;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    transition:all .3s ease;
+.nav-brand h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  letter-spacing: -0.2px;
 }
 
-.card-candidato img:hover{
-    transform:scale(1.05);
+.nav-brand p {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  margin-top: 1px;
 }
 
-.total-votos{
-    font-size:20px;
-    color:#2b6ed4;
-    font-weight:600;
-    margin-top:6px;
+.nav-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+.nav-back:hover { background: rgba(255,255,255,0.12); color: white; }
+
+/* ===== CARD ===== */
+.card {
+  background: rgba(255,255,255,0.97);
+  border-radius: 18px;
+  padding: 22px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255,255,255,0.5);
 }
 
-table{
-    width:100%;
-    border-collapse:separate;
-    border-spacing:0 8px;
+.card-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--slate-900);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
-thead th{
-    background:linear-gradient(90deg,#3a7bd5,#2b6ed4);
-    color:white;
-    padding:14px;
-    text-align:left;
-    font-weight:500;
-    border:none;
+.card-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--slate-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
 }
 
-tbody tr{
-    background:white;
-    box-shadow:0 6px 15px rgba(0,0,0,0.04);
-    transition:all .25s ease;
+/* ===== CONTROLS ===== */
+.controls-grid {
+  display: grid;
+  grid-template-columns: 120px 160px 1fr 1fr 1fr;
+  gap: 10px;
+  align-items: end;
 }
 
-tbody tr:hover{
-    transform:translateY(-3px);
-    box-shadow:0 10px 25px rgba(0,0,0,0.08);
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
-td{
-    padding:14px;
-    border:none;
+.form-group label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--slate-500);
 }
 
-button{
-    padding:8px 14px;
-    border:none;
-    border-radius:10px;
-    background:linear-gradient(135deg,#3a7bd5,#2b6ed4);
-    color:white;
-    font-weight:500;
-    cursor:pointer;
-    transition:all .25s ease;
-    box-shadow:0 5px 15px rgba(58,123,213,0.3);
+select, input[type="text"] {
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  border-radius: 9px;
+  border: 1.5px solid var(--slate-200);
+  background: var(--slate-50);
+  color: var(--slate-900);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none;
+  width: 100%;
 }
 
-button:hover{
-    transform:translateY(-2px);
-    box-shadow:0 8px 20px rgba(58,123,213,0.4);
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
 }
 
-/* --- ESTILOS DO MODAL E DASHBOARD --- */
-.modal{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(15,23,42,0.55);
-    backdrop-filter:blur(6px);
-    justify-content:center;
-    align-items:center;
-    animation: fade .3s ease;
-    z-index: 1000;
+select:focus, input:focus {
+  border-color: var(--blue-main);
+  box-shadow: 0 0 0 3px rgba(21,101,192,0.1);
+  background: white;
 }
 
-.modal-content{
-    background:white;
-    padding:35px;
-    border-radius:20px;
-    width:95%;
-    max-width:1200px;
-    max-height:90vh;
-    overflow:auto;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.25);
-    animation: fadeSlide .4s ease;
+/* ===== CANDIDATO CARD ===== */
+.candidato-card {
+  display: none;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
+  border-radius: 16px;
+  margin-bottom: 18px;
+  animation: fadeUp 0.3s ease;
+  box-shadow: 0 8px 24px rgba(13,45,107,0.4);
 }
 
-.modal-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:25px;
+.candidato-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255,255,255,0.25);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.candidato-avatar:hover { transform: scale(1.05); }
+
+.candidato-info h3 {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 6px;
 }
 
-.modal-header h3{
-    font-size:22px;
-    font-weight:600;
-    color:#1e2a38;
-    margin: 0;
+.candidato-votos {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  font-weight: 500;
 }
 
-.close-btn{
-    background:#f1f4f9;
-    border:none;
-    border-radius:10px;
-    padding:8px 12px;
-    cursor:pointer;
-    font-size:16px;
-    transition:.2s;
-    color: #1e2a38;
+.candidato-votos strong {
+  color: #fbbf24;
+  font-family: 'Sora', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin-left: 4px;
 }
 
-.close-btn:hover{
-    background:#e2e8f0;
-    transform:scale(1.05);
+/* ===== TABLE ===== */
+.table-wrapper {
+  overflow-x: auto;
 }
 
-.dashboard-grid{
-    display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap:25px;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
 }
 
-.card-dashboard{
-    background:linear-gradient(135deg,#ffffff,#f7faff);
-    padding:25px;
-    border-radius:18px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-    transition:.3s ease;
-    border: 1px solid #f0f4f8;
+thead tr {
+  background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
 }
 
-.card-dashboard:hover{
-    transform:translateY(-4px);
-    box-shadow: 0 18px 35px rgba(0,0,0,0.08);
+th {
+  color: rgba(255,255,255,0.85);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 12px 14px;
+  text-align: left;
+  white-space: nowrap;
 }
 
-.card-dashboard h4{
-    margin-bottom:15px;
-    font-weight:600;
-    font-size:15px;
-    color:#2b6ed4;
-    margin-top: 0;
+td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--slate-100);
+  font-size: 13px;
+  color: var(--slate-700);
+  vertical-align: middle;
 }
 
-/* =========================
-   MOBILE FIRST ADJUSTMENTS
-========================= */
-@media (max-width: 768px){
-    body{
-        padding:15px;
-    }
-
-    .container{
-        padding:20px;
-        border-radius:18px;
-    }
-
-    h2{
-        font-size:20px;
-    }
-
-    .top-controls{
-        flex-direction:column;
-        gap:12px;
-        background:#fff;
-        padding:15px;
-        border-radius:15px;
-        box-shadow:0 8px 20px rgba(0,0,0,0.06);
-    }
-
-    select,input{
-        width:100%;
-        min-width:unset;
-    }
-
-    .card-candidato{
-        flex-direction:column;
-        text-align:center;
-        gap:15px;
-    }
-
-    .card-candidato img{
-        width:110px;
-        height:110px;
-    }
-
-    /* Tabela como Cards no Mobile */
-    table thead{
-        display:none;
-    }
-
-    table, tbody, tr, td{
-        display:block;
-        width:100%;
-    }
-
-    tbody tr{
-        margin-bottom:15px;
-        padding:15px;
-        border-radius:16px;
-    }
-
-    td{
-        padding:6px 0;
-        display:flex;
-        justify-content:space-between;
-        font-size:14px;
-        border-bottom: 1px solid #f0f4f8;
-    }
-
-    td:last-child{
-        border-bottom:none;
-        justify-content: center;
-        padding-top: 10px;
-    }
-
-    td::before{
-        content:attr(data-label);
-        font-weight:600;
-        color:#2b6ed4;
-    }
-
-    .dashboard-grid{
-        grid-template-columns:1fr;
-    }
-
-    .modal-content{
-        width:100%;
-        height:100%;
-        max-width:100%;
-        max-height:100%;
-        border-radius:0;
-        padding:20px;
-    }
+tbody tr {
+  background: white;
+  transition: background 0.15s;
 }
 
-@keyframes fadeSlide{
-    from{opacity:0; transform:translateY(15px);}
-    to{opacity:1; transform:translateY(0);}
+tbody tr:hover { background: #f0f6ff; }
+tbody tr:last-child td { border-bottom: none; }
+
+.city-name {
+  font-weight: 600;
+  color: var(--slate-900);
 }
 
-@keyframes fade{
-    from{opacity:0;}
-    to{opacity:1;}
+.votos-num {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  color: var(--blue-main);
+}
+
+.posicao-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Sora', sans-serif;
+}
+
+.pos-1 { background: #fef3c7; color: #92400e; }
+.pos-2 { background: #e2e8f0; color: #475569; }
+.pos-3 { background: #fce7f3; color: #9d174d; }
+.pos-other { background: var(--slate-100); color: var(--slate-500); }
+
+.pct-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 100px;
+}
+
+.pct-bar {
+  flex: 1;
+  height: 5px;
+  background: var(--slate-100);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.pct-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue-main), #42a5f5);
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
+
+.pct-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate-600);
+  min-width: 44px;
+  text-align: right;
+}
+
+.btn-perfil {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 7px;
+  background: var(--slate-100);
+  color: var(--blue-main);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+  letter-spacing: 0.2px;
+}
+.btn-perfil:hover { background: var(--blue-main); color: white; }
+
+.empty-state {
+  text-align: center;
+  padding: 50px 20px;
+  color: var(--slate-400);
+}
+.empty-state .icon { font-size: 36px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; font-weight: 500; }
+
+.result-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--slate-50);
+  border-top: 1px solid var(--slate-100);
+  font-size: 12px;
+  color: var(--slate-500);
+  font-weight: 500;
+}
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(8,18,48,0.72);
+  backdrop-filter: blur(8px);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-card {
+  background: white;
+  border-radius: 22px;
+  width: 100%;
+  max-width: 1100px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.35);
+  animation: fadeUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--slate-100);
+}
+
+.modal-header h3 {
+  font-family: 'Sora', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--slate-900);
+}
+
+.modal-close {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: var(--slate-100);
+  color: var(--slate-600);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.modal-close:hover { background: var(--slate-200); }
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  padding: 20px 24px 24px;
+}
+
+.chart-card {
+  background: var(--slate-50);
+  border-radius: 14px;
+  padding: 18px;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.chart-card h4 {
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--slate-700);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.chart-card h4::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  background: var(--blue-main);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 900px) {
+  .controls-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 600px) {
+  .page { padding: 16px 14px 40px; }
+  .controls-grid { grid-template-columns: 1fr; }
+  .candidato-card { flex-direction: column; text-align: center; }
+
+  table thead { display: none; }
+  table, tbody, tr, td { display: block; width: 100%; }
+
+  tbody tr {
+    margin-bottom: 12px;
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+
+  td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--slate-100);
+    padding: 6px 0;
+    font-size: 13px;
+  }
+
+  td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--slate-500);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  td:last-child { justify-content: flex-end; border-bottom: none; }
+  td:last-child::before { display: none; }
+
+  .charts-grid { grid-template-columns: 1fr; }
+
+  .modal-card {
+    max-height: 95vh;
+    border-radius: 20px 20px 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+  }
 }
 </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Análise Estratégica Estadual</h2>
+<div class="overlay"></div>
+<div class="noise"></div>
 
-    <div class="top-controls">
+<div class="page">
+
+  <!-- NAV -->
+  <nav class="top-nav">
+    <div class="nav-brand">
+      <div class="nav-logo">📊</div>
+      <div>
+        <h1>Análise Estratégica</h1>
+        <p>Rio de Janeiro · Dados eleitorais</p>
+      </div>
+    </div>
+    <a href="../home.html" class="nav-back">← Voltar</a>
+  </nav>
+
+  <!-- CONTROLS CARD -->
+  <div class="card">
+    <div class="card-title">
+      <div class="card-icon">🔍</div>
+      Filtros de busca
+    </div>
+    <div class="controls-grid">
+      <div class="form-group">
+        <label>Ano</label>
         <select id="anoSelect">
-            <option value="2022">2022</option>
-            <option value="2018">2018</option>
-            <option value="2014">2014</option>
-            <option value="2010">2010</option>
+          <option value="2022">2022</option>
+          <option value="2018">2018</option>
+          <option value="2014">2014</option>
+          <option value="2010">2010</option>
         </select>
-
+      </div>
+      <div class="form-group">
+        <label>Cargo</label>
         <select id="cargoSelect">
-            <option value="DEPUTADO ESTADUAL">DEPUTADO ESTADUAL</option>
-            <option value="DEPUTADO FEDERAL">DEPUTADO FEDERAL</option>
+          <option value="DEPUTADO ESTADUAL">Dep. Estadual</option>
+          <option value="DEPUTADO FEDERAL">Dep. Federal</option>
         </select>
-
-        <input type="text" id="buscarCandidato" placeholder="Buscar candidato">
+      </div>
+      <div class="form-group">
+        <label>Buscar candidato</label>
+        <input type="text" id="buscarCandidato" placeholder="Nome do candidato...">
+      </div>
+      <div class="form-group">
+        <label>Candidato</label>
         <select id="candidatoSelect"></select>
-
-        <input type="text" id="buscarCidade" placeholder="Buscar cidade">
+      </div>
+      <div class="form-group">
+        <label>Filtrar cidade</label>
+        <input type="text" id="buscarCidade" placeholder="Nome da cidade...">
+      </div>
     </div>
+  </div>
 
-    <div id="cardCandidato" class="card-candidato">
-        <img id="fotoCandidato" alt="Foto do Candidato">
-        <div>
-            <h3 id="nomeCandidatoDisplay"></h3>
-            <div class="total-votos" id="totalVotosCandidato"></div>
-        </div>
+  <!-- CANDIDATO CARD -->
+  <div class="candidato-card" id="cardCandidato">
+    <img class="candidato-avatar" id="fotoCandidato" alt="Foto do candidato">
+    <div class="candidato-info">
+      <h3 id="nomeCandidatoDisplay"></h3>
+      <div class="candidato-votos" id="totalVotosCandidato"></div>
     </div>
+  </div>
 
-    <table>
+  <!-- TABLE CARD -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:18px 22px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div class="card-title" style="margin-bottom:0;">
+        <div class="card-icon">🗳️</div>
+        Resultado por cidade
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table>
         <thead>
-            <tr>
-                <th>Cidade</th>
-                <th>Votos</th>
-                <th>Válidos</th>
-                <th>% Cidade</th>
-                <th>Posição</th>
-                <th>% RJ</th>
-                <th>Perfil</th>
-            </tr>
+          <tr>
+            <th>Cidade</th>
+            <th>Votos</th>
+            <th>Válidos</th>
+            <th>% Cidade</th>
+            <th>Posição</th>
+            <th>% RJ</th>
+            <th>Perfil</th>
+          </tr>
         </thead>
         <tbody id="resultado"></tbody>
-    </table>
+      </table>
+      <div class="result-footer" id="result-footer" style="display:none;"></div>
+    </div>
+  </div>
+
 </div>
 
-<div class="modal" id="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="tituloCidade"></h3>
-            <button class="close-btn" onclick="fecharModal()">✕</button>
-        </div>
-
-        <div class="dashboard-grid">
-            <div class="card-dashboard">
-                <h4>Distribuição por Gênero</h4>
-                <canvas id="chartGenero"></canvas>
-            </div>
-
-            <div class="card-dashboard">
-                <h4>Distribuição por Faixa Etária</h4>
-                <canvas id="chartFaixa"></canvas>
-            </div>
-
-            <div class="card-dashboard">
-                <h4>Estado Civil</h4>
-                <canvas id="chartEstadoCivil"></canvas>
-            </div>
-
-            <div class="card-dashboard">
-                <h4>Escolaridade</h4>
-                <canvas id="chartEscolaridade"></canvas>
-            </div>
-        </div>
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="fecharModalFora(event)">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="tituloCidade"></h3>
+      <button class="modal-close" onclick="fecharModal()">✕</button>
     </div>
+    <div class="charts-grid">
+      <div class="chart-card"><h4>Distribuição por Gênero</h4><canvas id="chartGenero"></canvas></div>
+      <div class="chart-card"><h4>Faixa Etária</h4><canvas id="chartFaixa"></canvas></div>
+      <div class="chart-card"><h4>Estado Civil</h4><canvas id="chartEstadoCivil"></canvas></div>
+      <div class="chart-card"><h4>Escolaridade</h4><canvas id="chartEscolaridade"></canvas></div>
+    </div>
+  </div>
 </div>
 
 <script>
-// 🔥 BASE PATH DINÂMICA
 const BASE_PATH = "./";
-
 let resumo = {};
 let eleitorado = {};
 let candidatoSelecionado = null;
@@ -421,194 +672,209 @@ let charts = [];
 let anoSelecionado = "2022";
 const UF = "RJ";
 
-// Performance: Carregar após DOM pronto
-document.addEventListener("DOMContentLoaded", function() {
-    carregarAno(anoSelecionado);
+document.addEventListener("DOMContentLoaded", () => {
+  carregarAno(anoSelecionado);
 });
 
-// LISTENERS
 document.getElementById("anoSelect").addEventListener("change", function() {
-    anoSelecionado = this.value;
-    carregarAno(anoSelecionado);
+  anoSelecionado = this.value;
+  carregarAno(anoSelecionado);
 });
-
 document.getElementById("cargoSelect").addEventListener("change", preencherCandidatos);
 document.getElementById("buscarCandidato").addEventListener("input", preencherCandidatos);
 document.getElementById("buscarCidade").addEventListener("input", mostrarAnalise);
 
 function normalizarTexto(txt) {
-    if (!txt) return "";
-    return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+  if (!txt) return "";
+  return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
 }
 
-// 🔥 CARREGAR JSON POR ANO
 async function carregarAno(ano) {
-    try {
-        const resumoResp = await fetch(`${BASE_PATH}dados/${ano}/resumo.json`)
-        const eleitorResp = await fetch(`${BASE_PATH}dados/${ano}/eleitorado.json`)
-
-        resumo = await resumoResp.json();
-        eleitorado = await eleitorResp.json();
-
-        console.log("Ano carregado:", ano);
-        preencherCandidatos();
-    } catch (e) {
-        console.error("Erro ao carregar ano:", ano, e);
-    }
+  try {
+    const [resumoResp, eleitorResp] = await Promise.all([
+      fetch(`${BASE_PATH}dados/${ano}/resumo.json`),
+      fetch(`${BASE_PATH}dados/${ano}/eleitorado.json`)
+    ]);
+    resumo = await resumoResp.json();
+    eleitorado = await eleitorResp.json();
+    preencherCandidatos();
+  } catch (e) {
+    console.error("Erro ao carregar ano:", ano, e);
+  }
 }
 
 function preencherCandidatos() {
-    let cargoSelecionado = document.getElementById("cargoSelect").value;
-    let filtro = normalizarTexto(document.getElementById("buscarCandidato").value);
-    let select = document.getElementById("candidatoSelect");
-    select.innerHTML = "";
+  const cargoSelecionado = document.getElementById("cargoSelect").value;
+  const filtro = normalizarTexto(document.getElementById("buscarCandidato").value);
+  const select = document.getElementById("candidatoSelect");
+  select.innerHTML = "";
 
-    let chaveCargo = Object.keys(resumo).find(k => k.toUpperCase() === cargoSelecionado.toUpperCase());
-    if (!chaveCargo) return;
+  const chaveCargo = Object.keys(resumo).find(k => k.toUpperCase() === cargoSelecionado.toUpperCase());
+  if (!chaveCargo) return;
 
-    let dadosCargo = resumo[chaveCargo];
-    let mapa = {};
-
-    Object.values(dadosCargo.CIDADES).forEach(cidade => {
-        cidade.candidatos.forEach(c => {
-            if (c.sq_candidato > 0) mapa[c.nome] = c.sq_candidato;
-        });
+  const dadosCargo = resumo[chaveCargo];
+  const mapa = {};
+  Object.values(dadosCargo.CIDADES).forEach(cidade => {
+    cidade.candidatos.forEach(c => {
+      if (c.sq_candidato > 0) mapa[c.nome] = c.sq_candidato;
     });
+  });
 
-    let nomesFiltrados = Object.keys(mapa).sort().filter(nome => normalizarTexto(nome).includes(filtro));
+  const nomesFiltrados = Object.keys(mapa).sort().filter(n => normalizarTexto(n).includes(filtro));
+  nomesFiltrados.forEach(nome => {
+    const opt = document.createElement("option");
+    opt.value = nome; opt.text = nome; opt.dataset.sq = mapa[nome];
+    select.appendChild(opt);
+  });
 
-    nomesFiltrados.forEach(nome => {
-        let option = document.createElement("option");
-        option.value = nome;
-        option.text = nome;
-        option.dataset.sq = mapa[nome];
-        select.appendChild(option);
-    });
-
-    select.onchange = function() {
-        if (this.selectedIndex === -1) return;
-        candidatoSelecionado = this.value;
-        sqSelecionado = this.options[this.selectedIndex].dataset.sq;
-        document.getElementById("nomeCandidatoDisplay").innerText = candidatoSelecionado;
-        atualizarFoto();
-        mostrarAnalise();
-    };
-    if (nomesFiltrados.length > 0) select.onchange();
+  select.onchange = function() {
+    if (this.selectedIndex === -1) return;
+    candidatoSelecionado = this.value;
+    sqSelecionado = this.options[this.selectedIndex].dataset.sq;
+    document.getElementById("nomeCandidatoDisplay").textContent = candidatoSelecionado;
+    atualizarFoto();
+    mostrarAnalise();
+  };
+  if (nomesFiltrados.length > 0) select.onchange();
 }
 
-// 🔥 FOTO DINÂMICA
 function atualizarFoto() {
-    if (!sqSelecionado) return;
+  if (!sqSelecionado) return;
+  const prefixo = anoSelecionado >= 2018 ? "F" + UF : UF;
+  const img = document.getElementById("fotoCandidato");
+  img.src = `./fotos/${anoSelecionado}/${UF}/${prefixo}${sqSelecionado}_div.jpg`;
+  img.onerror = function() { this.src = "./sem-foto.png"; };
+  document.getElementById("cardCandidato").style.display = "flex";
+}
 
-    let prefixo;
-    if (anoSelecionado >= 2018) {
-        prefixo = "F" + UF;
-    } else {
-        prefixo = UF;
-    }
-
-    let fotoUrl = `./fotos/${anoSelecionado}/${UF}/${prefixo}${sqSelecionado}_div.jpg`;
-    const img = document.getElementById("fotoCandidato");
-    img.src = fotoUrl;
-    img.onerror = function () {
-        this.src = "./sem-foto.png";
-    };
-
-    document.getElementById("cardCandidato").style.display = "flex";
+function getPosClass(pos) {
+  return ['pos-1','pos-2','pos-3'][pos - 1] || 'pos-other';
 }
 
 function mostrarAnalise() {
-    if (!candidatoSelecionado) return;
-    let cargo = document.getElementById("cargoSelect").value;
-    let filtroCidade = normalizarTexto(document.getElementById("buscarCidade").value);
-    let tbody = document.getElementById("resultado");
-    tbody.innerHTML = "";
+  if (!candidatoSelecionado) return;
+  const cargo = document.getElementById("cargoSelect").value;
+  const filtroCidade = normalizarTexto(document.getElementById("buscarCidade").value);
+  const tbody = document.getElementById("resultado");
+  tbody.innerHTML = "";
 
-    let chaveCargo = Object.keys(resumo).find(k => k.toUpperCase() === cargo.toUpperCase());
-    if (!chaveCargo) return;
+  const chaveCargo = Object.keys(resumo).find(k => k.toUpperCase() === cargo.toUpperCase());
+  if (!chaveCargo) return;
 
-    let dadosCargo = resumo[chaveCargo];
-    let totalRJ = dadosCargo.TOTAL_RJ;
-    let cidades = dadosCargo.CIDADES;
-    let totalVotosGeral = 0;
+  const dadosCargo = resumo[chaveCargo];
+  const totalRJ = dadosCargo.TOTAL_RJ;
+  const cidades = dadosCargo.CIDADES;
+  let totalVotosGeral = 0;
+  let rowCount = 0;
 
-    Object.keys(cidades).sort().forEach(cidadeNome => {
-        if (filtroCidade && !normalizarTexto(cidadeNome).includes(filtroCidade)) return;
-        let dadosCidade = cidades[cidadeNome];
-        let candidato = dadosCidade.candidatos.find(c => normalizarTexto(c.nome) === normalizarTexto(candidatoSelecionado));
-        if (!candidato) return;
-
-        totalVotosGeral += candidato.votos;
-        let percentualCidade = ((candidato.votos / dadosCidade.total_validos) * 100).toFixed(2);
-        let percentualRJ = ((candidato.votos / totalRJ) * 100).toFixed(4);
-
-        let tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td data-label="Cidade">${cidadeNome}</td>
-            <td data-label="Votos">${candidato.votos.toLocaleString()}</td>
-            <td data-label="Válidos">${dadosCidade.total_validos.toLocaleString()}</td>
-            <td data-label="% Cidade">${percentualCidade}%</td>
-            <td data-label="Posição">${candidato.posicao}º</td>
-            <td data-label="% RJ">${percentualRJ}%</td>
-            <td data-label="Perfil"><button onclick="abrirModal('${cidadeNome}')">Ver</button></td>
-        `;
-        tbody.appendChild(tr);
-    });
-    document.getElementById("totalVotosCandidato").innerText = "Total no Estado: " + totalVotosGeral.toLocaleString() + " votos";
-}
-
-function abrirModal(cidade){
-    document.getElementById("tituloCidade").innerText = "Perfil do Eleitorado - " + cidade;
-    destruirGraficos();
-    let dados = eleitorado[cidade];
-    if(!dados) {
-        alert("Dados de perfil não disponíveis para esta cidade.");
-        return;
+  // Calcular max % cidade para barras proporcionais
+  let maxPct = 0;
+  Object.values(cidades).forEach(dadosCidade => {
+    const c = dadosCidade.candidatos.find(c => normalizarTexto(c.nome) === normalizarTexto(candidatoSelecionado));
+    if (c) {
+      const pct = c.votos / dadosCidade.total_validos * 100;
+      if (pct > maxPct) maxPct = pct;
     }
-    criarGrafico("chartGenero", "Distribuição por Gênero", dados.genero);
-    criarGrafico("chartFaixa", "Faixa Etária", dados.faixa_etaria);
-    criarGrafico("chartEstadoCivil", "Estado Civil", dados.estado_civil);
-    criarGrafico("chartEscolaridade", "Escolaridade", dados.escolaridade);
-    document.getElementById("modal").style.display = "flex";
+  });
+
+  Object.keys(cidades).sort().forEach(cidadeNome => {
+    if (filtroCidade && !normalizarTexto(cidadeNome).includes(filtroCidade)) return;
+    const dadosCidade = cidades[cidadeNome];
+    const candidato = dadosCidade.candidatos.find(c => normalizarTexto(c.nome) === normalizarTexto(candidatoSelecionado));
+    if (!candidato) return;
+
+    totalVotosGeral += candidato.votos;
+    rowCount++;
+    const pctCidade = (candidato.votos / dadosCidade.total_validos * 100).toFixed(2);
+    const pctRJ = (candidato.votos / totalRJ * 100).toFixed(4);
+    const barW = maxPct > 0 ? (candidato.votos / dadosCidade.total_validos * 100 / maxPct * 100).toFixed(1) : 0;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td data-label="Cidade"><span class="city-name">${cidadeNome}</span></td>
+      <td data-label="Votos"><span class="votos-num">${candidato.votos.toLocaleString('pt-BR')}</span></td>
+      <td data-label="Válidos">${dadosCidade.total_validos.toLocaleString('pt-BR')}</td>
+      <td data-label="% Cidade">
+        <div class="pct-bar-wrap">
+          <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
+          <span class="pct-label">${pctCidade}%</span>
+        </div>
+      </td>
+      <td data-label="Posição"><span class="posicao-badge ${getPosClass(candidato.posicao)}">${candidato.posicao}º</span></td>
+      <td data-label="% RJ"><span style="font-size:12px;">${pctRJ}%</span></td>
+      <td data-label=""><button class="btn-perfil" onclick="abrirModal('${cidadeNome.replace(/'/g,"\\'")}')">📊 Ver</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  if (rowCount === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">🔍</div><p>Nenhum resultado encontrado</p></div></td></tr>`;
+    document.getElementById("result-footer").style.display = "none";
+  } else {
+    const footer = document.getElementById("result-footer");
+    footer.style.display = "flex";
+    footer.textContent = `${rowCount} cidades · Total: ${totalVotosGeral.toLocaleString('pt-BR')} votos`;
+  }
+
+  const totalEl = document.getElementById("totalVotosCandidato");
+  totalEl.innerHTML = `Total no estado:<strong>${totalVotosGeral.toLocaleString('pt-BR')}</strong>`;
 }
 
-function fecharModal(){
-    document.getElementById("modal").style.display = "none";
+function abrirModal(cidade) {
+  document.getElementById("tituloCidade").textContent = "Perfil do eleitorado — " + cidade;
+  destruirGraficos();
+  const dados = eleitorado[cidade];
+  if (!dados) { alert("Dados de perfil não disponíveis para esta cidade."); return; }
+
+  const paleta = ['#0d2d6b','#1565c0','#1976d2','#1e88e5','#42a5f5','#64b5f6','#90caf9','#bbdefb'];
+  criarGrafico("chartGenero", dados.genero, paleta);
+  criarGrafico("chartFaixa", dados.faixa_etaria, paleta);
+  criarGrafico("chartEstadoCivil", dados.estado_civil, paleta);
+  criarGrafico("chartEscolaridade", dados.escolaridade, paleta);
+
+  document.getElementById("modal").style.display = "flex";
 }
 
-function criarGrafico(id, titulo, dadosObj) {
-    let ctx = document.getElementById(id);
-    let chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: Object.keys(dadosObj),
-            datasets: [{
-                data: Object.values(dadosObj),
-                backgroundColor: '#3a7bd5',
-                borderRadius: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                x: { grid: { display: false } },
-                y: { 
-                    beginAtZero: true,
-                    grid: { color: "rgba(0,0,0,0.05)" }
-                }
-            }
+function fecharModal() { document.getElementById("modal").style.display = "none"; }
+function fecharModalFora(e) { if (e.target === document.getElementById("modal")) fecharModal(); }
+document.addEventListener("keydown", e => { if (e.key === "Escape") fecharModal(); });
+
+function criarGrafico(id, dadosObj, cores) {
+  const ctx = document.getElementById(id);
+  const labels = Object.keys(dadosObj);
+  const chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: Object.values(dadosObj),
+        backgroundColor: labels.map((_, i) => cores[i % cores.length]),
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ` ${ctx.parsed.y.toLocaleString('pt-BR')} eleitores` }
         }
-    });
-    charts.push(chart);
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11, family: 'DM Sans' }, color: '#64748b' } },
+        y: {
+          beginAtZero: true,
+          grid: { color: "rgba(0,0,0,0.04)" },
+          ticks: { font: { size: 11, family: 'DM Sans' }, color: '#64748b', callback: v => v.toLocaleString('pt-BR') }
+        }
+      }
+    }
+  });
+  charts.push(chart);
 }
 
-function destruirGraficos(){
-    charts.forEach(c => c.destroy());
-    charts = [];
-}
+function destruirGraficos() { charts.forEach(c => c.destroy()); charts = []; }
 </script>
 
 </body>

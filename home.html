@@ -2,151 +2,367 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Prisma Gestão Política</title>
+<title>Paralax Gestão Política</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-:root{
-  --primary:#0f172a;
-  --accent:#2563eb;
-  --accent2:#7c3aed;
-  --text:#0f172a;
-  --muted:#64748b;
-  --radius:18px;
+:root {
+  --blue-deep: #0d2d6b;
+  --blue-main: #1565c0;
+  --blue-mid: #1976d2;
+  --blue-light: #e8f0fe;
+  --white: #ffffff;
+  --slate-900: #0f172a;
+  --slate-700: #334155;
+  --slate-500: #64748b;
+  --slate-300: #cbd5e1;
 }
 
-*{box-sizing:border-box}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* 🎯 1) BODY COM FUNDO LOCAL FIXO */
-body{
-  margin:0;
-  font-family:'Inter',sans-serif;
-  min-height:100vh;
+html, body {
+  height: 100%;
+}
 
+body {
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
   background: url('./assets/banner.jpg') no-repeat center center fixed;
   background-size: cover;
-
-  display:flex;
-  flex-direction:column;
+  background-color: #071426;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
 }
 
-/* 🎯 2) OVERLAY ESCURO ELEGANTE */
-.overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(15,23,42,0.65);
-  z-index:-1;
+/* ===== OVERLAY ===== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    160deg,
+    rgba(6, 14, 38, 0.88) 0%,
+    rgba(10, 26, 60, 0.80) 40%,
+    rgba(13, 45, 107, 0.70) 100%
+  );
+  z-index: 0;
 }
 
-/* CABEÇALHO */
-.top-image{
-  height:240px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  position:relative;
+/* ===== NOISE TEXTURE ===== */
+.noise {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  pointer-events: none;
 }
 
-.top-content{
-  position:relative;
-  color:#fff;
-  text-align:center;
-  z-index:2;
+/* ===== MAIN STRUCTURE ===== */
+.page {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.top-content h1{
-  margin:0;
-  font-size:32px;
-  font-weight:800;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+/* ===== TOP NAV ===== */
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  animation: fadeDown 0.5s ease both;
 }
 
-.top-content p{
-  margin-top:10px;
-  font-size:15px;
-  color:#cbd5e1;
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-/* 🎯 4) CENTRALIZAR TUDO NO MEIO DA TELA */
-.main{
-  flex:1;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:40px 20px;
+.nav-logo {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--blue-main), #42a5f5);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 4px 14px rgba(21,101,192,0.5);
 }
 
-/* GRID CENTRALIZADO */
-.container{
-  width:100%;
-  max-width:1100px;
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-  gap:30px;
+.nav-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  letter-spacing: -0.2px;
 }
 
-/* 🎯 3) CARDS PREMIUM (GLASS EFFECT) */
-.card{
-  background:rgba(255,255,255,0.95);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px); /* Suporte para Safari */
-  border-radius:var(--radius);
-  padding:24px;
-  box-shadow:0 15px 40px rgba(0,0,0,0.35);
-  display:flex;
-  flex-direction:column;
-  text-align:center;
-  transition:.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(255,255,255,0.2);
+.nav-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
-.card:hover{
-  transform:translateY(-8px);
-  background:rgba(255,255,255,1);
-  box-shadow:0 20px 50px rgba(0,0,0,0.45);
+/* ===== HERO ===== */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px 36px;
+  animation: fadeUp 0.6s ease 0.1s both;
 }
 
-.card h2{
-  margin:0;
-  font-size:18px;
-  font-weight:700;
-  color: var(--primary);
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 16px;
 }
 
-.card p{
-  font-size:14px;
-  color:var(--muted);
-  margin:15px 0 25px;
-  flex:1;
-  line-height: 1.5;
+.hero-eyebrow::before,
+.hero-eyebrow::after {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: rgba(255,255,255,0.2);
 }
 
-.card a{
-  text-decoration:none;
-  padding:12px;
-  border-radius:12px;
-  font-weight:600;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  color:#fff;
-  transition:.3s;
+.hero h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin-bottom: 14px;
+  text-shadow: 0 2px 30px rgba(0,0,0,0.3);
 }
 
-.card a:hover{
-  opacity:.9;
-  transform:scale(1.03);
+.hero h1 span {
+  background: linear-gradient(90deg, #60a5fa, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-#card-gestao-usuarios{
-  border:2px solid var(--accent);
+.hero p {
+  font-size: 16px;
+  color: rgba(255,255,255,0.5);
+  max-width: 440px;
+  line-height: 1.6;
 }
 
-footer{
-  text-align:center;
-  padding:20px;
-  font-size:13px;
-  color:#cbd5e1;
+/* ===== CARDS GRID ===== */
+.cards-section {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0 24px 48px;
+}
+
+.cards-grid {
+  width: 100%;
+  max-width: 1060px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 26px 24px;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1),
+              background 0.2s ease,
+              border-color 0.2s ease,
+              box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.5s ease both;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 60%);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.card:hover {
+  transform: translateY(-6px) scale(1.01);
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.card:active {
+  transform: translateY(-2px) scale(0.99);
+}
+
+.card-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.card-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.55;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.card-cta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  position: relative;
+  z-index: 1;
+  transition: gap 0.2s;
+}
+
+.card:hover .card-cta { gap: 10px; }
+
+.card-cta-arrow {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.card:hover .card-cta-arrow { transform: translateX(3px); }
+
+/* Color themes per card */
+.card-blue .card-icon-wrap { background: rgba(21,101,192,0.35); }
+.card-blue .card-cta { color: #60a5fa; }
+.card-blue .card-cta-arrow { background: rgba(21,101,192,0.3); color: #60a5fa; }
+.card-blue:hover { border-color: rgba(96,165,250,0.3); }
+
+.card-purple .card-icon-wrap { background: rgba(124,58,237,0.3); }
+.card-purple .card-cta { color: #a78bfa; }
+.card-purple .card-cta-arrow { background: rgba(124,58,237,0.25); color: #a78bfa; }
+.card-purple:hover { border-color: rgba(167,139,250,0.3); }
+
+.card-teal .card-icon-wrap { background: rgba(13,148,136,0.3); }
+.card-teal .card-cta { color: #5eead4; }
+.card-teal .card-cta-arrow { background: rgba(13,148,136,0.25); color: #5eead4; }
+.card-teal:hover { border-color: rgba(94,234,212,0.3); }
+
+.card-amber .card-icon-wrap { background: rgba(217,119,6,0.3); }
+.card-amber .card-cta { color: #fbbf24; }
+.card-amber .card-cta-arrow { background: rgba(217,119,6,0.25); color: #fbbf24; }
+.card-amber:hover { border-color: rgba(251,191,36,0.3); }
+
+.card-rose .card-icon-wrap { background: rgba(190,18,60,0.3); }
+.card-rose .card-cta { color: #fb7185; }
+.card-rose .card-cta-arrow { background: rgba(190,18,60,0.25); color: #fb7185; }
+.card-rose:hover { border-color: rgba(251,113,133,0.3); }
+
+/* Featured card accent */
+.card-featured {
+  border-color: rgba(96,165,250,0.25);
+  background: rgba(21,101,192,0.1);
+}
+
+/* Admin card (hidden by default) */
+#card-admin {
+  display: none;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 20px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.22);
+  letter-spacing: 0.3px;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card:nth-child(1) { animation-delay: 0.15s; }
+.card:nth-child(2) { animation-delay: 0.22s; }
+.card:nth-child(3) { animation-delay: 0.29s; }
+.card:nth-child(4) { animation-delay: 0.36s; }
+.card:nth-child(5) { animation-delay: 0.43s; }
+
+/* ===== MOBILE ===== */
+@media (max-width: 600px) {
+  .top-nav { padding: 16px 20px; }
+  .hero { padding: 32px 20px 24px; }
+  .hero h1 { font-size: 28px; }
+  .cards-section { padding: 0 16px 36px; }
+  .cards-grid { grid-template-columns: 1fr; gap: 12px; }
+  .card { padding: 22px 20px; }
 }
 </style>
 </head>
@@ -154,60 +370,93 @@ footer{
 <body>
 
 <div class="overlay"></div>
+<div class="noise"></div>
 
-<section class="top-image">
-  <div class="top-content">
-    <h1>Paralax Gestão</h1>
-    <p>Gestão de Campanha</p>
-  </div>
-</section>
+<div class="page">
 
-<section class="main">
-  <div class="container">
-
-    <div class="card">
-      <h2>🗺️ Mapa Estratégico</h2>
-      <p>Visualização interativa de municípios, lideranças e dados eleitorais organizados por região.</p>
-      <a href="./">Abrir Mapa</a>
+  <!-- NAV -->
+  <nav class="top-nav">
+    <div class="nav-brand">
+      <div class="nav-logo">🗺️</div>
+      <span class="nav-name">Paralax</span>
     </div>
+    <span class="nav-badge">Gestão Política</span>
+  </nav>
 
-    <div class="card">
-      <h2>👥 Painel Administrativo</h2>
-      <p>Cadastro e gerenciamento completo das lideranças com controle estratégico.</p>
-      <a href="./admin/">Abrir Painel</a>
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-eyebrow">Plataforma Estratégica</div>
+    <h1>Gestão de <span>Campanha</span><br>Política</h1>
+    <p>Controle suas lideranças, acompanhe dados eleitorais e tome decisões estratégicas em tempo real.</p>
+  </header>
+
+  <!-- CARDS -->
+  <section class="cards-section">
+    <div class="cards-grid">
+
+      <a href="./" class="card card-blue">
+        <div class="card-icon-wrap">🗺️</div>
+        <div class="card-title">Mapa Estratégico</div>
+        <div class="card-desc">Visualização interativa de municípios, lideranças e dados eleitorais organizados por região.</div>
+        <div class="card-cta">
+          Abrir mapa
+          <div class="card-cta-arrow">→</div>
+        </div>
+      </a>
+
+      <a href="./admin/" class="card card-purple card-featured">
+        <div class="card-icon-wrap">👥</div>
+        <div class="card-title">Painel Administrativo</div>
+        <div class="card-desc">Cadastro e gerenciamento completo das lideranças com controle estratégico e histórico.</div>
+        <div class="card-cta">
+          Abrir painel
+          <div class="card-cta-arrow">→</div>
+        </div>
+      </a>
+
+      <a href="./liderancas.html" class="card card-teal">
+        <div class="card-icon-wrap">📋</div>
+        <div class="card-title">Lista Completa</div>
+        <div class="card-desc">Consulta rápida com busca inteligente por nome, cidade, região ou contato.</div>
+        <div class="card-cta">
+          Ver lideranças
+          <div class="card-cta-arrow">→</div>
+        </div>
+      </a>
+
+      <a href="./analise/" class="card card-amber">
+        <div class="card-icon-wrap">📊</div>
+        <div class="card-title">Análise Eleitoral</div>
+        <div class="card-desc">Dashboard avançado com ranking, comparativos e histórico por ano e por região.</div>
+        <div class="card-cta">
+          Abrir análise
+          <div class="card-cta-arrow">→</div>
+        </div>
+      </a>
+
+      <a href="./usuarios.html" class="card card-rose" id="card-admin">
+        <div class="card-icon-wrap">🛡️</div>
+        <div class="card-title">Gestão de Acessos</div>
+        <div class="card-desc">Controle níveis de permissão, gerencie usuários e configure a segurança da plataforma.</div>
+        <div class="card-cta">
+          Configurar
+          <div class="card-cta-arrow">→</div>
+        </div>
+      </a>
+
     </div>
+  </section>
 
-    <div class="card">
-      <h2>📋 Lista Completa</h2>
-      <p>Consulta rápida com busca inteligente por nome, cidade ou contato.</p>
-      <a href="./liderancas.html">Ver Lideranças</a>
-    </div>
+  <footer>© 2026 Paralax Gestão Política</footer>
 
-    <div class="card">
-      <h2>📊 Análise Eleitoral</h2>
-      <p>Dashboard avançado com ranking, comparativos e histórico por ano.</p>
-      <a href="./analise/">Abrir Análise</a>
-    </div>
-
-    <div class="card" id="card-gestao-usuarios" style="display:none;">
-      <h2>🛡️ Gestão de Acessos</h2>
-      <p>Controle níveis de permissão e segurança da plataforma.</p>
-      <a href="./usuarios.html">Configurar Usuários</a>
-    </div>
-
-  </div>
-</section>
-
-<footer>
-© 2026 Paralax Gestão Política
-</footer>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const user = JSON.parse(localStorage.getItem('user'));
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
   if (user && user.nivel === 'dono') {
-    const adminCard = document.getElementById('card-gestao-usuarios');
-    if(adminCard) adminCard.style.display = 'flex';
+    const adminCard = document.getElementById('card-admin');
+    if (adminCard) adminCard.style.display = 'flex';
   }
 });
 </script>
