@@ -588,11 +588,9 @@ localStorage.removeItem('token');
       const userLogado = JSON.parse(localStorage.getItem('user'));
 
       // Filtro por nível de acesso (Líder de Região)
-      if (userLogado && userLogado.nivel === 'lider_regiao' && typeof regions !== 'undefined') {
-        const minhaRegiao = userLogado.regiao_vinculada;
-        const cidadesDaMinhaRegiao = regions[minhaRegiao] || [];
-        lista = lista.filter(item => cidadesDaMinhaRegiao.includes(item.cidade));
-      }
+      if (userLogado && userLogado.nivel === 'lider_regiao') {
+  lista = lista.filter(item => item.regiao === userLogado.regiao);
+}
 
       lista.forEach(l => {
         const tr = document.createElement('tr');
