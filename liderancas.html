@@ -4,169 +4,526 @@
   <meta charset="UTF-8" />
   <title>Lideranças Cadastradas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      margin: 0;
-      padding: 20px;
+    :root {
+      --blue-deep: #0d2d6b;
+      --blue-main: #1565c0;
+      --blue-light: #e8f0fe;
+      --blue-accent: #1976d2;
+      --green: #16a34a;
+      --green-light: #dcfce7;
+      --amber: #d97706;
+      --amber-light: #fef3c7;
+      --red: #dc2626;
+      --red-light: #fee2e2;
+      --celia: #1565c0;
+      --fernando: #b91c1c;
+      --slate-900: #0f172a;
+      --slate-700: #334155;
+      --slate-500: #64748b;
+      --slate-300: #cbd5e1;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+      --white: #ffffff;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+      --shadow-lg: 0 10px 30px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+      --shadow-xl: 0 24px 56px rgba(0,0,0,0.18), 0 8px 20px rgba(0,0,0,0.1);
     }
 
-    h1 {
-      margin-bottom: 10px;
-      color: #334155;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #eef2f8;
+      background-image: radial-gradient(circle at 20% 10%, rgba(21,101,192,0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 90%, rgba(13,45,107,0.06) 0%, transparent 50%);
+      min-height: 100vh;
+      color: var(--slate-700);
+    }
+
+    /* ======= LOGIN ======= */
+    #login-card {
+      max-width: 380px;
+      margin: 80px auto;
+      background: var(--white);
+      padding: 40px 36px;
+      border-radius: 20px;
+      box-shadow: var(--shadow-xl);
+      text-align: center;
+      animation: fadeUp 0.4s ease;
+    }
+
+    .login-logo {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 20px rgba(21,101,192,0.35);
+    }
+
+    #login-card h2 {
+      font-family: 'Sora', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 6px;
+    }
+
+    .login-subtitle {
+      font-size: 13px;
+      color: var(--slate-500);
+      margin-bottom: 28px;
+    }
+
+    #login-card input {
+      display: block;
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--slate-300);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--slate-900);
+      transition: border-color 0.2s;
+      background: var(--slate-50);
+    }
+    #login-card input:focus {
+      outline: none;
+      border-color: var(--blue-main);
+      background: white;
+    }
+
+    #login-card button {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 15px;
+      font-family: inherit;
+      letter-spacing: 0.3px;
+      transition: opacity 0.2s, transform 0.15s;
+      box-shadow: 0 6px 18px rgba(21,101,192,0.4);
+      margin-top: 4px;
+    }
+    #login-card button:hover { opacity: 0.9; transform: translateY(-1px); }
+    #login-card button:active { transform: translateY(0); }
+
+    #login-error {
+      display: block;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--red);
+      font-weight: 500;
+    }
+
+    /* ======= MAIN LAYOUT ======= */
+    #conteudo-lista {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 20px 40px;
+      animation: fadeUp 0.3s ease;
+    }
+
+    /* ======= HEADER ======= */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .page-header-left h1 {
+      font-family: 'Sora', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--blue-deep);
+      letter-spacing: -0.3px;
+    }
+
+    .page-header-left p {
+      font-size: 13px;
+      color: var(--slate-500);
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      transition: all 0.18s;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
+      color: white;
+      box-shadow: 0 4px 12px rgba(21,101,192,0.3);
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(21,101,192,0.35); }
+    .btn-outline {
+      background: white;
+      color: var(--slate-700);
+      border: 1.5px solid var(--slate-300);
+    }
+    .btn-outline:hover { border-color: var(--blue-main); color: var(--blue-main); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--slate-500);
+      border: 1.5px solid transparent;
+    }
+    .btn-ghost:hover { background: var(--slate-100); color: var(--slate-700); }
+
+    /* ======= STATS BAR ======= */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid rgba(0,0,0,0.04);
+      transition: box-shadow 0.2s;
+    }
+    .stat-card:hover { box-shadow: var(--shadow-md); }
+
+    .stat-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .stat-info .stat-number {
+      font-family: 'Sora', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--slate-900);
+      line-height: 1;
+    }
+
+    .stat-info .stat-label {
+      font-size: 12px;
+      color: var(--slate-500);
+      margin-top: 3px;
+      font-weight: 500;
+    }
+
+    /* ======= CONTROLS ======= */
+    .controls-panel {
+      background: white;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-wrapper {
+      flex: 1;
+      min-width: 220px;
+      position: relative;
+    }
+
+    .search-wrapper svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--slate-500);
     }
 
     input#busca {
       width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      margin-bottom: 20px;
-      border-radius: 8px;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      padding: 10px 12px 10px 38px;
+      font-size: 14px;
+      font-family: inherit;
+      border-radius: 9px;
+      border: 1.5px solid var(--slate-300);
+      background: var(--slate-50);
+      color: var(--slate-900);
+      transition: border-color 0.2s, background 0.2s;
       outline: none;
     }
     input#busca:focus {
-      border-color: #1565c0;
-    }
-
-    /* ESTILO DO CARD DE LOGIN */
-    #login-card {
+      border-color: var(--blue-main);
       background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-    #login-card input {
-      display: block;
-      width: 100%;
-      margin-bottom: 15px;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      box-sizing: border-box;
-    }
-    #login-card button {
-      width: 100%;
-      padding: 12px;
-      background: #0d47a1;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
     }
 
-    /* 1️⃣ DESIGN MAIS MODERNO */
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--slate-500);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+    }
+
+    select {
+      padding: 9px 32px 9px 12px;
+      border-radius: 9px;
+      border: 1.5px solid var(--slate-300);
+      background: var(--slate-50) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+      color: var(--slate-700);
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      appearance: none;
+      outline: none;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+    select:focus { border-color: var(--blue-main); background-color: white; }
+
+    .controls-divider {
+      width: 1px;
+      height: 28px;
+      background: var(--slate-300);
+      flex-shrink: 0;
+    }
+
+    /* ======= TABLE ======= */
+    .table-wrapper {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      background: #ffffff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    }
+
+    thead tr {
+      background: linear-gradient(135deg, var(--blue-deep) 0%, var(--blue-main) 100%);
     }
 
     th {
-      background: linear-gradient(135deg, #0d47a1, #1565c0);
-      color: #fff;
+      color: rgba(255,255,255,0.9);
       font-weight: 600;
-      font-size: 13px;
-      letter-spacing: 0.5px;
+      font-size: 11px;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
+      padding: 13px 14px;
+      text-align: left;
+      white-space: nowrap;
       position: sticky;
       top: 0;
     }
 
-    th, td {
+    th:first-child { padding-left: 18px; }
+    td:first-child { padding-left: 18px; }
+
+    td {
       padding: 12px 14px;
-      border-bottom: 1px solid #eef2f7;
-      text-align: left;
+      border-bottom: 1px solid var(--slate-100);
+      font-size: 13.5px;
+      color: var(--slate-700);
+      vertical-align: middle;
     }
 
     tbody tr {
       cursor: pointer;
-      transition: background 0.2s ease, transform 0.15s ease;
+      transition: background 0.15s;
+      position: relative;
     }
 
-    tbody tr:hover {
-      background: #f1f6ff;
-      transform: scale(1.001);
-    }
+    tbody tr:hover { background: #f0f6ff; }
+    tbody tr:last-child td { border-bottom: none; }
 
-    td {
-      font-size: 14px;
-      color: #334155;
-    }
+    /* status stripe */
+    tbody tr[data-status="ativa"] td:first-child { border-left: 3px solid var(--green); }
+    tbody tr[data-status="pendente"] td:first-child { border-left: 3px solid var(--amber); }
+    tbody tr[data-status="inativa"] td:first-child { border-left: 3px solid var(--red); opacity: 0.65; }
 
-    img {
-      width: 42px;
-      height: 42px;
+    .avatar {
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       object-fit: cover;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      display: block;
     }
 
-    .sem-foto {
-      width: 42px;
-      height: 42px;
+    .avatar-placeholder {
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      background: #cbd5e1;
+      background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 17px;
+      color: #4338ca;
+      font-weight: 600;
     }
 
-    /* 2️⃣ STATUS VISUAL ELEGANTE */
-    tr[data-status="ativa"] {
-      border-left: 4px solid #22c55e;
-    }
-    tr[data-status="pendente"] {
-      border-left: 4px solid #f59e0b;
-    }
-    tr[data-status="inativa"] {
-      border-left: 4px solid #ef4444;
-      opacity: 0.7;
+    .nome-cell strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--slate-900);
     }
 
-    .controls select {
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-      background: #fff;
-      color: #334155;
+    .nome-cell span {
+      font-size: 12px;
+      color: var(--slate-500);
     }
 
-    /* ===== MODAL MODERNO ===== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .badge-celia {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .badge-fernando {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .badge-ambos {
+      background: #f0fdf4;
+      color: #15803d;
+    }
+
+    .badge-status-ativa {
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .badge-status-pendente {
+      background: var(--amber-light);
+      color: var(--amber);
+    }
+
+    .badge-status-inativa {
+      background: var(--red-light);
+      color: var(--red);
+    }
+
+    .votos-cell {
+      font-weight: 700;
+      color: var(--blue-main);
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--slate-500);
+    }
+    .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 15px; font-weight: 500; }
+    .empty-state small { font-size: 13px; color: var(--slate-300); }
+
+    .result-count {
+      font-size: 12px;
+      color: var(--slate-500);
+      padding: 10px 18px;
+      background: var(--slate-50);
+      border-top: 1px solid var(--slate-100);
+      font-weight: 500;
+    }
+
+    /* ======= MODAL ======= */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.55);
-      backdrop-filter: blur(4px);
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(6px);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 9999;
+      padding: 20px;
     }
 
     .modal-card {
-      background: #ffffff;
-      width: 92%;
-      max-width: 560px;
-      border-radius: 18px;
-      padding: 24px;
+      background: var(--white);
+      width: 100%;
+      max-width: 580px;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: var(--shadow-xl);
+      animation: modalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
       position: relative;
-      box-shadow: 0 25px 50px rgba(0,0,0,0.25), 0 10px 20px rgba(0,0,0,0.15);
-      animation: modalIn 0.25s ease;
     }
 
     @keyframes modalIn {
-      from { opacity: 0; transform: translateY(12px) scale(0.97); }
-      to { opacity: 1; transform: none; }
+      from { opacity: 0; transform: translateY(16px) scale(0.96); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .modal-header-bg {
+      background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
+      padding: 28px 24px 72px;
+      position: relative;
     }
 
     .modal-close {
@@ -174,77 +531,156 @@
       top: 14px;
       right: 14px;
       border: none;
-      background: #f1f5f9;
-      width: 36px;
-      height: 36px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
-      font-size: 20px;
+      font-size: 18px;
       cursor: pointer;
-    }
-
-    .modal-conteudo-header {
       display: flex;
-      gap: 18px;
       align-items: center;
-      margin-bottom: 18px;
+      justify-content: center;
+      transition: background 0.2s;
+      line-height: 1;
+    }
+    .modal-close:hover { background: rgba(255,255,255,0.25); }
+
+    .modal-avatar-wrap {
+      position: absolute;
+      bottom: -40px;
+      left: 24px;
     }
 
-    .modal-conteudo-header img {
-      width: 96px;
-      height: 96px;
+    .modal-avatar-wrap img,
+    .modal-avatar-wrap .modal-avatar-ph {
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
+      border: 4px solid white;
       object-fit: cover;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    }
+
+    .modal-avatar-ph {
+      background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+
+    .modal-body {
+      padding: 52px 24px 24px;
     }
 
     .modal-nome {
-      font-size: 22px;
+      font-family: 'Sora', sans-serif;
+      font-size: 20px;
       font-weight: 700;
-      color: #0f172a;
-      margin: 0;
+      color: var(--slate-900);
+      margin-bottom: 4px;
     }
 
-    .modal-sub {
-      font-size: 14px;
-      color: #64748b;
+    .modal-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .modal-meta span {
+      font-size: 13px;
+      color: var(--slate-500);
     }
 
     .modal-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px 16px;
-      font-size: 14px;
-      color: #334155;
-      margin-bottom: 14px;
+      gap: 12px;
+      margin-bottom: 16px;
     }
+
+    .modal-field {
+      background: var(--slate-50);
+      border-radius: 12px;
+      padding: 12px 14px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .modal-field-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--slate-500);
+      margin-bottom: 4px;
+    }
+
+    .modal-field-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--slate-900);
+    }
+
+    .modal-field-value a {
+      color: var(--blue-main);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .modal-field-value a:hover { text-decoration: underline; }
 
     .modal-release {
-      background: #f8fafc;
+      background: var(--slate-50);
       padding: 14px;
       border-radius: 12px;
-      font-size: 14px;
-      color: #334155;
-      max-height: 180px;
+      font-size: 13.5px;
+      color: var(--slate-700);
+      line-height: 1.6;
+      max-height: 160px;
       overflow-y: auto;
+      border: 1px solid rgba(0,0,0,0.05);
     }
 
-    /* 📱 BREAKPOINT MOBILE */
-    @media (max-width: 768px) {
-      table, thead, tbody, th, tr {
-        display: block;
-      }
+    .modal-release-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--slate-500);
+      margin-bottom: 10px;
+    }
 
-      thead {
-        display: none;
-      }
+    /* ======= ANIMATIONS ======= */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .row-anim {
+      animation: fadeUp 0.25s ease both;
+    }
+
+    /* ======= MOBILE ======= */
+    @media (max-width: 768px) {
+      .stats-bar { grid-template-columns: 1fr 1fr; }
+
+      table, thead, tbody, th, tr { display: block; }
+      thead { display: none; }
 
       tbody tr {
-        background: #ffffff;
-        margin-bottom: 14px;
+        background: white;
+        margin-bottom: 12px;
         border-radius: 14px;
         padding: 14px;
-        box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid rgba(0,0,0,0.05);
         border-left: none !important;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
       }
 
       tbody td {
@@ -252,159 +688,226 @@
         justify-content: space-between;
         align-items: center;
         border: none;
-        padding: 8px 0;
-        font-size: 14px;
+        padding: 5px 0;
+        font-size: 13px;
+        width: 100%;
       }
+
+      tbody td:first-child { width: auto; }
+      tbody td:nth-child(2) { flex: 1; }
 
       tbody td::before {
         content: attr(data-label);
         font-weight: 600;
-        color: #475569;
+        font-size: 11px;
+        color: var(--slate-500);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
       }
+      tbody td:first-child::before,
+      tbody td:nth-child(2)::before { content: ''; }
 
-      tbody td img,
-      .sem-foto {
-        margin-left: auto;
-      }
+      .modal-grid { grid-template-columns: 1fr; }
+      .stats-bar { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-bar { grid-template-columns: 1fr; }
+      .controls-row { flex-direction: column; align-items: stretch; }
+      .search-wrapper { min-width: unset; }
     }
   </style>
 </head>
 <body>
 
-  <div id="login-card" style="max-width:380px;margin:60px auto;">
-    <h2>Login</h2>
-    <input id="login-user" placeholder="Usuário">
-    <input id="login-pass" type="password" placeholder="Senha">
+  <!-- LOGIN -->
+  <div id="login-card">
+    <div class="login-logo">🗺️</div>
+    <h2>Acesso Restrito</h2>
+    <p class="login-subtitle">Entre com suas credenciais para continuar</p>
+    <input id="login-user" placeholder="Usuário" autocomplete="username">
+    <input id="login-pass" type="password" placeholder="Senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     <button onclick="login()">Entrar</button>
-    <small id="login-error" style="color:red;"></small>
+    <small id="login-error"></small>
   </div>
 
+  <!-- MAIN CONTENT -->
   <div id="conteudo-lista" style="display:none;">
-    
-    <button onclick="logout()" style="margin-bottom:15px; padding:8px 16px; border-radius:6px; border:1px solid #cbd5e1; background:#fff; cursor:pointer;">Sair</button>
 
-    <h1>Lideranças cadastradas</h1>
-
-    <div class="controls" style="display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap;">
-      <input type="text" id="busca" placeholder="Buscar por nome, cidade ou contato..." style="flex: 1; margin-bottom: 0;">
-      <label style="font-size:14px;font-weight:600;">Região:</label>
-<select id="filtro-regiao">
-  <option value="todas">Todas</option>
-</select>
-      <label style="font-size: 14px; font-weight: 600;">Ordenar por:</label>
-      <select id="ordenar-por">
-        <option value="nome">Nome</option>
-        <option value="cidade">Cidade</option>
-        <option value="expectativa_votos">Votos</option>
-      </select>
-
-      <select id="ordem">
-        <option value="asc">Crescente</option>
-        <option value="desc">Decrescente</option>
-      </select>
-    </div>
-<label style="font-size: 14px; font-weight: 600;">Campanha:</label>
-<select id="filtro-campanha">
-  <option value="todas">Todas</option>
-  <option value="celia">Célia Jordão</option>
-  <option value="fernando">Fernando Jordão</option>
-  <option value="ambos">Ambos</option>
-</select>
-    <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
-      <button onclick="exportarTodas()"
-        style="padding:10px 14px; border:none; border-radius:8px; background:#0d47a1; color:#fff; cursor:pointer;">
-        Exportar todas
-      </button>
-
-      <button onclick="exportarPorCidade()"
-        style="padding:10px 14px; border:none; border-radius:8px; background:#1565c0; color:#fff; cursor:pointer;">
-        Exportar por cidade
-      </button>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Foto</th>
-          <th>Nome</th>
-          <th>Contato</th>
-          <th>Cidade</th>
-          <th>Região</th>
-          <th>Expectativa de votos</th>
-          <th>Campanha</th>
-        </tr>
-      </thead>
-      <tbody id="lista"></tbody>
-    </table>
-
-    <div id="modal-lideranca" class="modal-overlay" style="display:none;">
-      <div class="modal-card">
-        <button class="modal-close" onclick="fecharModal()">✕</button>
-        <div id="modal-conteudo"></div>
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>🗺️ Lideranças</h1>
+        <p id="subtitle-info">Carregando dados...</p>
       </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" onclick="exportarTodas()">
+          ⬇ Exportar todas
+        </button>
+        <button class="btn btn-primary" onclick="exportarFiltradas()">
+          ⬇ Exportar filtro atual
+        </button>
+        <button class="btn btn-ghost" onclick="logout()">Sair</button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#eff6ff;">👥</div>
+        <div class="stat-info">
+          <div class="stat-number" id="stat-total">–</div>
+          <div class="stat-label">Total de lideranças</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#dcfce7;">✅</div>
+        <div class="stat-info">
+          <div class="stat-number" id="stat-ativas">–</div>
+          <div class="stat-label">Ativas</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#eff6ff;">🗳️</div>
+        <div class="stat-info">
+          <div class="stat-number" id="stat-votos">–</div>
+          <div class="stat-label">Total de votos esperados</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fef9c3;">🏙️</div>
+        <div class="stat-info">
+          <div class="stat-number" id="stat-cidades">–</div>
+          <div class="stat-label">Cidades</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls-panel">
+      <div class="controls-row">
+        <div class="search-wrapper">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="busca" placeholder="Buscar por nome, cidade, contato...">
+        </div>
+
+        <div class="controls-divider"></div>
+
+        <div class="filter-group">
+          <span class="filter-label">Região</span>
+          <select id="filtro-regiao">
+            <option value="todas">Todas</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">Campanha</span>
+          <select id="filtro-campanha">
+            <option value="todas">Todas</option>
+            <option value="celia">Célia Jordão</option>
+            <option value="fernando">Fernando Jordão</option>
+            <option value="ambos">Ambos</option>
+          </select>
+        </div>
+
+        <div class="controls-divider"></div>
+
+        <div class="filter-group">
+          <span class="filter-label">Ordenar</span>
+          <select id="ordenar-por">
+            <option value="nome">Nome</option>
+            <option value="cidade">Cidade</option>
+            <option value="expectativa_votos">Votos</option>
+          </select>
+          <select id="ordem">
+            <option value="asc">↑ Asc</option>
+            <option value="desc">↓ Desc</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Foto</th>
+            <th>Nome</th>
+            <th>Contato</th>
+            <th>Cidade</th>
+            <th>Região</th>
+            <th>Votos</th>
+            <th>Campanha</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="lista"></tbody>
+      </table>
+      <div class="result-count" id="result-count"></div>
+    </div>
+
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal-lideranca" class="modal-overlay" style="display:none;" onclick="fecharModalFora(event)">
+    <div class="modal-card">
+      <div class="modal-header-bg">
+        <button class="modal-close" onclick="fecharModal()">✕</button>
+        <div class="modal-avatar-wrap" id="modal-avatar-wrap"></div>
+      </div>
+      <div class="modal-body" id="modal-conteudo"></div>
     </div>
   </div>
 
   <script>
     const API = 'https://map-backend-j88s.onrender.com';
     const API_URL = 'https://map-backend-j88s.onrender.com/api';
+
     async function apiFetch(endpoint, options = {}) {
-  const token = localStorage.getItem('token');
-
-  if (!token) {
-    alert('Sessão expirada');
-    logout();
-    throw new Error('Sem token');
-  }
-
-  const isFormData = options.body instanceof FormData;
-
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-      Authorization: 'Bearer ' + token,
-      ...(options.headers || {})
+      const token = localStorage.getItem('token');
+      if (!token) { alert('Sessão expirada'); logout(); throw new Error('Sem token'); }
+      const isFormData = options.body instanceof FormData;
+      const res = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+          Authorization: 'Bearer ' + token,
+          ...(options.headers || {})
+        }
+      });
+      if (res.status === 401) { logout(); throw new Error('Sessão expirada'); }
+      return res;
     }
-  });
-
-  if (res.status === 401) {
-    logout();
-    throw new Error('Sessão expirada');
-  }
-
-  return res;
-}
-
 
     let todasLiderancas = [];
+    let listaFiltrada = [];
 
-    // --- FUNÇÕES DE LOGIN E SEGURANÇA ---
+    // ===== LOGIN =====
     async function login() {
       const usuario = document.getElementById('login-user').value.trim();
       const senha = document.getElementById('login-pass').value.trim();
       const erro = document.getElementById('login-error');
-
+      const btn = document.querySelector('#login-card button');
       erro.textContent = '';
-
+      btn.textContent = 'Entrando...';
+      btn.disabled = true;
       try {
         const res = await fetch(API + '/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ usuario, senha })
         });
-
         if (!res.ok) throw new Error();
-
         const data = await res.json();
-
-localStorage.setItem('token', data.token);
-localStorage.setItem('user', JSON.stringify(data.user));
-
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
         iniciarLista();
-
       } catch {
         erro.textContent = 'Usuário ou senha inválidos';
+        btn.textContent = 'Entrar';
+        btn.disabled = false;
       }
     }
 
@@ -413,95 +916,304 @@ localStorage.setItem('user', JSON.stringify(data.user));
       document.getElementById('conteudo-lista').style.display = 'block';
       carregarLiderancas();
     }
-function carregarRegioes() {
-  const select = document.getElementById('filtro-regiao');
-
-  const regioes = [...new Set(todasLiderancas.map(l => l.regiao).filter(Boolean))];
-
-  select.innerHTML = '<option value="todas">Todas</option>';
-
-  regioes.forEach(r => {
-    const opt = document.createElement('option');
-    opt.value = r;
-    opt.textContent = r;
-    select.appendChild(opt);
-  });
-
-  const user = JSON.parse(localStorage.getItem('user'));
-
-  if (user && user.nivel === 'lider_regiao') {
-    select.value = user.regiao;
-    select.disabled = true;
-  }
-}
-    function verificarLogin() {
-  const token = localStorage.getItem('token');
-
-  if (token) {
-    iniciarLista();
-  } else {
-    document.getElementById('login-card').style.display = 'block';
-    document.getElementById('conteudo-lista').style.display = 'none';
-  }
-}
-
 
     function logout() {
       localStorage.removeItem('user');
-localStorage.removeItem('token');
+      localStorage.removeItem('token');
       location.reload();
     }
 
-    // --- FUNÇÕES ORIGINAIS DA LISTA ---
-    function abrirModal(l) {
-      const div = document.getElementById('modal-conteudo');
+    function verificarLogin() {
+      const token = localStorage.getItem('token');
+      if (token) { iniciarLista(); }
+      else { document.getElementById('login-card').style.display = 'block'; }
+    }
 
-      div.innerHTML = `
-        <div class="modal-conteudo-header">
-          ${
-            l.foto
-              ? `<img src="${l.foto}">`
-              : `<div class="sem-foto" style="width:96px;height:96px;font-size:40px;">👤</div>`
-          }
-          <div>
-            <h2 class="modal-nome">${l.nome || '—'}</h2>
-            <div class="modal-sub">
-              ${l.cidade || '—'} • ID ${l.id ?? '-'}
+    // ===== CARREGAR DADOS =====
+    async function carregarLiderancas() {
+      try {
+        const res = await apiFetch('/liderancas');
+        const dados = await res.json();
+        todasLiderancas = [];
+        if (Array.isArray(dados)) {
+          dados.forEach(item => {
+            if (Array.isArray(item.liderancas)) {
+              item.liderancas.forEach(l => {
+                todasLiderancas.push({ ...l, cidade: item.cidade });
+              });
+            }
+          });
+          carregarRegioes();
+          atualizarStats(todasLiderancas);
+        }
+        aplicarFiltros();
+      } catch(e) {
+        console.error('Erro ao carregar:', e);
+      }
+    }
+
+    function carregarRegioes() {
+      const select = document.getElementById('filtro-regiao');
+      const regioes = [...new Set(todasLiderancas.map(l => l.regiao).filter(Boolean))].sort();
+      select.innerHTML = '<option value="todas">Todas</option>';
+      regioes.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r; opt.textContent = r;
+        select.appendChild(opt);
+      });
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user && user.nivel === 'lider_regiao') {
+        select.value = user.regiao;
+        select.disabled = true;
+      }
+    }
+
+    function atualizarStats(lista) {
+      const ativas = lista.filter(l => (l.status || 'ativa') === 'ativa').length;
+      const votos = lista.reduce((acc, l) => acc + (Number(l.expectativa_votos) || 0), 0);
+      const cidades = new Set(lista.map(l => l.cidade).filter(Boolean)).size;
+      document.getElementById('stat-total').textContent = lista.length.toLocaleString('pt-BR');
+      document.getElementById('stat-ativas').textContent = ativas.toLocaleString('pt-BR');
+      document.getElementById('stat-votos').textContent = votos.toLocaleString('pt-BR');
+      document.getElementById('stat-cidades').textContent = cidades;
+      document.getElementById('subtitle-info').textContent =
+        `${lista.length} lideranças em ${cidades} cidades`;
+    }
+
+    // ===== FILTROS =====
+    function filtrarBusca(lista) {
+      const termo = document.getElementById('busca').value.toLowerCase().trim();
+      if (!termo) return lista;
+      return lista.filter(l =>
+        (l.nome || '').toLowerCase().includes(termo) ||
+        (l.contato || '').toLowerCase().includes(termo) ||
+        (l.cidade || '').toLowerCase().includes(termo) ||
+        (l.regiao || '').toLowerCase().includes(termo)
+      );
+    }
+
+    function filtrarCampanha(lista) {
+      const filtro = document.getElementById('filtro-campanha').value;
+      if (filtro === 'todas') return lista;
+      if (filtro === 'ambos') return lista.filter(l => l.vinculo_politico === 'ambos');
+      return lista.filter(l => l.vinculo_politico === filtro || l.vinculo_politico === 'ambos');
+    }
+
+    function filtrarRegiao(lista) {
+      const regiao = document.getElementById('filtro-regiao').value;
+      if (regiao === 'todas') return lista;
+      return lista.filter(l => l.regiao === regiao);
+    }
+
+    function ordenarLista(lista) {
+      const campo = document.getElementById('ordenar-por').value;
+      const ordem = document.getElementById('ordem').value;
+      return [...lista].sort((a, b) => {
+        let v1 = a[campo] ?? '', v2 = b[campo] ?? '';
+        if (campo === 'expectativa_votos') {
+          v1 = Number(v1); v2 = Number(v2);
+          return ordem === 'asc' ? v1 - v2 : v2 - v1;
+        }
+        return ordem === 'asc'
+          ? String(v1).localeCompare(String(v2), 'pt-BR')
+          : String(v2).localeCompare(String(v1), 'pt-BR');
+      });
+    }
+
+    function aplicarFiltros() {
+      const userLogado = JSON.parse(localStorage.getItem('user') || '{}');
+      let lista = todasLiderancas;
+      if (userLogado && userLogado.nivel === 'lider_regiao') {
+        lista = lista.filter(item => item.regiao === userLogado.regiao);
+      }
+      listaFiltrada = ordenarLista(filtrarRegiao(filtrarCampanha(filtrarBusca(lista))));
+      renderizar(listaFiltrada);
+    }
+
+    // Eventos
+    ['busca','filtro-regiao','filtro-campanha','ordenar-por','ordem'].forEach(id => {
+      document.getElementById(id).addEventListener('change', aplicarFiltros);
+      document.getElementById(id).addEventListener('input', aplicarFiltros);
+    });
+
+    // ===== RENDERIZAR =====
+    function getBadgeCampanha(vinculo) {
+      if (vinculo === 'celia') return `<span class="badge badge-celia">🔵 Célia</span>`;
+      if (vinculo === 'fernando') return `<span class="badge badge-fernando">🔴 Fernando</span>`;
+      return `<span class="badge badge-ambos">🟢 Ambos</span>`;
+    }
+
+    function getBadgeStatus(status) {
+      const s = status || 'ativa';
+      const map = {
+        ativa: ['badge-status-ativa', '● Ativa'],
+        pendente: ['badge-status-pendente', '◑ Pendente'],
+        inativa: ['badge-status-inativa', '○ Inativa'],
+      };
+      const [cls, label] = map[s] || map.ativa;
+      return `<span class="badge ${cls}">${label}</span>`;
+    }
+
+    function getInitials(nome) {
+      if (!nome) return '?';
+      const parts = nome.trim().split(' ');
+      if (parts.length >= 2) return parts[0][0] + parts[parts.length - 1][0];
+      return parts[0][0];
+    }
+
+    function renderizar(lista) {
+      const tbody = document.getElementById('lista');
+      tbody.innerHTML = '';
+
+      if (!lista.length) {
+        tbody.innerHTML = `
+          <tr><td colspan="8">
+            <div class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <p>Nenhuma liderança encontrada</p>
+              <small>Tente ajustar os filtros de busca</small>
             </div>
-          </div>
+          </td></tr>`;
+        document.getElementById('result-count').textContent = '0 resultados';
+        return;
+      }
+
+      lista.forEach((l, i) => {
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-status', l.status || 'ativa');
+        tr.style.animationDelay = `${Math.min(i * 0.02, 0.3)}s`;
+        tr.classList.add('row-anim');
+        tr.addEventListener('click', () => abrirModal(l));
+
+        // Foto
+        const fotoTd = document.createElement('td');
+        fotoTd.setAttribute('data-label', 'Foto');
+        if (l.foto) {
+          const img = document.createElement('img');
+          img.src = l.foto;
+          img.className = 'avatar';
+          img.alt = l.nome || '';
+          fotoTd.appendChild(img);
+        } else {
+          const div = document.createElement('div');
+          div.className = 'avatar-placeholder';
+          div.textContent = getInitials(l.nome);
+          fotoTd.appendChild(div);
+        }
+
+        // Nome td
+        const nomeTd = document.createElement('td');
+        nomeTd.setAttribute('data-label', 'Nome');
+        nomeTd.className = 'nome-cell';
+        nomeTd.innerHTML = `<strong>${l.nome || '—'}</strong>${l.perfil ? `<span>${l.perfil}</span>` : ''}`;
+
+        // Contato
+        const contatoTd = document.createElement('td');
+        contatoTd.setAttribute('data-label', 'Contato');
+        const tel = (l.contato || '').replace(/\D/g, '');
+        contatoTd.innerHTML = tel
+          ? `<a href="https://wa.me/55${tel}" target="_blank" style="color:var(--blue-main);text-decoration:none;font-weight:500;">📱 ${l.contato}</a>`
+          : '—';
+
+        // Cidade
+        const cidadeTd = document.createElement('td');
+        cidadeTd.setAttribute('data-label', 'Cidade');
+        cidadeTd.textContent = l.cidade || '—';
+
+        // Região
+        const regTd = document.createElement('td');
+        regTd.setAttribute('data-label', 'Região');
+        regTd.textContent = l.regiao || '—';
+
+        // Votos
+        const votosTd = document.createElement('td');
+        votosTd.setAttribute('data-label', 'Votos');
+        votosTd.className = 'votos-cell';
+        votosTd.textContent = (l.expectativa_votos || 0).toLocaleString('pt-BR');
+
+        // Campanha
+        const campTd = document.createElement('td');
+        campTd.setAttribute('data-label', 'Campanha');
+        campTd.innerHTML = getBadgeCampanha(l.vinculo_politico);
+
+        // Status
+        const statusTd = document.createElement('td');
+        statusTd.setAttribute('data-label', 'Status');
+        statusTd.innerHTML = getBadgeStatus(l.status);
+
+        tr.appendChild(fotoTd);
+        tr.appendChild(nomeTd);
+        tr.appendChild(contatoTd);
+        tr.appendChild(cidadeTd);
+        tr.appendChild(regTd);
+        tr.appendChild(votosTd);
+        tr.appendChild(campTd);
+        tr.appendChild(statusTd);
+
+        tbody.appendChild(tr);
+      });
+
+      const total = todasLiderancas.length;
+      const count = lista.length;
+      document.getElementById('result-count').textContent =
+        count === total
+          ? `${count} lideranças`
+          : `${count} de ${total} lideranças (filtrado)`;
+    }
+
+    // ===== MODAL =====
+    function abrirModal(l) {
+      const avatarWrap = document.getElementById('modal-avatar-wrap');
+      if (l.foto) {
+        avatarWrap.innerHTML = `<img src="${l.foto}" alt="${l.nome || ''}">`;
+      } else {
+        avatarWrap.innerHTML = `<div class="modal-avatar-ph">${getInitials(l.nome)}</div>`;
+      }
+
+      const tel = (l.contato || '').replace(/\D/g, '');
+      const contatoHtml = tel
+        ? `<a href="https://wa.me/55${tel}" target="_blank">📱 ${l.contato}</a>`
+        : (l.contato || '—');
+
+      document.getElementById('modal-conteudo').innerHTML = `
+        <div class="modal-nome">${l.nome || '—'}</div>
+        <div class="modal-meta">
+          <span>📍 ${l.cidade || '—'}</span>
+          ${l.regiao ? `<span>• ${l.regiao}</span>` : ''}
+          ${getBadgeCampanha(l.vinculo_politico)}
+          ${getBadgeStatus(l.status)}
         </div>
 
         <div class="modal-grid">
-          <div>
-            <strong>Contato</strong><br>
-            ${l.contato || '—'}
+          <div class="modal-field">
+            <div class="modal-field-label">Contato</div>
+            <div class="modal-field-value">${contatoHtml}</div>
           </div>
-
-          <div>
-            <strong>Status</strong><br>
-            ${l.status || 'ativa'}
+          <div class="modal-field">
+            <div class="modal-field-label">Expectativa de votos</div>
+            <div class="modal-field-value" style="color:var(--blue-main);">
+              🗳️ ${(l.expectativa_votos || 0).toLocaleString('pt-BR')}
+            </div>
           </div>
-
-          <div>
-            <strong>Expectativa de votos</strong><br>
-            ${l.expectativa_votos ?? 0}
+          <div class="modal-field">
+            <div class="modal-field-label">Perfil</div>
+            <div class="modal-field-value">${l.perfil || '—'}</div>
           </div>
-
-          <div>
-            <strong>Perfil</strong><br>
-            ${l.perfil || '—'}
+          <div class="modal-field">
+            <div class="modal-field-label">Responsável</div>
+            <div class="modal-field-value">${l.responsavel || '—'}</div>
           </div>
-
-          <div>
-            <strong>Responsável</strong><br>
-            ${l.responsavel || '—'}
-          </div>
+          ${l.id != null ? `
+          <div class="modal-field">
+            <div class="modal-field-label">ID</div>
+            <div class="modal-field-value">#${l.id}</div>
+          </div>` : ''}
         </div>
 
-        <div class="modal-release">
-          <strong>Release / Observações</strong><br><br>
-          ${l.release || '—'}
-        </div>
+        ${l.release ? `
+        <div class="modal-release-label">Release / Observações</div>
+        <div class="modal-release">${(l.release || '').replace(/\n/g, '<br>')}</div>
+        ` : ''}
       `;
 
       document.getElementById('modal-lideranca').style.display = 'flex';
@@ -511,255 +1223,53 @@ localStorage.removeItem('token');
       document.getElementById('modal-lideranca').style.display = 'none';
     }
 
-    function ordenarLista(lista) {
-      const campo = document.getElementById('ordenar-por').value;
-      const ordem = document.getElementById('ordem').value;
-
-      return [...lista].sort((a, b) => {
-        let v1 = a[campo] ?? '';
-        let v2 = b[campo] ?? '';
-
-        if (campo === 'expectativa_votos') {
-          v1 = Number(v1);
-          v2 = Number(v2);
-          return ordem === 'asc' ? v1 - v2 : v2 - v1;
-        }
-
-        return ordem === 'asc'
-          ? String(v1).localeCompare(String(v2))
-          : String(v2).localeCompare(String(v1));
-      });
+    function fecharModalFora(event) {
+      if (event.target === document.getElementById('modal-lideranca')) fecharModal();
     }
 
-    document.getElementById('ordenar-por').addEventListener('change', () => {
-      renderizar(
-  ordenarLista(
-    filtrarRegiao(
-      filtrarCampanha(
-        filtrarBusca(todasLiderancas)
-      )
-    )
-  )
-);
-    });
-    document.getElementById('ordem').addEventListener('change', () => {
-      renderizar(
-  ordenarLista(
-    filtrarRegiao(
-      filtrarCampanha(
-        filtrarBusca(todasLiderancas)
-      )
-    )
-  )
-);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') fecharModal();
     });
 
-    async function carregarLiderancas() {
-      const res = await apiFetch('/liderancas');
-      const dados = await res.json();
-      todasLiderancas = [];
-
-      if (Array.isArray(dados)) {
-        dados.forEach(item => {
-          if (Array.isArray(item.liderancas)) {
-            item.liderancas.forEach(l => {
-              todasLiderancas.push({ ...l, cidade: item.cidade });
-            });
-            
-          }
-        });
-        carregarRegioes();
-      }
-      renderizar(
-  ordenarLista(
-    filtrarRegiao(
-      filtrarCampanha(
-        filtrarBusca(todasLiderancas)
-      )
-    )
-  )
-);
-    }
-
-    function renderizar(lista) {
-      const tbody = document.getElementById('lista');
-      tbody.innerHTML = '';
-
-      const userLogado = JSON.parse(localStorage.getItem('user'));
-
-      // Filtro por nível de acesso (Líder de Região)
-      if (userLogado && userLogado.nivel === 'lider_regiao') {
-  lista = lista.filter(item => item.regiao === userLogado.regiao);
-}
-
-      lista.forEach(l => {
-        const tr = document.createElement('tr');
-        tr.setAttribute('data-status', l.status || 'ativa');
-        tr.addEventListener('dblclick', () => abrirModal(l));
-
-        const fotoTd = document.createElement('td');
-        fotoTd.setAttribute('data-label', 'Foto');
-        if (l.foto) {
-          const img = document.createElement('img');
-          img.src = l.foto;
-          fotoTd.appendChild(img);
-        } else {
-          const div = document.createElement('div');
-          div.className = 'sem-foto';
-          div.textContent = '👤';
-          fotoTd.appendChild(div);
-        }
-
-        let campanha = '';
-
-if (l.vinculo_politico === 'celia') {
-  campanha = '<span style="color:#1565c0;font-weight:600;">Célia</span>';
-} else if (l.vinculo_politico === 'fernando') {
-  campanha = '<span style="color:#c62828;font-weight:600;">Fernando</span>';
-} else {
-  campanha = '<span style="color:#475569;font-weight:600;">Ambos</span>';
-}
-
-tr.innerHTML = `
-  <td data-label="Foto"></td>
-  <td data-label="Nome">${l.nome || ''}</td>
-  <td data-label="Contato">${l.contato || ''}</td>
-  <td data-label="Cidade">${l.cidade || ''}</td>
-<td data-label="Região">${l.regiao || ''}</td>
-<td data-label="Votos">${l.expectativa_votos || 0}</td>
-<td data-label="Campanha">${campanha}</td>
-`;
-
-        tr.children[0].replaceWith(fotoTd);
-        tbody.appendChild(tr);
-      });
-    }
-
-    function filtrarBusca(lista) {
-      const termo = document.getElementById('busca').value.toLowerCase();
-      return lista.filter(l =>
-        (l.nome || '').toLowerCase().includes(termo) ||
-        (l.contato || '').toLowerCase().includes(termo) ||
-        (l.cidade || '').toLowerCase().includes(termo)
-      );
-    }
-
-    document.getElementById('busca').addEventListener('input', () => {
-      renderizar(
-  ordenarLista(
-    filtrarRegiao(
-      filtrarCampanha(
-        filtrarBusca(todasLiderancas)
-      )
-    )
-  )
-);
-    });
-
+    // ===== EXPORTAR =====
     function exportarTodas() {
-      gerarCSV(todasLiderancas);
+      gerarCSV(todasLiderancas, 'liderancas_todas');
     }
 
-    function exportarPorCidade() {
-      const termo = document.getElementById('busca').value.toLowerCase();
-      if (!termo) {
-        alert('Digite uma cidade no campo de busca para exportar filtrado.');
+    function exportarFiltradas() {
+      if (!listaFiltrada.length) {
+        alert('Nenhuma liderança para exportar com os filtros atuais.');
         return;
       }
-      const filtradas = todasLiderancas.filter(l => 
-        (l.cidade || '').toLowerCase().includes(termo)
-      );
-      gerarCSV(filtradas);
+      gerarCSV(listaFiltrada, 'liderancas_filtradas');
     }
 
-    function gerarCSV(dados) {
-      if (!dados.length) {
-        alert('Nenhuma liderança para exportar.');
-        return;
-      }
-
-      const cabecalho = [
-        'ID',
-        'Nome',
-        'Contato',
-        'Cidade',
-        'Status',
-        'Expectativa de votos',
-        'Perfil',
-        'Responsável',
-        'Release'
-      ];
-
+    function gerarCSV(dados, nome) {
+      if (!dados.length) { alert('Nenhuma liderança para exportar.'); return; }
+      const cabecalho = ['ID','Nome','Contato','Cidade','Região','Status','Expectativa de votos','Perfil','Responsável','Campanha','Release'];
       const linhas = dados.map(l => [
         l.id ?? '',
         l.nome ?? '',
         l.contato ?? '',
         l.cidade ?? '',
+        l.regiao ?? '',
         l.status ?? '',
         l.expectativa_votos ?? 0,
         l.perfil ?? '',
         l.responsavel ?? '',
+        l.vinculo_politico ?? '',
         (l.release ?? '').replace(/\n/g, ' ')
       ]);
-
-      const csv = [
-        cabecalho.join(';'),
-        ...linhas.map(l => l.join(';'))
-      ].join('\n');
-
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const csv = [cabecalho.join(';'), ...linhas.map(l => l.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'))].join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
-
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'liderancas.csv';
+      link.download = `${nome || 'liderancas'}.csv`;
       link.click();
-
       URL.revokeObjectURL(url);
     }
 
-
-function filtrarCampanha(lista) {
-  const filtro = document.getElementById('filtro-campanha').value;
-
-  if (filtro === 'todas') return lista;
-
-  return lista.filter(l => {
-    if (filtro === 'ambos') return l.vinculo_politico === 'ambos';
-    return l.vinculo_politico === filtro || l.vinculo_politico === 'ambos';
-  });
-}
-document.getElementById('filtro-campanha').addEventListener('change', () => {
-  renderizar(
-    ordenarLista(
-      filtrarRegiao(
-        filtrarCampanha(
-          filtrarBusca(todasLiderancas)
-        )
-      )
-    )
-  );
-});
-
-document.getElementById('filtro-regiao').addEventListener('change', () => {
-  renderizar(
-    ordenarLista(
-      filtrarRegiao(
-        filtrarCampanha(
-          filtrarBusca(todasLiderancas)
-        )
-      )
-    )
-  );
-});
-function filtrarRegiao(lista) {
-  const regiao = document.getElementById('filtro-regiao').value;
-
-  if (regiao === 'todas') return lista;
-
-  return lista.filter(l => l.regiao === regiao);
-}
-    // Início do fluxo da página
     verificarLogin();
   </script>
 </body>
