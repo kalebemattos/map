@@ -617,35 +617,100 @@ body.sidebar-closed #map {
 }
 
 .legend {
-  background: rgba(255,255,255,0.94);
-  backdrop-filter: blur(6px);
-  padding: 10px 14px;
-  border-radius: 12px;
-  box-shadow: var(--shadow-md);
-  font-size: 12px;
-  color: var(--slate-700);
-  min-width: 150px;
-  border: 1px solid rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(10px);
+  padding: 14px 16px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
   font-family: 'DM Sans', sans-serif;
+  min-width: 200px;
+  border: 1px solid rgba(255,255,255,0.6);
+  animation: fadeUp 0.3s ease;
 }
 
-.legend strong {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 11px;
+.legend-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 13px;
+}
+
+.legend-title-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--blue-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.legend-title-text {
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--slate-500);
+  color: var(--slate-800);
+  letter-spacing: -0.1px;
 }
 
-.legend i {
-  width: 16px;
-  height: 16px;
-  float: left;
-  margin-right: 8px;
-  border-radius: 3px;
-  opacity: 0.85;
+/* Gradient bar mode */
+.legend-gradient-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.legend-gradient-bar {
+  height: 12px;
+  border-radius: 6px;
+  width: 100%;
+}
+
+.legend-gradient-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--slate-500);
+  padding: 0 1px;
+}
+
+/* Step rows mode */
+.legend-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.legend-swatch {
+  width: 32px;
+  height: 13px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.legend-range {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--slate-700);
+  flex: 1;
+}
+
+.legend-range small {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--slate-400);
+  margin-top: 0.5px;
 }
 
 /* ===== LOGO ===== */
@@ -2546,15 +2611,7 @@ function exportData() {
     alert('Os dados de lideranças e observações foram exportados para um arquivo CSV. Verifique sua pasta de downloads.');
 }
 function initLegend() {
-  const div = document.getElementById('legend-control');
-  const grades = [0, 10000, 20000, 50000, 100000, 200000, 500000];
-  let html = '<strong>Votos válidos</strong><br>';
-  for (let i = 0; i < grades.length; i++) {
-    html += '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
-            grades[i].toLocaleString('pt-BR') +
-            (grades[i + 1] ? '&ndash;' + grades[i + 1].toLocaleString('pt-BR') + '<br>' : '+');
-  }
-  div.innerHTML = html;
+  updateLegendByMode();
 }
 function selecionarCidade(nome, layer) {
 
@@ -2619,30 +2676,103 @@ function updateLegendByMode() {
   const mode = mapModes[currentMapModeIndex];
 
   if (mode === 'validVotes') {
-    initLegend();
-    return;
+    const steps = [
+      { color: '#cce5ff', label: 'até 10 mil' },
+      { color: '#4575b4', label: '10–50 mil' },
+      { color: '#91cf60', label: '50–100 mil' },
+      { color: '#fee08b', label: '100–200 mil' },
+      { color: '#fc8d59', label: '200–500 mil' },
+      { color: '#d73027', label: '500 mil+' },
+    ];
+    div.innerHTML = `
+      <div class="legend-title">
+        <div class="legend-title-icon">🗳️</div>
+        <span class="legend-title-text">Votos válidos</span>
+      </div>
+      <div class="legend-gradient-wrap">
+        <div class="legend-gradient-bar" style="background:linear-gradient(to right,#cce5ff,#4575b4,#91cf60,#fee08b,#fc8d59,#d73027);"></div>
+        <div class="legend-gradient-labels">
+          <span>0</span>
+          <span>50 mil</span>
+          <span>200 mil</span>
+          <span>500 mil+</span>
+        </div>
+      </div>
+      <div class="legend-steps" style="margin-top:10px;">
+        ${steps.map(s => `
+          <div class="legend-row">
+            <div class="legend-swatch" style="background:${s.color};"></div>
+            <span class="legend-range">${s.label}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
   }
 
   if (mode === 'leaders') {
+    const steps = [
+      { color: '#00441b', label: '20 ou mais', sub: 'base consolidada' },
+      { color: '#1b7837', label: '10 – 19',    sub: 'presença forte' },
+      { color: '#5aae61', label: '5 – 9',       sub: 'presença moderada' },
+      { color: '#a6dba0', label: '1 – 4',       sub: 'presença inicial' },
+      { color: '#e5f5e0', label: 'Nenhuma',     sub: 'sem lideranças' },
+    ];
     div.innerHTML = `
-      <strong>Lideranças</strong><br>
-      <i style="background:#00441b"></i> 20+<br>
-      <i style="background:#1b7837"></i> 10–19<br>
-      <i style="background:#5aae61"></i> 5–9<br>
-      <i style="background:#a6dba0"></i> 1–4<br>
-      <i style="background:#e5f5e0"></i> 0
+      <div class="legend-title">
+        <div class="legend-title-icon">👥</div>
+        <span class="legend-title-text">Lideranças</span>
+      </div>
+      <div class="legend-gradient-wrap">
+        <div class="legend-gradient-bar" style="background:linear-gradient(to right,#e5f5e0,#a6dba0,#5aae61,#1b7837,#00441b);"></div>
+        <div class="legend-gradient-labels">
+          <span>0</span>
+          <span>5</span>
+          <span>10</span>
+          <span>20+</span>
+        </div>
+      </div>
+      <div class="legend-steps" style="margin-top:10px;">
+        ${steps.map(s => `
+          <div class="legend-row">
+            <div class="legend-swatch" style="background:${s.color};"></div>
+            <span class="legend-range">${s.label}<small>${s.sub}</small></span>
+          </div>
+        `).join('')}
+      </div>
     `;
   }
 
   if (mode === 'expectedVotes') {
+    const steps = [
+      { color: '#67000d', label: '5.000+',         sub: 'muito alto' },
+      { color: '#a50f15', label: '2.000 – 4.999',  sub: 'alto' },
+      { color: '#cb181d', label: '1.000 – 1.999',  sub: 'moderado' },
+      { color: '#fb6a4a', label: '300 – 999',       sub: 'baixo' },
+      { color: '#fcae91', label: '1 – 299',         sub: 'muito baixo' },
+      { color: '#fee5d9', label: 'Nenhuma',         sub: 'sem expectativa' },
+    ];
     div.innerHTML = `
-      <strong>Expectativa de votos</strong><br>
-      <i style="background:#67000d"></i> 5000+<br>
-      <i style="background:#a50f15"></i> 2000–4999<br>
-      <i style="background:#cb181d"></i> 1000–1999<br>
-      <i style="background:#fb6a4a"></i> 300–999<br>
-      <i style="background:#fcae91"></i> 1–299<br>
-      <i style="background:#fee5d9"></i> 0
+      <div class="legend-title">
+        <div class="legend-title-icon">📈</div>
+        <span class="legend-title-text">Expectativa de votos</span>
+      </div>
+      <div class="legend-gradient-wrap">
+        <div class="legend-gradient-bar" style="background:linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d);"></div>
+        <div class="legend-gradient-labels">
+          <span>0</span>
+          <span>300</span>
+          <span>2.000</span>
+          <span>5.000+</span>
+        </div>
+      </div>
+      <div class="legend-steps" style="margin-top:10px;">
+        ${steps.map(s => `
+          <div class="legend-row">
+            <div class="legend-swatch" style="background:${s.color};"></div>
+            <span class="legend-range">${s.label}<small>${s.sub}</small></span>
+          </div>
+        `).join('')}
+      </div>
     `;
   }
 }

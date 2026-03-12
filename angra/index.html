@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa de Angra - Painel</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- OVERLAY TOTAL -->
+<div id="overlay-total">
+  <div class="overlay-label">Expectativa Total</div>
+  <div id="total-expectativa">0</div>
+  <div id="overlay-campanha-badge">Ambos</div>
+</div>
+
+<!-- TOGGLE -->
+<button id="toggleSidebar" title="Abrir/fechar painel">☰</button>
+
+<!-- APP -->
+<div id="app">
+  <div id="map"></div>
+</div>
+
+<!-- LEGENDA -->
+<div id="legenda">
+  <div class="legenda-title">
+    <span class="legenda-icon">📊</span>
+    <span>Expectativa</span>
+  </div>
+  <div class="legenda-gradient-bar" style="background:linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d);"></div>
+  <div class="legenda-gradient-labels">
+    <span>0</span><span>300</span><span>1k</span><span>5k+</span>
+  </div>
+  <div class="legenda-steps">
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#67000d;"></div><span>5.000+ <small>muito alto</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#a50f15;"></div><span>2.000–4.999 <small>alto</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#cb181d;"></div><span>1.000–1.999 <small>moderado</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#fb6a4a;"></div><span>300–999 <small>baixo</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#fcae91;"></div><span>1–299 <small>muito baixo</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#fee5d9;"></div><span>0 <small>sem expectativa</small></span></div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+
+  <!-- HEADER -->
+  <div class="sidebar-header">
+    <div class="sidebar-header-brand">
+      <div class="sidebar-logo">🗺️</div>
+      <div>
+        <h1>Mapa Eleitoral</h1>
+        <p>Angra dos Reis · Painel de lideranças</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY SCROLLÁVEL -->
+  <div class="sidebar-body">
+
+    <!-- SELETOR DE CAMPANHA -->
+    <div class="sidebar-block">
+      <label class="block-label">Campanha</label>
+      <div id="seletor-campanha">
+        <div class="campanha-opcao ativa" data-campanha="ambos">
+          <img src="img/celia.jpg" onerror="this.style.display='none'" alt="">
+          <img src="img/fernando.jpg" onerror="this.style.display='none'" alt="" style="margin-left:-6px;">
+          <span>Ambos</span>
+        </div>
+        <div class="campanha-opcao" data-campanha="celia">
+          <img src="img/celia.jpg" onerror="this.style.display='none'" alt="">
+          <span>Célia Jordão</span>
+        </div>
+        <div class="campanha-opcao" data-campanha="fernando">
+          <img src="img/fernando.jpg" onerror="this.style.display='none'" alt="">
+          <span>Fernando Jordão</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SELETOR DE DISTRITO -->
+    <div class="sidebar-block">
+      <label class="block-label">Distrito</label>
+      <div class="select-wrap">
+        <select id="select-distrito">
+          <option value="">Todos os distritos</option>
+          <option value="1º DISTRITO">1º Distrito</option>
+          <option value="2º DISTRITO">2º Distrito</option>
+          <option value="3º DISTRITO">3º Distrito</option>
+          <option value="4º DISTRITO">4º Distrito</option>
+          <option value="5º DISTRITO">5º Distrito</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- LÍDER DO DISTRITO -->
+    <div id="lider-distrito-card" class="sidebar-block" style="display:none;">
+      <label class="block-label">Líder responsável</label>
+      <div id="lista-lideres-distrito"></div>
+    </div>
+
+    <!-- BUSCAR BAIRRO -->
+    <div class="sidebar-block">
+      <label class="block-label">Buscar bairro</label>
+      <div class="search-wrap">
+        <span class="search-icon">🏙️</span>
+        <input type="text" id="buscar-bairro" placeholder="Nome do bairro..." autocomplete="off">
+      </div>
+      <div id="buscar-bairro-results" class="search-results"></div>
+    </div>
+
+    <!-- BUSCAR LIDERANÇA -->
+    <div class="sidebar-block">
+      <label class="block-label">Buscar liderança</label>
+      <div class="search-wrap">
+        <span class="search-icon">👤</span>
+        <input type="text" id="buscar-lideranca" placeholder="Nome da liderança..." autocomplete="off">
+      </div>
+      <div id="buscar-lideranca-results" class="search-results"></div>
+    </div>
+
+    <!-- INFO DO BAIRRO -->
+    <div class="sidebar-block" id="block-bairro-info">
+      <h3 id="bairro-nome">Selecione um bairro</h3>
+      <div id="bairro-info" class="bairro-meta">Clique em um bairro no mapa</div>
+    </div>
+
+    <!-- EXPECTATIVA DO BAIRRO (separada por campanha) -->
+    <div class="sidebar-block">
+      <label class="block-label">Expectativa do bairro</label>
+      <div class="exp-grid">
+        <div class="exp-field">
+          <span class="exp-label badge-celia-label">Célia</span>
+          <input id="valor-exp-celia" type="number" min="0" value="0" placeholder="0">
+        </div>
+        <div class="exp-field">
+          <span class="exp-label badge-fernando-label">Fernando</span>
+          <input id="valor-exp-fernando" type="number" min="0" value="0" placeholder="0">
+        </div>
+      </div>
+      <button id="salvar-exp">Salvar expectativa</button>
+    </div>
+
+    <!-- LIDERANÇAS COM RANKING -->
+    <div class="sidebar-block" id="block-liderancas">
+      <div class="collapsible-header">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <h3 style="margin:0;">Lideranças</h3>
+          <span id="liderancas-count" class="count-badge">0</span>
+        </div>
+        <button class="collapse-btn" data-target="liderancas-content" data-state="expanded">−</button>
+      </div>
+
+      <div id="liderancas-content">
+        <!-- RESUMO TOTAIS -->
+        <div id="liderancas-totais" style="display:none;"></div>
+
+        <!-- LISTA RANKING -->
+        <div id="lista-liderancas"></div>
+
+        <!-- FORM ADICIONAR -->
+        <div class="add-lider-form" id="add-lider-form">
+          <div class="form-divider">Adicionar liderança</div>
+          <input id="lideranca-nome" type="text" placeholder="Nome" class="form-input">
+          <input id="lideranca-contato" type="text" placeholder="Contato / WhatsApp" class="form-input">
+          <div class="form-row">
+            <select id="lideranca-vinculo" class="form-input">
+              <option value="ambos">Ambos</option>
+              <option value="celia">Célia Jordão</option>
+              <option value="fernando">Fernando Jordão</option>
+            </select>
+            <input id="lideranca-votos" type="number" min="0" value="0" placeholder="Votos" class="form-input">
+          </div>
+          <button id="add-lideranca" class="btn-add">+ Adicionar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sidebar-body -->
+</div><!-- /sidebar -->
+
+<!-- MODAL LIDERANÇA -->
+<div id="modal-lideranca" class="modal-overlay" onclick="if(event.target===this)fecharModalLideranca()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="fecharModalLideranca()">✕</button>
+    <div id="modal-lideranca-conteudo"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="distritos.js"></script>
+<script src="mapa.js"></script>
+
+<script>
+// ===== TOGGLE SIDEBAR =====
+const sidebar = document.getElementById("sidebar")
+const toggle = document.getElementById("toggleSidebar")
+let sidebarOpen = true
+
+toggle.onclick = () => {
+  sidebarOpen = !sidebarOpen
+  sidebar.classList.toggle("sidebar-hidden", !sidebarOpen)
+  toggle.classList.toggle("sidebar-closed-btn", !sidebarOpen)
+  if (window.map) setTimeout(() => map.invalidateSize(), 320)
+}
+
+// ===== COLLAPSE SECTIONS =====
+document.querySelectorAll(".collapse-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const targetId = btn.dataset.target
+    const target = document.getElementById(targetId)
+    const isExpanded = btn.dataset.state === "expanded"
+    if (!target) return
+    if (isExpanded) {
+      target.style.display = "none"
+      btn.dataset.state = "collapsed"
+      btn.textContent = "+"
+    } else {
+      target.style.display = ""
+      btn.dataset.state = "expanded"
+      btn.textContent = "−"
+    }
+  })
+})
+
+// ===== MODAL =====
+function fecharModalLideranca() {
+  document.getElementById("modal-lideranca").style.display = "none"
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") fecharModalLideranca()
+})
+</script>
+</body>
+</html>
