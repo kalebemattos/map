@@ -287,7 +287,10 @@
 
     <div class="controls" style="display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap;">
       <input type="text" id="busca" placeholder="Buscar por nome, cidade ou contato..." style="flex: 1; margin-bottom: 0;">
-      
+      <label style="font-size:14px;font-weight:600;">Região:</label>
+<select id="filtro-regiao">
+  <option value="todas">Todas</option>
+</select>
       <label style="font-size: 14px; font-weight: 600;">Ordenar por:</label>
       <select id="ordenar-por">
         <option value="nome">Nome</option>
@@ -300,7 +303,13 @@
         <option value="desc">Decrescente</option>
       </select>
     </div>
-
+<label style="font-size: 14px; font-weight: 600;">Campanha:</label>
+<select id="filtro-campanha">
+  <option value="todas">Todas</option>
+  <option value="celia">Célia Jordão</option>
+  <option value="fernando">Fernando Jordão</option>
+  <option value="ambos">Ambos</option>
+</select>
     <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
       <button onclick="exportarTodas()"
         style="padding:10px 14px; border:none; border-radius:8px; background:#0d47a1; color:#fff; cursor:pointer;">
@@ -320,6 +329,7 @@
           <th>Nome</th>
           <th>Contato</th>
           <th>Cidade</th>
+          <th>Região</th>
           <th>Expectativa de votos</th>
           <th>Campanha</th>
         </tr>
@@ -403,7 +413,27 @@ localStorage.setItem('user', JSON.stringify(data.user));
       document.getElementById('conteudo-lista').style.display = 'block';
       carregarLiderancas();
     }
+function carregarRegioes() {
+  const select = document.getElementById('filtro-regiao');
 
+  const regioes = [...new Set(todasLiderancas.map(l => l.regiao).filter(Boolean))];
+
+  select.innerHTML = '<option value="todas">Todas</option>';
+
+  regioes.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r;
+    opt.textContent = r;
+    select.appendChild(opt);
+  });
+
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  if (user && user.nivel === 'lider_regiao') {
+    select.value = user.regiao;
+    select.disabled = true;
+  }
+}
     function verificarLogin() {
   const token = localStorage.getItem('token');
 
@@ -502,10 +532,26 @@ localStorage.removeItem('token');
     }
 
     document.getElementById('ordenar-por').addEventListener('change', () => {
-      renderizar(ordenarLista(filtrarBusca(todasLiderancas)));
+      renderizar(
+  ordenarLista(
+    filtrarRegiao(
+      filtrarCampanha(
+        filtrarBusca(todasLiderancas)
+      )
+    )
+  )
+);
     });
     document.getElementById('ordem').addEventListener('change', () => {
-      renderizar(ordenarLista(filtrarBusca(todasLiderancas)));
+      renderizar(
+  ordenarLista(
+    filtrarRegiao(
+      filtrarCampanha(
+        filtrarBusca(todasLiderancas)
+      )
+    )
+  )
+);
     });
 
     async function carregarLiderancas() {
@@ -519,10 +565,20 @@ localStorage.removeItem('token');
             item.liderancas.forEach(l => {
               todasLiderancas.push({ ...l, cidade: item.cidade });
             });
+            
           }
         });
+        carregarRegioes();
       }
-      renderizar(ordenarLista(todasLiderancas));
+      renderizar(
+  ordenarLista(
+    filtrarRegiao(
+      filtrarCampanha(
+        filtrarBusca(todasLiderancas)
+      )
+    )
+  )
+);
     }
 
     function renderizar(lista) {
@@ -556,13 +612,25 @@ localStorage.removeItem('token');
           fotoTd.appendChild(div);
         }
 
-        tr.innerHTML = `
-          <td data-label="Foto"></td>
-          <td data-label="Nome">${l.nome || ''}</td>
-          <td data-label="Contato">${l.contato || ''}</td>
-          <td data-label="Cidade">${l.cidade || ''}</td>
-          <td data-label="Votos">${l.expectativa_votos || 0}</td>
-        `;
+        let campanha = '';
+
+if (l.vinculo_politico === 'celia') {
+  campanha = '<span style="color:#1565c0;font-weight:600;">Célia</span>';
+} else if (l.vinculo_politico === 'fernando') {
+  campanha = '<span style="color:#c62828;font-weight:600;">Fernando</span>';
+} else {
+  campanha = '<span style="color:#475569;font-weight:600;">Ambos</span>';
+}
+
+tr.innerHTML = `
+  <td data-label="Foto"></td>
+  <td data-label="Nome">${l.nome || ''}</td>
+  <td data-label="Contato">${l.contato || ''}</td>
+  <td data-label="Cidade">${l.cidade || ''}</td>
+<td data-label="Região">${l.regiao || ''}</td>
+<td data-label="Votos">${l.expectativa_votos || 0}</td>
+<td data-label="Campanha">${campanha}</td>
+`;
 
         tr.children[0].replaceWith(fotoTd);
         tbody.appendChild(tr);
@@ -579,7 +647,15 @@ localStorage.removeItem('token');
     }
 
     document.getElementById('busca').addEventListener('input', () => {
-      renderizar(ordenarLista(filtrarBusca(todasLiderancas)));
+      renderizar(
+  ordenarLista(
+    filtrarRegiao(
+      filtrarCampanha(
+        filtrarBusca(todasLiderancas)
+      )
+    )
+  )
+);
     });
 
     function exportarTodas() {
@@ -644,6 +720,47 @@ localStorage.removeItem('token');
       URL.revokeObjectURL(url);
     }
 
+
+function filtrarCampanha(lista) {
+  const filtro = document.getElementById('filtro-campanha').value;
+
+  if (filtro === 'todas') return lista;
+
+  return lista.filter(l => {
+    if (filtro === 'ambos') return l.vinculo_politico === 'ambos';
+    return l.vinculo_politico === filtro || l.vinculo_politico === 'ambos';
+  });
+}
+document.getElementById('filtro-campanha').addEventListener('change', () => {
+  renderizar(
+    ordenarLista(
+      filtrarRegiao(
+        filtrarCampanha(
+          filtrarBusca(todasLiderancas)
+        )
+      )
+    )
+  );
+});
+
+document.getElementById('filtro-regiao').addEventListener('change', () => {
+  renderizar(
+    ordenarLista(
+      filtrarRegiao(
+        filtrarCampanha(
+          filtrarBusca(todasLiderancas)
+        )
+      )
+    )
+  );
+});
+function filtrarRegiao(lista) {
+  const regiao = document.getElementById('filtro-regiao').value;
+
+  if (regiao === 'todas') return lista;
+
+  return lista.filter(l => l.regiao === regiao);
+}
     // Início do fluxo da página
     verificarLogin();
   </script>
