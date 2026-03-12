@@ -4,178 +4,174 @@
 <meta charset="UTF-8" />
 <title>Mapa de Lideranças RJ</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  
-  .leaflet-interactive {
+/* ===== RESET & BASE ===== */
+:root {
+  --blue-deep: #0d2d6b;
+  --blue-main: #1565c0;
+  --blue-mid: #1976d2;
+  --blue-light: #e8f0fe;
+  --white: #ffffff;
+  --slate-900: #0f172a;
+  --slate-800: #1e293b;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748b;
+  --slate-400: #94a3b8;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --slate-50: #f8fafc;
+  --green: #16a34a;
+  --green-light: #dcfce7;
+  --amber: #d97706;
+  --amber-light: #fef3c7;
+  --red: #dc2626;
+  --red-light: #fee2e2;
+  --sidebar-w: 360px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+  --shadow-lg: 0 10px 28px rgba(0,0,0,0.16);
+  --shadow-xl: 0 24px 52px rgba(0,0,0,0.22);
+  --radius: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: 'DM Sans', Arial, sans-serif;
+  background: #0d1b3e;
+  overflow: hidden;
+  color: var(--slate-700);
+}
+
+/* ===== LEAFLET TRANSITION ===== */
+.leaflet-interactive {
   transition: fill-opacity 0.2s ease, stroke-width 0.2s ease;
 }
-  html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #ffeeee;
-  overflow: hidden; /* 🔒 trava o scroll da página */
-}
 
-
-  /* layout: mapa + painel lateral fixo */
-  #map {
+/* ===== MAP ===== */
+#map {
   position: absolute;
   top: 0;
   left: 0;
-  right: 360px;
+  right: var(--sidebar-w);
   bottom: 0;
-
-  /* imagem de fundo */
   background-image: url("img/map-bg.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-
-  /* acabamento premium */
-  box-shadow: inset 0 0 40px rgba(0,0,0,0.15);
+  transition: right 0.3s ease;
 }
+
 #map::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(245, 249, 255, 0.75);
+  background: rgba(240, 247, 255, 0.72);
   z-index: 0;
 }
 
-/* garante que o Leaflet fique acima da imagem */
-#map > * {
-  position: relative;
-  z-index: 1;
-}
+#map > * { position: relative; z-index: 1; }
 
-  .sidebar {
+/* ===== SIDEBAR ===== */
+.sidebar {
   position: absolute;
   top: 0;
   right: 0;
-  width: 360px;
+  width: var(--sidebar-w);
   height: 100%;
-
-  display: flex;              /* ✅ PASSO CRÍTICO */
-  flex-direction: column;     /* ✅ PASSO CRÍTICO */
-
-  background: linear-gradient(180deg, #ffffff, #f6f9ff);
-  border-left: 1px solid #e5e7eb;
-  box-shadow: -8px 0 24px rgba(0,0,0,0.12);
-
-  overflow: hidden;           /* 🔒 trava scroll geral */
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border-left: 1px solid var(--slate-200);
+  box-shadow: -6px 0 24px rgba(0,0,0,0.1);
+  overflow: hidden;
   z-index: 2000;
-
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
 }
 
-/* ============================= */
-/* TOGGLE SIDEBAR */
-/* ============================= */
-
-/* ============================= */
-/* SIDEBAR – BASE + TOGGLE */
-/* ============================= */
-
-
-
-/* Sidebar fechada */
 .sidebar.closed {
   transform: translateX(100%);
 }
 
-/* Mapa quando sidebar fecha */
 body.sidebar-closed #map {
   right: 0;
 }
 
-/* ============================= */
-/* ESTRUTURA INTERNA */
-/* ============================= */
-
+/* ===== SIDEBAR HEADER ===== */
 .sidebar-header {
-  padding: 18px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #ffffff;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--slate-100);
+  background: var(--white);
+  flex-shrink: 0;
 }
 
+/* ===== SIDEBAR BODY ===== */
 .sidebar-body {
   flex: 1;
-  overflow-y: auto;   /* ✅ ÚNICO scroll permitido */
-  padding: 16px 18px;
+  overflow-y: auto;
+  padding: 12px 14px;
 }
 
+.sidebar-body::-webkit-scrollbar { width: 5px; }
+.sidebar-body::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; }
+.sidebar-body:hover::-webkit-scrollbar-thumb { background: var(--slate-300); }
+.sidebar-body::-webkit-scrollbar-track { background: transparent; }
 
-/* ============================= */
-/* SCROLL APENAS NO BODY */
-/* ============================= */
-
-.sidebar-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-.sidebar-body::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 4px;
-}
-
-.sidebar-body:hover::-webkit-scrollbar-thumb {
-  background-color: #ccc;
-}
-
-.sidebar-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-/* ============================= */
-/* TÍTULOS */
-/* ============================= */
-
+/* ===== SIDEBAR TITLES ===== */
 .sidebar h2 {
-  margin: 0 0 12px 0;
-  font-size: 20px;
+  font-family: 'Sora', sans-serif;
+  font-size: 17px;
   font-weight: 700;
-  color: #020617;
-  letter-spacing: 0.5px;
+  color: var(--slate-900);
+  letter-spacing: -0.2px;
+  margin-bottom: 10px;
 }
 
 .sidebar h3 {
-  font-size: 15px;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
   font-weight: 700;
-  color: #1e3a8a;
-  margin: 0 0 10px 0;
+  color: var(--blue-deep);
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* ============================= */
-/* CARDS */
-/* ============================= */
-
+/* ===== CARDS ===== */
 .city-card {
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 14px;
-  margin-bottom: 16px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--slate-200);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s;
+}
+
+.city-card:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .subtitle {
-  font-size: 13px;
-  color: #475569;
-  margin-bottom: 14px;
-  line-height: 1.4;
+  font-size: 12px;
+  color: var(--slate-500);
+  line-height: 1.45;
+  margin-bottom: 10px;
 }
 
-/* ============================= */
-/* LISTAS DE DEPUTADOS */
-/* ============================= */
-
+/* ===== DEPUTADO LIST ===== */
 .deputado-list {
   list-style: none;
   padding: 0;
-  margin: 10px 0 0 0;
-  font-size: 14px;
+  margin: 8px 0 0;
+  font-size: 13px;
 }
 
 .deputado-list li {
@@ -184,369 +180,258 @@ body.sidebar-closed #map {
   align-items: center;
   padding: 6px 10px;
   border-radius: 8px;
-  margin-bottom: 6px;
-  background: #f8fafc;
+  margin-bottom: 4px;
+  background: var(--slate-50);
+  border: 1px solid transparent;
+  transition: background 0.15s;
 }
 
-.deputado-list li:nth-child(1) {
-  background: #eef2ff;
+.deputado-list li:first-child {
+  background: var(--blue-light);
+  border-color: rgba(21,101,192,0.15);
 }
+
+.deputado-list li:hover { background: #f0f6ff; }
 
 .deputado-list .name {
   font-weight: 600;
-  color: #1e3a8a;
+  color: var(--blue-deep);
+  font-size: 12.5px;
 }
 
 .deputado-list .votes {
   font-weight: 700;
-  color: #b91c1c;
+  color: var(--red);
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
 }
 
-/* ============================= */
-/* INFO CIDADE */
-/* ============================= */
-
+/* ===== CITY INFO ===== */
 .city-name {
-  font-size: 18px;
+  font-family: 'Sora', sans-serif;
+  font-size: 16px;
   font-weight: 700;
-  color: #0047ab;
+  color: var(--blue-main);
   margin-bottom: 4px;
 }
 
 .votos {
-  font-size: 14px;
-  color: #555;
+  font-size: 13px;
+  color: var(--slate-500);
   margin-bottom: 8px;
-  border-bottom: 1px dashed #ccc;
-  padding-bottom: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--slate-100);
 }
 
 .hint {
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 10px;
-  border-top: 1px dashed #cbd5f5;
-  padding-top: 6px;
-}
-
-/* ============================= */
-/* FILTRO REGIONAL */
-/* ============================= */
-
-.region-selector h3 {
-  font-size: 15px;
-  color: #003366;
-  margin: 0 0 8px 0;
-}
-
-.region-selector select {
-  width: 100%;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  margin-bottom: 15px;
-  box-sizing: border-box;
-}
-
-  
-  /* 5. Map Title Overlay */
-  .map-title-overlay {
-      position: absolute;
-      top: 20px;
-      left: 600px;
-      background: rgba(255, 255, 255, 0.9);
-      padding: 10px 15px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      z-index: 1000;
-  }
-
-  .map-title-overlay h1 {
-      margin: 0;
-      font-size: 20px;
-      color: #003366;
-      font-weight: 700;
-  }
-
-  /* 6. Leaflet Overrides (Legend) */
-  #fixed-legend-container {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;   /* ✔ fica sempre visível */
-    z-index: 1000;
-}
-
-  .legend {
-    line-height: 18px;
-    color: #555;
-    background: white;
-    padding: 6px 10px;
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    font-size: 13px;
-    min-width: 150px;
-  }
-  .legend i {
-    width: 18px;
-    height: 18px;
-    float: left;
-    margin-right: 8px;
-    opacity: 0.8;
-  }
-
-  /* 7. City Labels */
-  .city-label {
-  position: absolute;
-  top: -12px;
-  left: 0;
   font-size: 11px;
-  font-weight: 600;
-  color: rgba(15, 23, 42, 0.6);
-  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
-  pointer-events: none;
-  text-align: center;
-  width: 120px;
-  line-height: 1.1;
-  opacity: 0.45;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  color: var(--slate-400);
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--slate-100);
 }
 
-.city-label.highlight {
-  opacity: 1 !important;
-  transform: scale(1.05);
-  color: #020617;
-}
-
-  .city-label.highlight {
-      opacity: 1 !important;
-      color: #003366;
-  }
-
-  .city-tooltip {
-      font-size: 14px;
-  }
-  
-  /* 8. Estilo customizado para o popup de bairro */
-  .leaflet-popup.bairro-popup .leaflet-popup-content-wrapper {
-  border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-}
-
-.leaflet-popup-content {
-  font-size: 14px;
-}
-
-  /* 9. Logo */
-  .logo-container {
-    position: absolute;
-    bottom: 900px;
-    left: 20px;
-    z-index: 1000;
-  }
-  .logo-container img {
-    max-width: 150px;
-    height: auto;
-  }
-
-  /* 10. Estilo para a tela de bloqueio */
-  #blocker {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #f2f6fb;
-    z-index: 3000;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    font-size: 24px;
-    color: #003366;
-  }
-  #blocker p {
-      font-size: 16px;
-      color: #888;
-      margin-top: 10px;
-  }
-  
-  /* ESTILOS DE MINIMIZAR RESTAURADOS */
-  .collapsible-header {
+/* ===== COLLAPSIBLE ===== */
+.collapsible-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 6px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--slate-100);
 }
-  .collapsible-header h3 {
-      margin: 0;
-  }
-  .collapse-btn {
-  background: #1e3a8a;
-  color: white;
+
+.collapsible-header h3 { margin: 0; }
+
+.collapse-btn {
+  background: var(--blue-light);
+  color: var(--blue-main);
   border: none;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  cursor: pointer;
-}
-  .content-hidden {
-      display: none;
-  }
- 
-
-
-
-
-.comite-marker {
-  font-size: 22px;
-  color: #8e44ad;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
-  transform: translateY(-2px);
-}
-.pin-type-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.pin-type-btn {
-  padding: 6px 10px;
-  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
   font-weight: 700;
-  border-radius: 999px;
-  border: 1px solid #cbd5f5;
-  background: #f8fafc;
+  font-family: inherit;
   cursor: pointer;
-  transition: all .15s ease;
+  transition: background 0.15s;
 }
 
-.pin-type-btn.active {
-  color: #fff;
-  border-color: transparent;
+.collapse-btn:hover { background: var(--blue-main); color: white; }
+
+.content-hidden { display: none; }
+
+/* ===== SEARCH ===== */
+.search-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.pin-type-btn:hover {
-  transform: translateY(-1px);
+.search-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--slate-500);
 }
 
-.sidebar button {
-  font-size: 14px;
-  font-weight: 600;
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--slate-50);
+  border: 1.5px solid var(--slate-200);
   border-radius: 10px;
-  padding: 8px 12px;
+  padding: 8px 11px;
   transition: all 0.2s ease;
 }
 
-.sidebar button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+.search-input-wrapper:focus-within {
+  border-color: var(--blue-main);
+  box-shadow: 0 0 0 3px rgba(21,101,192,0.12);
+  background: var(--white);
 }
+
+.search-icon { font-size: 14px; opacity: 0.7; flex-shrink: 0; }
+
+.search-input-wrapper input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+  color: var(--slate-900);
+}
+
+.search-results {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.search-result-item {
+  padding: 9px 12px;
+  background: var(--white);
+  border-bottom: 1px solid var(--slate-100);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.12s;
+}
+
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background: var(--blue-light); }
+.search-result-item strong { color: var(--slate-900); font-weight: 600; }
+.search-result-item small { display: block; font-size: 11px; color: var(--slate-500); margin-top: 1px; }
+
+/* ===== SIDEBAR INPUTS ===== */
 .sidebar input,
 .sidebar select,
 .sidebar textarea {
   width: 100%;
   padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid #cbd5f5;
-  font-size: 14px;
+  border-radius: 9px;
+  border: 1.5px solid var(--slate-200);
+  font-size: 13px;
+  font-family: inherit;
   outline: none;
+  background: var(--slate-50);
+  color: var(--slate-900);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none;
 }
 
 .sidebar input:focus,
 .sidebar select:focus,
 .sidebar textarea:focus {
-  border-color: #1e3a8a;
-  box-shadow: 0 0 0 3px rgba(30,58,138,0.15);
-}
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(2, 6, 23, 0.55);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-
-  display: none;
-  align-items: center;
-  justify-content: center;
-
-  z-index: 10000; /* MAIS ALTO QUE MAPA E SIDEBAR */
+  border-color: var(--blue-main);
+  box-shadow: 0 0 0 3px rgba(21,101,192,0.12);
+  background: var(--white);
 }
 
-.modal-card {
-  background: #ffffff;
-  width: 92%;
-  max-width: 580px;
-  border-radius: 20px;
-  padding: 24px 26px;
-  position: relative;
-  box-shadow:
-    0 30px 60px rgba(0,0,0,0.35),
-    0 10px 20px rgba(0,0,0,0.2);
-
-  animation: modalIn 0.25s ease;
-}
-
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.modal-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: #f1f5f9;
-  color: #334155;
-  font-size: 20px;
+/* ===== SIDEBAR BUTTONS ===== */
+.sidebar button {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 9px;
+  padding: 8px 12px;
+  transition: all 0.18s;
   cursor: pointer;
-  transition: background 0.2s ease;
+  border: none;
 }
 
-.modal-close:hover {
-  background: #e2e8f0;
+.sidebar button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
-/* ============================= */
-/* FOTO DA LIDERANÇA – BLINDADA */
-/* ============================= */
+/* ===== CAMPANHA SELECTOR ===== */
+#seletor-campanha {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
 
-.lideranca-foto {
-  width: 40px;
-  height: 40px;
+.campanha-opcao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  cursor: pointer;
+  background: var(--slate-50);
+  border: 1.5px solid var(--slate-200);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--slate-700);
+  transition: all 0.18s;
+}
 
-  min-width: 40px;
-  max-width: 40px;
-  min-height: 40px;
-  max-height: 40px;
+.campanha-opcao:hover { background: var(--blue-light); border-color: rgba(21,101,192,0.3); }
 
-  flex: 0 0 40px;          /* trava no flex */
-  box-sizing: border-box;
+.campanha-opcao.ativa {
+  background: var(--blue-deep);
+  color: white;
+  border-color: var(--blue-deep);
+}
 
+.campanha-opcao img {
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  overflow: hidden;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.4);
+}
 
-  background: #e5e7eb;
-  border: 1px solid #cbd5f5;
+/* ===== LÍDER REGIÃO CARD ===== */
+#lider-regiao-card {
+  background: var(--blue-light) !important;
+  border-color: rgba(21,101,192,0.2) !important;
+}
 
+#lider-regiao-foto {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: white;
+  border: 2px solid rgba(21,101,192,0.3);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 22px;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
+/* ===== CELIA CARD ===== */
+#celia-jordao-card {
+  background: var(--amber-light) !important;
+  border-color: rgba(217,119,6,0.3) !important;
+}
+
+/* ===== LIDERANÇA ITEMS ===== */
 .lideranca-foto {
   width: 40px;
   height: 40px;
@@ -554,16 +439,11 @@ body.sidebar-closed #map {
   max-width: 40px;
   min-height: 40px;
   max-height: 40px;
-
-  flex: 0 0 40px;   /* 🔴 ISSO É O QUE FALTAVA */
-  box-sizing: border-box;
-
+  flex: 0 0 40px;
   border-radius: 50%;
   overflow: hidden;
-
-  background: #e5e7eb;
-  border: 1px solid #cbd5f5;
-
+  background: var(--slate-100);
+  border: 1.5px solid var(--slate-200);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -572,534 +452,646 @@ body.sidebar-closed #map {
 .lideranca-foto img {
   width: 100% !important;
   height: 100% !important;
-
-  max-width: 100% !important;
-  max-height: 100% !important;
-
-  min-width: 100% !important;
-  min-height: 100% !important;
-
   object-fit: cover !important;
-  object-position: center !important;
-
   display: block !important;
-  flex-shrink: 0 !important;
 }
 
+.lideranca-foto span { font-size: 18px; }
 
-.lideranca-foto span {
-  font-size: 18px;
-}
-/* ============================= */
-/* POPUP DE LIDERANÇA – NOVO UI */
-/* ============================= */
-
+/* ===== POPUP DE LIDERANÇA ===== */
 .lideranca-popup {
   width: 260px;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'DM Sans', Arial, sans-serif;
 }
 
 .popup-header {
   display: flex;
   gap: 10px;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .popup-foto {
-  width: 56px;
-  height: 56px;
-
-  min-width: 56px;
-  min-height: 56px;
-  max-width: 56px;
-  max-height: 56px;
-
-  flex: 0 0 56px;   /* 🔴 ISSO É O QUE FALTAVA */
-
-  border-radius: 8px;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  flex: 0 0 52px;
+  border-radius: 10px;
   overflow: hidden;
-
-  background: #e5e7eb;
-  border: 1px solid #cbd5f5;
-
+  background: var(--slate-100);
+  border: 1px solid var(--slate-200);
   display: flex;
   align-items: center;
   justify-content: center;
-
-  box-sizing: border-box;
 }
-
 
 .popup-foto img {
   width: 100%;
   height: 100%;
-
-  min-width: 100%;
-  min-height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-
   object-fit: cover;
-  object-position: center;
-
   display: block;
 }
 
-.popup-foto span {
-  font-size: 24px;
-}
+.popup-foto span { font-size: 22px; }
 
-
-
-
-.popup-info {
-  display: flex;
-  flex-direction: column;
-}
+.popup-info { display: flex; flex-direction: column; }
 
 .popup-nome {
-  font-size: 15px;
-  color: #020617;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--slate-900);
+  line-height: 1.2;
 }
 
 .popup-cidade {
   font-size: 12px;
-  color: #475569;
+  color: var(--slate-500);
+  margin-top: 2px;
 }
 
 .popup-body {
-  font-size: 13px;
-  color: #334155;
-  border-top: 1px dashed #cbd5f5;
-  padding-top: 6px;
+  font-size: 12.5px;
+  color: var(--slate-700);
+  border-top: 1px solid var(--slate-100);
+  padding-top: 8px;
 }
 
-.popup-body div {
-  margin-bottom: 4px;
-}
+.popup-body div { margin-bottom: 4px; }
 
 .popup-descricao {
   margin-top: 6px;
   font-size: 12px;
-  color: #475569;
+  color: var(--slate-500);
+  line-height: 1.45;
 }
-/* ============================= */
-/* FOTO NO MODAL DE LIDERANÇA    */
-/* ============================= */
 
+/* ===== PIN POPUP ===== */
+.pin-popup {
+  width: 230px;
+  font-family: 'DM Sans', Arial, sans-serif;
+}
+
+.pin-popup h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--slate-900);
+}
+
+.pin-popup small {
+  font-size: 11px;
+  color: var(--slate-500);
+}
+
+.pin-popup textarea {
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  border: 1.5px solid var(--slate-200);
+  font-size: 12px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+}
+
+.pin-popup textarea:focus {
+  border-color: var(--blue-main);
+}
+
+.pin-popup-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pin-btn {
+  flex: 1;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-weight: 700;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.pin-btn:hover { opacity: 0.85; }
+.pin-btn.save { background: var(--blue-main); color: #fff; }
+.pin-btn.delete { background: var(--red); color: #fff; }
+
+/* ===== MAP TITLE ===== */
+.map-title-overlay {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  padding: 8px 18px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-md);
+  z-index: 1000;
+  border: 1px solid rgba(255,255,255,0.6);
+  pointer-events: none;
+}
+
+.map-title-overlay h1 {
+  margin: 0;
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--blue-deep);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ===== LEGEND ===== */
+#fixed-legend-container {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+
+.legend {
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(6px);
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  font-size: 12px;
+  color: var(--slate-700);
+  min-width: 150px;
+  border: 1px solid rgba(255,255,255,0.5);
+  font-family: 'DM Sans', sans-serif;
+}
+
+.legend strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--slate-500);
+}
+
+.legend i {
+  width: 16px;
+  height: 16px;
+  float: left;
+  margin-right: 8px;
+  border-radius: 3px;
+  opacity: 0.85;
+}
+
+/* ===== LOGO ===== */
+.logo-container {
+  position: absolute;
+  bottom: 20px;
+  right: calc(var(--sidebar-w) + 20px);
+  z-index: 1000;
+  transition: right 0.3s ease;
+}
+
+body.sidebar-closed .logo-container { right: 20px; }
+
+.logo-container img {
+  max-width: 120px;
+  height: auto;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
+}
+
+/* ===== MAP CONTROLS ===== */
+#map-controls {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1500;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.control-card {
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(8px);
+  border-radius: 14px;
+  padding: 12px 14px;
+  min-width: 190px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255,255,255,0.5);
+}
+
+.control-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--slate-500);
+  margin-bottom: 8px;
+}
+
+.control-value {
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--blue-main);
+}
+
+.control-group {
+  display: flex;
+  gap: 5px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 6px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: 20px;
+  border: 1.5px solid var(--slate-200);
+  background: var(--slate-50);
+  color: var(--slate-600);
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+
+.mode-btn:hover { background: var(--blue-light); border-color: rgba(21,101,192,0.3); color: var(--blue-main); }
+
+.mode-btn.active {
+  background: var(--blue-main);
+  color: white;
+  border-color: var(--blue-main);
+  box-shadow: 0 3px 10px rgba(21,101,192,0.35);
+}
+
+.icon-btn {
+  flex: 1;
+  padding: 7px 6px;
+  font-size: 13px;
+  font-weight: 800;
+  font-family: inherit;
+  border-radius: 20px;
+  border: 1.5px solid var(--slate-200);
+  background: var(--slate-50);
+  cursor: pointer;
+  transition: all 0.18s;
+  color: var(--slate-700);
+}
+
+.icon-btn:hover { background: var(--slate-100); }
+
+.icon-btn.active {
+  background: var(--blue-deep);
+  color: white;
+  border-color: var(--blue-deep);
+}
+
+/* ===== TOGGLE SIDEBAR BTN ===== */
+#toggleSidebarBtn {
+  position: absolute;
+  top: 16px;
+  right: calc(var(--sidebar-w) + 10px);
+  z-index: 2500;
+  background: var(--blue-main);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(21,101,192,0.4);
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+body.sidebar-closed #toggleSidebarBtn { right: 16px; }
+#toggleSidebarBtn:hover { background: var(--blue-deep); transform: translateY(-1px); }
+
+/* ===== PIN TYPE BUTTONS ===== */
+.pin-type-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.pin-type-btn {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: 20px;
+  border: 1.5px solid var(--slate-200);
+  background: var(--slate-50);
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--slate-700);
+}
+
+.pin-type-btn.active { color: #fff; border-color: transparent; }
+.pin-type-btn:hover { transform: translateY(-1px); }
+
+/* ===== MODAL OVERLAY ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 18, 48, 0.65);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.modal-card {
+  background: var(--white);
+  width: 92%;
+  max-width: 580px;
+  border-radius: 22px;
+  padding: 24px 26px;
+  position: relative;
+  box-shadow: var(--shadow-xl);
+  animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: var(--slate-100);
+  color: var(--slate-600);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.modal-close:hover { background: var(--slate-200); }
+
+/* ===== MODAL LIDERANÇA ===== */
 .modal-conteudo-header {
   display: flex;
   gap: 16px;
   align-items: center;
+  margin-bottom: 18px;
 }
 
 .modal-foto {
-  width: 96px;
-  height: 96px;
-
-  min-width: 96px;
-  max-width: 96px;
-  min-height: 96px;
-  max-height: 96px;
-
+  width: 88px;
+  height: 88px;
+  min-width: 88px;
   border-radius: 50%;
   overflow: hidden;
-
-  background: #e5e7eb;
-  border: 2px solid #cbd5f5;
-
+  background: var(--slate-100);
+  border: 3px solid var(--slate-200);
   display: flex;
   align-items: center;
   justify-content: center;
-
-  flex: 0 0 96px;
+  flex: 0 0 88px;
 }
 
 .modal-foto img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
   display: block;
 }
 
-.modal-foto.sem-foto {
-  font-size: 40px;
-}
-/* ============================= */
-/* POPUP (MODAL) DE LIDERANÇA */
-/* ============================= */
+.modal-foto.sem-foto { font-size: 36px; }
 
-.lideranca-modal {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.lideranca-modal-header {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-}
-
-.lideranca-modal-foto {
-  width: 72px;
-  height: 72px;
-
-  border-radius: 12px;
-  overflow: hidden;
-
-  background: #e5e7eb;
-  border: 1px solid #cbd5f5;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.lideranca-modal-foto img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.lideranca-modal-foto span {
-  font-size: 28px;
-}
-
-.lideranca-modal-title h2 {
-  margin: 0;
-  font-size: 20px;
-  color: #020617;
-}
-
-.lideranca-modal-title p {
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: #475569;
-}
-
-.lideranca-modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.modal-metric {
-  background: #eef3ff;
-  border-radius: 12px;
-  padding: 14px;
-
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-metric span {
-  font-size: 13px;
-  color: #475569;
-}
-
-.modal-metric strong {
-  font-size: 20px;
-  color: #1e3a8a;
-}
-
-.modal-section label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #334155;
-}
-
-.modal-section textarea {
-  width: 100%;
-  min-height: 80px;
-  margin-top: 6px;
-  padding: 10px;
-
-  border-radius: 10px;
-  border: 1px solid #cbd5f5;
-  font-size: 14px;
-}
-
-/* FOOTER */
-.lideranca-modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.btn-primary {
-  background: #0047ab;
-  color: #fff;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 10px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.btn-secondary {
-  background: #f1f5f9;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 10px;
-  cursor: pointer;
-}
 .modal-nome {
-  font-size: 22px;
+  font-family: 'Sora', sans-serif;
+  font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--slate-900);
   margin: 0;
   line-height: 1.2;
 }
+
 .modal-sub {
   font-size: 13px;
-  color: #64748b;
+  color: var(--slate-500);
   margin-top: 4px;
 }
+
 .modal-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .modal-grid > div {
-  background: #f8fafc;
+  background: var(--slate-50);
   padding: 12px;
   border-radius: 12px;
-  font-size: 14px;
-  color: #334155;
+  font-size: 13px;
+  color: var(--slate-700);
+  border: 1px solid rgba(0,0,0,0.04);
 }
 
 .modal-grid strong {
   display: block;
-  font-size: 12px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: #64748b;
+  letter-spacing: 0.6px;
+  color: var(--slate-500);
+  font-weight: 700;
   margin-bottom: 4px;
 }
+
 .modal-release {
-  background: #f1f5f9;
-  padding: 16px;
-  border-radius: 14px;
-  font-size: 14px;
-  color: #334155;
-  line-height: 1.5;
-  max-height: 220px;
+  background: var(--slate-50);
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  color: var(--slate-700);
+  line-height: 1.55;
+  max-height: 200px;
   overflow-y: auto;
+  border: 1px solid rgba(0,0,0,0.04);
 }
 
 .modal-release strong {
-  font-size: 13px;
-  color: #475569;
-}
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-/* ========================= */
-/* SEARCH UI (BUSCA MODERNA) */
-/* ========================= */
-
-.search-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.search-label {
-  font-size: 13px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--slate-500);
   font-weight: 700;
-  color: #020617;
 }
 
-.search-input-wrapper {
+/* ===== LIDERANCA MODAL (alternate) ===== */
+.lideranca-modal { display: flex; flex-direction: column; gap: 16px; }
+.lideranca-modal-header { display: flex; gap: 14px; align-items: center; }
+
+.lideranca-modal-foto {
+  width: 66px;
+  height: 66px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--slate-100);
+  border: 1.5px solid var(--slate-200);
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  flex-shrink: 0;
+}
 
-  background: #f8fafc;
-  border: 1px solid #cbd5f5;
+.lideranca-modal-foto img { width: 100%; height: 100%; object-fit: cover; }
+.lideranca-modal-foto span { font-size: 26px; }
+.lideranca-modal-title h2 { margin: 0; font-family: 'Sora', sans-serif; font-size: 18px; color: var(--slate-900); }
+.lideranca-modal-title p { margin: 3px 0 0; font-size: 13px; color: var(--slate-500); }
+.lideranca-modal-body { display: flex; flex-direction: column; gap: 12px; }
+
+.modal-metric {
+  background: var(--blue-light);
   border-radius: 12px;
-  padding: 10px 12px;
-
-  transition: all 0.2s ease;
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid rgba(21,101,192,0.15);
 }
 
-.search-input-wrapper:focus-within {
-  border-color: #1e3a8a;
-  box-shadow: 0 0 0 3px rgba(30,58,138,0.15);
-  background: #ffffff;
-}
+.modal-metric span { font-size: 12px; color: var(--slate-600); font-weight: 600; }
+.modal-metric strong { font-family: 'Sora', sans-serif; font-size: 20px; color: var(--blue-deep); font-weight: 700; }
 
-.search-icon {
-  font-size: 18px;
-  opacity: 0.7;
-}
+.modal-section label { font-size: 12px; font-weight: 700; color: var(--slate-600); text-transform: uppercase; letter-spacing: 0.4px; }
 
-.search-input-wrapper input {
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 14px;
+.modal-section textarea {
   width: 100%;
-}
-
-/* RESULTADOS */
-.search-results {
+  min-height: 75px;
   margin-top: 6px;
+  padding: 10px;
   border-radius: 10px;
-  overflow: hidden;
+  border: 1.5px solid var(--slate-200);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
 }
 
-.search-result-item {
-  padding: 10px 12px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.15s ease;
+.modal-section textarea:focus { border-color: var(--blue-main); box-shadow: 0 0 0 3px rgba(21,101,192,0.1); }
+
+.lideranca-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
-.search-result-item:hover {
-  background: #eef3ff;
-}
-
-.search-result-item small {
-  display: block;
-  font-size: 12px;
-  color: #64748b;
-}
-#toggleSidebarBtn {
-  position: absolute;
-  top: 20px;
-  right: 380px; /* alinhado com sidebar aberta */
-  z-index: 2500;
-
-  background: #0047ab;
+.btn-primary {
+  background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
   color: #fff;
   border: none;
-  border-radius: 10px;
-  padding: 10px 14px;
-
-  font-size: 18px;
+  padding: 9px 16px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-family: inherit;
   cursor: pointer;
-
-  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(21,101,192,0.3);
+  transition: opacity 0.2s;
 }
 
-body.sidebar-closed #toggleSidebarBtn {
-  right: 20px; /* encosta quando sidebar fecha */
+.btn-primary:hover { opacity: 0.9; }
+
+.btn-secondary {
+  background: var(--slate-100);
+  border: 1.5px solid var(--slate-200);
+  padding: 9px 16px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--slate-700);
 }
 
-#toggleSidebarBtn:hover {
-  background: #003366;
-  transform: translateY(-1px);
-}
-/* ============================= */
-/* MAP CONTROLS – LADO ESQUERDO */
-/* ============================= */
+.btn-secondary:hover { background: var(--slate-200); }
 
-#map-controls {
+/* ===== COMITE MARKER ===== */
+.comite-marker {
+  font-size: 22px;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+}
+
+/* ===== CITY LABEL ===== */
+.city-label {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 1500;
+  top: -12px;
+  left: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(15,23,42,0.55);
+  text-shadow: 0 1px 3px rgba(255,255,255,0.9);
+  pointer-events: none;
+  text-align: center;
+  width: 120px;
+  line-height: 1.1;
+  opacity: 0.45;
+  transition: opacity 0.2s, transform 0.2s;
+  font-family: 'DM Sans', Arial, sans-serif;
+}
 
+.city-label.highlight {
+  opacity: 1 !important;
+  transform: scale(1.05);
+  color: var(--blue-deep);
+  font-weight: 700;
+}
+
+.city-tooltip { font-size: 13px; font-family: 'DM Sans', Arial, sans-serif; }
+
+/* ===== BLOCKER ===== */
+#blocker {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(160deg, #061026 0%, #0a1a3c 50%, #0d2d6b 100%);
+  z-index: 3000;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  color: rgba(255,255,255,0.6);
+  font-size: 15px;
+  font-family: 'DM Sans', Arial, sans-serif;
 }
 
-.control-card {
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(6px);
-  border-radius: 14px;
-  padding: 12px;
-  min-width: 180px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-}
-
-.control-title {
+#blocker p {
   font-size: 13px;
-  font-weight: 700;
-  color: #020617;
-  margin-bottom: 8px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 8px;
 }
 
-.control-value {
-  font-size: 18px;
-  font-weight: 800;
-  color: #0047ab;
-}
-
-.control-group {
-  display: flex;
-  gap: 6px;
-}
-
-.mode-btn {
-  flex: 1;
-  padding: 6px 8px;
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 999px;
-  border: 1px solid #cbd5f5;
-  background: #f8fafc;
-  color: #334155;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.mode-btn.active {
-  background: #0047ab;
-  color: #fff;
-  border-color: #0047ab;
-}
-
-.icon-btn {
-  flex: 1;
-  padding: 8px 0;
-  font-size: 14px;
-  font-weight: 800;
-  border-radius: 999px;
-  border: 1px solid #cbd5f5;
-  background: #f8fafc;
-  cursor: pointer;
-}
-
-.icon-btn.active {
-  background: #1e3a8a;
-  color: #fff;
-}
-/* ============================= */
-/* MOBILE AJUSTES */
-/* ============================= */
-
+/* ===== MOBILE ===== */
 @media (max-width: 768px) {
-
-  /* SIDEBAR VIRA FULLSCREEN */
   .sidebar {
     width: 100%;
     max-width: 100%;
   }
 
-  .sidebar.closed {
-    transform: translateX(100%);
-  }
+  .sidebar.closed { transform: translateX(100%); }
 
-  /* BOTÃO ☰ SEMPRE VISÍVEL */
   #toggleSidebarBtn {
     top: 12px;
     left: 12px;
@@ -1107,465 +1099,179 @@ body.sidebar-closed #toggleSidebarBtn {
     z-index: 3000;
   }
 
-  /* CONTROLES DO MAPA MAIS COMPACTOS */
   #map-controls {
     top: auto;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-
     flex-direction: row;
     gap: 8px;
   }
 
-  .control-card {
-    min-width: auto;
-    padding: 10px;
-  }
+  .control-card { min-width: auto; padding: 10px 12px; }
+  .control-title { display: none; }
+  .control-value { font-size: 13px; }
+  .mode-btn { font-size: 10px; padding: 5px 6px; }
+  .icon-btn { padding: 7px; }
 
-  .control-title {
-    display: none; /* economiza espaço */
-  }
-
-  .control-value {
-    font-size: 14px;
-  }
-
-  .mode-btn {
-    font-size: 11px;
-    padding: 6px;
-  }
-
-  .icon-btn {
-    padding: 8px;
-  }
+  #mobileControlsBtn { display: flex !important; }
+  #map-controls { display: none; }
+  #map-controls.mobile-open { display: flex; }
 }
+
 #mobileControlsBtn {
   display: none;
-}
-
-@media (max-width: 768px) {
-  #mobileControlsBtn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    z-index: 2000;
-
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-
-    background: #0047ab;
-    color: #fff;
-    font-size: 22px;
-    border: none;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-  }
-
-  #map-controls {
-    display: none;
-  }
-
-  #map-controls.mobile-open {
-    display: flex;
-  }
-}
-.pin-popup {
-  width: 240px;
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-.pin-popup h4 {
-  margin: 0 0 6px 0;
-  font-size: 15px;
-  color: #020617;
-}
-
-.pin-popup small {
-  font-size: 12px;
-  color: #64748b;
-}
-
-.pin-popup textarea {
-  width: 100%;
-  margin-top: 8px;
-  padding: 6px;
-  border-radius: 8px;
-  border: 1px solid #cbd5f5;
-  font-size: 13px;
-  resize: vertical;
-}
-
-.pin-popup-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-}
-
-.pin-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 2000;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--blue-main);
+  color: #fff;
+  font-size: 20px;
   border: none;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(21,101,192,0.4);
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-}
-
-.pin-btn.save {
-  background: #0047ab;
-  color: #fff;
-}
-
-.pin-btn.delete {
-  background: #e53935;
-  color: #fff;
-}
-#seletor-campanha{
-display:flex;
-flex-direction:column;
-gap:8px;
-margin-bottom:10px;
-}
-
-.campanha-opcao{
-display:flex;
-align-items:center;
-gap:8px;
-padding:8px 10px;
-border-radius:10px;
-cursor:pointer;
-background:#f8fafc;
-border:1px solid #e5e7eb;
-font-weight:600;
-}
-
-.campanha-opcao:hover{
-background:#eef3ff;
-}
-
-.campanha-opcao.ativa{
-background:#0047ab;
-color:white;
-border-color:#0047ab;
-}
-
-.campanha-opcao img{
-width:26px;
-height:26px;
-border-radius:50%;
-object-fit:cover;
+  font-family: inherit;
 }
 </style>
 </head>
 <body>
-<div id="login-modal" style="
-  position: fixed;
-  inset: 0;
-  background: rgba(2,6,23,0.55);
-  backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 4000;
-">
-  <div style="
-    width: 340px;
-    background: linear-gradient(180deg, #ffffff, #f8fafc);
-    border-radius: 18px;
-    padding: 24px 22px;
-    box-shadow:
-      0 30px 60px rgba(0,0,0,0.25),
-      0 8px 20px rgba(0,0,0,0.12);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  ">
 
-    <!-- TÍTULO -->
+<!-- ===== LOGIN MODAL ===== -->
+<div id="login-modal" style="position:fixed;inset:0;background:rgba(6,14,42,0.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:4000;">
+  <div style="width:360px;background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;animation:modalIn .3s ease;">
     <div style="text-align:center;">
-      <h2 style="
-        margin: 0;
-        font-size: 20px;
-        font-weight: 700;
-        color: #020617;
-      ">
-        Acesso ao Sistema
-      </h2>
-      <p style="
-        margin: 6px 0 0;
-        font-size: 13px;
-        color: #64748b;
-      ">
-        Mapa de Lideranças
-      </p>
+      <div style="width:48px;height:48px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">🗺️</div>
+      <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Mapa de Lideranças</h2>
+      <p style="margin:5px 0 0;font-size:13px;color:#64748b;">Insira suas credenciais para continuar</p>
     </div>
-
-    <!-- INPUT USUÁRIO -->
     <div>
-      <label style="
-        display:block;
-        font-size:12px;
-        font-weight:600;
-        color:#334155;
-        margin-bottom:4px;
-      ">Usuário</label>
-
-      <input
-        id="login-user"
-        placeholder="Digite seu usuário"
-        style="
-          width:90%;
-          padding:11px 12px;
-          border-radius:10px;
-          border:1px solid #cbd5f5;
-          font-size:14px;
-          outline:none;
-          transition: all .2s;
-        "
-        onfocus="this.style.borderColor='#1e3a8a';this.style.boxShadow='0 0 0 3px rgba(30,58,138,.15)'"
-        onblur="this.style.borderColor='#cbd5f5';this.style.boxShadow='none'"
-      >
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Usuário</label>
+      <input id="login-user" placeholder="Digite seu usuário" autocomplete="username" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;transition:all .2s;" onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'" onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
     </div>
-
-    <!-- INPUT SENHA -->
     <div>
-      <label style="
-        display:block;
-        font-size:12px;
-        font-weight:600;
-        color:#334155;
-        margin-bottom:4px;
-      ">Senha</label>
-
-      <input
-        id="login-pass"
-        type="password"
-        placeholder="Digite sua senha"
-        style="
-          width:90%;
-          padding:11px 12px;
-          border-radius:10px;
-          border:1px solid #cbd5f5;
-          font-size:14px;
-          outline:none;
-          transition: all .2s;
-        "
-        onfocus="this.style.borderColor='#1e3a8a';this.style.boxShadow='0 0 0 3px rgba(30,58,138,.15)'"
-        onblur="this.style.borderColor='#cbd5f5';this.style.boxShadow='none'"
-      >
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Senha</label>
+      <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;transition:all .2s;" onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'" onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
     </div>
-
-    <!-- ERRO -->
-    <div
-      id="login-error"
-      style="
-        display:none;
-        background:#fee2e2;
-        color:#b91c1c;
-        font-size:13px;
-        padding:8px 10px;
-        border-radius:8px;
-        text-align:center;
-      ">
-      Usuário ou senha inválidos
-    </div>
-
-    <!-- BOTÃO -->
-    <button
-      id="login-btn"
-      style="
-        margin-top:6px;
-        width:100%;
-        padding:12px;
-        border:none;
-        border-radius:12px;
-        background: linear-gradient(135deg, #0047ab, #003580);
-        color:#fff;
-        font-size:14px;
-        font-weight:700;
-        cursor:pointer;
-        box-shadow: 0 8px 18px rgba(0,71,171,.35);
-        transition: all .2s;
-      "
-      onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 12px 26px rgba(0,71,171,.45)'"
-      onmouseout="this.style.transform='none';this.style.boxShadow='0 8px 18px rgba(0,71,171,.35)'"
-    >
-      Entrar
-    </button>
-
+    <div id="login-error" style="display:none;background:#fee2e2;color:#b91c1c;font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;text-align:center;">Usuário ou senha inválidos</div>
+    <button id="login-btn" style="padding:12px;border:none;border-radius:11px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 6px 18px rgba(21,101,192,.4);transition:all .2s;" onmouseover="this.style.opacity='.9';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='none'">Entrar</button>
   </div>
 </div>
 
-
+<!-- ===== BLOCKER ===== -->
 <div id="blocker">
-    Aguardando login...
-    <p>Por favor, insira as credenciais quando solicitado.</p>
+  🗺️
+  <p>Carregando o sistema...</p>
 </div>
 
-<div id="content-wrapper" style="display:none; height:100%; width:100%;"> 
+<!-- ===== CONTENT WRAPPER ===== -->
+<div id="content-wrapper" style="display:none; height:100%; width:100%;">
 
   <div id="map"></div>
+
+  <!-- MAP CONTROLS -->
   <div id="map-controls">
     <button id="mobileControlsBtn">⚙️</button>
 
+    <!-- EXPECTATIVA GERAL -->
+    <div class="control-card">
+      <div class="control-title">📊 Expectativa Geral</div>
+      <div id="total-geral-overlay-celia" class="control-value">—</div>
+      <div id="total-geral-overlay-fernando" class="control-value" style="margin-top:4px;color:#b91c1c;">—</div>
+    </div>
 
-  <!-- EXPECTATIVA GERAL -->
-  <div class="control-card">
-    <div class="control-title">📊 Expectativa Geral</div>
-    <div id="total-geral-overlay-celia" class="control-value">
-—
-</div>
+    <!-- VISUALIZAÇÃO -->
+    <div class="control-card">
+      <div class="control-title">🗳️ Visualização</div>
+      <div class="control-group">
+        <button class="mode-btn active" data-mode="validVotes">Votos</button>
+        <button class="mode-btn" data-mode="expectedVotes">Expectativa</button>
+        <button class="mode-btn" data-mode="leaders">Lideranças</button>
+      </div>
+    </div>
 
-<div id="total-geral-overlay-fernando" class="control-value"
-     style="margin-top:4px;color:#8b0000;">
-—
-</div>
-  </div>
-
-  <!-- VISUALIZAÇÃO DO MAPA -->
-  <div class="control-card">
-    <div class="control-title">🗳️ Visualização</div>
-    <div class="control-group">
-      <button class="mode-btn active" data-mode="validVotes">Votos</button>
-      <button class="mode-btn" data-mode="expectedVotes">Expectativa</button>
-      <button class="mode-btn" data-mode="leaders">Lideranças</button>
+    <!-- PINS -->
+    <div class="control-card">
+      <div class="control-title">📍 Pins</div>
+      <div class="control-group">
+        <button id="togglePins" class="icon-btn active">ON</button>
+        <button id="addPinBtn" class="icon-btn">＋</button>
+      </div>
     </div>
   </div>
 
-  <!-- PINS -->
-  <div class="control-card">
-    <div class="control-title">📍 Pins</div>
-    <div class="control-group">
-      <button id="togglePins" class="icon-btn active">ON</button>
-      <button id="addPinBtn" class="icon-btn">＋</button>
-    </div>
-  </div>
+  <!-- TOGGLE SIDEBAR -->
+  <button id="toggleSidebarBtn" title="Abrir / Fechar painel">☰</button>
 
 </div>
 
-  
-<button id="toggleSidebarBtn" title="Abrir / Fechar painel">
-  ☰
-</button>
-
-
-
-  
-  
+<!-- MAP TITLE -->
+<div class="map-title-overlay">
+  <h1>Mapa de Lideranças · RJ</h1>
 </div>
-  
-  <div class="map-title-overlay">
-    <h1>MAPA DE LIDERANÇAS</h1>
-  </div>
-  
-  <div class="sidebar">
 
-  <!-- ========================= -->
-  <!-- HEADER FIXO -->
-  <!-- ========================= -->
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+  <!-- HEADER -->
   <div class="sidebar-header">
-
-  <div id="seletor-campanha">
-
-    <div class="campanha-opcao ativa" data-campanha="ambos">
-      <img src="img/celia.jpg">
-      <img src="img/fernando.jpg">
-      <span>Ambos</span>
+    <div id="seletor-campanha">
+      <div class="campanha-opcao ativa" data-campanha="ambos">
+        <img src="img/celia.jpg" alt="Célia">
+        <img src="img/fernando.jpg" alt="Fernando" style="margin-left:-8px;">
+        <span>Ambos</span>
+      </div>
+      <div class="campanha-opcao" data-campanha="celia">
+        <img src="img/celia.jpg" alt="Célia">
+        <span>Célia Jordão</span>
+      </div>
+      <div class="campanha-opcao" data-campanha="fernando">
+        <img src="img/fernando.jpg" alt="Fernando">
+        <span>Fernando Jordão</span>
+      </div>
     </div>
-
-    <div class="campanha-opcao" data-campanha="celia">
-      <img src="img/celia.jpg">
-      <span>Célia Jordão</span>
+    <div class="subtitle" style="margin-top:10px;margin-bottom:0;">
+      Passe o mouse sobre um município no mapa para ver os 5 mais votados (2022).
     </div>
-
-    <div class="campanha-opcao" data-campanha="fernando">
-      <img src="img/fernando.jpg">
-      <span>Fernando Jordão</span>
-    </div>
-
   </div>
 
-  <div class="subtitle" style="margin-top: 10px;">
-    Passe o mouse sobre um município no mapa para ver os 5 mais votados (2022).
-  </div>
-
-</div>
-
-  <!-- ========================= -->
-  <!-- CORPO SCROLLÁVEL -->
-  <!-- ========================= -->
+  <!-- BODY -->
   <div class="sidebar-body">
-<!-- LÍDER DA REGIÃO -->
-<div id="lider-regiao-card" class="city-card"
-     style="display:none;background:#eef3ff;border:1px solid #cbd5f5;">
 
-  <div style="display:flex;align-items:center;gap:12px;">
-
-    <div id="lider-regiao-foto"
-     style="
-  width:60px;
-  height:60px;
-  border-radius:12px;
-  background:#fff;
-  border:2px solid #0047ab;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:28px;
-  overflow:hidden;
-">
-  👤
-</div>
-
-    <div>
-      <h3 style="margin:0;font-size:13px;color:#0047ab;">
-        LÍDER DA REGIÃO
-      </h3>
-
-      <div id="lider-regiao-nome"
-           style="font-weight:700;font-size:16px;">
-      </div>
-
-      <div id="lider-regiao-contato"
-           style="font-size:13px;color:#475569;">
-      </div>
-
-      <div id="lider-regiao-votos"
-           style="font-weight:700;color:#1e3a8a;margin-top:4px;">
+    <!-- LÍDER DA REGIÃO -->
+    <div id="lider-regiao-card" class="city-card" style="display:none;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div id="lider-regiao-foto">👤</div>
+        <div>
+          <h3 style="margin:0;margin-bottom:4px;">Líder da Região</h3>
+          <div id="lider-regiao-nome" style="font-weight:700;font-size:15px;color:#0f172a;"></div>
+          <div id="lider-regiao-contato" style="font-size:12px;color:#64748b;margin-top:2px;"></div>
+          <div id="lider-regiao-votos" style="font-weight:700;color:#1565c0;margin-top:3px;font-size:13px;"></div>
+        </div>
       </div>
     </div>
 
-  </div>
-</div>
     <!-- BUSCAR CIDADE -->
     <div class="city-card search-card">
-      <label class="search-label">Buscar cidade</label>
+      <span class="search-label">Buscar cidade</span>
       <div class="search-input-wrapper">
         <span class="search-icon">🏙️</span>
-        <input
-          type="text"
-          id="city-search"
-          placeholder="Digite o nome da cidade..."
-          autocomplete="off"
-        />
+        <input type="text" id="city-search" placeholder="Nome da cidade..." autocomplete="off">
       </div>
       <div id="city-search-results" class="search-results"></div>
     </div>
 
     <!-- BUSCAR LIDERANÇA -->
     <div class="city-card search-card">
-      <label class="search-label">Buscar liderança</label>
+      <span class="search-label">Buscar liderança</span>
       <div class="search-input-wrapper">
         <span class="search-icon">👤</span>
-        <input
-          type="text"
-          id="lideranca-search"
-          placeholder="Digite o nome da liderança..."
-          autocomplete="off"
-        />
+        <input type="text" id="lideranca-search" placeholder="Nome da liderança..." autocomplete="off">
       </div>
       <div id="lideranca-search-results" class="search-results"></div>
     </div>
@@ -1586,59 +1292,36 @@ object-fit:cover;
       </select>
     </div>
 
-    
-
-
     <!-- LIDERANÇAS -->
     <div id="liderancas-container" class="city-card">
       <div class="collapsible-header">
         <h3 style="margin-bottom:0;">
           Lideranças Locais
-          <span id="liderancas-count" style="font-size:14px;font-weight:normal;color:#555;">
-            (0 líderes)
-          </span>
+          <span id="liderancas-count" style="font-size:12px;font-weight:500;color:#64748b;margin-left:4px;">(0)</span>
         </h3>
-        <button class="collapse-btn" data-target="liderancas-content" data-state="expanded">
-          Minimizar
-        </button>
+        <button class="collapse-btn" data-target="liderancas-content" data-state="expanded">Minimizar</button>
       </div>
 
       <div id="liderancas-content">
-        <div style="margin-bottom:10px;">
-
-  <label>Expectativa Célia Jordão</label>
-  <input
-    id="expectativa-cidade-celia"
-    type="number"
-    min="0"
-    style="width:100%;padding:6px;margin-top:4px;"
-  />
-
-  <label style="margin-top:8px;">Expectativa Fernando Jordão</label>
-  <input
-    id="expectativa-cidade-fernando"
-    type="number"
-    min="0"
-    style="width:100%;padding:6px;margin-top:4px;"
-  />
-
-  <button id="salvar-expectativa-cidade" style="width:100%;margin-top:6px;">
-    Salvar expectativa
-  </button>
-
-</div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Expectativa Célia Jordão</label>
+          <input id="expectativa-cidade-celia" type="number" min="0" style="margin-top:4px;">
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-top:8px;display:block;">Expectativa Fernando Jordão</label>
+          <input id="expectativa-cidade-fernando" type="number" min="0" style="margin-top:4px;">
+          <button id="salvar-expectativa-cidade" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;box-shadow:0 4px 12px rgba(21,101,192,0.3);">
+            Salvar expectativa
+          </button>
+        </div>
 
         <div id="liderancas-list"></div>
 
-        <div style="margin-top:10px;">
-          <input id="lideranca-nome" type="text" placeholder="Nome" style="width:100%;margin-bottom:6px;padding:6px;">
-          <input id="lideranca-contato" type="text" placeholder="Contato" style="width:100%;margin-bottom:6px;padding:6px;">
-          <label for="lideranca-foto-file" style="display:block;font-size:12px;color:#555;margin-bottom:4px;">
-            Foto da Liderança (opcional)
-          </label>
-          <input id="lideranca-foto-file" type="file" accept="image/*" style="width:100%;margin-bottom:6px;">
-          <button id="add-lideranca" style="width:100%;padding:8px;background:#0047ab;color:white;border:none;border-radius:6px;">
-            Adicionar Liderança
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f5f9;">
+          <input id="lideranca-nome" type="text" placeholder="Nome da liderança" style="margin-bottom:6px;">
+          <input id="lideranca-contato" type="text" placeholder="Contato" style="margin-bottom:6px;">
+          <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:4px;">Foto (opcional)</label>
+          <input id="lideranca-foto-file" type="file" accept="image/*" style="margin-bottom:8px;">
+          <button id="add-lideranca" style="width:100%;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;box-shadow:0 4px 12px rgba(21,101,192,0.3);">
+            + Adicionar Liderança
           </button>
         </div>
       </div>
@@ -1647,44 +1330,28 @@ object-fit:cover;
     <!-- OBSERVAÇÕES -->
     <div id="observacoes-container" class="city-card">
       <div class="collapsible-header">
-        <h3 style="margin-bottom:0;">Observações (Notas)</h3>
-        <button class="collapse-btn" data-target="observacoes-content" data-state="expanded">
-          Minimizar
-        </button>
+        <h3 style="margin-bottom:0;">Observações</h3>
+        <button class="collapse-btn" data-target="observacoes-content" data-state="expanded">Minimizar</button>
       </div>
 
       <div id="observacoes-content">
         <div id="observacoes-list" style="margin-bottom:10px;">
-          <p style="font-size:13px;color:#666;">
-            Selecione um município para ver as observações.
-          </p>
+          <p style="font-size:13px;color:#94a3b8;">Selecione um município para ver as observações.</p>
         </div>
-
-        <textarea
-          id="new-observacao-text"
-          placeholder="Adicionar nova observação..."
-          style="width:100%;min-height:50px;padding:6px;"
-        ></textarea>
-
-        <button
-          id="add-observacao"
-          style="width:100%;padding:8px;background:#189918;color:white;border:none;border-radius:6px;margin-top:6px;">
-          Adicionar Observação
+        <textarea id="new-observacao-text" placeholder="Adicionar nova observação..." style="min-height:60px;margin-bottom:8px;"></textarea>
+        <button id="add-observacao" style="width:100%;background:#16a34a;color:white;box-shadow:0 4px 12px rgba(22,163,74,0.3);">
+          + Adicionar Observação
         </button>
       </div>
     </div>
 
-    <!-- CÉLIA JORDÃO -->
-    <div id="celia-jordao-card" class="city-card" style="display:none;background:#fff9db;border:1px solid #fcc419;">
+    <!-- CÉLIA JORDÃO VOTOS -->
+    <div id="celia-jordao-card" class="city-card" style="display:none;">
       <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:50px;height:50px;border-radius:50%;background:#fff;border:2px solid #fcc419;display:flex;align-items:center;justify-content:center;">
-          👩‍💼
-        </div>
+        <div style="width:46px;height:46px;border-radius:50%;background:white;border:2px solid rgba(217,119,6,.4);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👩‍💼</div>
         <div>
-          <h3 style="margin:0;color:#856404;font-size:14px;">VOTAÇÃO CÉLIA JORDÃO</h3>
-          <div id="celia-votos-display" style="font-weight:800;color:#e67e22;font-size:18px;">
-            0 votos
-          </div>
+          <h3 style="margin:0;margin-bottom:4px;color:#92400e;">Votação Célia Jordão</h3>
+          <div id="celia-votos-display" style="font-family:'Sora',sans-serif;font-weight:800;color:#d97706;font-size:18px;">0 votos</div>
         </div>
       </div>
     </div>
@@ -1697,10 +1364,9 @@ object-fit:cover;
       <div class="hint">Dados oficiais – Eleição 2022</div>
     </div>
 
+    <!-- FEDERAIS -->
     <div id="city-info-federal" class="city-card">
-      <div class="city-name" id="city-name-federal">
-        Deputados Federais – 2022
-      </div>
+      <div class="city-name" id="city-name-federal">Deputados Federais – 2022</div>
       <div class="votos" id="votos-federal">Passe o mouse no mapa</div>
       <ul class="deputado-list" id="deputado-list-federal"></ul>
       <div class="hint">Dados oficiais – Eleição 2022</div>
@@ -1709,41 +1375,25 @@ object-fit:cover;
   </div>
 </div>
 
+<!-- LOGO -->
+<div class="logo-container">
+  <img src="LOGO-LEO.png" alt="Logo">
+</div>
 
-  
-
-  
-  
-  
-  </div>
-  
-  <div class="logo-container">
-    <img src="LOGO-LEO.png" alt="Logo">
-  </div>
-  
-  <div id="fixed-legend-container">
-      <div class="legend" id="legend-control">
-        <strong>Votos válidos</strong><br>
-      </div>
-  </div>
-
-
-<div id="custom-regions-panel">
-  
-
-
-
-  
-
- 
+<!-- LEGENDA -->
+<div id="fixed-legend-container">
+  <div class="legend" id="legend-control">
+    <strong>Votos válidos</strong>
   </div>
 </div>
-</div> <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<div id="custom-regions-panel"></div>
+
 <script src="auth.js"></script> 
 <script src="data.js"></script>
 <script src="deputadosFederais.js"></script>
 <script src="votosBairro.js"></script>
-<script src="votosCelia.js"></script> <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="votosCelia.js"></script>
 <script>
 // =================================================================
 // 1. VARIÁVEIS GLOBAIS (Inicializadas a null para evitar erros de referência)
