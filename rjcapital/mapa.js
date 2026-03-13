@@ -631,16 +631,18 @@ window.iniciarMapa = function() {
 
           const bairro = feature.properties[BAIRRO_PROP]
 
+          // clique no bairro
           layer.on("click", () => selecionarBairro(bairro, layer))
 
+          // label do bairro
           const center = layer.getBounds().getCenter()
 
           L.marker(center,{
             icon: L.divIcon({
-              className:"bairro-label",
-              html:bairro,
-              iconSize:[120,20],
-              iconAnchor:[60,10]
+              className: "bairro-label",
+              html: bairro,
+              iconSize: [120,20],
+              iconAnchor: [60,10]
             })
           }).addTo(map)
 
@@ -648,19 +650,27 @@ window.iniciarMapa = function() {
 
       }).addTo(map)
 
+      // ajustar mapa aos bairros
       map.fitBounds(geoBairros.getBounds())
 
+      // carregar dados do backend
       return carregarTudo()
 
     })
     .then(() => {
-  repaintMapa()
 
-  setTimeout(() => {
-    map.invalidateSize()
-  }, 200)
+      repaintMapa()
 
-})
-.catch(err => console.error("Erro ao inicializar mapa:", err))
+      // força recalculo do tamanho do mapa
+      map.whenReady(() => {
+        setTimeout(() => {
+          map.invalidateSize()
+        }, 400)
+      })
+
+    })
+    .catch(err => {
+      console.error("Erro ao inicializar mapa:", err)
+    })
 
 }
