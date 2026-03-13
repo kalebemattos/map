@@ -957,6 +957,51 @@ FROM expectativa_cidade
 });
 
 
+
+
+// ─── EXPECTATIVA ANGRA (isolada por mapa='angra') ───────────────────────────
+
+app.post('/api/expectativa-angra', auth, async (req, res) => {
+  const { cidade, celia, fernando } = req.body;
+  if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
+
+  const celiaValor    = Number(celia    || 0);
+  const fernandoValor = Number(fernando || 0);
+
+  await pool.query(
+    `INSERT INTO expectativa_cidade (cidade, expectativa_celia, expectativa_fernando, regiao, mapa)
+     VALUES ($1,$2,$3,$4,'angra')
+     ON CONFLICT (cidade, regiao, mapa)
+     DO UPDATE SET expectativa_celia = excluded.expectativa_celia,
+                   expectativa_fernando = excluded.expectativa_fernando`,
+    [cidade, celiaValor, fernandoValor, req.user.regiao || 'angra']
+  );
+
+  res.json({ ok: true });
+});
+
+app.get('/api/expectativa-angra', auth, async (req, res) => {
+  const { cidade } = req.query;
+  if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
+
+  const row = await dbGet(
+    `SELECT expectativa_celia, expectativa_fernando FROM expectativa_cidade
+     WHERE cidade = $1 AND mapa = 'angra'`,
+    [cidade]
+  );
+
+  res.json({ celia: row?.expectativa_celia || 0, fernando: row?.expectativa_fernando || 0 });
+});
+
+app.get('/api/expectativa-angra-todas', auth, async (req, res) => {
+  const rows = await dbAll(
+    `SELECT cidade, expectativa_celia, expectativa_fernando
+     FROM expectativa_cidade WHERE mapa = 'angra'`,
+    []
+  );
+  res.json(rows);
+});
+
 app.post('/api/pins',
   auth,
   allow('admin', 'dono', 'lider_regiao'),

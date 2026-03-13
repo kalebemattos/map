@@ -67,7 +67,7 @@ async function carregarTudo() {
 
   // Expectativas por bairro (separadas por campanha)
   try {
-    const res  = await apiFetch('/expectativa-cidade-todas')
+    const res  = await apiFetch('/expectativa-angra-todas')
     const lista = await res.json()
     if (Array.isArray(lista)) {
       lista.forEach(e => {
@@ -464,7 +464,7 @@ document.getElementById("salvar-exp").addEventListener("click", async () => {
   const fernando = Number(document.getElementById("valor-exp-fernando").value) || 0
 
   try {
-    await apiFetch('/expectativa-cidade', {
+    await apiFetch('/expectativa-angra', {
       method: 'POST',
       body: JSON.stringify({ cidade: bairroAtual, celia, fernando })
     })
