@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa Rio de Janeiro - Painel</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== LOGIN MODAL ===== -->
+<div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9000;">
+  <div style="width:360px;background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;animation:modalIn .25s cubic-bezier(0.34,1.56,0.64,1);">
+    <div style="text-align:center;">
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">&#x1F5FA;&#xFE0F;</div>
+      <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Mapa do Rio</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:#64748b;">Insira suas credenciais para continuar</p>
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Usuário</label>
+      <input id="login-user" type="text" placeholder="Digite seu usuário" autocomplete="username"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;transition:all .2s;"
+        onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Senha</label>
+      <input id="login-pass" type="password" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" autocomplete="current-password"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;transition:all .2s;"
+        onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
+    </div>
+    <div id="login-error" style="display:none;background:#fee2e2;color:#b91c1c;font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;text-align:center;"></div>
+    <button id="login-btn"
+      style="padding:13px;border:none;border-radius:11px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 6px 18px rgba(21,101,192,.4);transition:all .2s;"
+      onmouseover="this.style.opacity='.9';this.style.transform='translateY(-1px)'"
+      onmouseout="this.style.opacity='1';this.style.transform='none'">
+      Entrar
+    </button>
+  </div>
+</div>
+
+<!-- ===== BLOCKER ===== -->
+<div id="blocker" style="position:fixed;inset:0;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:8000;">
+  <div style="font-size:36px;">&#x1F5FA;&#xFE0F;</div>
+  <p style="margin:0;font-size:14px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando o sistema...</p>
+</div>
+
+<div id="content-wrapper" style="display:none;">
+
+<!-- OVERLAY TOTAL -->
+<div id="overlay-total">
+  <div class="overlay-label">Expectativa Total</div>
+  <div id="total-expectativa">0</div>
+  <div id="overlay-campanha-badge">Ambos</div>
+</div>
+
+<!-- TOGGLE -->
+<button id="toggleSidebar" title="Abrir/fechar painel">☰</button>
+
+<!-- APP -->
+<div id="app">
+  <div id="map"></div>
+</div>
+
+<!-- LEGENDA -->
+<div id="legenda">
+  <div class="legenda-title">
+    <span class="legenda-icon">📊</span>
+    <span>Expectativa</span>
+  </div>
+  <div class="legenda-gradient-bar" style="background:linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d);"></div>
+  <div class="legenda-gradient-labels">
+    <span>0</span><span>300</span><span>1k</span><span>5k+</span>
+  </div>
+  <div class="legenda-steps">
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#67000d;"></div><span>5.000+ <small>muito alto</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#a50f15;"></div><span>2.000–4.999 <small>alto</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#cb181d;"></div><span>1.000–1.999 <small>moderado</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#fb6a4a;"></div><span>300–999 <small>baixo</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#fcae91;"></div><span>1–299 <small>muito baixo</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#fee5d9;"></div><span>0 <small>sem expectativa</small></span></div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+
+  <!-- HEADER -->
+  <div class="sidebar-header">
+    <div class="sidebar-header-brand">
+      <div class="sidebar-logo">🗺️</div>
+      <div>
+        <h1>Mapa Eleitoral</h1>
+        <p>Rio de Janeiro · Painel de lideranças</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.15);">
+      <span id="user-chip" style="display:none;flex:1;font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.12);padding:4px 10px;border-radius:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+      <button onclick="logout()" title="Sair" style="flex-shrink:0;padding:5px 10px;border:none;border-radius:8px;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">Sair</button>
+    </div>
+  </div>
+
+  <!-- BODY SCROLLÁVEL -->
+  <div class="sidebar-body">
+
+    <!-- SELETOR DE CAMPANHA -->
+    <div class="sidebar-block">
+      <label class="block-label">Campanha</label>
+      <div id="seletor-campanha">
+        <div class="campanha-opcao ativa" data-campanha="ambos">
+          <img src="../../img/celia.jpg" onerror="this.style.display='none'" alt="">
+          <img src="../../img/fernando.jpg" onerror="this.style.display='none'" alt="" style="margin-left:-6px;">
+          <span>Ambos</span>
+        </div>
+        <div class="campanha-opcao" data-campanha="celia">
+          <img src="../../img/celia.jpg" onerror="this.style.display='none'" alt="">
+          <span>Célia Jordão</span>
+        </div>
+        <div class="campanha-opcao" data-campanha="fernando">
+          <img src="../../img/fernando.jpg" onerror="this.style.display='none'" alt="">
+          <span>Fernando Jordão</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SELETOR DE DISTRITO -->
+    <div class="sidebar-block">
+      <label class="block-label">Zona</label>
+      <div class="select-wrap">
+        <select id="select-distrito">
+          <option value="">Todas as zonas</option>
+          <option value="ZONA NORTE">Zona Norte</option>
+          <option value="ZONA SUL">Zona Sul</option>
+          <option value="ZONA OESTE">Zona Oeste</option>
+          <option value="ZONA LESTE">Zona Leste</option>
+          <option value="CENTRO">Centro</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- LÍDER DO DISTRITO -->
+    <div id="lider-distrito-card" class="sidebar-block" style="display:none;">
+      <label class="block-label">Líder responsável</label>
+      <div id="lista-lideres-distrito"></div>
+    </div>
+
+    <!-- BUSCAR BAIRRO -->
+    <div class="sidebar-block">
+      <label class="block-label">Buscar bairro</label>
+      <div class="search-wrap">
+        <span class="search-icon">🏙️</span>
+        <input type="text" id="buscar-bairro" placeholder="Nome do bairro..." autocomplete="off">
+      </div>
+      <div id="buscar-bairro-results" class="search-results"></div>
+    </div>
+
+    <!-- BUSCAR LIDERANÇA -->
+    <div class="sidebar-block">
+      <label class="block-label">Buscar liderança</label>
+      <div class="search-wrap">
+        <span class="search-icon">👤</span>
+        <input type="text" id="buscar-lideranca" placeholder="Nome da liderança..." autocomplete="off">
+      </div>
+      <div id="buscar-lideranca-results" class="search-results"></div>
+    </div>
+
+    <!-- INFO DO BAIRRO -->
+    <div class="sidebar-block" id="block-bairro-info">
+      <h3 id="bairro-nome">Selecione um bairro</h3>
+      <div id="bairro-info" class="bairro-meta">Clique em um bairro no mapa</div>
+    </div>
+
+    <!-- EXPECTATIVA DO BAIRRO (separada por campanha) -->
+    <div class="sidebar-block">
+      <label class="block-label">Expectativa do bairro</label>
+      <div class="exp-grid">
+        <div class="exp-field">
+          <span class="exp-label badge-celia-label">Célia</span>
+          <input id="valor-exp-celia" type="number" min="0" value="0" placeholder="0">
+        </div>
+        <div class="exp-field">
+          <span class="exp-label badge-fernando-label">Fernando</span>
+          <input id="valor-exp-fernando" type="number" min="0" value="0" placeholder="0">
+        </div>
+      </div>
+      <button id="salvar-exp">Salvar expectativa</button>
+    </div>
+
+    <!-- LIDERANÇAS COM RANKING -->
+    <div class="sidebar-block" id="block-liderancas">
+      <div class="collapsible-header">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <h3 style="margin:0;">Lideranças</h3>
+          <span id="liderancas-count" class="count-badge">0</span>
+        </div>
+        <button class="collapse-btn" data-target="liderancas-content" data-state="expanded">−</button>
+      </div>
+
+      <div id="liderancas-content">
+        <!-- RESUMO TOTAIS -->
+        <div id="liderancas-totais" style="display:none;"></div>
+
+        <!-- LISTA RANKING -->
+        <div id="lista-liderancas"></div>
+
+        <!-- FORM ADICIONAR -->
+        <div class="add-lider-form" id="add-lider-form">
+          <div class="form-divider">Adicionar liderança</div>
+          <input id="lideranca-nome" type="text" placeholder="Nome" class="form-input">
+          <input id="lideranca-contato" type="text" placeholder="Contato / WhatsApp" class="form-input">
+          <div class="form-row">
+            <select id="lideranca-vinculo" class="form-input">
+              <option value="ambos">Ambos</option>
+              <option value="celia">Célia Jordão</option>
+              <option value="fernando">Fernando Jordão</option>
+            </select>
+            <input id="lideranca-votos" type="number" min="0" value="0" placeholder="Votos" class="form-input">
+          </div>
+          <button id="add-lideranca" class="btn-add">+ Adicionar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sidebar-body -->
+</div><!-- /sidebar -->
+
+<!-- MODAL LIDERANÇA -->
+<div id="modal-lideranca" class="modal-overlay" onclick="if(event.target===this)fecharModalLideranca()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="fecharModalLideranca()">✕</button>
+    <div id="modal-lideranca-conteudo"></div>
+  </div>
+</div>
+
+<script>
+// ===== BOOT — deve ser definido ANTES do auth.js =====
+window.iniciarAplicacao = async function () {
+  // Mostra chip do usuário logado
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const chip = document.getElementById('user-chip')
+  if (chip && user.usuario) {
+    chip.textContent = user.usuario
+    chip.style.display = 'inline-block'
+  }
+  // Inicia o mapa (carrega GeoJSON + dados do backend)
+  if (typeof window.iniciarMapa === 'function') {
+    window.iniciarMapa()
+  }
+}
+</script>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="../auth.js"></script>
+<script src="distritos.js"></script>
+<script src="mapa.js"></script>
+
+<script>
+
+// ===== TOGGLE SIDEBAR =====
+const sidebar = document.getElementById("sidebar")
+const toggle = document.getElementById("toggleSidebar")
+let sidebarOpen = true
+
+toggle.onclick = () => {
+  sidebarOpen = !sidebarOpen
+  sidebar.classList.toggle("sidebar-hidden", !sidebarOpen)
+  toggle.classList.toggle("sidebar-closed-btn", !sidebarOpen)
+  if (window.map) setTimeout(() => map.invalidateSize(), 320)
+}
+
+// ===== COLLAPSE SECTIONS =====
+document.querySelectorAll(".collapse-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const targetId = btn.dataset.target
+    const target = document.getElementById(targetId)
+    const isExpanded = btn.dataset.state === "expanded"
+    if (!target) return
+    if (isExpanded) {
+      target.style.display = "none"
+      btn.dataset.state = "collapsed"
+      btn.textContent = "+"
+    } else {
+      target.style.display = ""
+      btn.dataset.state = "expanded"
+      btn.textContent = "−"
+    }
+  })
+})
+
+// ===== MODAL =====
+function fecharModalLideranca() {
+  document.getElementById("modal-lideranca").style.display = "none"
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") fecharModalLideranca()
+})
+</script>
+</div><!-- /content-wrapper -->
+
+</body>
+</html>
