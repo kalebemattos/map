@@ -270,17 +270,20 @@ body {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.3px;
+  color: rgba(255,255,255,0.75);
   position: relative;
   z-index: 1;
-  transition: gap 0.2s;
+  transition: gap 0.2s, color 0.2s;
 }
 
-.card:hover .card-cta { gap: 10px; }
+.card:hover .card-cta { gap: 10px; color: rgba(255,255,255,1); }
 
 .card-cta-arrow {
   width: 22px;
   height: 22px;
   border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -292,29 +295,34 @@ body {
 
 /* Color themes per card */
 .card-blue .card-icon-wrap { background: rgba(21,101,192,0.35); }
-.card-blue .card-cta { color: #60a5fa; }
-.card-blue .card-cta-arrow { background: rgba(21,101,192,0.3); color: #60a5fa; }
+
+.card-blue .card-cta-arrow { background: rgba(255,255,255,0.15); }
 .card-blue:hover { border-color: rgba(96,165,250,0.3); }
 
 .card-purple .card-icon-wrap { background: rgba(124,58,237,0.3); }
-.card-purple .card-cta { color: #a78bfa; }
-.card-purple .card-cta-arrow { background: rgba(124,58,237,0.25); color: #a78bfa; }
+
+.card-purple .card-cta-arrow { background: rgba(255,255,255,0.15); }
 .card-purple:hover { border-color: rgba(167,139,250,0.3); }
 
 .card-teal .card-icon-wrap { background: rgba(13,148,136,0.3); }
-.card-teal .card-cta { color: #5eead4; }
-.card-teal .card-cta-arrow { background: rgba(13,148,136,0.25); color: #5eead4; }
+
+.card-teal .card-cta-arrow { background: rgba(255,255,255,0.15); }
 .card-teal:hover { border-color: rgba(94,234,212,0.3); }
 
 .card-amber .card-icon-wrap { background: rgba(217,119,6,0.3); }
-.card-amber .card-cta { color: #fbbf24; }
-.card-amber .card-cta-arrow { background: rgba(217,119,6,0.25); color: #fbbf24; }
+
+.card-amber .card-cta-arrow { background: rgba(255,255,255,0.15); }
 .card-amber:hover { border-color: rgba(251,191,36,0.3); }
 
 .card-rose .card-icon-wrap { background: rgba(190,18,60,0.3); }
-.card-rose .card-cta { color: #fb7185; }
-.card-rose .card-cta-arrow { background: rgba(190,18,60,0.25); color: #fb7185; }
+
+.card-rose .card-cta-arrow { background: rgba(255,255,255,0.15); }
 .card-rose:hover { border-color: rgba(251,113,133,0.3); }
+
+.card-green .card-icon-wrap { background: rgba(5,150,105,0.3); }
+
+.card-green .card-cta-arrow { background: rgba(255,255,255,0.15); }
+.card-green:hover { border-color: rgba(52,211,153,0.3); }
 
 /* Featured card accent */
 .card-featured {
@@ -354,6 +362,7 @@ footer {
 .card:nth-child(3) { animation-delay: 0.29s; }
 .card:nth-child(4) { animation-delay: 0.36s; }
 .card:nth-child(5) { animation-delay: 0.43s; }
+.card:nth-child(6) { animation-delay: 0.50s; }
 
 /* ===== MOBILE ===== */
 @media (max-width: 600px) {
@@ -404,7 +413,17 @@ footer {
         </div>
       </a>
 
-      <a href="./admin/" class="card card-purple card-featured">
+      <a href="./angra/" class="card card-green">
+        <div class="card-icon-wrap">🏝️</div>
+        <div class="card-title">Mapa de Angra</div>
+        <div class="card-desc">Painel de lideranças e expectativa de votos por bairro em Angra dos Reis, com ranking por campanha.</div>
+        <div class="card-cta">
+          Abrir mapa
+          <div class="card-cta-arrow">→</div>
+        </div>
+      </a>
+
+      <a href="./admin/" class="card card-purple">
         <div class="card-icon-wrap">👥</div>
         <div class="card-title">Painel Administrativo</div>
         <div class="card-desc">Cadastro e gerenciamento completo das lideranças com controle estratégico e histórico.</div>
