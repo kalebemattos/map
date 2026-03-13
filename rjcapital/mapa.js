@@ -653,7 +653,14 @@ window.iniciarMapa = function() {
       return carregarTudo()
 
     })
-    .then(() => repaintMapa())
-    .catch(err => console.error("Erro ao inicializar mapa:", err))
+    .then(() => {
+  repaintMapa()
+
+  setTimeout(() => {
+    map.invalidateSize()
+  }, 200)
+
+})
+.catch(err => console.error("Erro ao inicializar mapa:", err))
 
 }

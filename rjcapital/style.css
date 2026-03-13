@@ -34,16 +34,17 @@ html, body {
 }
 
 /* ===== APP ===== */
-#app {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
+#app{
+display:flex;
+height:100vh;
+width:100vw;
+position:relative;
 }
 
-#map {
-  flex: 1;
-  height: 100vh;
-  transition: margin-right 0.35s ease;
+#map{
+flex:1;
+height:100%;
+width:100%;
 }
 
 .leaflet-container { background: #dde8f5; }
@@ -912,11 +913,4 @@ input:focus, select:focus, textarea:focus {
   #toggleSidebar.sidebar-closed-btn { right: 12px; }
   #overlay-total { top: 12px; left: 12px; }
   #legenda { display: none; }
-}
-#map{
-position:absolute;
-top:0;
-left:0;
-right:0;
-bottom:0;
 }
