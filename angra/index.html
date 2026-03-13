@@ -238,13 +238,8 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="auth.js"></script>
-<script src="distritos.js"></script>
-<script src="mapa.js"></script>
-
 <script>
-// ===== BOOT — chamado pelo auth.js após login/validação =====
+// ===== BOOT — deve ser definido ANTES do auth.js =====
 window.iniciarAplicacao = async function () {
   // Mostra chip do usuário logado
   const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -258,6 +253,14 @@ window.iniciarAplicacao = async function () {
     window.iniciarMapa()
   }
 }
+</script>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="auth.js"></script>
+<script src="distritos.js"></script>
+<script src="mapa.js"></script>
+
+<script>
 
 // ===== TOGGLE SIDEBAR =====
 const sidebar = document.getElementById("sidebar")
