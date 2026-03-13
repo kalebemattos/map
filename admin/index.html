@@ -498,28 +498,7 @@ textarea {
 .state-msg .icon { font-size: 36px; margin-bottom: 10px; }
 .state-msg p { font-size: 14px; font-weight: 500; }
 
-/* ===== LOGIN ===== */
-#login-card-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(8,18,48,0.65);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9000;
-}
-#login-card-overlay.hidden { display: none; }
 .hidden { display: none !important; }
-
-#login-card {
-  width: 360px;
-  max-width: calc(100vw - 40px);
-  padding: 36px 32px;
-  margin: 0;
-  animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
-  box-shadow: 0 30px 70px rgba(0,0,0,0.35);
-}
 
 @keyframes modalIn {
   from { opacity: 0; transform: translateY(16px) scale(0.96); }
@@ -622,20 +601,35 @@ textarea {
 <div class="bg-overlay"></div>
 
 <!-- LOGIN -->
-<div id="login-card" class="card">
-  <div class="login-logo">🗺️</div>
-  <h2>Painel de Lideranças</h2>
-  <p class="login-subtitle">Entre com suas credenciais para continuar</p>
-  <div class="form-group">
-    <label>Usuário</label>
-    <input id="login-user" placeholder="Digite seu usuário" autocomplete="username">
+<div id="login-card-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9000;">
+  <div style="width:360px;background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;animation:modalIn .25s cubic-bezier(0.34,1.56,0.64,1);">
+    <div style="text-align:center;">
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">🗺️</div>
+      <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Painel de Lideranças</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:#64748b;">Insira suas credenciais para continuar</p>
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Usuário</label>
+      <input id="login-user" type="text" placeholder="Digite seu usuário" autocomplete="username"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;transition:all .2s;"
+        onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Senha</label>
+      <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;transition:all .2s;"
+        onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
+    </div>
+    <div id="login-error" style="display:none;background:#fee2e2;color:#b91c1c;font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;text-align:center;"></div>
+    <button id="login-btn"
+      style="padding:13px;border:none;border-radius:11px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 6px 18px rgba(21,101,192,.4);transition:all .2s;"
+      onmouseover="this.style.opacity='.9';this.style.transform='translateY(-1px)'"
+      onmouseout="this.style.opacity='1';this.style.transform='none'">
+      Entrar
+    </button>
   </div>
-  <div class="form-group">
-    <label>Senha</label>
-    <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password">
-  </div>
-  <button id="login-btn" class="btn btn-primary btn-full">Entrar</button>
-  <small id="login-error"></small>
 </div>
 
 <!-- PANEL -->
@@ -1007,7 +1001,7 @@ function logout() {
 function iniciarPainel() {
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user) return;
-  loginCard.classList.add('hidden');
+  loginCard.style.display = 'none';
   panel.classList.remove('hidden');
 
   const nomeDisplay = user.nome || user.usuario || 'Usuário';
@@ -1038,7 +1032,13 @@ document.addEventListener('DOMContentLoaded', () => {
   buscaCidade.addEventListener('input', filtrarCidades);
   regiao.addEventListener('change', carregarCidadesPorRegiao);
   cidade.addEventListener('change', carregarLiderancas);
-  iniciarPainel();
+
+  const token = localStorage.getItem('token');
+  if (token) {
+    iniciarPainel();
+  } else {
+    loginCard.style.display = 'flex';
+  }
 });
 
 /* ===== REGIÕES / CIDADES ===== */
