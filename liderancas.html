@@ -840,6 +840,7 @@
             <th>Região</th>
             <th>Votos</th>
             <th>Campanha</th>
+            <th>Aniversário</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -939,7 +940,7 @@
           dados.forEach(item => {
             if (Array.isArray(item.liderancas)) {
               item.liderancas.forEach(l => {
-                todasLiderancas.push({ ...l, cidade: item.cidade });
+                todasLiderancas.push({ ...l, cidade: item.cidade || item.bairro, regiao: l.regiao || item.regiao || item.cidade || item.bairro });
               });
             }
           });
@@ -1035,6 +1036,42 @@
       document.getElementById(id).addEventListener('change', aplicarFiltros);
       document.getElementById(id).addEventListener('input', aplicarFiltros);
     });
+
+    // ===== ANIVERSÁRIO =====
+    function formatarAniversario(val) {
+      if (!val) return '—'
+      try {
+        // suporta YYYY-MM-DD ou DD/MM/YYYY
+        let d
+        if (val.includes('-')) {
+          const [y, m, day] = val.split('T')[0].split('-')
+          d = new Date(Number(y), Number(m) - 1, Number(day))
+        } else {
+          const [day, m, y] = val.split('/')
+          d = new Date(Number(y), Number(m) - 1, Number(day))
+        }
+        if (isNaN(d)) return val
+        return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      } catch { return val }
+    }
+
+    function diasParaAniversario(val) {
+      if (!val) return null
+      try {
+        let d
+        if (val.includes('-')) {
+          const [, m, day] = val.split('T')[0].split('-')
+          d = new Date(new Date().getFullYear(), Number(m) - 1, Number(day))
+        } else {
+          const [day, m] = val.split('/')
+          d = new Date(new Date().getFullYear(), Number(m) - 1, Number(day))
+        }
+        const hoje = new Date(); hoje.setHours(0,0,0,0)
+        d.setFullYear(hoje.getFullYear())
+        if (d < hoje) d.setFullYear(hoje.getFullYear() + 1)
+        return Math.ceil((d - hoje) / 86400000)
+      } catch { return null }
+    }
 
     // ===== RENDERIZAR =====
     function getBadgeCampanha(vinculo) {
@@ -1136,6 +1173,18 @@
         campTd.setAttribute('data-label', 'Campanha');
         campTd.innerHTML = getBadgeCampanha(l.vinculo_politico);
 
+        // Aniversário
+        const anivTd = document.createElement('td');
+        anivTd.setAttribute('data-label', 'Aniversário');
+        const _dias = diasParaAniversario(l.data_nascimento || l.aniversario);
+        if (_dias === 0) {
+          anivTd.innerHTML = `<span style="background:#fef9c3;color:#b45309;font-weight:700;padding:2px 8px;border-radius:20px;font-size:12px;">🎂 Hoje!</span>`;
+        } else if (_dias !== null && _dias <= 7) {
+          anivTd.innerHTML = `<span style="background:#fff7ed;color:#c2410c;font-weight:600;padding:2px 8px;border-radius:20px;font-size:12px;">🎉 em ${_dias}d</span>`;
+        } else {
+          anivTd.textContent = formatarAniversario(l.data_nascimento || l.aniversario);
+        }
+
         // Status
         const statusTd = document.createElement('td');
         statusTd.setAttribute('data-label', 'Status');
@@ -1148,6 +1197,7 @@
         tr.appendChild(regTd);
         tr.appendChild(votosTd);
         tr.appendChild(campTd);
+        tr.appendChild(anivTd);
         tr.appendChild(statusTd);
 
         tbody.appendChild(tr);
@@ -1203,6 +1253,10 @@
             <div class="modal-field-label">Responsável</div>
             <div class="modal-field-value">${l.responsavel || '—'}</div>
           </div>
+          <div class="modal-field">
+            <div class="modal-field-label">Aniversário</div>
+            <div class="modal-field-value">${formatarAniversario(l.data_nascimento || l.aniversario)}</div>
+          </div>
           ${l.id != null ? `
           <div class="modal-field">
             <div class="modal-field-label">ID</div>
@@ -1246,7 +1300,7 @@
 
     function gerarCSV(dados, nome) {
       if (!dados.length) { alert('Nenhuma liderança para exportar.'); return; }
-      const cabecalho = ['ID','Nome','Contato','Cidade','Região','Status','Expectativa de votos','Perfil','Responsável','Campanha','Release'];
+      const cabecalho = ['ID','Nome','Contato','Cidade','Região','Status','Expectativa de votos','Perfil','Responsável','Campanha','Aniversário','Release'];
       const linhas = dados.map(l => [
         l.id ?? '',
         l.nome ?? '',
@@ -1258,6 +1312,7 @@
         l.perfil ?? '',
         l.responsavel ?? '',
         l.vinculo_politico ?? '',
+        formatarAniversario(l.data_nascimento || l.aniversario),
         (l.release ?? '').replace(/\n/g, ' ')
       ]);
       const csv = [cabecalho.join(';'), ...linhas.map(l => l.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'))].join('\n');

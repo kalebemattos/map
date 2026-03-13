@@ -521,7 +521,9 @@ app.post('/api/liderancas',
  responsavel,
  status,
  release,
- vinculo_politico
+ vinculo_politico,
+ regiao: regiaoBody,
+ data_nascimento
 } = req.body;
     if (!validarTexto(cidade, 120)) {
   return res.status(400).json({ error: 'Cidade inválida' });
@@ -582,8 +584,8 @@ if (expectativa_votos && !validarNumero(expectativa_votos, 0, 1000000)) {
     await pool.query(
   `
   INSERT INTO liderancas
-(cidade, nome, contato, foto, expectativa_votos, perfil, responsavel, status, release, regiao, vinculo_politico)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+(cidade, nome, contato, foto, expectativa_votos, perfil, responsavel, status, release, regiao, vinculo_politico, data_nascimento)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
   `,
   [
   cidade,
@@ -595,8 +597,9 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
   responsavel || null,
   status || 'ativa',
   release || null,
-  req.user.regiao,
-  vinculo_politico || 'fernando'
+  regiaoBody || req.user.regiao,
+  vinculo_politico || 'fernando',
+  data_nascimento || null
 ]
 );
 // 🔐 REGISTRA AUDITORIA AQUI
@@ -673,7 +676,9 @@ app.put('/api/liderancas/:id',
  responsavel,
  status,
  release,
- vinculo_politico
+ vinculo_politico,
+ regiao: regiaoBody,
+ data_nascimento
 } = req.body;
     // 🔐 ===== VALIDAÇÃO =====
 
@@ -763,8 +768,10 @@ status=$6,
 release=$7,
 foto=$8,
 cidade=$9,
-vinculo_politico=$10
-WHERE id=$11 AND LOWER(regiao)=LOWER($12)
+vinculo_politico=$10,
+regiao=COALESCE($12, regiao),
+data_nascimento=$13
+WHERE id=$11 AND (LOWER(regiao)=LOWER($12) OR $14='dono')
   `,
   [
   nome,
@@ -778,7 +785,9 @@ WHERE id=$11 AND LOWER(regiao)=LOWER($12)
   cidade,
   vinculo_politico || 'fernando',
   id,
-  req.user.regiao
+  regiaoBody || req.user.regiao,
+  data_nascimento || null,
+  req.user.nivel
 ]
 );
 if (result.rowCount === 0) {
