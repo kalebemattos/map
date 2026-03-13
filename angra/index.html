@@ -12,6 +12,46 @@
 </head>
 <body>
 
+<!-- ===== LOGIN MODAL ===== -->
+<div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(6,14,42,0.75);backdrop-filter:blur(10px);align-items:center;justify-content:center;z-index:9000;">
+  <div style="width:360px;background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;animation:modalIn .3s ease;">
+    <div style="text-align:center;">
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">&#x1F5FA;&#xFE0F;</div>
+      <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Mapa de Angra</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:#64748b;">Insira suas credenciais para continuar</p>
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Usuário</label>
+      <input id="login-user" type="text" placeholder="Digite seu usuário" autocomplete="username"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;transition:all .2s;"
+        onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Senha</label>
+      <input id="login-pass" type="password" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" autocomplete="current-password"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;transition:all .2s;"
+        onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
+    </div>
+    <div id="login-error" style="display:none;background:#fee2e2;color:#b91c1c;font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;text-align:center;"></div>
+    <button id="login-btn"
+      style="padding:13px;border:none;border-radius:11px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 6px 18px rgba(21,101,192,.4);transition:all .2s;"
+      onmouseover="this.style.opacity='.9';this.style.transform='translateY(-1px)'"
+      onmouseout="this.style.opacity='1';this.style.transform='none'">
+      Entrar
+    </button>
+  </div>
+</div>
+
+<!-- ===== BLOCKER ===== -->
+<div id="blocker" style="position:fixed;inset:0;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:8000;">
+  <div style="font-size:36px;">&#x1F5FA;&#xFE0F;</div>
+  <p style="margin:0;font-size:14px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando o sistema...</p>
+</div>
+
+<div id="content-wrapper" style="display:none;">
+
 <!-- OVERLAY TOTAL -->
 <div id="overlay-total">
   <div class="overlay-label">Expectativa Total</div>
@@ -58,6 +98,11 @@
         <h1>Mapa Eleitoral</h1>
         <p>Angra dos Reis · Painel de lideranças</p>
       </div>
+    </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.15);">
+      <span id="user-chip" style="display:none;flex:1;font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.12);padding:4px 10px;border-radius:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+      <button onclick="logout()" title="Sair" style="flex-shrink:0;padding:5px 10px;border:none;border-radius:8px;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">Sair</button>
     </div>
   </div>
 
@@ -194,10 +239,29 @@
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="auth.js"></script>
 <script src="distritos.js"></script>
 <script src="mapa.js"></script>
 
 <script>
+// ===== BOOT — chamado pelo auth.js após login/validação =====
+window.iniciarAplicacao = async function () {
+  console.log('[BOOT] iniciarAplicacao chamada')
+  // Mostra chip do usuário logado
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const chip = document.getElementById('user-chip')
+  if (chip && user.usuario) {
+    chip.textContent = user.usuario
+    chip.style.display = 'inline-block'
+  }
+  // mapa.js já se auto-inicializa ao carregar os scripts
+  // mas se precisar recarregar dados:
+  if (typeof carregarTudo === 'function' && typeof repaintMapa === 'function') {
+    await carregarTudo()
+    repaintMapa()
+  }
+}
+
 // ===== TOGGLE SIDEBAR =====
 const sidebar = document.getElementById("sidebar")
 const toggle = document.getElementById("toggleSidebar")
@@ -237,5 +301,7 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape") fecharModalLideranca()
 })
 </script>
+</div><!-- /content-wrapper -->
+
 </body>
 </html>

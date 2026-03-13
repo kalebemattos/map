@@ -2,10 +2,7 @@
 // MAPA DE ANGRA DOS REIS – mapa.js
 // =============================================================
 
-// ─────────────────────────────────────────────
-// CONFIG
-// ─────────────────────────────────────────────
-const API_URL = "https://map-backend-j88s.onrender.com"
+// API_URL é definido pelo auth.js como window.API_URL
 
 // ─────────────────────────────────────────────
 // ESTADO GLOBAL
@@ -24,7 +21,7 @@ const dataCache = {}
 // API
 // ─────────────────────────────────────────────
 async function apiFetch(endpoint, options = {}) {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('accessToken')
 
   if (!token) {
     localStorage.clear()
@@ -32,7 +29,7 @@ async function apiFetch(endpoint, options = {}) {
     throw new Error('Sem token')
   }
 
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  const res = await fetch(`${window.API_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -438,7 +435,7 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
 
     await apiFetch('/liderancas', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') },
+      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('accessToken') },
       body: formData
     })
 
