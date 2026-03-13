@@ -21,7 +21,7 @@ const dataCache = {}
 // API
 // ─────────────────────────────────────────────
 async function apiFetch(endpoint, options = {}) {
-  const token = localStorage.getItem('accessToken')
+  const token = localStorage.getItem('token')
 
   if (!token) {
     localStorage.clear()
@@ -435,7 +435,7 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
 
     await apiFetch('/liderancas', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('accessToken') },
+      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') },
       body: formData
     })
 
