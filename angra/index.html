@@ -246,7 +246,6 @@
 <script>
 // ===== BOOT — chamado pelo auth.js após login/validação =====
 window.iniciarAplicacao = async function () {
-  console.log('[BOOT] iniciarAplicacao chamada')
   // Mostra chip do usuário logado
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const chip = document.getElementById('user-chip')
@@ -254,11 +253,9 @@ window.iniciarAplicacao = async function () {
     chip.textContent = user.usuario
     chip.style.display = 'inline-block'
   }
-  // mapa.js já se auto-inicializa ao carregar os scripts
-  // mas se precisar recarregar dados:
-  if (typeof carregarTudo === 'function' && typeof repaintMapa === 'function') {
-    await carregarTudo()
-    repaintMapa()
+  // Inicia o mapa (carrega GeoJSON + dados do backend)
+  if (typeof window.iniciarMapa === 'function') {
+    window.iniciarMapa()
   }
 }
 

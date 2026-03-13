@@ -609,32 +609,33 @@ document.getElementById("buscar-lideranca").addEventListener("input", e => {
 })
 
 // ─────────────────────────────────────────────
-// GEOJSON — limite primeiro (sem fill), bairros por cima
-// depois carrega dados do backend e pinta
+// GEOJSON — chamado pelo iniciarAplicacao() após login
 // ─────────────────────────────────────────────
-fetch("geo/angra_limite.geojson")
-  .then(r => r.json())
-  .then(data => {
-    const limite = L.geoJSON(data, {
-      style: { color: "#0f5132", weight: 2.5, fillOpacity: 0, interactive: false }
-    }).addTo(map)
-    map.fitBounds(limite.getBounds())
-  })
-  .then(() => fetch("geo/angra_bairros.geojson"))
-  .then(r => r.json())
-  .then(data => {
-    geoBairros = L.geoJSON(data, {
-      style: { color: "#1e40af", weight: 0.9, fillOpacity: 0.72, fillColor: "#e8f4ff" },
-      onEachFeature: (feature, layer) => {
-        const bairro = feature.properties.NM_BAIRRO
-        layer.on("click", () => selecionarBairro(bairro, layer))
-        const center = layer.getBounds().getCenter()
-        L.marker(center, {
-          icon: L.divIcon({ className:"bairro-label", html:bairro, iconSize:[120,20], iconAnchor:[60,10] })
-        }).addTo(map)
-      }
-    }).addTo(map)
-    return carregarTudo()
-  })
-  .then(() => repaintMapa())
-  .catch(err => console.error("Erro ao inicializar mapa:", err))
+window.iniciarMapa = function() {
+  fetch("geo/angra_limite.geojson")
+    .then(r => r.json())
+    .then(data => {
+      const limite = L.geoJSON(data, {
+        style: { color: "#0f5132", weight: 2.5, fillOpacity: 0, interactive: false }
+      }).addTo(map)
+      map.fitBounds(limite.getBounds())
+    })
+    .then(() => fetch("geo/angra_bairros.geojson"))
+    .then(r => r.json())
+    .then(data => {
+      geoBairros = L.geoJSON(data, {
+        style: { color: "#1e40af", weight: 0.9, fillOpacity: 0.72, fillColor: "#e8f4ff" },
+        onEachFeature: (feature, layer) => {
+          const bairro = feature.properties.NM_BAIRRO
+          layer.on("click", () => selecionarBairro(bairro, layer))
+          const center = layer.getBounds().getCenter()
+          L.marker(center, {
+            icon: L.divIcon({ className:"bairro-label", html:bairro, iconSize:[120,20], iconAnchor:[60,10] })
+          }).addTo(map)
+        }
+      }).addTo(map)
+      return carregarTudo()
+    })
+    .then(() => repaintMapa())
+    .catch(err => console.error("Erro ao inicializar mapa:", err))
+}
