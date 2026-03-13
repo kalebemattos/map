@@ -622,7 +622,7 @@ window.iniciarMapa = function() {
       }).addTo(map)
       map.fitBounds(limite.getBounds())
     })
-    .then(() => fetch("geo/rj_bairros.geojson"))
+    .then(() => fetch("geo/riobairros.geojson"))
     .then(r => r.json())
     .then(data => {
       geoBairros = L.geoJSON(data, {
