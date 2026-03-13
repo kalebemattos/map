@@ -385,7 +385,7 @@ footer {
 
 
 <!-- ===== LOGIN MODAL ===== -->
-<div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9000;">
+<div id="login-modal" style="display:flex;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9000;">
   <div style="width:360px;background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;animation:modalIn .25s cubic-bezier(0.34,1.56,0.64,1);">
     <div style="text-align:center;">
       <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">🗺️</div>
@@ -417,10 +417,17 @@ footer {
 </div>
 
 <!-- ===== BLOCKER ===== -->
-<div id="blocker" style="position:fixed;inset:0;background:#071426;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:8000;">
+<div id="blocker" style="position:fixed;inset:0;background:#071426;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:8000;transition:opacity .3s;">
   <div style="font-size:36px;">🗺️</div>
   <p style="margin:0;font-size:14px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando...</p>
 </div>
+<script>
+// Esconde blocker após validação do token (max 1.5s)
+setTimeout(function() {
+  const b = document.getElementById('blocker')
+  if (b) b.style.display = 'none'
+}, 1500)
+</script>
 
 <div id="content-wrapper" style="display:none;">
 <div class="overlay"></div>
@@ -526,6 +533,7 @@ footer {
 
 <script>
 // Definido ANTES do auth.js
+
 window.iniciarAplicacao = function() {
   // Mostra nome do usuário no nav
   const user = JSON.parse(localStorage.getItem('user') || '{}')
