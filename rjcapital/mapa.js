@@ -614,6 +614,8 @@ document.getElementById("buscar-lideranca").addEventListener("input", e => {
 // GEOJSON — chamado pelo iniciarAplicacao() após login
 // ─────────────────────────────────────────────
 window.iniciarMapa = function() {
+  // Força o Leaflet a recalcular o tamanho após content-wrapper ser revelado
+  setTimeout(() => { if (map) map.invalidateSize() }, 100)
 
   fetch("geo/riobairros.geojson")
     .then(r => r.json())

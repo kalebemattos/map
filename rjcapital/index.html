@@ -239,6 +239,16 @@
 
 <script>
 // ===== BOOT — deve ser definido ANTES do auth.js =====
+// Sobrescreve liberarInterface do auth.js para usar display:flex
+window.liberarInterface = function() {
+  const loginModal = document.getElementById('login-modal')
+  const blocker    = document.getElementById('blocker')
+  const wrapper    = document.getElementById('content-wrapper')
+  if (loginModal) loginModal.style.display = 'none'
+  if (blocker)    blocker.style.display    = 'none'
+  if (wrapper)    wrapper.style.display    = 'flex'
+}
+
 window.iniciarAplicacao = async function () {
   // Mostra chip do usuário logado
   const user = JSON.parse(localStorage.getItem('user') || '{}')
