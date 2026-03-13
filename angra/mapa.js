@@ -54,7 +54,7 @@ async function carregarTudo() {
 
   // Lideranças
   try {
-    const res  = await apiFetch('/liderancas')
+    const res  = await apiFetch('/liderancas?mapa=angra')
     const lista = await res.json()
     if (Array.isArray(lista)) {
       lista.forEach(c => {
@@ -369,29 +369,8 @@ function abrirModalLideranca(l, bairro) {
 // ─────────────────────────────────────────────
 // EDITAR LIDERANÇA
 // ─────────────────────────────────────────────
-async function editarLideranca(l, bairro) {
-  const novoNome    = prompt("Nome:", l.nome);           if (novoNome === null) return
-  const novoContato = prompt("Contato:", l.contato || "")
-  const novosVotos  = prompt("Expectativa de votos:", l.expectativa_votos ?? 0)
-  const novoVinculo = prompt("Campanha (ambos / celia / fernando):", l.vinculo_politico || "ambos")
-
-  try {
-    await apiFetch(`/liderancas/${l.id}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        nome:              novoNome,
-        contato:           novoContato,
-        expectativa_votos: Number(novosVotos) || 0,
-        vinculo_politico:  ["ambos","celia","fernando"].includes(novoVinculo) ? novoVinculo : l.vinculo_politico
-      })
-    })
-    await carregarTudo()
-    repaintMapa()
-    renderLiderancas(bairro)
-  } catch (err) {
-    console.error(err)
-    alert('Erro ao salvar liderança')
-  }
+function editarLideranca(l, bairro) {
+  abrirModalEditar(l, bairro)
 }
 
 // ─────────────────────────────────────────────
@@ -427,7 +406,8 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
 
   try {
     const formData = new FormData()
-    formData.append('bairro',            bairroAtual)
+    formData.append('cidade',            bairroAtual)
+    formData.append('mapa',              'angra')
     formData.append('nome',              nome)
     formData.append('contato',           contato)
     formData.append('vinculo_politico',  vinculo)
@@ -641,3 +621,58 @@ window.iniciarMapa = function() {
     .then(() => repaintMapa())
     .catch(err => console.error("Erro ao inicializar mapa:", err))
 }
+
+// ─────────────────────────────────────────────
+// MODAL DE EDIÇÃO
+// ─────────────────────────────────────────────
+let _editLideranca = null
+let _editBairro    = null
+
+function abrirModalEditar(l, bairro) {
+  _editLideranca = l
+  _editBairro    = bairro
+  document.getElementById('edit-nome').value    = l.nome || ''
+  document.getElementById('edit-contato').value = l.contato || ''
+  document.getElementById('edit-votos').value   = l.expectativa_votos || 0
+  document.getElementById('edit-vinculo').value = l.vinculo_politico || 'ambos'
+  const modal = document.getElementById('modal-editar')
+  modal.style.display = 'flex'
+}
+
+function fecharModalEditar() {
+  document.getElementById('modal-editar').style.display = 'none'
+  _editLideranca = null
+  _editBairro    = null
+}
+
+document.getElementById('edit-salvar-btn').addEventListener('click', async () => {
+  if (!_editLideranca) return
+  const btn = document.getElementById('edit-salvar-btn')
+  btn.textContent = 'Salvando...'
+  btn.disabled = true
+  try {
+    await apiFetch(`/liderancas/${_editLideranca.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        nome:              document.getElementById('edit-nome').value.trim(),
+        contato:           document.getElementById('edit-contato').value.trim(),
+        expectativa_votos: Number(document.getElementById('edit-votos').value) || 0,
+        vinculo_politico:  document.getElementById('edit-vinculo').value
+      })
+    })
+    fecharModalEditar()
+    await carregarTudo()
+    repaintMapa()
+    renderLiderancas(bairroAtual)
+  } catch (err) {
+    console.error(err)
+    alert('Erro ao salvar')
+  } finally {
+    btn.textContent = 'Salvar'
+    btn.disabled = false
+  }
+})
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') fecharModalEditar()
+})

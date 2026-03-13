@@ -50,6 +50,41 @@
   <p style="margin:0;font-size:14px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando o sistema...</p>
 </div>
 
+
+<!-- MODAL EDITAR LIDERANÇA -->
+<div id="modal-editar" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9500;">
+  <div style="width:360px;max-width:calc(100vw - 32px);background:white;border-radius:22px;padding:28px 24px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 style="margin:0;font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:#0f172a;">Editar liderança</h3>
+      <button onclick="fecharModalEditar()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#64748b;">✕</button>
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Nome</label>
+      <input id="edit-nome" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Contato</label>
+      <input id="edit-contato" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Expectativa de votos</label>
+      <input id="edit-votos" type="number" min="0" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Campanha</label>
+      <select id="edit-vinculo" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;background:white;">
+        <option value="ambos">Ambos</option>
+        <option value="celia">Célia Jordão</option>
+        <option value="fernando">Fernando Jordão</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button onclick="fecharModalEditar()" style="flex:1;padding:11px;border:1.5px solid #e2e8f0;border-radius:10px;background:white;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:#64748b;">Cancelar</button>
+      <button id="edit-salvar-btn" style="flex:1;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div id="content-wrapper" style="display:none;">
 
 <!-- OVERLAY TOTAL -->
@@ -113,16 +148,16 @@
       <label class="block-label">Campanha</label>
       <div id="seletor-campanha">
         <div class="campanha-opcao ativa" data-campanha="ambos">
-          <img src="../../img/celia.jpg" onerror="this.style.display='none'" alt="">
-          <img src="../../img/fernando.jpg" onerror="this.style.display='none'" alt="" style="margin-left:-6px;">
+          <img src="../img/celia.jpg" onerror="this.style.display='none'" alt="">
+          <img src="../img/fernando.jpg" onerror="this.style.display='none'" alt="" style="margin-left:-6px;">
           <span>Ambos</span>
         </div>
         <div class="campanha-opcao" data-campanha="celia">
-          <img src="../../img/celia.jpg" onerror="this.style.display='none'" alt="">
+          <img src="../img/celia.jpg" onerror="this.style.display='none'" alt="">
           <span>Célia Jordão</span>
         </div>
         <div class="campanha-opcao" data-campanha="fernando">
-          <img src="../../img/fernando.jpg" onerror="this.style.display='none'" alt="">
+          <img src="../img/fernando.jpg" onerror="this.style.display='none'" alt="">
           <span>Fernando Jordão</span>
         </div>
       </div>

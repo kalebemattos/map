@@ -527,7 +527,8 @@ app.post('/api/liderancas',
  release,
  vinculo_politico,
  regiao: regiaoBody,
- data_nascimento
+ data_nascimento,
+ mapa
 } = req.body;
     if (!validarTexto(cidade, 120)) {
   return res.status(400).json({ error: 'Cidade inválida' });
@@ -588,8 +589,8 @@ if (expectativa_votos && !validarNumero(expectativa_votos, 0, 1000000)) {
     await pool.query(
   `
   INSERT INTO liderancas
-(cidade, nome, contato, foto, expectativa_votos, perfil, responsavel, status, release, regiao, vinculo_politico, data_nascimento)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+(cidade, nome, contato, foto, expectativa_votos, perfil, responsavel, status, release, regiao, vinculo_politico, data_nascimento, mapa)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
   `,
   [
   cidade,
@@ -603,7 +604,8 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
   release || null,
   regiaoBody || req.user.regiao,
   vinculo_politico || 'fernando',
-  data_nascimento || null
+  data_nascimento || null,
+  req.body.mapa || null
 ]
 );
 // 🔐 REGISTRA AUDITORIA AQUI
@@ -682,7 +684,8 @@ app.put('/api/liderancas/:id',
  release,
  vinculo_politico,
  regiao: regiaoBody,
- data_nascimento
+ data_nascimento,
+ mapa
 } = req.body;
     // 🔐 ===== VALIDAÇÃO =====
 
@@ -820,11 +823,13 @@ app.get('/api/liderancas', auth, async (req, res) => {
     let query;
     let params = [];
 
-    query = `
-SELECT cidade, json_agg(l.*) AS liderancas
-FROM liderancas l
-GROUP BY cidade
-`;
+    const mapaFiltro = req.query.mapa || null;
+    if (mapaFiltro) {
+      query = `SELECT cidade, json_agg(l.*) AS liderancas FROM liderancas l WHERE mapa = $1 GROUP BY cidade`;
+      params = [mapaFiltro];
+    } else {
+      query = `SELECT cidade, json_agg(l.*) AS liderancas FROM liderancas l GROUP BY cidade`;
+    }
 
     const result = await pool.query(query, params);
     res.json(result.rows);
