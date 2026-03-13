@@ -913,3 +913,10 @@ input:focus, select:focus, textarea:focus {
   #overlay-total { top: 12px; left: 12px; }
   #legenda { display: none; }
 }
+#map{
+position:absolute;
+top:0;
+left:0;
+right:0;
+bottom:0;
+}
