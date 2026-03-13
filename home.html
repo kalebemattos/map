@@ -357,6 +357,11 @@ footer {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
 .card:nth-child(1) { animation-delay: 0.15s; }
 .card:nth-child(2) { animation-delay: 0.22s; }
 .card:nth-child(3) { animation-delay: 0.29s; }
@@ -378,6 +383,46 @@ footer {
 
 <body>
 
+
+<!-- ===== LOGIN MODAL ===== -->
+<div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9000;">
+  <div style="width:360px;background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;animation:modalIn .25s cubic-bezier(0.34,1.56,0.64,1);">
+    <div style="text-align:center;">
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">🗺️</div>
+      <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Paralax</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:#64748b;">Insira suas credenciais para continuar</p>
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Usuário</label>
+      <input id="login-user" type="text" placeholder="Digite seu usuário" autocomplete="username"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;transition:all .2s;"
+        onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Senha</label>
+      <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;transition:all .2s;"
+        onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
+    </div>
+    <div id="login-error" style="display:none;background:#fee2e2;color:#b91c1c;font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;text-align:center;"></div>
+    <button id="login-btn"
+      style="padding:13px;border:none;border-radius:11px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 6px 18px rgba(21,101,192,.4);transition:all .2s;"
+      onmouseover="this.style.opacity='.9';this.style.transform='translateY(-1px)'"
+      onmouseout="this.style.opacity='1';this.style.transform='none'">
+      Entrar
+    </button>
+  </div>
+</div>
+
+<!-- ===== BLOCKER ===== -->
+<div id="blocker" style="position:fixed;inset:0;background:#071426;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:8000;">
+  <div style="font-size:36px;">🗺️</div>
+  <p style="margin:0;font-size:14px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando...</p>
+</div>
+
+<div id="content-wrapper" style="display:none;">
 <div class="overlay"></div>
 <div class="noise"></div>
 
@@ -389,7 +434,11 @@ footer {
       <div class="nav-logo">🗺️</div>
       <span class="nav-name">Paralax</span>
     </div>
-    <span class="nav-badge">Gestão Política</span>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="nav-badge">Gestão Política</span>
+      <span id="user-chip" style="display:none;font-size:12px;font-weight:600;color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);padding:4px 12px;border-radius:20px;"></span>
+      <button onclick="logout()" style="display:none;padding:5px 12px;border:none;border-radius:8px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,0.15);transition:all .2s;" id="logout-btn" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Sair</button>
+    </div>
   </nav>
 
   <!-- HERO -->
@@ -470,15 +519,33 @@ footer {
 
 </div>
 
+
+
+</div><!-- /content-wrapper -->
+
+
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  if (user && user.nivel === 'dono') {
-    const adminCard = document.getElementById('card-admin');
-    if (adminCard) adminCard.style.display = 'flex';
+// Definido ANTES do auth.js
+window.iniciarAplicacao = function() {
+  // Mostra nome do usuário no nav
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const chip = document.getElementById('user-chip')
+  if (chip && user.usuario) {
+    chip.textContent = user.usuario
+    chip.style.display = 'inline-flex'
   }
-});
+  // Mostra botão logout
+  const logoutBtn = document.getElementById('logout-btn')
+  if (logoutBtn) logoutBtn.style.display = 'inline-block'
+  // Mostra card admin se dono
+  if (user.nivel === 'dono') {
+    const adminCard = document.getElementById('card-admin')
+    if (adminCard) adminCard.style.display = 'flex'
+  }
+}
 </script>
+
+<script src="auth.js"></script>
 
 </body>
 </html>
