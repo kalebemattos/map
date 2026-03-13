@@ -115,6 +115,10 @@ function validarNumero(valor, min = 0, max = 100000000) {
 /* ================= CONFIG ================= */
 const allowedOrigins = [
   'https://kalebemattos.github.io',
+  'http://paralaxgestao.online',
+  'https://paralaxgestao.online',
+  'http://www.paralaxgestao.online',
+  'https://www.paralaxgestao.online',
 ];
 
 app.use(cors({
