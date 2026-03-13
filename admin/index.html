@@ -601,8 +601,8 @@ textarea {
 <div class="bg-overlay"></div>
 
 <!-- LOGIN -->
-<div id="login-card-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9000;">
-  <div style="width:360px;background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;animation:modalIn .25s cubic-bezier(0.34,1.56,0.64,1);">
+<div id="login-card-overlay" style="position:fixed;inset:0;background:rgba(8,18,48,0.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:9000;">
+  <div style="width:360px;max-width:calc(100vw - 32px);background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;">
     <div style="text-align:center;">
       <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">🗺️</div>
       <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Painel de Lideranças</h2>
@@ -967,7 +967,7 @@ document.getElementById('login-pass').addEventListener('keydown', e => {
 
 /* ===== LOGIN ===== */
 async function login() {
-  loginError.textContent = '';
+  loginError.style.display = 'none'; loginError.textContent = '';
   const btn = document.getElementById('login-btn');
   btn.textContent = 'Entrando...';
   btn.disabled = true;
@@ -986,7 +986,7 @@ async function login() {
     localStorage.setItem('user', JSON.stringify(data.user));
     iniciarPainel();
   } catch {
-    loginError.textContent = 'Usuário ou senha inválidos';
+    loginError.style.display = 'block'; loginError.textContent = 'Usuário ou senha inválidos';
     btn.textContent = 'Entrar';
     btn.disabled = false;
   }
@@ -1001,7 +1001,7 @@ function logout() {
 function iniciarPainel() {
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user) return;
-  loginCard.style.display = 'none';
+  loginCard.style.visibility = 'hidden'; loginCard.style.pointerEvents = 'none';
   panel.classList.remove('hidden');
 
   const nomeDisplay = user.nome || user.usuario || 'Usuário';
@@ -1037,7 +1037,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (token) {
     iniciarPainel();
   } else {
-    loginCard.style.display = 'flex';
+    loginCard.style.visibility = 'visible'; loginCard.style.pointerEvents = 'auto';
   }
 });
 
