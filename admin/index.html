@@ -499,11 +499,31 @@ textarea {
 .state-msg p { font-size: 14px; font-weight: 500; }
 
 /* ===== LOGIN ===== */
+#login-card-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8,18,48,0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+}
+#login-card-overlay.hidden { display: none; }
+.hidden { display: none !important; }
+
 #login-card {
-  max-width: 380px;
-  margin: 80px auto;
-  padding: 40px 36px;
-  animation: fadeUp 0.4s ease;
+  width: 360px;
+  max-width: calc(100vw - 40px);
+  padding: 36px 32px;
+  margin: 0;
+  animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 30px 70px rgba(0,0,0,0.35);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
 }
 
 .login-logo {
@@ -840,7 +860,7 @@ let liderancaSelecionadaId = null;
 /* ===== DOM REFS ===== */
 const expectativaCidadeInput = document.getElementById('expectativa-cidade');
 const salvarExpectativaCidadeBtn = document.getElementById('salvar-expectativa-cidade');
-const loginCard = document.getElementById('login-card');
+const loginCard = document.getElementById('login-card-overlay');
 const panel = document.getElementById('panel');
 const loginUser = document.getElementById('login-user');
 const loginPass = document.getElementById('login-pass');
@@ -902,7 +922,46 @@ function atualizarPreviewAniversario() {
   }
 }
 
+// ===== ANIVERSÁRIO =====
+function formatarDataBR(val) {
+  if (!val) return '—'
+  try {
+    const d = new Date(val + 'T00:00:00')
+    return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' })
+  } catch { return val }
+}
+
+function diasParaAniversario(val) {
+  if (!val) return null
+  try {
+    const parts = val.split('T')[0].split('-')
+    const hoje = new Date(); hoje.setHours(0,0,0,0)
+    const aniv = new Date(hoje.getFullYear(), Number(parts[1])-1, Number(parts[2]))
+    if (aniv < hoje) aniv.setFullYear(hoje.getFullYear()+1)
+    return Math.ceil((aniv - hoje) / 86400000)
+  } catch { return null }
+}
+
+function atualizarPreviewAniversario() {
+  const val = dataNascimentoInput.value
+  const preview = document.getElementById('aniversario-preview')
+  if (!preview) return
+  if (!val) { preview.textContent = '—'; preview.style.background = '#f8fafc'; return }
+  const dias = diasParaAniversario(val)
+  if (dias === 0) {
+    preview.innerHTML = '🎂 <strong>Aniversário hoje!</strong>'
+    preview.style.background = '#fef9c3'
+  } else if (dias !== null && dias <= 7) {
+    preview.innerHTML = `🎉 Aniversário em <strong>${dias} dias</strong>`
+    preview.style.background = '#fff7ed'
+  } else {
+    preview.textContent = formatarDataBR(val)
+    preview.style.background = '#f8fafc'
+  }
+}
+
 document.getElementById('salvar-btn').onclick = salvar;
+document.getElementById('data_nascimento').addEventListener('change', atualizarPreviewAniversario);
 dataNascimentoInput.addEventListener('change', atualizarPreviewAniversario);
 cancelarBtn.onclick = cancelarEdicao;
 document.getElementById('filtro-status').addEventListener('change', carregarLiderancas);
@@ -1229,6 +1288,7 @@ async function salvar() {
   fd.append('status', statusInput.value);
   fd.append('release', releaseInput.value);
   fd.append('vinculo_politico', document.getElementById('vinculo_politico').value);
+  fd.append('data_nascimento', dataNascimentoInput.value || '');
 
   if (fotoInput.files.length) fd.append('foto', fotoInput.files[0]);
 
