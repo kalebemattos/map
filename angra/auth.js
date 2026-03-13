@@ -57,9 +57,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const token = localStorage.getItem('token');
 
   if (!token) {
-    iniciarLogin();
-    return;
-  }
+  document.getElementById("blocker").style.display = "none";
+  document.getElementById("login-modal").style.display = "flex";
+  iniciarLogin();
+  return;
+}
 
   try {
     const res = await fetch(`${API_URL}/validar-token`, {
@@ -77,7 +79,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
   } catch {
-    localStorage.clear();
-    iniciarLogin();
-  }
+  localStorage.clear();
+  document.getElementById("blocker").style.display = "none";
+  document.getElementById("login-modal").style.display = "flex";
+  iniciarLogin();
+}
 });
