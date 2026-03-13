@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────
 // ESTADO GLOBAL
 // ─────────────────────────────────────────────
-const map = L.map('map').setView([-23.01, -44.32], 11)
+let map
 
 let geoBairros       = null
 let bairroAtual      = null
@@ -612,6 +612,8 @@ document.getElementById("buscar-lideranca").addEventListener("input", e => {
 // GEOJSON — chamado pelo iniciarAplicacao() após login
 // ─────────────────────────────────────────────
 window.iniciarMapa = function() {
+  map = L.map('map').setView([-23.01, -44.32], 11)
+  setTimeout(() => map.invalidateSize(), 200)
   fetch("geo/angra_limite.geojson")
     .then(r => r.json())
     .then(data => {
