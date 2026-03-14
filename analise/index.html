@@ -494,25 +494,45 @@ tbody tr:last-child td { border-bottom: none; }
   to   { opacity: 1; }
 }
 
-/* ===== MOBILE ===== */
+/* ===== TABLET ===== */
 @media (max-width: 900px) {
   .controls-grid { grid-template-columns: 1fr 1fr; }
 }
 
+/* ===== MOBILE ===== */
 @media (max-width: 600px) {
-  .page { padding: 16px 14px 40px; }
-  .controls-grid { grid-template-columns: 1fr; }
-  .candidato-card { flex-direction: column; text-align: center; }
+  .page { padding: 14px 12px 40px; }
 
+  /* Nav */
+  .nav-brand h1 { font-size: 15px; }
+  .nav-brand p  { display: none; }
+
+  /* Filtros: 1 coluna */
+  .controls-grid { grid-template-columns: 1fr; gap: 8px; }
+
+  /* Card candidato: empilha */
+  .candidato-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px;
+  }
+  .candidato-avatar { width: 56px; height: 56px; }
+  .candidato-info h3 { font-size: 15px; }
+  .candidato-votos strong { font-size: 17px; }
+
+  /* Tabela → cards */
+  table { min-width: unset; }
   table thead { display: none; }
   table, tbody, tr, td { display: block; width: 100%; }
 
   tbody tr {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     border-radius: 12px;
     padding: 12px 14px;
     box-shadow: var(--shadow-sm);
-    border: 1px solid rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.06);
+    background: white;
   }
 
   td {
@@ -520,34 +540,52 @@ tbody tr:last-child td { border-bottom: none; }
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--slate-100);
-    padding: 6px 0;
+    padding: 7px 0;
     font-size: 13px;
   }
 
   td::before {
     content: attr(data-label);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    color: var(--slate-500);
+    color: var(--slate-400);
     text-transform: uppercase;
-    letter-spacing: 0.4px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    margin-right: 8px;
   }
 
-  td:last-child { justify-content: flex-end; border-bottom: none; }
+  /* Cidade: sem label, nome em destaque */
+  td:first-child { border-bottom: 1px solid var(--slate-200); padding-bottom: 9px; margin-bottom: 2px; }
+  td:first-child::before { display: none; }
+  td:first-child .city-name { font-size: 14px; font-weight: 700; }
+
+  /* Barra de % — simplifica para só texto no mobile */
+  .pct-bar { display: none; }
+  .pct-bar-wrap { min-width: unset; }
+
+  /* Botão Ver: linha separada */
+  td:last-child { justify-content: flex-end; border-bottom: none; padding-top: 8px; }
   td:last-child::before { display: none; }
 
-  .charts-grid { grid-template-columns: 1fr; }
+  /* Footer de resultados */
+  .result-footer { flex-direction: column; align-items: flex-start; gap: 4px; }
 
+  /* Modal: bottom sheet */
+  .modal-overlay { padding: 0; align-items: flex-end; }
   .modal-card {
-    max-height: 95vh;
+    max-height: 92vh;
     border-radius: 20px 20px 0 0;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
     width: 100%;
-    border-radius: 20px 20px 0 0;
   }
+  .modal-header { padding: 18px 18px 14px; }
+  .modal-header h3 { font-size: 14px; }
+  .charts-grid {
+    grid-template-columns: 1fr;
+    padding: 14px 16px 20px;
+    gap: 12px;
+  }
+  .chart-card { padding: 14px; }
 }
 </style>
 </head>
