@@ -71,13 +71,13 @@
 <div id="legenda">
   <div class="legenda-title">
     <span class="legenda-icon">📊</span>
-    <span>Expectativa</span>
+    <span id="legenda-titulo">Expectativa</span>
   </div>
-  <div class="legenda-gradient-bar" style="background:linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d);"></div>
-  <div class="legenda-gradient-labels">
+  <div id="legenda-grad-bar" class="legenda-gradient-bar" style="background:linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d);"></div>
+  <div id="legenda-grad-labels" class="legenda-gradient-labels">
     <span>0</span><span>300</span><span>1k</span><span>5k+</span>
   </div>
-  <div class="legenda-steps">
+  <div id="legenda-steps" class="legenda-steps">
     <div class="legenda-row"><div class="legenda-swatch" style="background:#67000d;"></div><span>5.000+ <small>muito alto</small></span></div>
     <div class="legenda-row"><div class="legenda-swatch" style="background:#a50f15;"></div><span>2.000–4.999 <small>alto</small></span></div>
     <div class="legenda-row"><div class="legenda-swatch" style="background:#cb181d;"></div><span>1.000–1.999 <small>moderado</small></span></div>
@@ -107,6 +107,16 @@
 
   <!-- BODY SCROLLÁVEL -->
   <div class="sidebar-body">
+
+    <!-- SELETOR DE VISUALIZAÇÃO -->
+    <div class="sidebar-block">
+      <label class="block-label">Visualização</label>
+      <div class="modos-container">
+        <button class="modo-btn ativa" data-modo="expectativa">Expectativa</button>
+        <button class="modo-btn" data-modo="votosValidos">Votos 2022</button>
+        <button class="modo-btn" data-modo="liderancas">Lideranças</button>
+      </div>
+    </div>
 
     <!-- SELETOR DE CAMPANHA -->
     <div class="sidebar-block">

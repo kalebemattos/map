@@ -1,7 +1,77 @@
 const BAIRRO_PROP = "NM_BAIRRO" // ajuste para o campo correto do seu GeoJSON
 
+// ─────────────────────────────────────────────
+// VOTOS VÁLIDOS 2022 (embutidos)
+// ─────────────────────────────────────────────
+const VOTOS_VALIDOS = {
+  "CAMPO GRANDE": 362473, "SANTA CRUZ": 194888, "TIJUCA": 189075,
+  "REALENGO": 173554, "BANGU": 155773, "COPACABANA": 145645,
+  "TAQUARA": 130249, "BARRA DA TIJUCA": 125207, "PACIENCIA": 110258,
+  "BONSUCESSO": 108233, "IRAJÁ": 97220, "RAMOS": 88401,
+  "PADRE MIGUEL": 81626, "PENHA": 81265, "BOTAFOGO": 78220,
+  "ANCHIETA": 71457, "FREGUESIA JPA": 71219, "VILA ISABEL": 70729,
+  "SENADOR CAMARÁ": 70114, "MEIER": 69733, "PAVUNA": 68793,
+  "RECREIO": 61108, "CURICICA": 60632, "OLARIA": 59334,
+  "GUARATIBA": 58772, "PRAÇA SECA": 56815, "COSMOS": 54410,
+  "VILA KENNEDY": 51592, "LARANJEIRAS": 50921, "RIO DAS PEDRAS": 50901,
+  "GUADALUPE": 50564, "SÃO CONRADO": 49367, "ROCHA MIRANDA": 49232,
+  "ENGENHO DE DENTRO": 48079, "MADUREIRA": 47896, "LEBLON": 47696,
+  "SANTÍSSIMO": 46792, "MARECHAL HERMES": 46249, "CIDADE DE DEUS": 44885,
+  "VILA DA PENHA": 44862, "CENTRO": 44777, "PIEDADE": 44085,
+  "INHOAÍBA": 44079, "ENGENHO NOVO": 43476, "SÃO CRISTÓVÃO": 43101,
+  "INHAUMA": 41795, "RIO COMPRIDO": 41735, "PENHA CIRCULAR": 41603,
+  "GRAJAÚ": 41422, "VILA VALQUEIRE": 41379, "SEPETIBA": 40927,
+  "BRÁS DE PINA": 40926, "IPANEMA": 40793, "ANDARAÍ": 39177,
+  "CATETE": 39061, "FLAMENGO": 38696, "TANQUE": 38635,
+  "CASCADURA": 38082, "CACHAMBI": 37044, "JARDIM AMÉRICA": 36671,
+  "PEDRA DE GUARATIBA": 36324, "MAGALHÃES BASTOS": 35804,
+  "VAZ LOBO": 35643, "GÁVEA": 34423, "CORDOVIL": 33973,
+  "HIGIENÓPOLIS": 33941, "JARDIM GUANABARA": 33679,
+  "DEL CASTILHO": 32265, "OSWALDO CRUZ": 32210,
+  "ENGENHO DA RAINHA": 31439, "BENTO RIBEIRO": 31379,
+  "BENFICA": 31075, "QUINTINO BOCAIUVA": 29269,
+  "RICARDO DE ALBUQUERQUE": 29163, "PECHINCHA": 28656,
+  "COELHO NETO": 27553, "JACARÉ": 26096, "HONÓRIO GURGEL": 25654,
+  "ANIL": 24679, "SANTA TERESA": 23198, "TODOS OS SANTOS": 23142,
+  "COCOTÁ": 23069, "PILARES": 22764, "MARACANÃ": 22600,
+  "COLÉGIO": 22454, "VILA KOSMOS": 21300, "COSTA BARROS": 21256,
+  "PORTUGUESA": 20818, "ITANHANGÁ": 20164, "DEODORO": 19770,
+  "LINS DE VASCONCELOS": 19675, "VIGÁRIO GERAL": 19537,
+  "SENADOR VASCONCELOS": 19518, "JARDIM BANGU": 19513,
+  "CAMORIM": 19467, "LAGOA": 19046, "CAJU": 18789,
+  "PARADA DE LUCAS": 18430, "GARDENIA AZUL": 17968,
+  "FREGUESIA (ILHA DO GOVERNADOR)": 17076, "ENCANTADO": 17067,
+  "GALEÃO": 16980, "VICENTE DE CARVALHO": 16835,
+  "VISTA ALEGRE": 16783, "BANCÁRIOS": 16738, "ROCHA": 16447,
+  "HUMAITA": 16193, "CAVALCANTI": 16100, "CACUIA": 16007,
+  "JARDIM BOTÂNICO": 15952, "VARGEM GRANDE": 15656,
+  "CAMPINHO": 15367, "ILHA DE GUARATIBA": 15126,
+  "JARDIM SULACAP": 14643, "MARIA DA GRAÇA": 14158,
+  "LEME": 13618, "TURIAÇÚ": 13411, "VARGEM PEQUENA": 13329,
+  "PRAÇA DA BANDEIRA": 13258, "VIDIGAL": 12705,
+  "BAIRRO DE FÁTIMA": 12191, "RIACHUELO": 12041, "ESTÁCIO": 10462,
+  "URCA": 10344, "GUARABU": 10225, "ÁGUA SANTA": 9853,
+  "MONERÓ": 9840, "TRIAGEM": 9732, "TAUÁ": 9564, "ZUMBI": 9561,
+  "ACARI": 9360, "COSME VELHO": 9200, "PARQUE COLÚMBIA": 9129,
+  "AUGUSTO VASCONCELOS": 9091, "ALTO DA BOA VISTA": 8229,
+  "TOMÁS COELHO": 7269, "CATIRI": 7121, "MANGUEIRA": 7075,
+  "NOVA SEPETIBA": 6981, "BARROS FILHO": 6844,
+  "BARRA DE GUARATIBA": 6756, "SANTO CRISTO": 6732,
+  "RIBEIRA": 6699, "LAPA": 5906, "SAUDE": 5779, "SAMPAIO": 5232,
+  "TOMAS COELHO": 4427, "GAMBOA": 4201, "ABOLIÇÃO": 3947,
+  "DENDE": 3796, "ENGENHEIRO LEAL": 3660, "GLÓRIA": 3575,
+  "PAQUETÁ": 3567, "SÃO FRANCISCO XAVIER": 3438,
+  "MANGUINHOS": 3109, "CIDADE NOVA": 2775, "PARQUE ANCHIETA": 2567,
+  "TUBIACANGA": 1764, "FUNDÃO": 1734, "ROCINHA": 1682,
+  "SÃO JORGE": 1249, "VILA MILITAR": 1045
+}
+
+// Modo de visualização: 'expectativa' | 'votosValidos' | 'liderancas'
+let modoVisualizacao = 'expectativa'
+
+
 // =============================================================
-// MAPA DE ANGRA DOS REIS – mapa.js
+// MAPA RIO DE JANEIRO (Capital) – mapa.js
 // =============================================================
 
 // API_URL é definido pelo auth.js como window.API_URL
@@ -9,7 +79,7 @@ const BAIRRO_PROP = "NM_BAIRRO" // ajuste para o campo correto do seu GeoJSON
 // ─────────────────────────────────────────────
 // ESTADO GLOBAL
 // ─────────────────────────────────────────────
-const map = L.map('map').setView([-22.91, -43.17], 11)
+let map = null
 
 let geoBairros       = null
 let bairroAtual      = null
@@ -163,6 +233,44 @@ function corPorExpectativa(v) {
   return "#e8f4ff"
 }
 
+function corPorVotosValidos(v) {
+  if (v >= 150000) return "#084594"
+  if (v >= 80000)  return "#2171b5"
+  if (v >= 40000)  return "#4292c6"
+  if (v >= 15000)  return "#6baed6"
+  if (v >  0)      return "#c6dbef"
+  return "#f7fbff"
+}
+
+function corPorLiderancas(v) {
+  if (v >= 10) return "#005a32"
+  if (v >= 5)  return "#238b45"
+  if (v >= 2)  return "#41ae76"
+  if (v >= 1)  return "#99d8c9"
+  return "#e5f5f9"
+}
+
+function getValorModo(bairro) {
+  if (modoVisualizacao === 'votosValidos') {
+    const n = normalizar(bairro)
+    for (const k of Object.keys(VOTOS_VALIDOS)) {
+      if (normalizar(k) === n) return VOTOS_VALIDOS[k]
+    }
+    return 0
+  }
+  if (modoVisualizacao === 'liderancas') {
+    return (dataCache[bairro]?.liderancas || []).length
+  }
+  return getTotalExpectativa(bairro)
+}
+
+function getCorModo(bairro) {
+  const v = getValorModo(bairro)
+  if (modoVisualizacao === 'votosValidos') return corPorVotosValidos(v)
+  if (modoVisualizacao === 'liderancas')   return corPorLiderancas(v)
+  return corPorExpectativa(v)
+}
+
 // ─────────────────────────────────────────────
 // REPINTAR
 // ─────────────────────────────────────────────
@@ -170,11 +278,10 @@ function repaintMapa() {
   if (!geoBairros) return
   geoBairros.eachLayer(layer => {
     const b = layer.feature.properties[BAIRRO_PROP]
-    const v = getTotalExpectativa(b)
     layer.setStyle({
       color:       layer === layerSelecionado ? "#0f172a" : "#1e40af",
       weight:      layer === layerSelecionado ? 3.5 : 0.9,
-      fillColor:   corPorExpectativa(v),
+      fillColor:   getCorModo(b),
       fillOpacity: layer === layerSelecionado ? 0.92 : 0.72
     })
   })
@@ -189,13 +296,12 @@ function filtrarDistrito(distrito) {
   geoBairros.eachLayer(layer => {
     const b = layer.feature.properties[BAIRRO_PROP]
     const d = getDistritoDoBairro(b)
-    const v = getTotalExpectativa(b)
     if (!distrito) {
-      layer.setStyle({ color:"#1e40af", weight:0.9, fillColor:corPorExpectativa(v), fillOpacity:0.72 })
+      layer.setStyle({ color:"#1e40af", weight:0.9, fillColor:getCorModo(b), fillOpacity:0.72 })
       return
     }
     if (d === distrito) {
-      layer.setStyle({ color:"#0f172a", weight:2.5, fillColor:corPorExpectativa(v), fillOpacity:0.9 })
+      layer.setStyle({ color:"#0f172a", weight:2.5, fillColor:getCorModo(b), fillOpacity:0.9 })
     } else {
       layer.setStyle({ color:"#1e40af", weight:0.5, fillColor:"#e8f4ff", fillOpacity:0.12 })
     }
@@ -492,7 +598,7 @@ function selecionarBairro(bairroNome, layer) {
     const old = layerSelecionado.feature.properties[BAIRRO_PROP]
     layerSelecionado.setStyle({
       color: "#1e40af", weight: 0.9,
-      fillColor: corPorExpectativa(getTotalExpectativa(old)),
+      fillColor: getCorModo(old),
       fillOpacity: 0.72
     })
   }
@@ -590,12 +696,67 @@ document.getElementById("buscar-lideranca").addEventListener("input", e => {
   })
 })
 
+
+// ─────────────────────────────────────────────
+// SELETOR DE MODO DE VISUALIZAÇÃO
+// ─────────────────────────────────────────────
+document.querySelectorAll(".modo-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".modo-btn").forEach(b => b.classList.remove("ativa"))
+    btn.classList.add("ativa")
+    modoVisualizacao = btn.dataset.modo
+    atualizarLegenda()
+    repaintMapa()
+  })
+})
+
+function atualizarLegenda() {
+  const gradBar = document.getElementById("legenda-grad-bar")
+  const labels  = document.getElementById("legenda-grad-labels")
+  const steps   = document.getElementById("legenda-steps")
+  const titulo  = document.getElementById("legenda-titulo")
+
+  if (modoVisualizacao === 'votosValidos') {
+    gradBar.style.background = "linear-gradient(to right,#f7fbff,#c6dbef,#6baed6,#2171b5,#084594)"
+    labels.innerHTML  = "<span>0</span><span>15k</span><span>80k</span><span>150k+</span>"
+    steps.innerHTML   = `
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#084594;"></div><span>150.000+ <small>muito alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#2171b5;"></div><span>80.000–149.999 <small>alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#4292c6;"></div><span>40.000–79.999 <small>moderado</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#6baed6;"></div><span>15.000–39.999 <small>baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#c6dbef;"></div><span>1–14.999 <small>muito baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#f7fbff;"></div><span>0 <small>sem dados</small></span></div>`
+    titulo.textContent = "Votos Válidos 2022"
+  } else if (modoVisualizacao === 'liderancas') {
+    gradBar.style.background = "linear-gradient(to right,#e5f5f9,#99d8c9,#41ae76,#238b45,#005a32)"
+    labels.innerHTML  = "<span>0</span><span>1</span><span>5</span><span>10+</span>"
+    steps.innerHTML   = `
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#005a32;"></div><span>10+ <small>muito alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#238b45;"></div><span>5–9 <small>alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#41ae76;"></div><span>2–4 <small>moderado</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#99d8c9;"></div><span>1 <small>baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#e5f5f9;"></div><span>0 <small>sem lideranças</small></span></div>`
+    titulo.textContent = "Lideranças"
+  } else {
+    gradBar.style.background = "linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d)"
+    labels.innerHTML  = "<span>0</span><span>300</span><span>1k</span><span>5k+</span>"
+    steps.innerHTML   = `
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#67000d;"></div><span>5.000+ <small>muito alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#a50f15;"></div><span>2.000–4.999 <small>alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#cb181d;"></div><span>1.000–1.999 <small>moderado</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#fb6a4a;"></div><span>300–999 <small>baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#fcae91;"></div><span>1–299 <small>muito baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#fee5d9;"></div><span>0 <small>sem expectativa</small></span></div>`
+    titulo.textContent = "Expectativa"
+  }
+}
+
 // ─────────────────────────────────────────────
 // GEOJSON — chamado pelo iniciarAplicacao() após login
 // ─────────────────────────────────────────────
 window.iniciarMapa = function() {
-  // Força o Leaflet a recalcular o tamanho após content-wrapper ser revelado
-  setTimeout(() => { if (map) map.invalidateSize() }, 100)
+  map = L.map('map').setView([-22.91, -43.17], 11)
+  setTimeout(() => map.invalidateSize(), 200)
 
   fetch("geo/riobairros.geojson")
     .then(r => r.json())
@@ -640,16 +801,7 @@ window.iniciarMapa = function() {
 
     })
     .then(() => {
-
       repaintMapa()
-
-      // força recalculo do tamanho do mapa
-      map.whenReady(() => {
-        setTimeout(() => {
-          map.invalidateSize()
-        }, 400)
-      })
-
     })
     .catch(err => {
       console.error("Erro ao inicializar mapa:", err)

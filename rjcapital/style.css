@@ -915,6 +915,41 @@ input:focus, select:focus, textarea:focus {
   to   { opacity: 1; transform: none; }
 }
 
+/* ===== MODO DE VISUALIZAÇÃO ===== */
+.modos-container {
+  display: flex;
+  gap: 5px;
+}
+
+.modo-btn {
+  flex: 1;
+  padding: 7px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: 8px;
+  border: 1.5px solid var(--slate-200);
+  background: var(--slate-50);
+  color: var(--slate-600);
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.modo-btn:hover {
+  background: var(--blue-light);
+  border-color: rgba(21,101,192,0.3);
+  color: var(--blue-main);
+}
+
+.modo-btn.ativa {
+  background: var(--blue-deep);
+  color: white;
+  border-color: var(--blue-deep);
+  box-shadow: 0 3px 10px rgba(13,45,107,0.3);
+}
+
 /* ===== MOBILE ===== */
 @media (max-width: 700px) {
   #sidebar { width: 100%; }

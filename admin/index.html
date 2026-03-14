@@ -771,25 +771,6 @@ textarea {
     <button id="salvar-btn" class="btn btn-primary btn-full">💾 Salvar liderança</button>
   </div>
 
-  <!-- EXPECTATIVA CIDADE CARD -->
-  <div class="card anim" style="animation-delay:0.08s">
-    <div class="card-header">
-      <div class="card-title">
-        <div class="card-icon">📊</div>
-        Expectativa da cidade
-      </div>
-    </div>
-    <div class="form-row" style="align-items:flex-end;">
-      <div class="form-group" style="margin-bottom:0;">
-        <label>Votos esperados (cidade)</label>
-        <input id="expectativa-cidade" type="number" min="0" placeholder="Ex: 12000">
-      </div>
-      <div>
-        <button id="salvar-expectativa-cidade" class="btn btn-success" style="white-space:nowrap;">✓ Salvar</button>
-      </div>
-    </div>
-  </div>
-
   <!-- GASTOS CARD -->
   <div class="card anim" id="gastos-card" style="display:none;animation-delay:0.1s;">
     <div class="card-header">
@@ -880,8 +861,6 @@ let editandoId = null;
 let liderancaSelecionadaId = null;
 
 /* ===== DOM REFS ===== */
-const expectativaCidadeInput = document.getElementById('expectativa-cidade');
-const salvarExpectativaCidadeBtn = document.getElementById('salvar-expectativa-cidade');
 const loginCard = document.getElementById('login-card-overlay');
 const panel = document.getElementById('panel');
 const loginUser = document.getElementById('login-user');
@@ -1040,7 +1019,7 @@ function iniciarPainel() {
   document.getElementById('user-initials').textContent = initials;
 
   if (user.nivel === 'visualizador') {
-    ['salvar-btn', 'salvar-expectativa-cidade', 'btn-add-gasto'].forEach(id => {
+    ['salvar-btn', 'btn-add-gasto'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
@@ -1190,19 +1169,21 @@ async function carregarLiderancas() {
   const cidadeVal = cidade.value;
   if (!cidadeVal) {
     lista.innerHTML = `<div class="state-msg"><div class="icon">🏙️</div><p>Selecione uma cidade</p></div>`;
-    expectativaCidadeInput.value = '';
     return;
   }
   if (CIDADES_COM_BAIRROS[cidadeVal] && !bairroSelect.value) {
     lista.innerHTML = `<div class="state-msg"><div class="icon">🏘️</div><p>Selecione um bairro</p></div>`;
-    expectativaCidadeInput.value = '';
     return;
   }
   const chave = getCidadeOuBairro();
 
   lista.innerHTML = `<div class="state-msg"><div class="icon">⏳</div><p>Carregando...</p></div>`;
 
-  const res = await apiFetch('/api/liderancas');
+  const mapa = cidade.value === 'Angra dos Reis' ? 'angra'
+             : cidade.value === 'Rio de Janeiro' ? 'rjcapital'
+             : ''
+  const query = mapa ? `?mapa=${mapa}` : ''
+  const res = await apiFetch('/api/liderancas' + query);
   const cidades = await res.json();
   const blocoCidade = cidades.find(c => c.cidade === chave);
 
@@ -1212,16 +1193,7 @@ async function carregarLiderancas() {
     liderancas = liderancas.filter(l => (l.status || 'ativa') === filtroValue);
   }
 
-  let expectativaCidade = 0;
-  const resExp = await apiFetch('/api/expectativa-cidade?cidade=' + encodeURIComponent(chave));
-  if (resExp.ok) {
-    const j = await resExp.json();
-    expectativaCidade = Number(j.valor || 0);
-  }
-  expectativaCidadeInput.value = expectativaCidade;
-
   const somaLiderancas = liderancas.reduce((s, l) => s + Number(l.expectativa_votos || 0), 0);
-  const totalGeral = expectativaCidade + somaLiderancas;
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -1232,16 +1204,12 @@ async function carregarLiderancas() {
   statsDiv.className = 'stats-summary';
   statsDiv.innerHTML = `
     <div class="stat-row">
-      <span class="stat-label">📊 Expectativa da cidade</span>
-      <span class="stat-val">${expectativaCidade.toLocaleString('pt-BR')}</span>
-    </div>
-    <div class="stat-row">
       <span class="stat-label">👥 Lideranças (${filtroValue === 'todas' ? 'todas' : filtroValue})</span>
       <span class="stat-val">${somaLiderancas.toLocaleString('pt-BR')}</span>
     </div>
     <div class="stat-total">
       <span class="label">🗳️ TOTAL ESPERADO</span>
-      <span class="value">${totalGeral.toLocaleString('pt-BR')}</span>
+      <span class="value">${somaLiderancas.toLocaleString('pt-BR')}</span>
     </div>
   `;
   lista.appendChild(statsDiv);
@@ -1365,6 +1333,10 @@ async function salvar() {
 
   const fd = new FormData();
   fd.append('cidade', cidadeOuBairro);
+  const mapaVal = cidade.value === 'Angra dos Reis' ? 'angra'
+                : cidade.value === 'Rio de Janeiro' ? 'rjcapital'
+                : ''
+  if (mapaVal) fd.append('mapa', mapaVal);
   fd.append('nome', nome.value.trim());
   fd.append('contato', contato.value.trim());
   fd.append('expectativa_votos', Number(expectativaVotosInput.value) || 0);
@@ -1393,27 +1365,6 @@ async function salvar() {
   }
 }
 
-salvarExpectativaCidadeBtn.onclick = async () => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  if (user.nivel === 'visualizador') { alert('Sem permissão.'); return; }
-  const expChave = getCidadeOuBairro();
-  if (!expChave) { alert('Selecione uma cidade' + (CIDADES_COM_BAIRROS[cidade.value] ? ' e um bairro' : '')); return; }
-
-  const btn = salvarExpectativaCidadeBtn;
-  btn.textContent = '...';
-  btn.disabled = true;
-
-  const valor = Number(expectativaCidadeInput.value || 0);
-  await apiFetch('/api/expectativa-cidade', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cidade: expChave, valor })
-  });
-
-  btn.textContent = '✓ Salvo!';
-  setTimeout(() => { btn.textContent = '✓ Salvar'; btn.disabled = false; }, 1500);
-  carregarLiderancas();
-};
 
 /* ===== EXCLUIR ===== */
 async function excluir(id) {

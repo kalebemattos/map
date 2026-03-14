@@ -1,3 +1,26 @@
+const BAIRRO_PROP = "NM_BAIRRO" // ajuste para o campo correto do seu GeoJSON
+
+// ─────────────────────────────────────────────
+// VOTOS VÁLIDOS 2022 (embutidos)
+// ─────────────────────────────────────────────
+const VOTOS_VALIDOS = {
+  "CENTRO": 31380, "JAPUÍBA": 22124, "PARQUE MAMBUCABA": 18612,
+  "JACUECANGA": 14318, "FRADE": 13161, "BALNEÁRIO": 8599,
+  "MONSUABA": 8340, "BRACUÍ": 7830, "CAMORIM": 7492,
+  "PARQUE BELÉM": 6615, "ILHA GRANDE": 6118, "CAMPO BELO": 5746,
+  "AREAL": 4471, "SAO BENTO": 4337, "ENSEADA": 3411,
+  "PARQUE DAS PALMEIRAS": 3312, "GARATUCAIA": 2924,
+  "SERRA D'ÁGUA": 2049, "PRAIA BRAVA": 1698, "PONTAL": 1650,
+  "VILA HISTÓRICA DE MAMBUCABA": 1541, "BANQUETA": 1493,
+  "MARINAS": 1492, "BONFIM": 1492, "GAMBOA DO BELÉM": 1429,
+  "MORRO DA CRUZ": 1150, "VILA VELHA": 1030, "PORTO GALO": 895,
+  "CAPUTERA": 838, "ILHA DA GIPOIA": 260
+}
+
+// Modo de visualização: 'expectativa' | 'votosValidos' | 'liderancas'
+let modoVisualizacao = 'expectativa'
+
+
 // =============================================================
 // MAPA DE ANGRA DOS REIS – mapa.js
 // =============================================================
@@ -7,7 +30,7 @@
 // ─────────────────────────────────────────────
 // ESTADO GLOBAL
 // ─────────────────────────────────────────────
-let map
+let map = null
 
 let geoBairros       = null
 let bairroAtual      = null
@@ -161,18 +184,55 @@ function corPorExpectativa(v) {
   return "#e8f4ff"
 }
 
+function corPorVotosValidos(v) {
+  if (v >= 20000) return "#084594"
+  if (v >= 10000) return "#2171b5"
+  if (v >= 5000)  return "#4292c6"
+  if (v >= 2000)  return "#6baed6"
+  if (v >  0)     return "#c6dbef"
+  return "#f7fbff"
+}
+
+function corPorLiderancas(v) {
+  if (v >= 10) return "#005a32"
+  if (v >= 5)  return "#238b45"
+  if (v >= 2)  return "#41ae76"
+  if (v >= 1)  return "#99d8c9"
+  return "#e5f5f9"
+}
+
+function getValorModo(bairro) {
+  if (modoVisualizacao === 'votosValidos') {
+    const n = normalizar(bairro)
+    for (const k of Object.keys(VOTOS_VALIDOS)) {
+      if (normalizar(k) === n) return VOTOS_VALIDOS[k]
+    }
+    return 0
+  }
+  if (modoVisualizacao === 'liderancas') {
+    return (dataCache[bairro]?.liderancas || []).length
+  }
+  return getTotalExpectativa(bairro)
+}
+
+function getCorModo(bairro) {
+  const v = getValorModo(bairro)
+  if (modoVisualizacao === 'votosValidos') return corPorVotosValidos(v)
+  if (modoVisualizacao === 'liderancas')   return corPorLiderancas(v)
+  return corPorExpectativa(v)
+}
+
 // ─────────────────────────────────────────────
 // REPINTAR
 // ─────────────────────────────────────────────
 function repaintMapa() {
   if (!geoBairros) return
   geoBairros.eachLayer(layer => {
-    const b = layer.feature.properties.NM_BAIRRO
-    const v = getTotalExpectativa(b)
+    const b = layer.feature.properties[BAIRRO_PROP]
     layer.setStyle({
       color:       layer === layerSelecionado ? "#0f172a" : "#1e40af",
       weight:      layer === layerSelecionado ? 3.5 : 0.9,
-      fillColor:   corPorExpectativa(v),
+      fillColor:   getCorModo(b),
       fillOpacity: layer === layerSelecionado ? 0.92 : 0.72
     })
   })
@@ -185,15 +245,14 @@ function repaintMapa() {
 function filtrarDistrito(distrito) {
   if (!geoBairros) return
   geoBairros.eachLayer(layer => {
-    const b = layer.feature.properties.NM_BAIRRO
+    const b = layer.feature.properties[BAIRRO_PROP]
     const d = getDistritoDoBairro(b)
-    const v = getTotalExpectativa(b)
     if (!distrito) {
-      layer.setStyle({ color:"#1e40af", weight:0.9, fillColor:corPorExpectativa(v), fillOpacity:0.72 })
+      layer.setStyle({ color:"#1e40af", weight:0.9, fillColor:getCorModo(b), fillOpacity:0.72 })
       return
     }
     if (d === distrito) {
-      layer.setStyle({ color:"#0f172a", weight:2.5, fillColor:corPorExpectativa(v), fillOpacity:0.9 })
+      layer.setStyle({ color:"#0f172a", weight:2.5, fillColor:getCorModo(b), fillOpacity:0.9 })
     } else {
       layer.setStyle({ color:"#1e40af", weight:0.5, fillColor:"#e8f4ff", fillOpacity:0.12 })
     }
@@ -487,10 +546,10 @@ document.querySelectorAll(".campanha-opcao").forEach(el => {
 // ─────────────────────────────────────────────
 function selecionarBairro(bairroNome, layer) {
   if (layerSelecionado) {
-    const old = layerSelecionado.feature.properties.NM_BAIRRO
+    const old = layerSelecionado.feature.properties[BAIRRO_PROP]
     layerSelecionado.setStyle({
       color: "#1e40af", weight: 0.9,
-      fillColor: corPorExpectativa(getTotalExpectativa(old)),
+      fillColor: getCorModo(old),
       fillOpacity: 0.72
     })
   }
@@ -524,7 +583,7 @@ document.getElementById("buscar-bairro").addEventListener("input", e => {
 
   const matches = []
   geoBairros.eachLayer(layer => {
-    const b = layer.feature.properties.NM_BAIRRO
+    const b = layer.feature.properties[BAIRRO_PROP]
     if (normalizar(b).includes(texto)) matches.push({ nome: b, layer })
   })
 
@@ -575,7 +634,7 @@ document.getElementById("buscar-lideranca").addEventListener("input", e => {
     div.addEventListener("click", () => {
       if (geoBairros) {
         geoBairros.eachLayer(layer => {
-          if (layer.feature.properties.NM_BAIRRO === bairro) {
+          if (layer.feature.properties[BAIRRO_PROP] === bairro) {
             map.fitBounds(layer.getBounds(), { maxZoom: 13 })
             selecionarBairro(bairro, layer)
           }
@@ -588,12 +647,68 @@ document.getElementById("buscar-lideranca").addEventListener("input", e => {
   })
 })
 
+
+// ─────────────────────────────────────────────
+// SELETOR DE MODO DE VISUALIZAÇÃO
+// ─────────────────────────────────────────────
+document.querySelectorAll(".modo-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".modo-btn").forEach(b => b.classList.remove("ativa"))
+    btn.classList.add("ativa")
+    modoVisualizacao = btn.dataset.modo
+    atualizarLegenda()
+    repaintMapa()
+  })
+})
+
+function atualizarLegenda() {
+  const gradBar = document.getElementById("legenda-grad-bar")
+  const labels  = document.getElementById("legenda-grad-labels")
+  const steps   = document.getElementById("legenda-steps")
+  const titulo  = document.getElementById("legenda-titulo")
+
+  if (modoVisualizacao === 'votosValidos') {
+    gradBar.style.background = "linear-gradient(to right,#f7fbff,#c6dbef,#6baed6,#2171b5,#084594)"
+    labels.innerHTML  = "<span>0</span><span>2k</span><span>10k</span><span>20k+</span>"
+    steps.innerHTML   = `
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#084594;"></div><span>20.000+ <small>muito alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#2171b5;"></div><span>10.000–19.999 <small>alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#4292c6;"></div><span>5.000–9.999 <small>moderado</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#6baed6;"></div><span>2.000–4.999 <small>baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#c6dbef;"></div><span>1–1.999 <small>muito baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#f7fbff;"></div><span>0 <small>sem dados</small></span></div>`
+    titulo.textContent = "Votos Válidos 2022"
+  } else if (modoVisualizacao === 'liderancas') {
+    gradBar.style.background = "linear-gradient(to right,#e5f5f9,#99d8c9,#41ae76,#238b45,#005a32)"
+    labels.innerHTML  = "<span>0</span><span>1</span><span>5</span><span>10+</span>"
+    steps.innerHTML   = `
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#005a32;"></div><span>10+ <small>muito alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#238b45;"></div><span>5–9 <small>alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#41ae76;"></div><span>2–4 <small>moderado</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#99d8c9;"></div><span>1 <small>baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#e5f5f9;"></div><span>0 <small>sem lideranças</small></span></div>`
+    titulo.textContent = "Lideranças"
+  } else {
+    gradBar.style.background = "linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d)"
+    labels.innerHTML  = "<span>0</span><span>300</span><span>1k</span><span>5k+</span>"
+    steps.innerHTML   = `
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#67000d;"></div><span>5.000+ <small>muito alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#a50f15;"></div><span>2.000–4.999 <small>alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#cb181d;"></div><span>1.000–1.999 <small>moderado</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#fb6a4a;"></div><span>300–999 <small>baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#fcae91;"></div><span>1–299 <small>muito baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#fee5d9;"></div><span>0 <small>sem expectativa</small></span></div>`
+    titulo.textContent = "Expectativa"
+  }
+}
+
 // ─────────────────────────────────────────────
 // GEOJSON — chamado pelo iniciarAplicacao() após login
 // ─────────────────────────────────────────────
 window.iniciarMapa = function() {
   map = L.map('map').setView([-23.01, -44.32], 11)
   setTimeout(() => map.invalidateSize(), 200)
+
   fetch("geo/angra_limite.geojson")
     .then(r => r.json())
     .then(data => {
@@ -606,20 +721,35 @@ window.iniciarMapa = function() {
     .then(r => r.json())
     .then(data => {
       geoBairros = L.geoJSON(data, {
-        style: { color: "#1e40af", weight: 0.9, fillOpacity: 0.72, fillColor: "#e8f4ff" },
+        style: {
+          color: "#1e40af",
+          weight: 0.9,
+          fillOpacity: 0.72,
+          fillColor: "#e8f4ff"
+        },
         onEachFeature: (feature, layer) => {
-          const bairro = feature.properties.NM_BAIRRO
+          const bairro = feature.properties[BAIRRO_PROP]
           layer.on("click", () => selecionarBairro(bairro, layer))
           const center = layer.getBounds().getCenter()
           L.marker(center, {
-            icon: L.divIcon({ className:"bairro-label", html:bairro, iconSize:[120,20], iconAnchor:[60,10] })
+            icon: L.divIcon({
+              className: "bairro-label",
+              html: bairro,
+              iconSize: [120, 20],
+              iconAnchor: [60, 10]
+            })
           }).addTo(map)
         }
       }).addTo(map)
       return carregarTudo()
     })
-    .then(() => repaintMapa())
-    .catch(err => console.error("Erro ao inicializar mapa:", err))
+    .then(() => {
+      repaintMapa()
+    })
+    .catch(err => {
+      console.error("Erro ao inicializar mapa:", err)
+    })
+
 }
 
 // ─────────────────────────────────────────────
