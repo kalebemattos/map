@@ -33,6 +33,11 @@ app.use(
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'", "https://kalebemattos.github.io", "https://*.supabase.co"],
       }
+    },
+    hsts: {
+      maxAge: 31536000,        // 1 ano em segundos
+      includeSubDomains: true,
+      preload: true
     }
   })
 );
@@ -82,9 +87,9 @@ async function registrarAuditoria(usuarioId, acao, entidade, entidadeId) {
   );
 }
 
-pool.query('select current_database(), inet_server_addr()')
-  .then(r => console.log('DB:', r.rows))
-  .catch(e => console.error('DB ERR', e));
+pool.query('select current_database()')
+  .then(r => console.log('✅ Banco conectado:', r.rows[0]))
+  .catch(e => console.error('❌ DB ERR:', e.message));
 
 async function dbGet(sql, params = []) {
   const r = await pool.query(sql, params);
@@ -123,7 +128,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Não permitido por CORS'));
@@ -159,6 +164,14 @@ const createLiderancaLimiter = rateLimit({
   legacyHeaders: false
 });
 
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 20,                   // 20 tentativas por IP
+  message: { error: 'Muitas tentativas de refresh. Tente novamente mais tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 
 /* ================= PATHS & GARANTIAS ================= */
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
@@ -175,7 +188,21 @@ const storage = multer.diskStorage({
     cb(null, name + ext);
   }
 });
-const upload = multer({ storage });
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+const fileFilter = (req, file, cb) => {
+  if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Tipo de arquivo não permitido. Envie apenas imagens (JPEG, PNG, WEBP).'), false);
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB máximo
+});
 async function otimizarImagem(caminhoArquivo) {
   const caminhoFinal = caminhoArquivo + '.webp';
 
@@ -200,6 +227,14 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     return res.status(400).json({ error: 'Dados incompletos' });
   }
 
+  if (typeof usuario !== 'string' || usuario.length > 60) {
+    return res.status(400).json({ error: 'Dados inválidos' });
+  }
+
+  if (typeof senha !== 'string' || senha.length > 128) {
+    return res.status(400).json({ error: 'Dados inválidos' });
+  }
+
   try {
     // Procure por: SELECT id, usuario, senha_hash, nome FROM usuarios...
 // E troque por:
@@ -208,17 +243,23 @@ const user = await dbGet(
   [usuario]
 );
 
-    if (!user) {
-      return res.status(401).json({ error: 'Usuário ou senha inválidos' });
-    }
+    // Hash fictício garante tempo de resposta constante mesmo quando usuário não existe
+    // — impede enumeração de usuários por timing attack
+    const HASH_FAKE = '$2b$10$invalido.hash.para.timing.proteção.xxxxxxxxxxx';
+    const hashParaComparar = user ? user.senha_hash : HASH_FAKE;
+    const ok = await bcrypt.compare(senha, hashParaComparar);
 
-    const ok = await bcrypt.compare(senha, user.senha_hash);
-
-    if (!ok) {
+    if (!user || !ok) {
+      // Log de tentativa falha (sem revelar qual campo falhou)
+      console.warn(`[LOGIN FALHA] usuario="${usuario}" ip="${req.ip}" ts="${new Date().toISOString()}"`);
       return res.status(401).json({ error: 'Usuário ou senha inválidos' });
     }
 
   delete user.senha_hash;
+
+  // Log de login bem-sucedido
+  console.log(`[LOGIN OK] usuario="${usuario}" nivel="${user.nivel}" ip="${req.ip}" ts="${new Date().toISOString()}"`);
+  try { await registrarAuditoria(user.id, 'LOGIN', 'usuario', user.id); } catch {}
 
 
 
@@ -263,7 +304,7 @@ res.json({
   }
 });
 /* ================= REFRESH TOKEN ================= */
-app.post('/api/refresh', async (req, res) => {
+app.post('/api/refresh', refreshLimiter, async (req, res) => {
 
   const { refreshToken } = req.body;
 
@@ -639,7 +680,14 @@ app.delete('/api/liderancas/:id',
         'DELETE FROM liderancas WHERE id = $1',
         [id]
       );
+    } else if (req.user.nivel === 'admin') {
+      // admin pode deletar qualquer liderança (escopo global intencional)
+      result = await pool.query(
+        'DELETE FROM liderancas WHERE id = $1',
+        [id]
+      );
     } else {
+      // lider_regiao só deleta da própria região
       result = await pool.query(
         'DELETE FROM liderancas WHERE id = $1 AND regiao = $2',
         [id, req.user.regiao]
@@ -723,6 +771,7 @@ if (!atual) {
 
 if (
   req.user.nivel !== 'dono' &&
+  req.user.nivel !== 'admin' &&
   atual.regiao !== req.user.regiao
 ) {
   return res.status(403).json({ error: 'Acesso negado' });
@@ -778,7 +827,7 @@ cidade=$9,
 vinculo_politico=$10,
 regiao=COALESCE($12, regiao),
 data_nascimento=$13
-WHERE id=$11 AND (LOWER(regiao)=LOWER($12) OR $14='dono')
+WHERE id=$11 AND (LOWER(regiao)=LOWER($12) OR $14='dono' OR $14='admin')
   `,
   [
   nome,
@@ -1197,6 +1246,11 @@ if (!usuario || !senha || !nivel) {
     error: 'Usuario, senha e nivel são obrigatórios'
   });
 }
+if (!/^[a-zA-Z0-9._-]{1,60}$/.test(usuario)) {
+  return res.status(400).json({
+    error: 'Login inválido. Use apenas letras, números, . _ - (máx. 60 caracteres).'
+  });
+}
 if (nivel === 'lider_regiao' && !regiao_vinculada) {
   return res.status(400).json({
     error: 'Região vinculada é obrigatória para Líder de Região'
@@ -1207,6 +1261,12 @@ const niveisPermitidos = ['dono', 'admin', 'visualizador', 'lider_regiao'];
 if (!niveisPermitidos.includes(nivel)) {
   return res.status(400).json({
     error: 'Nivel inválido'
+  });
+}
+
+if (!/(?=.*[A-Z])(?=.*[0-9]).{8,}/.test(senha)) {
+  return res.status(400).json({
+    error: 'Senha fraca. Use pelo menos 8 caracteres, uma letra maiúscula e um número.'
   });
 }
 
@@ -1227,6 +1287,8 @@ if (!niveisPermitidos.includes(nivel)) {
       [usuario, hash, nome, nivel, regiao_vinculada]
     );
 
+    const novoUser = await dbGet('SELECT id FROM usuarios WHERE usuario = $1', [usuario]);
+    try { await registrarAuditoria(req.user.id, 'CRIAR_USUARIO', 'usuario', novoUser?.id); } catch {}
     res.json({ ok: true, message: 'Usuário criado com sucesso!' });
   } catch (err) {
     console.error('Erro ao criar usuário:', err);
@@ -1266,8 +1328,10 @@ app.put('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
     }
 
     if (senha) {
-      if (senha.length < 8) {
-        return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres.' });
+      if (!/(?=.*[A-Z])(?=.*[0-9]).{8,}/.test(senha)) {
+        return res.status(400).json({
+          error: 'Senha fraca. Use pelo menos 8 caracteres, uma letra maiúscula e um número.'
+        });
       }
       const hash = await require('bcrypt').hash(senha, 10);
       await pool.query(
@@ -1278,6 +1342,11 @@ app.put('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
            senha_hash = $4
          WHERE id = $5`,
         [nome || null, nivel || null, regiao_vinculada || null, hash, id]
+      );
+      // Invalida todas as sessões ativas do usuário ao trocar a senha
+      await pool.query(
+        'DELETE FROM refresh_tokens WHERE usuario_id = $1',
+        [id]
       );
     } else {
       await pool.query(
@@ -1290,6 +1359,7 @@ app.put('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
       );
     }
 
+    try { await registrarAuditoria(req.user.id, 'EDITAR_USUARIO', 'usuario', id); } catch {}
     res.json({ ok: true });
   } catch (err) {
     console.error('Erro ao editar usuário:', err);
@@ -1309,6 +1379,7 @@ if (result.rowCount === 0) {
   return res.status(404).json({ error: 'Usuário não encontrado' });
 }
 
+try { await registrarAuditoria(req.user.id, 'EXCLUIR_USUARIO', 'usuario', req.params.id); } catch {}
 res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao excluir usuário.' });
@@ -1374,6 +1445,47 @@ app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
     res.status(500).json({ error: 'Erro interno' });
   }
 });
+
+/* ================= LOGOUT ================= */
+app.post('/api/logout', async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (refreshToken) {
+    try {
+      // Identifica usuário para auditoria antes de deletar
+      const row = await dbGet(
+        'SELECT usuario_id FROM refresh_tokens WHERE token = $1',
+        [refreshToken]
+      );
+      await pool.query(
+        'DELETE FROM refresh_tokens WHERE token = $1',
+        [refreshToken]
+      );
+      if (row) {
+        try { await registrarAuditoria(row.usuario_id, 'LOGOUT', 'usuario', row.usuario_id); } catch {}
+      }
+    } catch (err) {
+      console.error('Erro ao revogar refresh token:', err.message);
+    }
+  }
+
+  res.json({ ok: true });
+});
+
+/* ================= LOGOUT TOTAL (todos os dispositivos) ================= */
+app.post('/api/logout-all', auth, async (req, res) => {
+  try {
+    await pool.query(
+      'DELETE FROM refresh_tokens WHERE usuario_id = $1',
+      [req.user.id]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Erro ao revogar todos os tokens:', err.message);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
 /* ================= KEEP ALIVE (RENDER) ================= */
 app.get('/ping', (req, res) => {
   res.status(200).send('pong');
@@ -1382,3 +1494,20 @@ app.get('/ping', (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Backend rodando em http://localhost:${PORT}`);
 });
+
+// ── Limpeza de refresh tokens expirados (a cada 6h) ──────────
+async function limparRefreshTokensExpirados() {
+  try {
+    const result = await pool.query(
+      'DELETE FROM refresh_tokens WHERE expira_em < NOW()'
+    );
+    if (result.rowCount > 0) {
+      console.log(`🧹 ${result.rowCount} refresh token(s) expirado(s) removido(s).`);
+    }
+  } catch (err) {
+    console.error('Erro ao limpar refresh tokens:', err.message);
+  }
+}
+
+limparRefreshTokensExpirados(); // roda na inicialização
+setInterval(limparRefreshTokensExpirados, 6 * 60 * 60 * 1000); // a cada 6h

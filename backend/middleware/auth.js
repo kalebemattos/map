@@ -15,8 +15,13 @@ function auth(req, res, next) {
 
   const token = authHeader.split(' ')[1];
 
-  // 3️⃣ Segurança extra
-  if (!token) {
+  // 3️⃣ Segurança extra: tipo e tamanho
+  if (!token || typeof token !== 'string') {
+    return res.status(401).json({ error: 'Token inválido' });
+  }
+
+  // JWT válido tem no máximo ~512 chars; bloqueia strings gigantes
+  if (token.length > 512) {
     return res.status(401).json({ error: 'Token inválido' });
   }
 
