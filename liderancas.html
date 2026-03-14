@@ -837,11 +837,11 @@
             <th>Nome</th>
             <th>Contato</th>
             <th>Cidade</th>
+            <th>Bairro</th>
             <th>Região</th>
             <th>Votos</th>
             <th>Campanha</th>
             <th>Aniversário</th>
-            <th>Status</th>
           </tr>
         </thead>
         <tbody id="lista"></tbody>
@@ -940,7 +940,7 @@
           dados.forEach(item => {
             if (Array.isArray(item.liderancas)) {
               item.liderancas.forEach(l => {
-                todasLiderancas.push({ ...l, cidade: item.cidade || item.bairro, regiao: l.regiao || item.regiao || item.cidade || item.bairro });
+                todasLiderancas.push({ ...l, cidade: item.cidade || item.bairro, bairro: item.bairro || null, regiao: l.regiao || item.regiao || item.cidade || item.bairro });
               });
             }
           });
@@ -1104,7 +1104,7 @@
 
       if (!lista.length) {
         tbody.innerHTML = `
-          <tr><td colspan="8">
+          <tr><td colspan="9">
             <div class="empty-state">
               <div class="empty-icon">🔍</div>
               <p>Nenhuma liderança encontrada</p>
@@ -1157,6 +1157,11 @@
         cidadeTd.setAttribute('data-label', 'Cidade');
         cidadeTd.textContent = l.cidade || '—';
 
+        // Bairro (só Angra e RJ têm bairro)
+        const bairroTd = document.createElement('td');
+        bairroTd.setAttribute('data-label', 'Bairro');
+        bairroTd.textContent = l.bairro || '—';
+
         // Região
         const regTd = document.createElement('td');
         regTd.setAttribute('data-label', 'Região');
@@ -1185,20 +1190,15 @@
           anivTd.textContent = formatarAniversario(l.data_nascimento || l.aniversario);
         }
 
-        // Status
-        const statusTd = document.createElement('td');
-        statusTd.setAttribute('data-label', 'Status');
-        statusTd.innerHTML = getBadgeStatus(l.status);
-
         tr.appendChild(fotoTd);
         tr.appendChild(nomeTd);
         tr.appendChild(contatoTd);
         tr.appendChild(cidadeTd);
+        tr.appendChild(bairroTd);
         tr.appendChild(regTd);
         tr.appendChild(votosTd);
         tr.appendChild(campTd);
         tr.appendChild(anivTd);
-        tr.appendChild(statusTd);
 
         tbody.appendChild(tr);
       });
@@ -1229,6 +1229,7 @@
         <div class="modal-nome">${l.nome || '—'}</div>
         <div class="modal-meta">
           <span>📍 ${l.cidade || '—'}</span>
+          ${l.bairro ? `<span>• ${l.bairro}</span>` : ''}
           ${l.regiao ? `<span>• ${l.regiao}</span>` : ''}
           ${getBadgeCampanha(l.vinculo_politico)}
           ${getBadgeStatus(l.status)}
@@ -1300,14 +1301,14 @@
 
     function gerarCSV(dados, nome) {
       if (!dados.length) { alert('Nenhuma liderança para exportar.'); return; }
-      const cabecalho = ['ID','Nome','Contato','Cidade','Região','Status','Expectativa de votos','Perfil','Responsável','Campanha','Aniversário','Release'];
+      const cabecalho = ['ID','Nome','Contato','Cidade','Bairro','Região','Expectativa de votos','Perfil','Responsável','Campanha','Aniversário','Release'];
       const linhas = dados.map(l => [
         l.id ?? '',
         l.nome ?? '',
         l.contato ?? '',
         l.cidade ?? '',
+        l.bairro ?? '',
         l.regiao ?? '',
-        l.status ?? '',
         l.expectativa_votos ?? 0,
         l.perfil ?? '',
         l.responsavel ?? '',
