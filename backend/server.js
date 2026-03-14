@@ -138,7 +138,26 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname));
+// Pasta raiz do projeto (um nível acima de /backend/)
+const ROOT_DIR = path.join(__dirname, '..');
+
+// Bloqueia acesso direto a arquivos sensíveis do servidor
+app.use((req, res, next) => {
+  const bloqueados = [
+    '/backend/server.js', '/backend/package.json', '/backend/package-lock.json',
+    '/backend/middleware', '/backend/node_modules', '/backend/database.sqlite',
+    '/backend/users.json', '/backend/data.json', '/.env',
+    '/server.js', '/package.json', '/package-lock.json'
+  ];
+  const url = req.path.toLowerCase();
+  if (bloqueados.some(b => url === b || url.startsWith(b))) {
+    return res.status(403).send('Proibido');
+  }
+  next();
+});
+
+// Serve os arquivos estáticos da raiz do projeto
+app.use(express.static(ROOT_DIR));
 app.set('trust proxy', 1);
 
 const loginLimiter = rateLimit({
