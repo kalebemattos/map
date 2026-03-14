@@ -822,6 +822,153 @@
       padding: 2px 8px;
       border-radius: 20px;
     }
+
+    /* ===== ANIVERSARIANTES ===== */
+    #aniversariantes-card {
+      background: white;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(0,0,0,0.04);
+      display: none;
+    }
+
+    .aniv-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .aniv-titulo {
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--slate-900);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .aniv-titulo-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #fef9c3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .aniv-count {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--slate-500);
+      background: var(--slate-100);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .aniv-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .aniv-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 10px;
+      border: 1px solid;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      text-decoration: none;
+    }
+
+    .aniv-chip:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .aniv-chip.hoje {
+      background: #fefce8;
+      border-color: #fde047;
+    }
+
+    .aniv-chip.breve {
+      background: #fff7ed;
+      border-color: #fed7aa;
+    }
+
+    .aniv-chip-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .aniv-chip-avatar-ph {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #4338ca;
+      flex-shrink: 0;
+    }
+
+    .aniv-chip-info { min-width: 0; }
+
+    .aniv-chip-nome {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--slate-900);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
+    }
+
+    .aniv-chip-sub {
+      font-size: 11px;
+      color: var(--slate-500);
+      margin-top: 1px;
+    }
+
+    .aniv-chip-badge {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .aniv-chip.hoje .aniv-chip-badge {
+      background: #fde047;
+      color: #713f12;
+    }
+
+    .aniv-chip.breve .aniv-chip-badge {
+      background: #fed7aa;
+      color: #7c2d12;
+    }
+
+    @media (max-width: 600px) {
+      .aniv-list { flex-direction: column; }
+      .aniv-chip { width: 100%; }
+      .aniv-chip-nome { max-width: none; }
+    }
   </style>
 </head>
 <body>
@@ -886,6 +1033,18 @@
           <div class="stat-label">Cidades</div>
         </div>
       </div>
+    </div>
+
+    <!-- ANIVERSARIANTES -->
+    <div id="aniversariantes-card">
+      <div class="aniv-header">
+        <div class="aniv-titulo">
+          <div class="aniv-titulo-icon">🎂</div>
+          Aniversariantes
+        </div>
+        <span class="aniv-count" id="aniv-count"></span>
+      </div>
+      <div class="aniv-list" id="aniv-list"></div>
     </div>
 
     <!-- CONTROLS -->
@@ -1063,6 +1222,7 @@
           });
           carregarRegioes();
           atualizarStats(todasLiderancas);
+          renderAniversariantes();
         }
         aplicarFiltros();
       } catch(e) {
@@ -1078,6 +1238,66 @@
         select.value = user.regiao;
         select.disabled = true;
       }
+    }
+
+    function renderAniversariantes() {
+      const card  = document.getElementById('aniversariantes-card')
+      const lista = document.getElementById('aniv-list')
+      const count = document.getElementById('aniv-count')
+      lista.innerHTML = ''
+
+      const hoje = []
+      const breve = []
+
+      todasLiderancas.forEach(l => {
+        const d = diasParaAniversario(l.data_nascimento || l.aniversario)
+        if (d === null) return
+        if (d === 0) hoje.push(l)
+        else if (d <= 7) breve.push({ ...l, _dias: d })
+      })
+
+      // Ordena breve por dias
+      breve.sort((a, b) => a._dias - b._dias)
+
+      const todos = [
+        ...hoje.map(l => ({ ...l, _tipo: 'hoje', _dias: 0 })),
+        ...breve.map(l => ({ ...l, _tipo: 'breve' }))
+      ]
+
+      if (!todos.length) {
+        card.style.display = 'none'
+        return
+      }
+
+      card.style.display = 'block'
+      count.textContent = todos.length + ' esta semana'
+
+      todos.forEach(l => {
+        const initials = (l.nome || '?').split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase()
+        const avatar = l.foto
+          ? `<img src="${l.foto}" class="aniv-chip-avatar" alt="" onerror="this.outerHTML='<div class=aniv-chip-avatar-ph>${initials}</div>'">`
+          : `<div class="aniv-chip-avatar-ph">${initials}</div>`
+
+        const badge = l._tipo === 'hoje'
+          ? '🎂 Hoje!'
+          : `🎉 em ${l._dias}d`
+
+        const sub = [l.cidade, l.bairro].filter(Boolean).join(' · ')
+
+        const chip = document.createElement('div')
+        chip.className = `aniv-chip ${l._tipo}`
+        chip.title = `Aniversário de ${l.nome}`
+        chip.innerHTML = `
+          ${avatar}
+          <div class="aniv-chip-info">
+            <div class="aniv-chip-nome">${l.nome || '—'}</div>
+            ${sub ? `<div class="aniv-chip-sub">${sub}</div>` : ''}
+          </div>
+          <span class="aniv-chip-badge">${badge}</span>
+        `
+        chip.addEventListener('click', () => abrirModal(l))
+        lista.appendChild(chip)
+      })
     }
 
     function atualizarStats(lista) {
