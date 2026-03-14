@@ -825,17 +825,36 @@ app.get('/api/liderancas', auth, async (req, res) => {
 
     const mapaFiltro = req.query.mapa || null;
     if (mapaFiltro) {
-      query = `SELECT cidade, json_agg(l.*) AS liderancas FROM liderancas l WHERE mapa = $1 GROUP BY cidade`;
+      // Para mapas de bairro (angra, rjcapital): expõe cidade também como "bairro"
+      // para que o frontend use c.bairro como chave do cache
+      query = `
+        SELECT
+          cidade AS bairro,
+          cidade,
+          MIN(l.regiao) AS regiao,
+          json_agg(l.* ORDER BY l.id) AS liderancas
+        FROM liderancas l
+        WHERE mapa = $1
+        GROUP BY cidade
+      `;
       params = [mapaFiltro];
     } else {
-      query = `SELECT cidade, json_agg(l.*) AS liderancas FROM liderancas l GROUP BY cidade`;
+      // Para o painel geral: retorna cidade + regiao para filtros
+      query = `
+        SELECT
+          cidade,
+          MIN(l.regiao) AS regiao,
+          json_agg(l.* ORDER BY l.id) AS liderancas
+        FROM liderancas l
+        GROUP BY cidade
+      `;
     }
 
     const result = await pool.query(query, params);
     res.json(result.rows);
 
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar lideranças' });
+    res.status(500).json({ error: 'Erro ao buscar liderancas' });
   }
 });
 

@@ -130,9 +130,9 @@ async function carregarTudo() {
     const lista = await res.json()
     if (Array.isArray(lista)) {
       lista.forEach(c => {
-        const key = c.bairro || c.cidade
-        initCache(key)
-        dataCache[key].liderancas = c.liderancas || []
+        const raw = c.bairro || c.cidade
+        initCache(raw)
+        getCacheEntry(raw).liderancas = c.liderancas || []
       })
     }
   } catch (e) { console.error('Erro lideranças:', e) }
@@ -143,9 +143,9 @@ async function carregarTudo() {
     const lista = await res.json()
     if (Array.isArray(lista)) {
       lista.forEach(e => {
-        const key = e.bairro || e.cidade
-        initCache(key)
-        dataCache[key].expectativaCidade = {
+        const raw = e.bairro || e.cidade
+        initCache(raw)
+        getCacheEntry(raw).expectativaCidade = {
           celia:    Number(e.expectativa_celia    || 0),
           fernando: Number(e.expectativa_fernando || 0)
         }
@@ -154,17 +154,52 @@ async function carregarTudo() {
   } catch (e) { console.error('Erro expectativas:', e) }
 }
 
+// ─────────────────────────────────────────────
+// NORMALIZAÇÃO DE CHAVE DO CACHE
+// Garante que nomes do GeoJSON (com acento, grafia variada)
+// batem com os nomes enviados pelo painel (maiúsculas sem acento)
+// ─────────────────────────────────────────────
+function normalizarChave(texto) {
+  if (!texto) return ""
+  return texto.toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+}
+
+// Índice invertido: chave normalizada → chave original no cache
+const _cacheIndex = {}
+
 function initCache(bairro) {
   if (!bairro) return
+  const norm = normalizarChave(bairro)
+  // Se já existe uma chave normalizada igual, reutiliza a chave original existente
+  if (_cacheIndex[norm]) {
+    const existing = _cacheIndex[norm]
+    if (existing !== bairro && !dataCache[bairro]) {
+      // aponta para o mesmo objeto
+      dataCache[bairro] = dataCache[existing]
+    }
+    return
+  }
   if (!dataCache[bairro]) {
     dataCache[bairro] = {
       liderancas: [],
       expectativaCidade: { celia: 0, fernando: 0 }
     }
   }
+  _cacheIndex[norm] = bairro
 }
 
 function getCacheEntry(bairro) {
+  if (!bairro) return { liderancas: [], expectativaCidade: { celia: 0, fernando: 0 } }
+  // Tenta direto
+  if (dataCache[bairro]) return dataCache[bairro]
+  // Tenta via normalização
+  const norm = normalizarChave(bairro)
+  const original = _cacheIndex[norm]
+  if (original && dataCache[original]) return dataCache[original]
+  // Cria entrada nova
   initCache(bairro)
   return dataCache[bairro]
 }
