@@ -62,6 +62,78 @@ body {
   pointer-events: none;
 }
 
+/* ===== PARALLAX LAYERS ===== */
+.parallax-bg {
+  position: fixed;
+  inset: -60px;          /* margem para o movimento não mostrar borda */
+  background: url('./assets/banner.jpg') no-repeat center center;
+  background-size: cover;
+  will-change: transform;
+  transition: transform 0.12s cubic-bezier(0.25,0.46,0.45,0.94);
+  z-index: -1;
+}
+
+/* Orbes de luz que se movem em camadas distintas */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform;
+  transition: transform 0.2s cubic-bezier(0.25,0.46,0.45,0.94),
+              opacity 1.2s ease;
+  z-index: 0;
+}
+.orb.visible { opacity: 1; }
+
+.orb-1 {
+  width: 520px; height: 520px;
+  background: radial-gradient(circle, rgba(21,101,192,0.28) 0%, transparent 70%);
+  top: -120px; left: -120px;
+}
+.orb-2 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
+  bottom: -80px; right: -60px;
+}
+.orb-3 {
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(96,165,250,0.14) 0%, transparent 70%);
+  top: 40%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Partículas */
+.particles-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Cards com efeito tilt 3D */
+.card {
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* Brilho interno que segue o mouse */
+.card-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12) 0%, transparent 60%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+}
+
+.card:hover .card-shine { opacity: 1; }
+
 /* ===== MAIN STRUCTURE ===== */
 .page {
   position: relative;
@@ -478,8 +550,13 @@ setTimeout(function() {
 </script>
 
 <div id="content-wrapper" style="display:none;">
+<div class="parallax-bg" id="parallax-bg"></div>
 <div class="overlay"></div>
 <div class="noise"></div>
+<canvas class="particles-canvas" id="particles-canvas"></canvas>
+<div class="orb orb-1" id="orb-1"></div>
+<div class="orb orb-2" id="orb-2"></div>
+<div class="orb orb-3" id="orb-3"></div>
 
 <div class="page">
 
@@ -509,6 +586,7 @@ setTimeout(function() {
 
       <!-- ── DESTAQUE: Mapa Estratégico ── -->
       <a href="./" class="card card-blue card-hero">
+        <div class="card-shine"></div>
         <div class="card-icon-wrap">🗺️</div>
         <div class="card-body">
           <div class="card-title">Mapa Estratégico do Estado</div>
@@ -519,6 +597,7 @@ setTimeout(function() {
 
       <!-- ── LINHA 2: Mapas por cidade ── -->
       <a href="./angra/" class="card card-green">
+        <div class="card-shine"></div>
         <div class="card-icon-wrap">🏝️</div>
         <div class="card-body">
           <div class="card-title">Mapa de Angra dos Reis</div>
@@ -528,6 +607,7 @@ setTimeout(function() {
       </a>
 
       <a href="./rjcapital/" class="card card-teal">
+        <div class="card-shine"></div>
         <div class="card-icon-wrap">🏙️</div>
         <div class="card-body">
           <div class="card-title">Mapa Rio de Janeiro</div>
@@ -537,6 +617,7 @@ setTimeout(function() {
       </a>
 
       <a href="./analise/" class="card card-amber">
+        <div class="card-shine"></div>
         <div class="card-icon-wrap">📊</div>
         <div class="card-body">
           <div class="card-title">Análise Eleitoral</div>
@@ -547,6 +628,7 @@ setTimeout(function() {
 
       <!-- ── LINHA 3: Gestão ── -->
       <a href="./admin/" class="card card-purple">
+        <div class="card-shine"></div>
         <div class="card-icon-wrap">👥</div>
         <div class="card-body">
           <div class="card-title">Painel Administrativo</div>
@@ -556,6 +638,7 @@ setTimeout(function() {
       </a>
 
       <a href="./liderancas.html" class="card card-blue">
+        <div class="card-shine"></div>
         <div class="card-icon-wrap">📋</div>
         <div class="card-body">
           <div class="card-title">Lista de Lideranças</div>
@@ -565,6 +648,7 @@ setTimeout(function() {
       </a>
 
       <a href="./usuarios.html" class="card card-rose" id="card-admin">
+        <div class="card-shine"></div>
         <div class="card-icon-wrap">🛡️</div>
         <div class="card-body">
           <div class="card-title">Gestão de Acessos</div>
@@ -608,6 +692,197 @@ window.iniciarAplicacao = function() {
 </script>
 
 <script src="auth.js"></script>
+
+<script>
+// ══════════════════════════════════════════════════
+// PARALLAX + TILT + PARTICLES
+// ══════════════════════════════════════════════════
+
+const isMobile = () => window.innerWidth < 700 || 'ontouchstart' in window
+
+// ── Mostrar orbes com delay ──
+setTimeout(() => {
+  document.querySelectorAll('.orb').forEach((o, i) => {
+    setTimeout(() => o.classList.add('visible'), i * 300)
+  })
+}, 400)
+
+// ── Parallax de fundo e orbes com mouse ──
+const parallaxBg  = document.getElementById('parallax-bg')
+const orb1 = document.getElementById('orb-1')
+const orb2 = document.getElementById('orb-2')
+const orb3 = document.getElementById('orb-3')
+
+let mouseX = 0, mouseY = 0
+let targetX = 0, targetY = 0
+let rafId = null
+
+document.addEventListener('mousemove', e => {
+  if (isMobile()) return
+  // -1 a 1 relativo ao centro
+  mouseX = (e.clientX / window.innerWidth  - 0.5) * 2
+  mouseY = (e.clientY / window.innerHeight - 0.5) * 2
+})
+
+function animateParallax() {
+  // Suaviza o movimento
+  targetX += (mouseX - targetX) * 0.06
+  targetY += (mouseY - targetY) * 0.06
+
+  // Fundo: move oposto ao mouse (efeito profundidade)
+  if (parallaxBg) {
+    parallaxBg.style.transform =
+      `translate(${targetX * -18}px, ${targetY * -12}px)`
+  }
+
+  // Orbes: camadas com velocidades diferentes
+  if (orb1) orb1.style.transform = `translate(${targetX * 28}px, ${targetY * 20}px)`
+  if (orb2) orb2.style.transform = `translate(${targetX * -20}px, ${targetY * -14}px)`
+  if (orb3) orb3.style.transform = `translate(calc(-50% + ${targetX * 12}px), calc(-50% + ${targetY * 8}px))`
+
+  rafId = requestAnimationFrame(animateParallax)
+}
+animateParallax()
+
+// ── Tilt 3D nos cards ──
+const MAX_TILT   = 12   // graus máximo
+const SCALE_HOVER = 1.03
+
+document.querySelectorAll('.card').forEach(card => {
+  let tiltRaf = null
+  let currentRX = 0, currentRY = 0
+  let targetRX  = 0, targetRY  = 0
+
+  card.addEventListener('mousemove', e => {
+    if (isMobile()) return
+    const rect = card.getBoundingClientRect()
+    const cx = rect.left + rect.width  / 2
+    const cy = rect.top  + rect.height / 2
+    const dx = (e.clientX - cx) / (rect.width  / 2)  // -1 a 1
+    const dy = (e.clientY - cy) / (rect.height / 2)  // -1 a 1
+
+    targetRY =  dx * MAX_TILT
+    targetRX = -dy * MAX_TILT
+
+    // Brilho segue o mouse
+    const shine = card.querySelector('.card-shine')
+    if (shine) {
+      const px = ((e.clientX - rect.left) / rect.width  * 100).toFixed(1)
+      const py = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1)
+      shine.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.16) 0%, transparent 55%)`
+    }
+
+    if (!tiltRaf) tiltRaf = requestAnimationFrame(animateTilt)
+
+    function animateTilt() {
+      currentRX += (targetRX - currentRX) * 0.18
+      currentRY += (targetRY - currentRY) * 0.18
+
+      card.style.transform =
+        `perspective(800px) rotateX(${currentRX}deg) rotateY(${currentRY}deg) scale(${SCALE_HOVER})`
+
+      if (Math.abs(targetRX - currentRX) > 0.05 || Math.abs(targetRY - currentRY) > 0.05) {
+        tiltRaf = requestAnimationFrame(animateTilt)
+      } else {
+        tiltRaf = null
+      }
+    }
+  })
+
+  card.addEventListener('mouseleave', () => {
+    targetRX = 0
+    targetRY = 0
+    const shine = card.querySelector('.card-shine')
+
+    function resetTilt() {
+      currentRX += (0 - currentRX) * 0.14
+      currentRY += (0 - currentRY) * 0.14
+
+      card.style.transform =
+        `perspective(800px) rotateX(${currentRX}deg) rotateY(${currentRY}deg) scale(1)`
+
+      if (shine) shine.style.background =
+        'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12) 0%, transparent 60%)'
+
+      if (Math.abs(currentRX) > 0.05 || Math.abs(currentRY) > 0.05) {
+        tiltRaf = requestAnimationFrame(resetTilt)
+      } else {
+        card.style.transform = ''
+        tiltRaf = null
+      }
+    }
+    if (tiltRaf) cancelAnimationFrame(tiltRaf)
+    tiltRaf = requestAnimationFrame(resetTilt)
+  })
+})
+
+// ── Partículas flutuantes ──
+;(function initParticles() {
+  const canvas = document.getElementById('particles-canvas')
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+  let W, H, particles
+
+  function resize() {
+    W = canvas.width  = window.innerWidth
+    H = canvas.height = window.innerHeight
+  }
+  resize()
+  window.addEventListener('resize', resize)
+
+  function Particle() {
+    this.reset()
+  }
+  Particle.prototype.reset = function() {
+    this.x    = Math.random() * W
+    this.y    = Math.random() * H
+    this.r    = Math.random() * 1.5 + 0.4
+    this.vx   = (Math.random() - 0.5) * 0.25
+    this.vy   = -(Math.random() * 0.3 + 0.1)
+    this.life = Math.random()
+    this.maxLife = Math.random() * 0.6 + 0.4
+    this.alpha = 0
+  }
+  Particle.prototype.update = function() {
+    this.life += 0.003
+    this.x   += this.vx
+    this.y   += this.vy
+    // parallax leve nas partículas
+    this.x   += targetX * 0.04
+    this.y   += targetY * 0.03
+    if (this.life < 0.3) {
+      this.alpha = this.life / 0.3
+    } else if (this.life > this.maxLife) {
+      this.alpha = 1 - (this.life - this.maxLife) / 0.2
+    } else {
+      this.alpha = 1
+    }
+    if (this.life > this.maxLife + 0.2 || this.y < -10 || this.x < -10 || this.x > W + 10) {
+      this.reset()
+    }
+  }
+
+  const COUNT = isMobile() ? 30 : 60
+  particles = Array.from({ length: COUNT }, () => {
+    const p = new Particle()
+    p.life = Math.random() * p.maxLife // distribuição inicial aleatória
+    return p
+  })
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H)
+    particles.forEach(p => {
+      p.update()
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(148,163,184,${p.alpha * 0.6})`
+      ctx.fill()
+    })
+    requestAnimationFrame(draw)
+  }
+  draw()
+})()
+</script>
 
 </body>
 </html>
