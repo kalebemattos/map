@@ -1,238 +1,751 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Gestão de Usuários</title>
-    <style>
-        /* DESIGN DO SITE (Copiado do estilo do mapa para manter a identidade) */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f2f6fb;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .card {
-            background: white;
-            border-radius: 14px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-            width: 100%;
-            max-width: 500px;
-        }
-        h2, h3 { color: #1e3a8a; margin-top: 0; }
-        input, select, button {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 8px;
-            border: 1px solid #cbd5f5;
-            box-sizing: border-box;
-        }
-        button {
-            background: #1e3a8a;
-            color: white;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        button:hover { background: #0047ab; }
-        
-        /* Estilos para a lista de usuários */
-        .user-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            background: #f8fafc;
-            margin-bottom: 8px;
-            border-radius: 8px;
-        }
-        .user-info { display: flex; flex-direction: column; }
-        .user-nivel { font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase; }
-        .btn-del {
-            background: #c62828;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            width: auto; /* Não ocupa a linha toda na lista */
-        }
-        .btn-del:hover { background: #b71c1c; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão de Acessos · Paralax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue-deep: #0d2d6b;
+  --blue-main: #1565c0;
+  --blue-light: #e8f0fe;
+  --green: #16a34a;
+  --green-light: #dcfce7;
+  --amber: #d97706;
+  --red: #dc2626;
+  --red-light: #fee2e2;
+  --slate-900: #0f172a;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748b;
+  --slate-400: #94a3b8;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --slate-50:  #f8fafc;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 28px rgba(0,0,0,0.13);
+  --shadow-xl: 0 24px 52px rgba(0,0,0,0.2);
+  --radius: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #eef2f8;
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(21,101,192,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 90%, rgba(13,45,107,0.06) 0%, transparent 50%);
+  min-height: 100vh;
+  color: var(--slate-700);
+}
+
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+
+/* ===== HEADER ===== */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-header-left { display: flex; align-items: center; gap: 14px; }
+.page-logo {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 6px 16px rgba(21,101,192,0.35);
+  flex-shrink: 0;
+}
+.page-header h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--blue-deep); letter-spacing: -0.3px;
+}
+.page-header p { font-size: 13px; color: var(--slate-500); margin-top: 2px; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--white);
+  border: 1px solid var(--slate-200);
+  padding: 7px 14px; border-radius: 50px;
+  font-size: 13px; font-weight: 600; color: var(--slate-700);
+  box-shadow: var(--shadow-sm);
+}
+.user-chip .dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-main), #42a5f5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: white;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 24px 22px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(0,0,0,0.04);
+}
+.card-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px; flex-wrap: wrap; gap: 8px;
+}
+.card-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 15px; font-weight: 700; color: var(--slate-900);
+  display: flex; align-items: center; gap: 8px;
+}
+.card-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--blue-light);
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+
+/* ===== FORM ===== */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+label {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.6px; color: var(--slate-500);
+}
+input, select {
+  width: 100%; padding: 10px 12px;
+  font-size: 14px; font-family: inherit; font-weight: 500;
+  border-radius: 9px; border: 1.5px solid var(--slate-200);
+  background: var(--slate-50); color: var(--slate-900); outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  appearance: none;
+}
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+input:focus, select:focus {
+  border-color: var(--blue-main);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(21,101,192,0.12);
+}
+input::placeholder { color: var(--slate-400); font-weight: 400; }
+
+.input-wrap { position: relative; }
+.input-wrap input { padding-right: 44px; }
+.toggle-pass {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; color: var(--slate-400); padding: 0; width: auto; line-height: 1;
+}
+.toggle-pass:hover { color: var(--slate-600); }
+
+.strength-bar {
+  height: 3px; border-radius: 3px;
+  background: var(--slate-200); margin-top: 4px; overflow: hidden;
+}
+.strength-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 0.3s, background 0.3s; width: 0%;
+}
+.strength-text { font-size: 11px; font-weight: 600; margin-top: 3px; min-height: 14px; }
+
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 18px; border-radius: 9px;
+  font-size: 13px; font-weight: 700; font-family: inherit;
+  cursor: pointer; border: none;
+  transition: all 0.18s; letter-spacing: 0.2px;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
+  color: white; box-shadow: 0 4px 14px rgba(21,101,192,0.35);
+}
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.btn-ghost {
+  background: transparent; color: var(--slate-500);
+  border: 1.5px solid var(--slate-200);
+}
+.btn-ghost:hover { background: var(--slate-100); color: var(--slate-700); }
+.btn-outline {
+  background: var(--white); color: var(--slate-700);
+  border: 1.5px solid var(--slate-200);
+}
+.btn-outline:hover { background: var(--slate-100); }
+.btn-full { width: 100%; margin-top: 6px; }
+
+/* ===== FEEDBACK ===== */
+.feedback {
+  font-size: 13px; font-weight: 600;
+  padding: 10px 14px; border-radius: 9px;
+  margin-top: 12px; display: none;
+}
+.feedback.success { background: var(--green-light); color: var(--green); display: block; }
+.feedback.error   { background: var(--red-light);   color: var(--red);   display: block; }
+
+/* ===== USERS LIST ===== */
+.users-list { display: flex; flex-direction: column; gap: 8px; }
+.user-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 16px;
+  background: var(--slate-50); border-radius: 11px;
+  border: 1px solid var(--slate-200);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.user-item:hover { box-shadow: var(--shadow-sm); border-color: var(--slate-300); }
+.user-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; color: #4338ca; flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-nome {
+  font-size: 14px; font-weight: 600; color: var(--slate-900);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.user-sub {
+  font-size: 12px; color: var(--slate-500); margin-top: 2px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.nivel-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.3px;
+}
+.nivel-dono        { background: #fef3c7; color: #b45309; }
+.nivel-admin       { background: var(--blue-light); color: var(--blue-main); }
+.nivel-lider       { background: #f0fdf4; color: #15803d; }
+.nivel-visualizador{ background: var(--slate-100); color: var(--slate-500); }
+
+.user-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.btn-icon {
+  width: 32px; height: 32px; border: none; border-radius: 7px;
+  font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.btn-icon-edit { background: var(--blue-light); color: var(--blue-main); }
+.btn-icon-edit:hover { background: var(--blue-main); color: white; }
+.btn-icon-del  { background: var(--red-light); color: var(--red); }
+.btn-icon-del:hover  { background: var(--red); color: white; }
+
+/* ===== STATE ===== */
+.state-msg { text-align: center; padding: 40px 20px; color: var(--slate-400); }
+.state-msg .icon { font-size: 32px; margin-bottom: 10px; }
+.state-msg p { font-size: 14px; font-weight: 500; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,0.6); backdrop-filter: blur(6px);
+  display: none; align-items: center; justify-content: center;
+  z-index: 9999; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal-card {
+  background: var(--white); width: 100%; max-width: 420px;
+  border-radius: 20px; padding: 28px 26px; position: relative;
+  box-shadow: var(--shadow-xl);
+  animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+.modal-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 32px; height: 32px; border: none; border-radius: 50%;
+  background: var(--slate-100); color: var(--slate-600);
+  font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.modal-close:hover { background: var(--slate-200); }
+.modal-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 16px; font-weight: 700; color: var(--slate-900); margin-bottom: 18px;
+}
+.modal-form { display: flex; flex-direction: column; gap: 12px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 6px; }
+.modal-actions .btn { flex: 1; }
+
+/* ===== ANIM ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+.anim { animation: fadeUp 0.3s ease both; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .page { padding: 16px 12px 40px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group.full { grid-column: 1; }
+  .page-header h1 { font-size: 18px; }
+  .user-chip span { display: none; }
+}
+</style>
 </head>
 <body>
-    <div class="card">
-        <h2>Cadastrar Novo Usuário</h2>
-        <input id="u_nome" placeholder="Nome Completo">
-        <input id="u_user" placeholder="Login">
-        <input id="u_pass" type="password" placeholder="Senha">
-        
-        <label>Nível de Acesso</label>
-        <select id="u_nivel" onchange="toggleRegiao()">
-            <option value="visualizador">Visualizador</option>
-            <option value="lider_regiao">Líder de Região</option>
-            <option value="administrador">Administrador</option>
-            <option value="dono">Dono</option>
-        </select>
 
-        <div id="div_regiao" style="display:none;">
-            <label>Vincular à Região</label>
-            <select id="u_regiao"></select>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="page-header anim">
+    <div class="page-header-left">
+      <div class="page-logo">🛡️</div>
+      <div>
+        <h1>Gestão de Acessos</h1>
+        <p>Usuários, níveis e permissões da plataforma</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="user-chip">
+        <div class="dot" id="header-initials">D</div>
+        <span id="header-nome">Dono</span>
+      </div>
+      <button class="btn btn-ghost" onclick="voltarHome()">← Início</button>
+    </div>
+  </div>
+
+  <!-- CRIAR USUÁRIO -->
+  <div class="card anim" style="animation-delay:0.05s">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="card-icon">➕</div>
+        Novo usuário
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nome completo</label>
+        <input id="u_nome" placeholder="Ex: João Silva" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Login</label>
+        <input id="u_user" placeholder="Ex: joao.silva" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <div class="input-wrap">
+          <input id="u_pass" type="password" placeholder="Mínimo 8 caracteres" oninput="avaliarSenha(this.value)">
+          <button type="button" class="toggle-pass" onclick="toggleSenha('u_pass',this)">👁</button>
         </div>
-
-        <button onclick="salvarUsuario()">Criar Usuário</button>
+        <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+        <span class="strength-text" id="strength-text"></span>
+      </div>
+      <div class="form-group">
+        <label>Confirmar senha</label>
+        <div class="input-wrap">
+          <input id="u_pass2" type="password" placeholder="Repita a senha">
+          <button type="button" class="toggle-pass" onclick="toggleSenha('u_pass2',this)">👁</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Nível de acesso</label>
+        <select id="u_nivel" onchange="toggleRegiao()">
+          <option value="visualizador">Visualizador</option>
+          <option value="lider_regiao">Líder de Região</option>
+          <option value="admin">Administrador</option>
+          <option value="dono">Dono</option>
+        </select>
+      </div>
+      <div class="form-group" id="div_regiao" style="display:none;">
+        <label>Região vinculada</label>
+        <select id="u_regiao">
+          <option value="">Selecione uma região</option>
+          <option value="metropolitana">Metropolitana</option>
+          <option value="baixadasLitoraneas">Baixadas Litorâneas</option>
+          <option value="norteFluminense">Norte Fluminense</option>
+          <option value="noroesteFluminense">Noroeste Fluminense</option>
+          <option value="serrana">Serrana</option>
+          <option value="centroSulFluminense">Centro-Sul Fluminense</option>
+          <option value="medioParaiba">Médio Paraíba</option>
+          <option value="costaVerde">Costa Verde</option>
+        </select>
+      </div>
     </div>
 
-    <div class="card">
-        <h3>Usuários Cadastrados</h3>
-        <div id="lista-usuarios">Carregando usuários...</div>
+    <button class="btn btn-primary btn-full" id="btn-criar" onclick="salvarUsuario()">
+      ✚ Criar usuário
+    </button>
+    <div class="feedback" id="feedback-criar"></div>
+  </div>
+
+  <!-- LISTA -->
+  <div class="card anim" style="animation-delay:0.1s">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="card-icon">👥</div>
+        Usuários cadastrados
+      </div>
+      <span id="users-count" style="font-size:12px;color:var(--slate-500);font-weight:600;"></span>
     </div>
+    <div class="users-list" id="lista-usuarios">
+      <div class="state-msg"><div class="icon">⏳</div><p>Carregando...</p></div>
+    </div>
+  </div>
 
-    <script src="./data.js"></script>
-    <script>
-        function verificarPermissao() {
-    const user = JSON.parse(localStorage.getItem('user'));
-    const token = localStorage.getItem('token');
+</div>
 
-    if (!token || !user || user.nivel !== 'dono') {
-        alert("Acesso restrito.");
-        location.href = "index.html";
-    }
+<!-- MODAL EDITAR -->
+<div class="modal-overlay" id="modal-editar" onclick="if(event.target===this)fecharModal()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="fecharModal()">✕</button>
+    <div class="modal-title">✏️ Editar usuário</div>
+    <div class="modal-form">
+      <div class="form-group">
+        <label>Nome completo</label>
+        <input id="edit-nome" placeholder="Nome">
+      </div>
+      <div class="form-group">
+        <label>Nova senha <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;">(deixe em branco para não alterar)</span></label>
+        <div class="input-wrap">
+          <input id="edit-pass" type="password" placeholder="Nova senha (opcional)">
+          <button type="button" class="toggle-pass" onclick="toggleSenha('edit-pass',this)">👁</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Nível de acesso</label>
+        <select id="edit-nivel" onchange="toggleRegiaoModal()">
+          <option value="visualizador">Visualizador</option>
+          <option value="lider_regiao">Líder de Região</option>
+          <option value="admin">Administrador</option>
+          <option value="dono">Dono</option>
+        </select>
+      </div>
+      <div class="form-group" id="edit-div-regiao" style="display:none;">
+        <label>Região vinculada</label>
+        <select id="edit-regiao">
+          <option value="">Selecione uma região</option>
+          <option value="metropolitana">Metropolitana</option>
+          <option value="baixadasLitoraneas">Baixadas Litorâneas</option>
+          <option value="norteFluminense">Norte Fluminense</option>
+          <option value="noroesteFluminense">Noroeste Fluminense</option>
+          <option value="serrana">Serrana</option>
+          <option value="centroSulFluminense">Centro-Sul Fluminense</option>
+          <option value="medioParaiba">Médio Paraíba</option>
+          <option value="costaVerde">Costa Verde</option>
+        </select>
+      </div>
+      <div class="feedback" id="feedback-editar"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-salvar-edit" onclick="salvarEdicao()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://map-backend-j88s.onrender.com/api'
+
+const REGIOES_LABEL = {
+  metropolitana:       'Metropolitana',
+  baixadasLitoraneas:  'Baixadas Litorâneas',
+  norteFluminense:     'Norte Fluminense',
+  noroesteFluminense:  'Noroeste Fluminense',
+  serrana:             'Serrana',
+  centroSulFluminense: 'Centro-Sul Fluminense',
+  medioParaiba:        'Médio Paraíba',
+  costaVerde:          'Costa Verde',
 }
 
-verificarPermissao();
+const NIVEL_LABEL = {
+  dono:         'Dono',
+  admin:        'Administrador',
+  lider_regiao: 'Líder de Região',
+  visualizador: 'Visualizador',
+}
 
-        const API = 'https://map-backend-j88s.onrender.com';
-        const API_URL = 'https://map-backend-j88s.onrender.com/api';
+// ── Auth ──────────────────────────────────────────────────
+;(function init() {
+  const user  = JSON.parse(localStorage.getItem('user') || 'null')
+  const token = localStorage.getItem('token')
+  if (!token || !user || user.nivel !== 'dono') {
+    alert('Acesso restrito ao Dono do sistema.')
+    location.href = '../index.html'
+    return
+  }
+  const nome = user.nome || user.usuario || 'Dono'
+  document.getElementById('header-nome').textContent = nome
+  document.getElementById('header-initials').textContent =
+    nome.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase()
+})()
 
 async function apiFetch(endpoint, options = {}) {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-        alert("Sessão expirada.");
-        location.href = "index.html"; // ou página de login
-        throw new Error("Sem token");
+  const token = localStorage.getItem('token')
+  if (!token) { logout(); throw new Error('Sem token') }
+  const res = await fetch(API_URL + endpoint, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + token,
+      ...(options.headers || {})
     }
-
-    const res = await fetch(`${API_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + token,
-            ...(options.headers || {})
-        }
-    });
-
-    if (res.status === 401 || res.status === 403) {
-        alert("Acesso negado.");
-        location.href = "index.html";
-        throw new Error("Sem permissão");
-    }
-
-    return res;
+  })
+  if (res.status === 401 || res.status === 403) {
+    alert('Sessão expirada ou acesso negado.')
+    logout()
+    throw new Error('Sem permissão')
+  }
+  return res
 }
 
+function logout() {
+  localStorage.removeItem('user')
+  localStorage.removeItem('token')
+  location.href = '../index.html'
+}
 
-        function toggleRegiao() {
-            const nivel = document.getElementById('u_nivel').value;
-            const div = document.getElementById('div_regiao');
-            div.style.display = (nivel === 'lider_regiao') ? 'block' : 'none';
+function voltarHome() { location.href = '../index.html' }
 
-            if (nivel === 'lider_regiao' && document.getElementById('u_regiao').options.length === 0) {
-                const select = document.getElementById('u_regiao');
-                Object.keys(regions).forEach(r => {
-                    if (r === 'all') return;
-                    const opt = document.createElement('option');
-                    opt.value = r;
-                    opt.textContent = r;
-                    select.appendChild(opt);
-                });
-            }
-        }
+// ── UI helpers ────────────────────────────────────────────
+function toggleRegiao() {
+  document.getElementById('div_regiao').style.display =
+    document.getElementById('u_nivel').value === 'lider_regiao' ? 'block' : 'none'
+}
 
-        async function salvarUsuario() {
-    const nivel = document.getElementById('u_nivel').value;
+function toggleRegiaoModal() {
+  document.getElementById('edit-div-regiao').style.display =
+    document.getElementById('edit-nivel').value === 'lider_regiao' ? 'block' : 'none'
+}
 
-    const dados = {
-        nome: document.getElementById('u_nome').value.trim(),
-        usuario: document.getElementById('u_user').value.trim(),
-        senha: document.getElementById('u_pass').value.trim(),
-        nivel
-    };
+function toggleSenha(id, btn) {
+  const el = document.getElementById(id)
+  el.type = el.type === 'password' ? 'text' : 'password'
+  btn.textContent = el.type === 'password' ? '👁' : '🙈'
+}
 
-    if (nivel === 'lider_regiao') {
-        dados.regiao_vinculada = document.getElementById('u_regiao').value || null;
-    }
+function avaliarSenha(v) {
+  const fill = document.getElementById('strength-fill')
+  const text = document.getElementById('strength-text')
+  if (!v) { fill.style.width='0'; text.textContent=''; return }
+  let s = 0
+  if (v.length >= 8)  s++
+  if (v.length >= 12) s++
+  if (/[A-Z]/.test(v)) s++
+  if (/[0-9]/.test(v)) s++
+  if (/[^A-Za-z0-9]/.test(v)) s++
+  const lvl = [
+    ['20%','#dc2626','🔴 Muito fraca'],
+    ['40%','#d97706','🟠 Fraca'],
+    ['60%','#ca8a04','🟡 Razoável'],
+    ['80%','#16a34a','🟢 Boa'],
+    ['100%','#059669','✅ Forte'],
+  ][Math.min(s,4)]
+  fill.style.width = lvl[0]
+  fill.style.background = lvl[1]
+  text.textContent = lvl[2]
+  text.style.color = lvl[1]
+}
 
-    const res = await apiFetch('/usuarios', {
-        method: 'POST',
-        body: JSON.stringify(dados)
-    });
+function showFeedback(id, msg, tipo) {
+  const el = document.getElementById(id)
+  el.textContent = msg
+  el.className = 'feedback ' + tipo
+  setTimeout(() => { el.className = 'feedback' }, 4000)
+}
 
-    const resposta = await res.text();
-    console.log("Resposta backend:", resposta);
+// ── Validar novo usuário ──────────────────────────────────
+function validar() {
+  const nome  = document.getElementById('u_nome').value.trim()
+  const user  = document.getElementById('u_user').value.trim()
+  const pass  = document.getElementById('u_pass').value
+  const pass2 = document.getElementById('u_pass2').value
+  const nivel = document.getElementById('u_nivel').value
+  const reg   = document.getElementById('u_regiao').value
 
+  if (!nome)  { showFeedback('feedback-criar','⚠️ Informe o nome completo.','error'); return false }
+  if (!user)  { showFeedback('feedback-criar','⚠️ Informe o login.','error'); return false }
+  if (!/^[a-zA-Z0-9._-]+$/.test(user)) {
+    showFeedback('feedback-criar','⚠️ Login inválido. Use apenas letras, números, . _ -','error')
+    return false
+  }
+  if (pass.length < 8) { showFeedback('feedback-criar','⚠️ Senha deve ter pelo menos 8 caracteres.','error'); return false }
+  if (pass !== pass2)  { showFeedback('feedback-criar','⚠️ As senhas não coincidem.','error'); return false }
+  if (nivel === 'lider_regiao' && !reg) {
+    showFeedback('feedback-criar','⚠️ Selecione uma região para o Líder.','error'); return false
+  }
+  return true
+}
+
+// ── Criar ─────────────────────────────────────────────────
+async function salvarUsuario() {
+  if (!validar()) return
+  const btn = document.getElementById('btn-criar')
+  btn.textContent = 'Criando...'
+  btn.disabled = true
+
+  const nivel = document.getElementById('u_nivel').value
+  const dados = {
+    nome:    document.getElementById('u_nome').value.trim(),
+    usuario: document.getElementById('u_user').value.trim().toLowerCase(),
+    senha:   document.getElementById('u_pass').value,
+    nivel,
+    regiao_vinculada: nivel === 'lider_regiao' ? document.getElementById('u_regiao').value : null
+  }
+
+  try {
+    const res = await apiFetch('/usuarios', { method: 'POST', body: JSON.stringify(dados) })
     if (res.ok) {
-        alert("Usuário cadastrado!");
-        carregarUsuarios();
+      showFeedback('feedback-criar','✅ Usuário criado com sucesso!','success')
+      ;['u_nome','u_user','u_pass','u_pass2'].forEach(id => document.getElementById(id).value = '')
+      document.getElementById('u_nivel').value = 'visualizador'
+      document.getElementById('div_regiao').style.display = 'none'
+      document.getElementById('strength-fill').style.width = '0'
+      document.getElementById('strength-text').textContent = ''
+      carregarUsuarios()
     } else {
-        alert("Erro: " + resposta);
+      const d = await res.json().catch(() => ({}))
+      showFeedback('feedback-criar','❌ ' + (d.error || 'Erro ao criar usuário.'),'error')
     }
+  } catch { showFeedback('feedback-criar','❌ Erro de conexão.','error') }
+  finally {
+    btn.textContent = '✚ Criar usuário'
+    btn.disabled = false
+  }
 }
 
-        async function carregarUsuarios() {
-            try {
-                const res = await apiFetch('/usuarios');
-                const usuarios = await res.json();
-                const lista = document.getElementById('lista-usuarios');
-                
-                if (usuarios.length === 0) {
-                    lista.innerHTML = "Nenhum usuário encontrado.";
-                    return;
-                }
+// ── Listar ────────────────────────────────────────────────
+async function carregarUsuarios() {
+  const lista = document.getElementById('lista-usuarios')
+  lista.innerHTML = '<div class="state-msg"><div class="icon">⏳</div><p>Carregando...</p></div>'
+  try {
+    const res = await apiFetch('/usuarios')
+    const usuarios = await res.json()
+    document.getElementById('users-count').textContent =
+      usuarios.length + ' usuário' + (usuarios.length !== 1 ? 's' : '')
 
-                lista.innerHTML = usuarios.map(u => `
-                    <div class="user-item">
-                        <div class="user-info">
-                            <strong>${u.nome}</strong>
-                            <span class="user-nivel">${u.nivel} ${u.regiao_vinculada ? ' - ' + u.regiao_vinculada : ''}</span>
-                        </div>
-                        <button class="btn-del" onclick="excluirUsuario('${u.id}')">Excluir</button>
-                    </div>
-                `).join('');
-            } catch (err) {
-                document.getElementById('lista-usuarios').innerHTML = "Erro ao carregar lista.";
-            }
-        }
+    if (!usuarios.length) {
+      lista.innerHTML = '<div class="state-msg"><div class="icon">👥</div><p>Nenhum usuário</p></div>'
+      return
+    }
 
-        async function excluirUsuario(id) {
-            if (!confirm("Deseja realmente excluir este usuário?")) return;
+    const meId = JSON.parse(localStorage.getItem('user') || '{}').id
+    lista.innerHTML = ''
 
-            try {
-                const res = await apiFetch(`/usuarios/${id}`, {
-                    method: 'DELETE'
-                });
+    usuarios.forEach(u => {
+      const initials = (u.nome || u.usuario || '?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase()
+      const nivelClass = { dono:'nivel-dono', admin:'nivel-admin', lider_regiao:'nivel-lider', visualizador:'nivel-visualizador' }[u.nivel] || 'nivel-visualizador'
+      const regiaoLabel = u.regiao_vinculada ? (REGIOES_LABEL[u.regiao_vinculada] || u.regiao_vinculada) : ''
+      const isSelf = String(u.id) === String(meId)
 
-                if (res.ok) {
-                    alert("Usuário removido!");
-                    carregarUsuarios();
-                } else {
-                    alert("Erro ao excluir usuário.");
-                }
-            } catch (err) {
-                console.error("Erro na conexão:", err);
-            }
-        }
+      const div = document.createElement('div')
+      div.className = 'user-item'
+      div.innerHTML = `
+        <div class="user-avatar">${initials}</div>
+        <div class="user-info">
+          <div class="user-nome">${u.nome || '—'}${isSelf ? ' <span style="font-size:11px;color:var(--slate-400);font-weight:500;">(você)</span>' : ''}</div>
+          <div class="user-sub">
+            <span>@${u.usuario}</span>
+            <span class="nivel-badge ${nivelClass}">${NIVEL_LABEL[u.nivel] || u.nivel}</span>
+            ${regiaoLabel ? `<span>· ${regiaoLabel}</span>` : ''}
+          </div>
+        </div>
+        <div class="user-actions">
+          <button class="btn-icon btn-icon-edit" title="Editar" data-u='${JSON.stringify(u).replace(/'/g,"&#39;")}'>✏️</button>
+          ${isSelf ? '' : `<button class="btn-icon btn-icon-del" title="Excluir" data-id="${u.id}" data-nome="${(u.nome||'').replace(/"/g,'&quot;')}">🗑</button>`}
+        </div>`
 
-        carregarUsuarios();
-    </script>
+      div.querySelector('.btn-icon-edit').addEventListener('click', () => {
+        abrirModalEditar(u)
+      })
+      const btnDel = div.querySelector('.btn-icon-del')
+      if (btnDel) btnDel.addEventListener('click', () => excluirUsuario(u.id, u.nome || u.usuario))
+
+      lista.appendChild(div)
+    })
+  } catch {
+    lista.innerHTML = '<div class="state-msg"><div class="icon">⚠️</div><p>Erro ao carregar</p></div>'
+  }
+}
+
+// ── Excluir ───────────────────────────────────────────────
+async function excluirUsuario(id, nome) {
+  if (!confirm(`Excluir o usuário "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return
+  try {
+    const res = await apiFetch('/usuarios/' + id, { method: 'DELETE' })
+    if (res.ok) carregarUsuarios()
+    else alert('Erro ao excluir usuário.')
+  } catch { alert('Erro de conexão.') }
+}
+
+// ── Modal editar ──────────────────────────────────────────
+let _editId = null
+
+function abrirModalEditar(u) {
+  _editId = u.id
+  document.getElementById('edit-nome').value  = u.nome || ''
+  document.getElementById('edit-pass').value  = ''
+  document.getElementById('edit-nivel').value = u.nivel || 'visualizador'
+  document.getElementById('edit-regiao').value = u.regiao_vinculada || ''
+  toggleRegiaoModal()
+  document.getElementById('feedback-editar').className = 'feedback'
+  document.getElementById('modal-editar').classList.add('open')
+}
+
+function fecharModal() {
+  document.getElementById('modal-editar').classList.remove('open')
+  _editId = null
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModal() })
+
+async function salvarEdicao() {
+  if (!_editId) return
+  const nome  = document.getElementById('edit-nome').value.trim()
+  const pass  = document.getElementById('edit-pass').value
+  const nivel = document.getElementById('edit-nivel').value
+  const reg   = document.getElementById('edit-regiao').value
+
+  if (!nome) { showFeedback('feedback-editar','⚠️ Informe o nome.','error'); return }
+  if (nivel === 'lider_regiao' && !reg) { showFeedback('feedback-editar','⚠️ Selecione uma região.','error'); return }
+  if (pass && pass.length < 8) { showFeedback('feedback-editar','⚠️ Nova senha deve ter pelo menos 8 caracteres.','error'); return }
+
+  const btn = document.getElementById('btn-salvar-edit')
+  btn.textContent = 'Salvando...'
+  btn.disabled = true
+
+  const dados = {
+    nome, nivel,
+    regiao_vinculada: nivel === 'lider_regiao' ? reg : null,
+    ...(pass ? { senha: pass } : {})
+  }
+
+  try {
+    const res = await apiFetch('/usuarios/' + _editId, { method: 'PUT', body: JSON.stringify(dados) })
+    if (res.ok) { fecharModal(); carregarUsuarios() }
+    else {
+      const d = await res.json().catch(() => ({}))
+      showFeedback('feedback-editar','❌ ' + (d.error || 'Erro ao salvar.'),'error')
+    }
+  } catch { showFeedback('feedback-editar','❌ Erro de conexão.','error') }
+  finally { btn.textContent = 'Salvar'; btn.disabled = false }
+}
+
+carregarUsuarios()
+</script>
 </body>
 </html>

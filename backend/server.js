@@ -825,36 +825,17 @@ app.get('/api/liderancas', auth, async (req, res) => {
 
     const mapaFiltro = req.query.mapa || null;
     if (mapaFiltro) {
-      // Para mapas de bairro (angra, rjcapital): expõe cidade também como "bairro"
-      // para que o frontend use c.bairro como chave do cache
-      query = `
-        SELECT
-          cidade AS bairro,
-          cidade,
-          MIN(l.regiao) AS regiao,
-          json_agg(l.* ORDER BY l.id) AS liderancas
-        FROM liderancas l
-        WHERE mapa = $1
-        GROUP BY cidade
-      `;
+      query = `SELECT cidade, json_agg(l.*) AS liderancas FROM liderancas l WHERE mapa = $1 GROUP BY cidade`;
       params = [mapaFiltro];
     } else {
-      // Para o painel geral: retorna cidade + regiao para filtros
-      query = `
-        SELECT
-          cidade,
-          MIN(l.regiao) AS regiao,
-          json_agg(l.* ORDER BY l.id) AS liderancas
-        FROM liderancas l
-        GROUP BY cidade
-      `;
+      query = `SELECT cidade, json_agg(l.*) AS liderancas FROM liderancas l GROUP BY cidade`;
     }
 
     const result = await pool.query(query, params);
     res.json(result.rows);
 
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar liderancas' });
+    res.status(500).json({ error: 'Erro ao buscar lideranças' });
   }
 });
 
@@ -1211,9 +1192,14 @@ app.post('/api/usuarios',
   try {
     const { usuario, senha, nome, nivel, regiao_vinculada } = req.body;
     // 🔎 Validação básica
-if (!usuario || !senha || !nivel || !regiao_vinculada) {
+if (!usuario || !senha || !nivel) {
   return res.status(400).json({
-    error: 'Usuario, senha, nivel e regiao_vinculada são obrigatórios'
+    error: 'Usuario, senha e nivel são obrigatórios'
+  });
+}
+if (nivel === 'lider_regiao' && !regiao_vinculada) {
+  return res.status(400).json({
+    error: 'Região vinculada é obrigatória para Líder de Região'
   });
 }
 const niveisPermitidos = ['dono', 'admin', 'visualizador', 'lider_regiao'];
@@ -1261,6 +1247,55 @@ app.get('/api/usuarios',
   }
 });
 
+
+// Rota para editar usuário
+app.put('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, nivel, regiao_vinculada, senha } = req.body;
+
+    const niveisPermitidos = ['dono', 'admin', 'visualizador', 'lider_regiao'];
+    if (nivel && !niveisPermitidos.includes(nivel)) {
+      return res.status(400).json({ error: 'Nível inválido' });
+    }
+
+    // Não deixa o dono rebaixar a própria conta
+    const meId = req.user.id;
+    if (String(id) === String(meId) && nivel && nivel !== 'dono') {
+      return res.status(400).json({ error: 'Você não pode alterar o seu próprio nível.' });
+    }
+
+    if (senha) {
+      if (senha.length < 8) {
+        return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres.' });
+      }
+      const hash = await require('bcrypt').hash(senha, 10);
+      await pool.query(
+        `UPDATE usuarios SET
+           nome = COALESCE($1, nome),
+           nivel = COALESCE($2, nivel),
+           regiao_vinculada = $3,
+           senha_hash = $4
+         WHERE id = $5`,
+        [nome || null, nivel || null, regiao_vinculada || null, hash, id]
+      );
+    } else {
+      await pool.query(
+        `UPDATE usuarios SET
+           nome = COALESCE($1, nome),
+           nivel = COALESCE($2, nivel),
+           regiao_vinculada = $3
+         WHERE id = $4`,
+        [nome || null, nivel || null, regiao_vinculada || null, id]
+      );
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Erro ao editar usuário:', err);
+    res.status(500).json({ error: 'Erro interno ao editar usuário.' });
+  }
+});
 // Rota para excluir usuário
 app.delete('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
 
