@@ -180,23 +180,61 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 0 24px 48px;
+  padding: 0 24px 52px;
 }
 
 .cards-grid {
   width: 100%;
   max-width: 1060px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 18px;
+  /* Linha 1: card destaque full-width */
+  /* Linha 2: 3 colunas iguais */
+  /* Linha 3: 3 colunas iguais */
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+  gap: 16px;
 }
 
-/* ===== CARD ===== */
+/* Card destaque ocupa linha inteira */
+.card-hero {
+  grid-column: 1 / -1;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 28px;
+  padding: 28px 32px !important;
+}
+
+.card-hero .card-icon-wrap {
+  width: 64px !important;
+  height: 64px !important;
+  font-size: 28px !important;
+  flex-shrink: 0;
+  margin-bottom: 0 !important;
+}
+
+.card-hero .card-body {
+  flex: 1;
+}
+
+.card-hero .card-title {
+  font-size: 18px !important;
+  margin-bottom: 6px !important;
+}
+
+.card-hero .card-desc {
+  max-width: 500px;
+}
+
+.card-hero .card-cta {
+  margin-top: 14px !important;
+}
+
+/* ===== CARD BASE ===== */
 .card {
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.09);
   border-radius: 20px;
-  padding: 26px 24px;
+  padding: 24px 22px;
   display: flex;
   flex-direction: column;
   text-decoration: none;
@@ -208,22 +246,34 @@ body {
   position: relative;
   overflow: hidden;
   animation: fadeUp 0.5s ease both;
+  /* Altura mínima uniforme para alinhar os cards */
+  min-height: 200px;
 }
 
 .card::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 60%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 55%);
   pointer-events: none;
   border-radius: inherit;
 }
 
+/* Linha decorativa superior colorida */
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 20px; right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  border-radius: 1px;
+}
+
 .card:hover {
-  transform: translateY(-6px) scale(1.01);
+  transform: translateY(-5px) scale(1.005);
   background: rgba(255,255,255,0.1);
-  border-color: rgba(255,255,255,0.2);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.18);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.07);
 }
 
 .card:active {
@@ -231,32 +281,41 @@ body {
 }
 
 .card-icon-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  margin-bottom: 18px;
+  font-size: 21px;
+  margin-bottom: 16px;
   position: relative;
   z-index: 1;
+  flex-shrink: 0;
+}
+
+/* wrapper para body nos cards normais */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .card-title {
   font-family: 'Sora', sans-serif;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: rgba(255,255,255,0.92);
-  margin-bottom: 8px;
+  margin-bottom: 7px;
   position: relative;
   z-index: 1;
+  line-height: 1.3;
 }
 
 .card-desc {
-  font-size: 13px;
-  color: rgba(255,255,255,0.45);
-  line-height: 1.55;
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.42);
+  line-height: 1.6;
   flex: 1;
   position: relative;
   z-index: 1;
@@ -266,74 +325,55 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 20px;
-  font-size: 12px;
+  margin-top: 18px;
+  font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: 0.3px;
-  color: rgba(255,255,255,0.75);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
   position: relative;
   z-index: 1;
   transition: gap 0.2s, color 0.2s;
 }
 
-.card:hover .card-cta { gap: 10px; color: rgba(255,255,255,1); }
+.card:hover .card-cta { gap: 10px; color: rgba(255,255,255,0.95); }
 
 .card-cta-arrow {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.75);
+  background: rgba(255,255,255,0.12);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   transition: transform 0.2s;
 }
 
 .card:hover .card-cta-arrow { transform: translateX(3px); }
 
-/* Color themes per card */
-.card-blue .card-icon-wrap { background: rgba(21,101,192,0.35); }
+/* ===== COLOR ACCENTS ===== */
+/* Todos os ícones têm opacidade consistente */
+.card-blue   .card-icon-wrap { background: rgba(21,101,192,0.3);  box-shadow: 0 4px 12px rgba(21,101,192,0.25); }
+.card-blue:hover   { border-color: rgba(96,165,250,0.25); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(21,101,192,0.12); }
 
-.card-blue .card-cta-arrow { background: rgba(255,255,255,0.15); }
-.card-blue:hover { border-color: rgba(96,165,250,0.3); }
+.card-green  .card-icon-wrap { background: rgba(5,150,105,0.3);   box-shadow: 0 4px 12px rgba(5,150,105,0.2); }
+.card-green:hover  { border-color: rgba(52,211,153,0.25); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(5,150,105,0.1); }
 
-.card-purple .card-icon-wrap { background: rgba(124,58,237,0.3); }
+.card-purple .card-icon-wrap { background: rgba(124,58,237,0.3);  box-shadow: 0 4px 12px rgba(124,58,237,0.2); }
+.card-purple:hover { border-color: rgba(167,139,250,0.25); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(124,58,237,0.1); }
 
-.card-purple .card-cta-arrow { background: rgba(255,255,255,0.15); }
-.card-purple:hover { border-color: rgba(167,139,250,0.3); }
+.card-teal   .card-icon-wrap { background: rgba(13,148,136,0.3);  box-shadow: 0 4px 12px rgba(13,148,136,0.2); }
+.card-teal:hover   { border-color: rgba(94,234,212,0.25); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(13,148,136,0.1); }
 
-.card-teal .card-icon-wrap { background: rgba(13,148,136,0.3); }
+.card-amber  .card-icon-wrap { background: rgba(217,119,6,0.3);   box-shadow: 0 4px 12px rgba(217,119,6,0.2); }
+.card-amber:hover  { border-color: rgba(251,191,36,0.25); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(217,119,6,0.1); }
 
-.card-teal .card-cta-arrow { background: rgba(255,255,255,0.15); }
-.card-teal:hover { border-color: rgba(94,234,212,0.3); }
-
-.card-amber .card-icon-wrap { background: rgba(217,119,6,0.3); }
-
-.card-amber .card-cta-arrow { background: rgba(255,255,255,0.15); }
-.card-amber:hover { border-color: rgba(251,191,36,0.3); }
-
-.card-rose .card-icon-wrap { background: rgba(190,18,60,0.3); }
-
-.card-rose .card-cta-arrow { background: rgba(255,255,255,0.15); }
-.card-rose:hover { border-color: rgba(251,113,133,0.3); }
-
-.card-green .card-icon-wrap { background: rgba(5,150,105,0.3); }
-
-.card-green .card-cta-arrow { background: rgba(255,255,255,0.15); }
-.card-green:hover { border-color: rgba(52,211,153,0.3); }
-
-/* Featured card accent */
-.card-featured {
-  border-color: rgba(96,165,250,0.25);
-  background: rgba(21,101,192,0.1);
-}
+.card-rose   .card-icon-wrap { background: rgba(190,18,60,0.3);   box-shadow: 0 4px 12px rgba(190,18,60,0.2); }
+.card-rose:hover   { border-color: rgba(251,113,133,0.25); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(190,18,60,0.1); }
 
 /* Admin card (hidden by default) */
-#card-admin {
-  display: none;
-}
+#card-admin { display: none; }
 
 /* ===== FOOTER ===== */
 footer {
@@ -362,21 +402,29 @@ footer {
   to   { opacity: 1; transform: none; }
 }
 
-.card:nth-child(1) { animation-delay: 0.15s; }
-.card:nth-child(2) { animation-delay: 0.22s; }
-.card:nth-child(3) { animation-delay: 0.29s; }
-.card:nth-child(4) { animation-delay: 0.36s; }
-.card:nth-child(5) { animation-delay: 0.43s; }
-.card:nth-child(6) { animation-delay: 0.50s; }
+.card:nth-child(1) { animation-delay: 0.12s; }
+.card:nth-child(2) { animation-delay: 0.19s; }
+.card:nth-child(3) { animation-delay: 0.26s; }
+.card:nth-child(4) { animation-delay: 0.33s; }
+.card:nth-child(5) { animation-delay: 0.40s; }
+.card:nth-child(6) { animation-delay: 0.47s; }
+.card:nth-child(7) { animation-delay: 0.54s; }
 
 /* ===== MOBILE ===== */
+@media (max-width: 860px) {
+  .cards-grid { grid-template-columns: repeat(2, 1fr); }
+  .card-hero { flex-direction: column !important; gap: 0 !important; }
+  .card-hero .card-icon-wrap { margin-bottom: 14px !important; }
+}
+
 @media (max-width: 600px) {
   .top-nav { padding: 16px 20px; }
   .hero { padding: 32px 20px 24px; }
   .hero h1 { font-size: 28px; }
   .cards-section { padding: 0 16px 36px; }
   .cards-grid { grid-template-columns: 1fr; gap: 12px; }
-  .card { padding: 22px 20px; }
+  .card { padding: 20px 18px; min-height: unset; }
+  .card-hero { padding: 20px 18px !important; }
 }
 </style>
 </head>
@@ -459,74 +507,69 @@ setTimeout(function() {
   <section class="cards-section">
     <div class="cards-grid">
 
-      <a href="./" class="card card-blue">
+      <!-- ── DESTAQUE: Mapa Estratégico ── -->
+      <a href="./" class="card card-blue card-hero">
         <div class="card-icon-wrap">🗺️</div>
-        <div class="card-title">Mapa Estratégico</div>
-        <div class="card-desc">Visualização interativa de municípios, lideranças e dados eleitorais organizados por região.</div>
-        <div class="card-cta">
-          Abrir mapa
-          <div class="card-cta-arrow">→</div>
+        <div class="card-body">
+          <div class="card-title">Mapa Estratégico do Estado</div>
+          <div class="card-desc">Visualização interativa de todos os municípios do Rio de Janeiro — lideranças, dados eleitorais e expectativas organizadas por região.</div>
+          <div class="card-cta">Abrir mapa <div class="card-cta-arrow">→</div></div>
         </div>
       </a>
 
+      <!-- ── LINHA 2: Mapas por cidade ── -->
       <a href="./angra/" class="card card-green">
         <div class="card-icon-wrap">🏝️</div>
-        <div class="card-title">Mapa de Angra</div>
-        <div class="card-desc">Painel de lideranças e expectativa de votos por bairro em Angra dos Reis, com ranking por campanha.</div>
-        <div class="card-cta">
-          Abrir mapa
-          <div class="card-cta-arrow">→</div>
-        </div>
-      </a>
-<a href="./rjcapital/" class="card card-blue card-featured">
-  <div class="card-icon-wrap">🏙️</div>
-  <div class="card-title">Mapa Rio de Janeiro</div>
-  <div class="card-desc">
-    Visualização estratégica dos bairros da capital com expectativa eleitoral,
-    lideranças e análise territorial detalhada.
-  </div>
-  <div class="card-cta">
-    Abrir mapa
-    <div class="card-cta-arrow">→</div>
-  </div>
-</a>
-      <a href="./admin/" class="card card-purple">
-        <div class="card-icon-wrap">👥</div>
-        <div class="card-title">Painel Administrativo</div>
-        <div class="card-desc">Cadastro e gerenciamento completo das lideranças com controle estratégico e histórico.</div>
-        <div class="card-cta">
-          Abrir painel
-          <div class="card-cta-arrow">→</div>
+        <div class="card-body">
+          <div class="card-title">Mapa de Angra dos Reis</div>
+          <div class="card-desc">Lideranças e expectativa de votos por bairro, com ranking por campanha e distritos.</div>
+          <div class="card-cta">Abrir mapa <div class="card-cta-arrow">→</div></div>
         </div>
       </a>
 
-      <a href="./liderancas.html" class="card card-teal">
-        <div class="card-icon-wrap">📋</div>
-        <div class="card-title">Lista Completa</div>
-        <div class="card-desc">Consulta rápida com busca inteligente por nome, cidade, região ou contato.</div>
-        <div class="card-cta">
-          Ver lideranças
-          <div class="card-cta-arrow">→</div>
+      <a href="./rjcapital/" class="card card-teal">
+        <div class="card-icon-wrap">🏙️</div>
+        <div class="card-body">
+          <div class="card-title">Mapa Rio de Janeiro</div>
+          <div class="card-desc">Bairros da capital com expectativa eleitoral, lideranças e análise territorial detalhada.</div>
+          <div class="card-cta">Abrir mapa <div class="card-cta-arrow">→</div></div>
         </div>
       </a>
 
       <a href="./analise/" class="card card-amber">
         <div class="card-icon-wrap">📊</div>
-        <div class="card-title">Análise Eleitoral</div>
-        <div class="card-desc">Dashboard avançado com ranking, comparativos e histórico por ano e por região.</div>
-        <div class="card-cta">
-          Abrir análise
-          <div class="card-cta-arrow">→</div>
+        <div class="card-body">
+          <div class="card-title">Análise Eleitoral</div>
+          <div class="card-desc">Dashboard com ranking, comparativos e histórico por ano e por região.</div>
+          <div class="card-cta">Abrir análise <div class="card-cta-arrow">→</div></div>
+        </div>
+      </a>
+
+      <!-- ── LINHA 3: Gestão ── -->
+      <a href="./admin/" class="card card-purple">
+        <div class="card-icon-wrap">👥</div>
+        <div class="card-body">
+          <div class="card-title">Painel Administrativo</div>
+          <div class="card-desc">Cadastro e gerenciamento completo de lideranças com controle estratégico.</div>
+          <div class="card-cta">Abrir painel <div class="card-cta-arrow">→</div></div>
+        </div>
+      </a>
+
+      <a href="./liderancas.html" class="card card-blue">
+        <div class="card-icon-wrap">📋</div>
+        <div class="card-body">
+          <div class="card-title">Lista de Lideranças</div>
+          <div class="card-desc">Busca inteligente por nome, cidade, bairro, região ou contato em todas as lideranças.</div>
+          <div class="card-cta">Ver lideranças <div class="card-cta-arrow">→</div></div>
         </div>
       </a>
 
       <a href="./usuarios.html" class="card card-rose" id="card-admin">
         <div class="card-icon-wrap">🛡️</div>
-        <div class="card-title">Gestão de Acessos</div>
-        <div class="card-desc">Controle níveis de permissão, gerencie usuários e configure a segurança da plataforma.</div>
-        <div class="card-cta">
-          Configurar
-          <div class="card-cta-arrow">→</div>
+        <div class="card-body">
+          <div class="card-title">Gestão de Acessos</div>
+          <div class="card-desc">Permissões, usuários e configurações de segurança da plataforma.</div>
+          <div class="card-cta">Configurar <div class="card-cta-arrow">→</div></div>
         </div>
       </a>
 

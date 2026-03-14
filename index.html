@@ -1203,6 +1203,56 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
   cursor: pointer;
   font-family: inherit;
 }
+
+/* ===== CARD TOTAIS REGIÃO ===== */
+#regiao-totais-card {
+  background: linear-gradient(135deg, var(--blue-deep), #1976d2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 10px;
+  color: white;
+  display: none;
+  animation: fadeUp 0.3s ease;
+}
+
+.regiao-totais-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 10px;
+}
+
+.regiao-totais-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  font-size: 13px;
+}
+
+.regiao-totais-row:first-of-type { border-top: none; }
+
+.regiao-totais-label {
+  color: rgba(255,255,255,0.7);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.regiao-totais-val {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: white;
+}
+
+.regiao-totais-val.highlight {
+  color: #fbbf24;
+  font-size: 18px;
+}
 </style>
 </head>
 <body>
@@ -1355,6 +1405,26 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
         <option value="medioParaiba">Médio Paraíba</option>
         <option value="costaVerde">Costa Verde</option>
       </select>
+
+      <div id="regiao-totais-card">
+        <div class="regiao-totais-title" id="regiao-totais-nome">—</div>
+        <div class="regiao-totais-row">
+          <span class="regiao-totais-label">🗳️ Votos válidos (2022)</span>
+          <span class="regiao-totais-val" id="regiao-total-votos">0</span>
+        </div>
+        <div class="regiao-totais-row">
+          <span class="regiao-totais-label">📊 Expectativa Célia</span>
+          <span class="regiao-totais-val" id="regiao-exp-celia">0</span>
+        </div>
+        <div class="regiao-totais-row">
+          <span class="regiao-totais-label">📊 Expectativa Fernando</span>
+          <span class="regiao-totais-val" id="regiao-exp-fernando">0</span>
+        </div>
+        <div class="regiao-totais-row" style="margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.25);">
+          <span class="regiao-totais-label" style="color:rgba(255,255,255,0.9);font-weight:700;">🏆 Total expectativa</span>
+          <span class="regiao-totais-val highlight" id="regiao-exp-total">0</span>
+        </div>
+      </div>
     </div>
 
     <!-- LIDERANÇAS -->
@@ -3320,9 +3390,68 @@ carregarPins();
       });
 
     // ===== Filtrar por região (Adiciona o listener após o mapa ser inicializado) =====
+
+// ─────────────────────────────────────────────
+// TOTAIS DA REGIÃO SELECIONADA
+// ─────────────────────────────────────────────
+function calcularTotaisRegiao(key) {
+  const card = document.getElementById('regiao-totais-card')
+
+  if (!key || key === 'all') {
+    card.style.display = 'none'
+    return
+  }
+
+  const cidades = (typeof regions !== 'undefined' && regions[key]) || []
+  if (!cidades.length) { card.style.display = 'none'; return }
+
+  const REGIOES_LABEL = {
+    metropolitana:       'Metropolitana',
+    baixadasLitoraneas:  'Baixadas Litorâneas',
+    norteFluminense:     'Norte Fluminense',
+    noroesteFluminense:  'Noroeste Fluminense',
+    serrana:             'Serrana',
+    centroSulFluminense: 'Centro-Sul Fluminense',
+    medioParaiba:        'Médio Paraíba',
+    costaVerde:          'Costa Verde',
+  }
+
+  let totalVotos = 0
+  let totalExpCelia = 0
+  let totalExpFernando = 0
+  let totalExpLideres = 0
+
+  cidades.forEach(cidade => {
+    // Votos válidos
+    totalVotos += (typeof votosValidos !== 'undefined' ? votosValidos[cidade] || 0 : 0)
+
+    // Expectativa da cidade + lideranças
+    const c = dataCache[cidade]
+    if (c) {
+      totalExpCelia    += Number(c.expectativaCidade?.celia    || 0)
+      totalExpFernando += Number(c.expectativaCidade?.fernando || 0)
+      totalExpLideres  += (c.liderancas || []).reduce((s, l) => s + Number(l.expectativa_votos || 0), 0)
+    }
+  })
+
+  const totalExp = totalExpCelia + totalExpFernando + totalExpLideres
+
+  const fmt = n => n.toLocaleString('pt-BR')
+
+  document.getElementById('regiao-totais-nome').textContent =
+    (REGIOES_LABEL[key] || key) + ' · ' + cidades.length + ' municípios'
+  document.getElementById('regiao-total-votos').textContent   = fmt(totalVotos)
+  document.getElementById('regiao-exp-celia').textContent     = fmt(totalExpCelia)
+  document.getElementById('regiao-exp-fernando').textContent  = fmt(totalExpFernando)
+  document.getElementById('regiao-exp-total').textContent     = fmt(totalExp)
+
+  card.style.display = 'block'
+}
+
     document.getElementById('regionSelect').addEventListener('change', (e) => {
         const key = e.target.value;
         regiaoAtiva = key;
+        calcularTotaisRegiao(key);
         // 🔹 Controle do líder da região
 if (key !== 'all') {
   mostrarLiderRegiao(key);
