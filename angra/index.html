@@ -257,6 +257,20 @@ window.iniciarAplicacao = async function () {
     chip.textContent = user.usuario
     chip.style.display = 'inline-block'
   }
+
+  // Trava o sidebar fechado para lider_regiao
+  if (user.nivel === 'lider_regiao') {
+    const sb  = document.getElementById('sidebar')
+    const tog = document.getElementById('toggleSidebar')
+    if (sb)  sb.classList.add('sidebar-hidden')
+    if (tog) {
+      tog.classList.add('sidebar-closed-btn')
+      tog.style.display = 'none'   // esconde o botão — não pode reabrir
+    }
+    // Ajusta o mapa após esconder o sidebar
+    setTimeout(() => { if (window.map) window.map.invalidateSize() }, 50)
+  }
+
   // Inicia o mapa (carrega GeoJSON + dados do backend)
   if (typeof window.iniciarMapa === 'function') {
     window.iniciarMapa()

@@ -1,0 +1,63 @@
+{
+  "name": "Paralax Gestão Política",
+  "short_name": "Paralax",
+  "description": "Plataforma de gestão de campanha política com mapas, lideranças e análise eleitoral.",
+  "start_url": "/home.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#071426",
+  "theme_color": "#0d2d6b",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/assets/paralax-favicon.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/paralax-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/paralax-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mapa Estratégico",
+      "short_name": "Mapa",
+      "description": "Abrir mapa do estado do RJ",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/assets/paralax-favicon.png",
+          "sizes": "64x64"
+        }
+      ]
+    },
+    {
+      "name": "Lideranças",
+      "short_name": "Lideranças",
+      "description": "Lista completa de lideranças",
+      "url": "/liderancas.html",
+      "icons": [
+        {
+          "src": "/assets/paralax-favicon.png",
+          "sizes": "64x64"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "productivity",
+    "politics"
+  ],
+  "prefer_related_applications": false
+}

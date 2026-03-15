@@ -9,6 +9,40 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<style>
+
+/* ===== BOTÕES DE MODO ===== */
+.modos-container {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+.modo-btn {
+  flex: 1;
+  padding: 7px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.75);
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  text-align: center;
+}
+.modo-btn:hover { background: rgba(255,255,255,0.2); color: white; }
+.modo-btn.ativa {
+  background: white;
+  color: var(--blue-deep);
+  border-color: white;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+
+</style>
 </head>
 <body>
 
@@ -17,7 +51,7 @@
   <div style="width:360px;background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;animation:modalIn .25s cubic-bezier(0.34,1.56,0.64,1);">
     <div style="text-align:center;">
       <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">&#x1F5FA;&#xFE0F;</div>
-      <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Mapa do Rio</h2>
+      <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Mapa Rio de Janeiro</h2>
       <p style="margin:6px 0 0;font-size:13px;color:#64748b;">Insira suas credenciais para continuar</p>
     </div>
     <div>
@@ -49,7 +83,6 @@
   <div style="font-size:36px;">&#x1F5FA;&#xFE0F;</div>
   <p style="margin:0;font-size:14px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando o sistema...</p>
 </div>
-
 
 <!-- MODAL EDITAR LIDERANÇA -->
 <div id="modal-editar" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9500;">
@@ -143,7 +176,7 @@
   <!-- BODY SCROLLÁVEL -->
   <div class="sidebar-body">
 
-    <!-- SELETOR DE VISUALIZAÇÃO -->
+    <!-- SELETOR DE MODO DE VISUALIZAÇÃO -->
     <div class="sidebar-block">
       <label class="block-label">Visualização</label>
       <div class="modos-container">
@@ -173,7 +206,7 @@
       </div>
     </div>
 
-    <!-- SELETOR DE DISTRITO -->
+    <!-- SELETOR DE DISTRITO/ZONA -->
     <div class="sidebar-block">
       <label class="block-label">Zona</label>
       <div class="select-wrap">
@@ -220,7 +253,7 @@
       <div id="bairro-info" class="bairro-meta">Clique em um bairro no mapa</div>
     </div>
 
-    <!-- EXPECTATIVA DO BAIRRO (separada por campanha) -->
+    <!-- EXPECTATIVA DO BAIRRO -->
     <div class="sidebar-block">
       <label class="block-label">Expectativa do bairro</label>
       <div class="exp-grid">
@@ -247,13 +280,8 @@
       </div>
 
       <div id="liderancas-content">
-        <!-- RESUMO TOTAIS -->
         <div id="liderancas-totais" style="display:none;"></div>
-
-        <!-- LISTA RANKING -->
         <div id="lista-liderancas"></div>
-
-        <!-- FORM ADICIONAR -->
         <div class="add-lider-form" id="add-lider-form">
           <div class="form-divider">Adicionar liderança</div>
           <input id="lideranca-nome" type="text" placeholder="Nome" class="form-input">
@@ -283,8 +311,6 @@
 </div>
 
 <script>
-// ===== BOOT — deve ser definido ANTES do auth.js =====
-// Sobrescreve liberarInterface do auth.js para usar display:flex
 window.liberarInterface = function() {
   const loginModal = document.getElementById('login-modal')
   const blocker    = document.getElementById('blocker')
@@ -295,17 +321,26 @@ window.liberarInterface = function() {
 }
 
 window.iniciarAplicacao = async function () {
-  // Mostra chip do usuário logado
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const chip = document.getElementById('user-chip')
   if (chip && user.usuario) {
     chip.textContent = user.usuario
     chip.style.display = 'inline-block'
   }
-  // Inicia o mapa (carrega GeoJSON + dados do backend)
-  if (typeof window.iniciarMapa === 'function') {
-    window.iniciarMapa()
+
+  // Trava o sidebar fechado para lider_regiao
+  if (user.nivel === 'lider_regiao') {
+    const sb  = document.getElementById('sidebar')
+    const tog = document.getElementById('toggleSidebar')
+    if (sb)  sb.classList.add('sidebar-hidden')
+    if (tog) {
+      tog.classList.add('sidebar-closed-btn')
+      tog.style.display = 'none'
+    }
+    setTimeout(() => { if (window.map) window.map.invalidateSize() }, 50)
   }
+
+  if (typeof window.iniciarMapa === 'function') window.iniciarMapa()
 }
 </script>
 
@@ -315,12 +350,10 @@ window.iniciarAplicacao = async function () {
 <script src="mapa.js"></script>
 
 <script>
-
 // ===== TOGGLE SIDEBAR =====
 const sidebar = document.getElementById("sidebar")
-const toggle = document.getElementById("toggleSidebar")
+const toggle  = document.getElementById("toggleSidebar")
 let sidebarOpen = true
-
 toggle.onclick = () => {
   sidebarOpen = !sidebarOpen
   sidebar.classList.toggle("sidebar-hidden", !sidebarOpen)
@@ -331,8 +364,7 @@ toggle.onclick = () => {
 // ===== COLLAPSE SECTIONS =====
 document.querySelectorAll(".collapse-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    const targetId = btn.dataset.target
-    const target = document.getElementById(targetId)
+    const target = document.getElementById(btn.dataset.target)
     const isExpanded = btn.dataset.state === "expanded"
     if (!target) return
     if (isExpanded) {
