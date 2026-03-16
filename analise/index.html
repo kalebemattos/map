@@ -969,7 +969,7 @@ const _bCache = {};
 
 function _nomeArq(nome) {
   return nome.toUpperCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
 }
 
@@ -987,10 +987,13 @@ async function abrirModalBairros(cidade) {
   // Carrega JSON da cidade (com cache)
   const key = _nomeArq(cidade) + '_' + anoSelecionado;
   if (!(key in _bCache)) {
+    const url = BASE_PATH + 'dados/' + anoSelecionado + '/cidades/' + _nomeArq(cidade) + '.json';
+    console.log('[Bairros] Buscando:', url);
     try {
-      const res = await fetch(BASE_PATH + 'dados/' + anoSelecionado + '/cidades/' + _nomeArq(cidade) + '.json');
+      const res = await fetch(url);
+      console.log('[Bairros] Status:', res.status, res.ok ? 'OK' : 'ERRO');
       _bCache[key] = res.ok ? await res.json() : null;
-    } catch { _bCache[key] = null; }
+    } catch(e) { console.error('[Bairros] Erro:', e); _bCache[key] = null; }
   }
   const data = _bCache[key];
 
