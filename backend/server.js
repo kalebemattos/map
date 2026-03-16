@@ -320,12 +320,12 @@ if (!cidade) {
 const celiaValor = Number(celia || 0);
 const fernandoValor = Number(fernando || 0);
 
-// mapa = 'principal' identifica expectativas do mapa principal
+// mapa = 'rj' identifica expectativas do mapa principal
 // NULL não funciona em ON CONFLICT no PostgreSQL
 await pool.query(
   `INSERT INTO expectativa_cidade
    (cidade, expectativa_celia, expectativa_fernando, regiao, mapa)
-   VALUES ($1, $2, $3, $4, 'principal')
+   VALUES ($1, $2, $3, $4, 'rj')
    ON CONFLICT (cidade, regiao, mapa)
    DO UPDATE SET
      expectativa_celia    = excluded.expectativa_celia,
@@ -945,7 +945,7 @@ app.get('/api/expectativa-cidade-todas', auth, async (req, res) => {
   const rows = await dbAll(
     `SELECT cidade, expectativa_celia, expectativa_fernando
      FROM expectativa_cidade
-     WHERE mapa IS NULL OR mapa = ''`,
+     WHERE mapa = 'rj'`,
     []
   );
   res.json(rows);
