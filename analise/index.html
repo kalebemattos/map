@@ -588,86 +588,103 @@ tbody tr:last-child td { border-bottom: none; }
   .chart-card { padding: 14px; }
 }
 
-    /* ===== ABAS DO MODAL ===== */
-    .modal-tabs {
-      display: flex;
-      gap: 0;
-      border-bottom: 1px solid var(--slate-200);
-      padding: 0 24px;
-      background: var(--slate-50);
+    /* ===== SUBTABELA BAIRROS INLINE ===== */
+    .bairros-row { display: none; }
+    .bairros-row.aberto { display: table-row; }
+
+    .bairros-cell {
+      padding: 0 !important;
+      background: #f8faff !important;
+      border-bottom: 2px solid var(--blue-main) !important;
     }
-    .modal-tab {
-      padding: 12px 18px;
-      font-size: 13px;
-      font-weight: 600;
-      font-family: inherit;
+
+    .bairros-inner {
+      padding: 12px 16px 16px;
+      animation: fadeUp 0.2s ease;
+    }
+
+    .bairros-inner-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .bairros-inner-titulo {
+      font-family: 'Sora', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--blue-deep);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bairros-subtable {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .bairros-subtable th {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
       color: var(--slate-500);
-      background: none;
-      border: none;
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      transition: color 0.2s, border-color 0.2s;
+      padding: 6px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--slate-200);
       white-space: nowrap;
     }
-    .modal-tab:hover { color: var(--blue-main); }
-    .modal-tab.active { color: var(--blue-main); border-bottom-color: var(--blue-main); }
-    .modal-tab-badge {
+
+    .bairros-subtable td {
+      padding: 7px 10px;
+      font-size: 12.5px;
+      color: var(--slate-700);
+      border-bottom: 1px solid var(--slate-100);
+    }
+
+    .bairros-subtable tbody tr:last-child td { border-bottom: none; }
+    .bairros-subtable tbody tr:hover { background: #e8f0fe; }
+
+    .bairros-subtable .b-nome { font-weight: 600; color: var(--slate-900); }
+    .bairros-subtable .b-votos {
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      color: var(--blue-main);
+    }
+
+    .bairros-loading-msg {
+      padding: 20px;
+      text-align: center;
+      color: var(--slate-400);
+      font-size: 13px;
+    }
+
+    /* Linha da cidade clicável */
+    .cidade-row { cursor: pointer; }
+    .cidade-row:hover td { background: #e8f0fe !important; }
+    .cidade-row.aberta td { background: #dbeafe !important; }
+
+    .cidade-expand-icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
       background: var(--blue-light);
       color: var(--blue-main);
       font-size: 10px;
       font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 10px;
-      margin-left: 5px;
+      margin-right: 5px;
+      transition: transform 0.2s;
+      flex-shrink: 0;
     }
-    .modal-panel { display: none; }
-    .modal-panel.active { display: block; }
-    .bairros-panel { padding: 16px 24px 24px; }
-    .bairros-loading { text-align: center; padding: 40px 20px; color: var(--slate-400); font-size: 14px; }
-    .bairros-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-    .bairros-search {
-      flex: 1; min-width: 160px;
-      padding: 8px 12px; font-size: 13px; font-family: inherit;
-      border-radius: 9px; border: 1.5px solid var(--slate-200);
-      background: var(--slate-50); outline: none;
-    }
-    .bairros-search:focus { border-color: var(--blue-main); background: white; }
-    .bairros-cargo-select {
-      padding: 8px 28px 8px 10px; font-size: 12px; font-family: inherit; font-weight: 600;
-      border-radius: 9px; border: 1.5px solid var(--slate-200);
-      background: var(--slate-50) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 8px center;
-      appearance: none; outline: none; cursor: pointer; color: var(--slate-700);
-    }
-    .bairros-table-wrap { overflow-x: auto; }
-    .bairros-table { width: 100%; border-collapse: collapse; min-width: 420px; }
-    .bairros-table thead tr { background: linear-gradient(135deg, var(--blue-deep), var(--blue-main)); }
-    .bairros-table th {
-      color: rgba(255,255,255,0.85); font-size: 10px; font-weight: 700;
-      letter-spacing: 0.7px; text-transform: uppercase; padding: 10px 12px;
-      text-align: left; white-space: nowrap;
-    }
-    .bairros-table td { padding: 9px 12px; border-bottom: 1px solid var(--slate-100); font-size: 13px; color: var(--slate-700); }
-    .bairros-table tbody tr:hover { background: #f0f6ff; }
-    .bairros-table tbody tr:last-child td { border-bottom: none; }
-    .bairros-table .bairro-nome { font-weight: 600; color: var(--slate-900); }
-    .bairros-table .votos-num { font-family: 'Sora', sans-serif; font-weight: 700; color: var(--blue-main); }
-    .bairros-bar-wrap { display: flex; align-items: center; gap: 6px; min-width: 80px; }
-    .bairros-bar { flex: 1; height: 5px; background: var(--slate-100); border-radius: 10px; overflow: hidden; }
-    .bairros-bar-fill { height: 100%; background: linear-gradient(90deg, var(--blue-main), #42a5f5); border-radius: 10px; }
-    .bairros-footer {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 0 0; font-size: 12px; color: var(--slate-500); font-weight: 500;
-      border-top: 1px solid var(--slate-100); margin-top: 10px; flex-wrap: wrap; gap: 6px;
-    }
-    @media (max-width: 600px) {
-      .modal-tabs { padding: 0 14px; overflow-x: auto; }
-      .modal-tab { padding: 10px 12px; font-size: 12px; }
-      .bairros-panel { padding: 12px 14px 20px; }
-      .bairros-controls { flex-direction: column; align-items: stretch; }
-    }
+
+    .cidade-row.aberta .cidade-expand-icon { transform: rotate(90deg); }
 </style>
 </head>
 <body>
@@ -772,44 +789,12 @@ tbody tr:last-child td { border-bottom: none; }
       <h3 id="tituloCidade"></h3>
       <button class="modal-close" onclick="fecharModal()">✕</button>
     </div>
-
-    <!-- ABAS -->
-    <div class="modal-tabs">
-      <button class="modal-tab active" onclick="trocarAba('bairros')" id="tab-bairros">
-        🏘️ Votos por Bairro
-        <span class="modal-tab-badge" id="badge-bairros">–</span>
-      </button>
-      <button class="modal-tab" onclick="trocarAba('eleitorado')" id="tab-eleitorado">
-        👥 Perfil do Eleitorado
-      </button>
+    <div class="charts-grid">
+      <div class="chart-card"><h4>Distribuição por Gênero</h4><canvas id="chartGenero"></canvas></div>
+      <div class="chart-card"><h4>Faixa Etária</h4><canvas id="chartFaixa"></canvas></div>
+      <div class="chart-card"><h4>Estado Civil</h4><canvas id="chartEstadoCivil"></canvas></div>
+      <div class="chart-card"><h4>Escolaridade</h4><canvas id="chartEscolaridade"></canvas></div>
     </div>
-
-    <!-- ABA: BAIRROS -->
-    <div class="modal-panel active" id="panel-bairros">
-      <div class="bairros-panel">
-        <div class="bairros-controls">
-          <input class="bairros-search" id="bairros-search" placeholder="Buscar bairro..." oninput="filtrarBairros()">
-          <select class="bairros-cargo-select" id="bairros-cargo" onchange="renderBairros()">
-            <option value="DEPUTADO ESTADUAL">Dep. Estadual</option>
-            <option value="DEPUTADO FEDERAL">Dep. Federal</option>
-          </select>
-        </div>
-        <div class="bairros-table-wrap">
-          <div id="bairros-content"><div class="bairros-loading">⏳ Carregando...</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ABA: ELEITORADO -->
-    <div class="modal-panel" id="panel-eleitorado">
-      <div class="charts-grid">
-        <div class="chart-card"><h4>Distribuição por Gênero</h4><canvas id="chartGenero"></canvas></div>
-        <div class="chart-card"><h4>Faixa Etária</h4><canvas id="chartFaixa"></canvas></div>
-        <div class="chart-card"><h4>Estado Civil</h4><canvas id="chartEstadoCivil"></canvas></div>
-        <div class="chart-card"><h4>Escolaridade</h4><canvas id="chartEscolaridade"></canvas></div>
-      </div>
-    </div>
-
   </div>
 </div>
 
@@ -822,6 +807,29 @@ let sqSelecionado = null;
 let charts = [];
 let anoSelecionado = "2022";
 const UF = "RJ";
+
+// ── Cache JSONs de cidades ──
+const cidadeCache = {}
+
+function nomeCidadeParaArquivo(nome) {
+  return nome.toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/[^A-Z0-9_]/g, '')
+}
+
+async function carregarDadosCidade(cidade, ano) {
+  const key = cidade + '_' + ano
+  if (cidadeCache[key] !== undefined) return cidadeCache[key]
+  const arquivo = nomeCidadeParaArquivo(cidade)
+  try {
+    const res = await fetch(`${BASE_PATH}dados/${ano}/cidades/${arquivo}.json`)
+    if (!res.ok) { cidadeCache[key] = null; return null }
+    const data = await res.json()
+    cidadeCache[key] = data
+    return data
+  } catch { cidadeCache[key] = null; return null }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   carregarAno(anoSelecionado);
@@ -971,97 +979,34 @@ function mostrarAnalise() {
   totalEl.innerHTML = `Total no estado:<strong>${totalVotosGeral.toLocaleString('pt-BR')}</strong>`;
 }
 
-// ── Cache dos JSONs de cidades já carregados ──
-const cidadeCache = {}
-let cidadeAtualModal = null
-let dadosCidadeAtual = null  // JSON da cidade carregado
+async function renderSubtabelaBairros(trBairros, cidadeNome) {
+  const inner = trBairros.querySelector('.bairros-inner')
+  const cargo = document.getElementById("cargoSelect").value
 
-// ── Troca de aba ──
-function trocarAba(aba) {
-  document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'))
-  document.querySelectorAll('.modal-panel').forEach(p => p.classList.remove('active'))
-  document.getElementById('tab-' + aba).classList.add('active')
-  document.getElementById('panel-' + aba).classList.add('active')
+  const data = await carregarDadosCidade(cidadeNome, anoSelecionado)
 
-  if (aba === 'eleitorado') {
-    // Renderiza gráficos só quando a aba é aberta (evita canvas invisível)
-    setTimeout(() => renderEleitorado(cidadeAtualModal), 50)
-  }
-}
-
-// ── Nome do arquivo: "Angra dos Reis" → "ANGRA_DOS_REIS" ──
-function nomeCidadeParaArquivo(nome) {
-  return nome.toUpperCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '_')
-    .replace(/[^A-Z0-9_]/g, '')
-}
-
-// ── Carrega JSON da cidade (com cache) ──
-async function carregarDadosCidade(cidade, ano) {
-  const key = cidade + '_' + ano
-  if (cidadeCache[key]) return cidadeCache[key]
-  const arquivo = nomeCidadeParaArquivo(cidade)
-  try {
-    const res = await fetch(`${BASE_PATH}dados/${ano}/cidades/${arquivo}.json`)
-    if (!res.ok) return null
-    const data = await res.json()
-    cidadeCache[key] = data
-    return data
-  } catch { return null }
-}
-
-// ── Abre modal ──
-async function abrirModal(cidade) {
-  cidadeAtualModal = cidade
-  dadosCidadeAtual = null
-  document.getElementById('tituloCidade').textContent = cidade
-  document.getElementById('bairros-content').innerHTML =
-    '<div class="bairros-loading">⏳ Carregando dados dos bairros...</div>'
-  document.getElementById('badge-bairros').textContent = '–'
-  document.getElementById('modal').style.display = 'flex'
-
-  // Começa na aba bairros
-  trocarAba('bairros')
-  destruirGraficos()
-
-  // Carrega JSON da cidade
-  dadosCidadeAtual = await carregarDadosCidade(cidade, anoSelecionado)
-  renderBairros()
-}
-
-// ── Renderiza tabela de bairros ──
-function renderBairros() {
-  const container = document.getElementById('bairros-content')
-  if (!dadosCidadeAtual) {
-    container.innerHTML = '<div class="bairros-loading">📂 Dados por bairro não disponíveis para esta cidade.</div>'
+  if (!data) {
+    inner.innerHTML = `<div class="bairros-loading-msg">📂 Dados por bairro não disponíveis para ${cidadeNome}.</div>`
     return
   }
 
-  const cargo = document.getElementById('bairros-cargo').value
-  const chaveCargo = Object.keys(dadosCidadeAtual).find(
-    k => k.toUpperCase() === cargo.toUpperCase()
-  )
-
+  const chaveCargo = Object.keys(data).find(k => k.toUpperCase() === cargo.toUpperCase())
   if (!chaveCargo) {
-    container.innerHTML = `<div class="bairros-loading">📂 Dados de "${cargo}" não disponíveis.</div>`
+    inner.innerHTML = `<div class="bairros-loading-msg">📂 Sem dados de "${cargo}" para ${cidadeNome}.</div>`
     return
   }
 
-  const cidades = dadosCidadeAtual[chaveCargo].CIDADES
-  const nomeCidade = Object.keys(cidades).find(
-    k => normalizarTexto(k) === normalizarTexto(cidadeAtualModal)
+  const cidades = data[chaveCargo].CIDADES
+  const nomeCidadeKey = Object.keys(cidades).find(
+    k => normalizarTexto(k) === normalizarTexto(cidadeNome)
   )
 
-  if (!nomeCidade || !cidades[nomeCidade].BAIRROS) {
-    container.innerHTML = '<div class="bairros-loading">📂 Dados por bairro não disponíveis.</div>'
+  if (!nomeCidadeKey || !cidades[nomeCidadeKey].BAIRROS) {
+    inner.innerHTML = `<div class="bairros-loading-msg">📂 Dados por bairro não disponíveis para ${cidadeNome}.</div>`
     return
   }
 
-  const bairros = cidades[nomeCidade].BAIRROS
-  const filtro = normalizarTexto(document.getElementById('bairros-search').value)
-
-  // Encontra o candidato selecionado nos dados dos bairros
+  const bairros = cidades[nomeCidadeKey].BAIRROS
   const bairrosArr = Object.entries(bairros).map(([nome, dados]) => {
     const cand = (dados.candidatos || []).find(
       c => normalizarTexto(c.nome) === normalizarTexto(candidatoSelecionado)
@@ -1072,15 +1017,7 @@ function renderBairros() {
       posicao: cand ? cand.posicao : null,
       total_validos: dados.total_validos || 0
     }
-  }).filter(b => !filtro || normalizarTexto(b.nome).includes(filtro))
-   .sort((a, b) => b.votos - a.votos)
-
-  document.getElementById('badge-bairros').textContent = bairrosArr.length
-
-  if (!bairrosArr.length) {
-    container.innerHTML = '<div class="bairros-loading">🔍 Nenhum bairro encontrado.</div>'
-    return
-  }
+  }).sort((a, b) => b.votos - a.votos)
 
   const maxVotos = Math.max(...bairrosArr.map(b => b.votos), 1)
   const totalVotos = bairrosArr.reduce((s, b) => s + b.votos, 0)
@@ -1089,22 +1026,25 @@ function renderBairros() {
     const pct = b.total_validos > 0 ? (b.votos / b.total_validos * 100).toFixed(1) : '0.0'
     const barW = (b.votos / maxVotos * 100).toFixed(1)
     const posClass = b.posicao === 1 ? 'pos-1' : b.posicao === 2 ? 'pos-2' : b.posicao === 3 ? 'pos-3' : 'pos-other'
-    const posLabel = b.posicao ? b.posicao + 'º' : '—'
     return `<tr>
-      <td><span class="bairro-nome">${b.nome}</span></td>
-      <td><span class="votos-num">${b.votos.toLocaleString('pt-BR')}</span></td>
+      <td><span class="b-nome">${b.nome}</span></td>
+      <td><span class="b-votos">${b.votos.toLocaleString('pt-BR')}</span></td>
       <td>
-        <div class="bairros-bar-wrap">
-          <div class="bairros-bar"><div class="bairros-bar-fill" style="width:${barW}%"></div></div>
-          <span style="font-size:11px;font-weight:600;color:var(--slate-600);min-width:36px;text-align:right;">${pct}%</span>
+        <div class="pct-bar-wrap">
+          <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
+          <span class="pct-label">${pct}%</span>
         </div>
       </td>
-      <td><span class="posicao-badge ${posClass}">${posLabel}</span></td>
+      <td><span class="posicao-badge ${posClass}">${b.posicao ? b.posicao + 'º' : '—'}</span></td>
     </tr>`
   }).join('')
 
-  container.innerHTML = `
-    <table class="bairros-table">
+  inner.innerHTML = `
+    <div class="bairros-inner-header">
+      <div class="bairros-inner-titulo">🏘️ Votos por bairro — ${cidadeNome} · ${cargo}</div>
+      <span style="font-size:11px;color:var(--slate-500);font-weight:600;">Total: ${totalVotos.toLocaleString('pt-BR')} votos em ${bairrosArr.length} bairros</span>
+    </div>
+    <table class="bairros-subtable">
       <thead><tr>
         <th>Bairro</th>
         <th>Votos</th>
@@ -1113,28 +1053,25 @@ function renderBairros() {
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <div class="bairros-footer">
-      <span>${bairrosArr.length} bairros</span>
-      <span>Total: <strong>${totalVotos.toLocaleString('pt-BR')} votos</strong></span>
-    </div>
   `
 }
 
-function filtrarBairros() { renderBairros() }
+function abrirModal(cidade) {
+  document.getElementById("tituloCidade").textContent = "Perfil do eleitorado — " + cidade;
+  destruirGraficos();
+  const dados = eleitorado[cidade];
+  if (!dados) { alert("Dados de perfil não disponíveis para esta cidade."); return; }
 
-// ── Renderiza gráficos do eleitorado ──
-function renderEleitorado(cidade) {
-  destruirGraficos()
-  const dados = eleitorado[cidade]
-  if (!dados) return
-  const paleta = ['#0d2d6b','#1565c0','#1976d2','#1e88e5','#42a5f5','#64b5f6','#90caf9','#bbdefb']
-  criarGrafico('chartGenero', dados.genero, paleta)
-  criarGrafico('chartFaixa', dados.faixa_etaria, paleta)
-  criarGrafico('chartEstadoCivil', dados.estado_civil, paleta)
-  criarGrafico('chartEscolaridade', dados.escolaridade, paleta)
+  const paleta = ['#0d2d6b','#1565c0','#1976d2','#1e88e5','#42a5f5','#64b5f6','#90caf9','#bbdefb'];
+  criarGrafico("chartGenero", dados.genero, paleta);
+  criarGrafico("chartFaixa", dados.faixa_etaria, paleta);
+  criarGrafico("chartEstadoCivil", dados.estado_civil, paleta);
+  criarGrafico("chartEscolaridade", dados.escolaridade, paleta);
+
+  document.getElementById("modal").style.display = "flex";
 }
 
-function fecharModal() { document.getElementById("modal").style.display = "none"; destruirGraficos() }
+function fecharModal() { document.getElementById("modal").style.display = "none"; }
 function fecharModalFora(e) { if (e.target === document.getElementById("modal")) fecharModal(); }
 document.addEventListener("keydown", e => { if (e.key === "Escape") fecharModal(); });
 
