@@ -33,11 +33,6 @@ app.use(
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'", "https://kalebemattos.github.io", "https://*.supabase.co"],
       }
-    },
-    hsts: {
-      maxAge: 31536000,        // 1 ano em segundos
-      includeSubDomains: true,
-      preload: true
     }
   })
 );
@@ -87,9 +82,9 @@ async function registrarAuditoria(usuarioId, acao, entidade, entidadeId) {
   );
 }
 
-pool.query('select current_database()')
-  .then(r => console.log('✅ Banco conectado:', r.rows[0]))
-  .catch(e => console.error('❌ DB ERR:', e.message));
+pool.query('select current_database(), inet_server_addr()')
+  .then(r => console.log('DB:', r.rows))
+  .catch(e => console.error('DB ERR', e));
 
 async function dbGet(sql, params = []) {
   const r = await pool.query(sql, params);
@@ -128,7 +123,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Não permitido por CORS'));
@@ -138,26 +133,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Pasta raiz do projeto (um nível acima de /backend/)
-const ROOT_DIR = path.join(__dirname, '..');
-
-// Bloqueia acesso direto a arquivos sensíveis do servidor
-app.use((req, res, next) => {
-  const bloqueados = [
-    '/backend/server.js', '/backend/package.json', '/backend/package-lock.json',
-    '/backend/middleware', '/backend/node_modules', '/backend/database.sqlite',
-    '/backend/users.json', '/backend/data.json', '/.env',
-    '/server.js', '/package.json', '/package-lock.json'
-  ];
-  const url = req.path.toLowerCase();
-  if (bloqueados.some(b => url === b || url.startsWith(b))) {
-    return res.status(403).send('Proibido');
-  }
-  next();
-});
-
-// Serve os arquivos estáticos da raiz do projeto
-app.use(express.static(ROOT_DIR));
+app.use(express.static(__dirname));
 app.set('trust proxy', 1);
 
 const loginLimiter = rateLimit({
@@ -183,14 +159,6 @@ const createLiderancaLimiter = rateLimit({
   legacyHeaders: false
 });
 
-const refreshLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 20,                   // 20 tentativas por IP
-  message: { error: 'Muitas tentativas de refresh. Tente novamente mais tarde.' },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
 
 /* ================= PATHS & GARANTIAS ================= */
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
@@ -207,21 +175,7 @@ const storage = multer.diskStorage({
     cb(null, name + ext);
   }
 });
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-
-const fileFilter = (req, file, cb) => {
-  if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Tipo de arquivo não permitido. Envie apenas imagens (JPEG, PNG, WEBP).'), false);
-  }
-};
-
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB máximo
-});
+const upload = multer({ storage });
 async function otimizarImagem(caminhoArquivo) {
   const caminhoFinal = caminhoArquivo + '.webp';
 
@@ -246,14 +200,6 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     return res.status(400).json({ error: 'Dados incompletos' });
   }
 
-  if (typeof usuario !== 'string' || usuario.length > 60) {
-    return res.status(400).json({ error: 'Dados inválidos' });
-  }
-
-  if (typeof senha !== 'string' || senha.length > 128) {
-    return res.status(400).json({ error: 'Dados inválidos' });
-  }
-
   try {
     // Procure por: SELECT id, usuario, senha_hash, nome FROM usuarios...
 // E troque por:
@@ -262,23 +208,17 @@ const user = await dbGet(
   [usuario]
 );
 
-    // Hash fictício garante tempo de resposta constante mesmo quando usuário não existe
-    // — impede enumeração de usuários por timing attack
-    const HASH_FAKE = '$2b$10$invalido.hash.para.timing.proteção.xxxxxxxxxxx';
-    const hashParaComparar = user ? user.senha_hash : HASH_FAKE;
-    const ok = await bcrypt.compare(senha, hashParaComparar);
+    if (!user) {
+      return res.status(401).json({ error: 'Usuário ou senha inválidos' });
+    }
 
-    if (!user || !ok) {
-      // Log de tentativa falha (sem revelar qual campo falhou)
-      console.warn(`[LOGIN FALHA] usuario="${usuario}" ip="${req.ip}" ts="${new Date().toISOString()}"`);
+    const ok = await bcrypt.compare(senha, user.senha_hash);
+
+    if (!ok) {
       return res.status(401).json({ error: 'Usuário ou senha inválidos' });
     }
 
   delete user.senha_hash;
-
-  // Log de login bem-sucedido
-  console.log(`[LOGIN OK] usuario="${usuario}" nivel="${user.nivel}" ip="${req.ip}" ts="${new Date().toISOString()}"`);
-  try { await registrarAuditoria(user.id, 'LOGIN', 'usuario', user.id); } catch {}
 
 
 
@@ -323,7 +263,7 @@ res.json({
   }
 });
 /* ================= REFRESH TOKEN ================= */
-app.post('/api/refresh', refreshLimiter, async (req, res) => {
+app.post('/api/refresh', async (req, res) => {
 
   const { refreshToken } = req.body;
 
@@ -380,22 +320,17 @@ if (!cidade) {
 const celiaValor = Number(celia || 0);
 const fernandoValor = Number(fernando || 0);
 
+// mapa = NULL identifica expectativas do mapa principal
+// separando-as das de Angra (mapa='angra') e RJ Capital (mapa='rjcapital')
 await pool.query(
-`
-INSERT INTO expectativa_cidade
-(cidade, expectativa_celia, expectativa_fernando, regiao)
-VALUES ($1,$2,$3,$4)
-ON CONFLICT (cidade, regiao)
-DO UPDATE SET
-expectativa_celia = excluded.expectativa_celia,
-expectativa_fernando = excluded.expectativa_fernando
-`,
-[
-cidade,
-celiaValor,
-fernandoValor,
-req.user.regiao
-]
+  `INSERT INTO expectativa_cidade
+   (cidade, expectativa_celia, expectativa_fernando, regiao, mapa)
+   VALUES ($1, $2, $3, $4, NULL)
+   ON CONFLICT (cidade, regiao, mapa)
+   DO UPDATE SET
+     expectativa_celia    = excluded.expectativa_celia,
+     expectativa_fernando = excluded.expectativa_fernando`,
+  [cidade, celiaValor, fernandoValor, req.user.regiao]
 );
 
 res.json({ ok: true });
@@ -699,14 +634,7 @@ app.delete('/api/liderancas/:id',
         'DELETE FROM liderancas WHERE id = $1',
         [id]
       );
-    } else if (req.user.nivel === 'admin') {
-      // admin pode deletar qualquer liderança (escopo global intencional)
-      result = await pool.query(
-        'DELETE FROM liderancas WHERE id = $1',
-        [id]
-      );
     } else {
-      // lider_regiao só deleta da própria região
       result = await pool.query(
         'DELETE FROM liderancas WHERE id = $1 AND regiao = $2',
         [id, req.user.regiao]
@@ -790,7 +718,6 @@ if (!atual) {
 
 if (
   req.user.nivel !== 'dono' &&
-  req.user.nivel !== 'admin' &&
   atual.regiao !== req.user.regiao
 ) {
   return res.status(403).json({ error: 'Acesso negado' });
@@ -846,7 +773,7 @@ cidade=$9,
 vinculo_politico=$10,
 regiao=COALESCE($12, regiao),
 data_nascimento=$13
-WHERE id=$11 AND (LOWER(regiao)=LOWER($12) OR $14='dono' OR $14='admin')
+WHERE id=$11 AND (LOWER(regiao)=LOWER($12) OR $14='dono')
   `,
   [
   nome,
@@ -1013,19 +940,14 @@ app.get('/api/data', auth, async (req, res) => {
 
 
 app.get('/api/expectativa-cidade-todas', auth, async (req, res) => {
-
-  let query;
-  let params = [];
-
-  query = `
-SELECT
-cidade,
-expectativa_celia,
-expectativa_fernando
-FROM expectativa_cidade
-`;
-
-  const rows = await dbAll(query, params);
+  // Retorna APENAS expectativas do mapa principal (mapa IS NULL)
+  // Angra e RJ Capital têm seus próprios endpoints isolados
+  const rows = await dbAll(
+    `SELECT cidade, expectativa_celia, expectativa_fernando
+     FROM expectativa_cidade
+     WHERE mapa IS NULL OR mapa = ''`,
+    []
+  );
   res.json(rows);
 });
 
@@ -1260,19 +1182,9 @@ app.post('/api/usuarios',
   try {
     const { usuario, senha, nome, nivel, regiao_vinculada } = req.body;
     // 🔎 Validação básica
-if (!usuario || !senha || !nivel) {
+if (!usuario || !senha || !nivel || !regiao_vinculada) {
   return res.status(400).json({
-    error: 'Usuario, senha e nivel são obrigatórios'
-  });
-}
-if (!/^[a-zA-Z0-9._-]{1,60}$/.test(usuario)) {
-  return res.status(400).json({
-    error: 'Login inválido. Use apenas letras, números, . _ - (máx. 60 caracteres).'
-  });
-}
-if (nivel === 'lider_regiao' && !regiao_vinculada) {
-  return res.status(400).json({
-    error: 'Região vinculada é obrigatória para Líder de Região'
+    error: 'Usuario, senha, nivel e regiao_vinculada são obrigatórios'
   });
 }
 const niveisPermitidos = ['dono', 'admin', 'visualizador', 'lider_regiao'];
@@ -1280,12 +1192,6 @@ const niveisPermitidos = ['dono', 'admin', 'visualizador', 'lider_regiao'];
 if (!niveisPermitidos.includes(nivel)) {
   return res.status(400).json({
     error: 'Nivel inválido'
-  });
-}
-
-if (!/(?=.*[A-Z])(?=.*[0-9]).{8,}/.test(senha)) {
-  return res.status(400).json({
-    error: 'Senha fraca. Use pelo menos 8 caracteres, uma letra maiúscula e um número.'
   });
 }
 
@@ -1306,8 +1212,6 @@ if (!/(?=.*[A-Z])(?=.*[0-9]).{8,}/.test(senha)) {
       [usuario, hash, nome, nivel, regiao_vinculada]
     );
 
-    const novoUser = await dbGet('SELECT id FROM usuarios WHERE usuario = $1', [usuario]);
-    try { await registrarAuditoria(req.user.id, 'CRIAR_USUARIO', 'usuario', novoUser?.id); } catch {}
     res.json({ ok: true, message: 'Usuário criado com sucesso!' });
   } catch (err) {
     console.error('Erro ao criar usuário:', err);
@@ -1328,63 +1232,6 @@ app.get('/api/usuarios',
   }
 });
 
-
-// Rota para editar usuário
-app.put('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { nome, nivel, regiao_vinculada, senha } = req.body;
-
-    const niveisPermitidos = ['dono', 'admin', 'visualizador', 'lider_regiao'];
-    if (nivel && !niveisPermitidos.includes(nivel)) {
-      return res.status(400).json({ error: 'Nível inválido' });
-    }
-
-    // Não deixa o dono rebaixar a própria conta
-    const meId = req.user.id;
-    if (String(id) === String(meId) && nivel && nivel !== 'dono') {
-      return res.status(400).json({ error: 'Você não pode alterar o seu próprio nível.' });
-    }
-
-    if (senha) {
-      if (!/(?=.*[A-Z])(?=.*[0-9]).{8,}/.test(senha)) {
-        return res.status(400).json({
-          error: 'Senha fraca. Use pelo menos 8 caracteres, uma letra maiúscula e um número.'
-        });
-      }
-      const hash = await require('bcrypt').hash(senha, 10);
-      await pool.query(
-        `UPDATE usuarios SET
-           nome = COALESCE($1, nome),
-           nivel = COALESCE($2, nivel),
-           regiao_vinculada = $3,
-           senha_hash = $4
-         WHERE id = $5`,
-        [nome || null, nivel || null, regiao_vinculada || null, hash, id]
-      );
-      // Invalida todas as sessões ativas do usuário ao trocar a senha
-      await pool.query(
-        'DELETE FROM refresh_tokens WHERE usuario_id = $1',
-        [id]
-      );
-    } else {
-      await pool.query(
-        `UPDATE usuarios SET
-           nome = COALESCE($1, nome),
-           nivel = COALESCE($2, nivel),
-           regiao_vinculada = $3
-         WHERE id = $4`,
-        [nome || null, nivel || null, regiao_vinculada || null, id]
-      );
-    }
-
-    try { await registrarAuditoria(req.user.id, 'EDITAR_USUARIO', 'usuario', id); } catch {}
-    res.json({ ok: true });
-  } catch (err) {
-    console.error('Erro ao editar usuário:', err);
-    res.status(500).json({ error: 'Erro interno ao editar usuário.' });
-  }
-});
 // Rota para excluir usuário
 app.delete('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
 
@@ -1398,7 +1245,6 @@ if (result.rowCount === 0) {
   return res.status(404).json({ error: 'Usuário não encontrado' });
 }
 
-try { await registrarAuditoria(req.user.id, 'EXCLUIR_USUARIO', 'usuario', req.params.id); } catch {}
 res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao excluir usuário.' });
@@ -1464,47 +1310,6 @@ app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
     res.status(500).json({ error: 'Erro interno' });
   }
 });
-
-/* ================= LOGOUT ================= */
-app.post('/api/logout', async (req, res) => {
-  const { refreshToken } = req.body;
-
-  if (refreshToken) {
-    try {
-      // Identifica usuário para auditoria antes de deletar
-      const row = await dbGet(
-        'SELECT usuario_id FROM refresh_tokens WHERE token = $1',
-        [refreshToken]
-      );
-      await pool.query(
-        'DELETE FROM refresh_tokens WHERE token = $1',
-        [refreshToken]
-      );
-      if (row) {
-        try { await registrarAuditoria(row.usuario_id, 'LOGOUT', 'usuario', row.usuario_id); } catch {}
-      }
-    } catch (err) {
-      console.error('Erro ao revogar refresh token:', err.message);
-    }
-  }
-
-  res.json({ ok: true });
-});
-
-/* ================= LOGOUT TOTAL (todos os dispositivos) ================= */
-app.post('/api/logout-all', auth, async (req, res) => {
-  try {
-    await pool.query(
-      'DELETE FROM refresh_tokens WHERE usuario_id = $1',
-      [req.user.id]
-    );
-    res.json({ ok: true });
-  } catch (err) {
-    console.error('Erro ao revogar todos os tokens:', err.message);
-    res.status(500).json({ error: 'Erro interno' });
-  }
-});
-
 /* ================= KEEP ALIVE (RENDER) ================= */
 app.get('/ping', (req, res) => {
   res.status(200).send('pong');
@@ -1513,20 +1318,3 @@ app.get('/ping', (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Backend rodando em http://localhost:${PORT}`);
 });
-
-// ── Limpeza de refresh tokens expirados (a cada 6h) ──────────
-async function limparRefreshTokensExpirados() {
-  try {
-    const result = await pool.query(
-      'DELETE FROM refresh_tokens WHERE expira_em < NOW()'
-    );
-    if (result.rowCount > 0) {
-      console.log(`🧹 ${result.rowCount} refresh token(s) expirado(s) removido(s).`);
-    }
-  } catch (err) {
-    console.error('Erro ao limpar refresh tokens:', err.message);
-  }
-}
-
-limparRefreshTokensExpirados(); // roda na inicialização
-setInterval(limparRefreshTokensExpirados, 6 * 60 * 60 * 1000); // a cada 6h
