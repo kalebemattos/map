@@ -588,103 +588,92 @@ tbody tr:last-child td { border-bottom: none; }
   .chart-card { padding: 14px; }
 }
 
-    /* ===== SUBTABELA BAIRROS INLINE ===== */
-    .bairros-row { display: none; }
-    .bairros-row.aberto { display: table-row; }
-
-    .bairros-cell {
-      padding: 0 !important;
-      background: #f8faff !important;
-      border-bottom: 2px solid var(--blue-main) !important;
-    }
-
-    .bairros-inner {
-      padding: 12px 16px 16px;
-      animation: fadeUp 0.2s ease;
-    }
-
-    .bairros-inner-header {
-      display: flex;
+    /* ===== MODAL BAIRROS ===== */
+    #modal-bairros {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(8,18,48,0.72);
+      backdrop-filter: blur(8px);
+      justify-content: center;
       align-items: center;
+      z-index: 1001;
+      padding: 16px;
+    }
+    #modal-bairros.aberto { display: flex; }
+    .modal-bairros-card {
+      background: white;
+      border-radius: 22px;
+      width: 100%;
+      max-width: 640px;
+      max-height: 88vh;
+      overflow-y: auto;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.35);
+      animation: fadeUp 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .modal-bairros-header {
+      display: flex;
       justify-content: space-between;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      gap: 8px;
+      align-items: flex-start;
+      padding: 20px 22px 14px;
+      border-bottom: 1px solid var(--slate-100);
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 1;
     }
-
-    .bairros-inner-titulo {
+    .modal-bairros-titulo {
       font-family: 'Sora', sans-serif;
-      font-size: 12px;
+      font-size: 15px;
       font-weight: 700;
-      color: var(--blue-deep);
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      color: var(--slate-900);
+      line-height: 1.3;
     }
-
-    .bairros-subtable {
+    .modal-bairros-sub {
+      font-size: 12px;
+      color: var(--slate-500);
+      margin-top: 3px;
+      font-weight: 500;
+    }
+    .tb {
       width: 100%;
       border-collapse: collapse;
     }
-
-    .bairros-subtable th {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--slate-500);
-      padding: 6px 10px;
-      text-align: left;
-      border-bottom: 1px solid var(--slate-200);
-      white-space: nowrap;
+    .tb thead tr { background: linear-gradient(135deg,var(--blue-deep),var(--blue-main)); }
+    .tb th {
+      color: rgba(255,255,255,.85);
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .7px; text-transform: uppercase;
+      padding: 10px 14px; text-align: left; white-space: nowrap;
     }
-
-    .bairros-subtable td {
-      padding: 7px 10px;
-      font-size: 12.5px;
-      color: var(--slate-700);
+    .tb td {
+      padding: 9px 14px;
       border-bottom: 1px solid var(--slate-100);
+      font-size: 13px; color: var(--slate-700);
     }
-
-    .bairros-subtable tbody tr:last-child td { border-bottom: none; }
-    .bairros-subtable tbody tr:hover { background: #e8f0fe; }
-
-    .bairros-subtable .b-nome { font-weight: 600; color: var(--slate-900); }
-    .bairros-subtable .b-votos {
-      font-family: 'Sora', sans-serif;
-      font-weight: 700;
-      color: var(--blue-main);
+    .tb tbody tr:hover { background: #f0f6ff; }
+    .tb tbody tr:last-child td { border-bottom: none; }
+    .tb .b-nome { font-weight: 600; color: var(--slate-900); }
+    .tb .b-votos { font-family:'Sora',sans-serif; font-weight:700; color:var(--blue-main); }
+    .tb-footer {
+      padding: 10px 14px;
+      font-size: 12px; color: var(--slate-500); font-weight: 500;
+      border-top: 1px solid var(--slate-100);
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;
     }
-
-    .bairros-loading-msg {
-      padding: 20px;
-      text-align: center;
-      color: var(--slate-400);
-      font-size: 13px;
-    }
-
     /* Linha da cidade clicável */
-    .cidade-row { cursor: pointer; }
-    .cidade-row:hover td { background: #e8f0fe !important; }
-    .cidade-row.aberta td { background: #dbeafe !important; }
-
-    .cidade-expand-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 18px;
-      height: 18px;
-      border-radius: 4px;
-      background: var(--blue-light);
-      color: var(--blue-main);
+    .cidade-clicavel { cursor: pointer; }
+    .cidade-clicavel:hover td { background: #eff6ff !important; }
+    .cidade-clicavel .city-name::after {
+      content: ' ▸';
       font-size: 10px;
-      font-weight: 700;
-      margin-right: 5px;
-      transition: transform 0.2s;
-      flex-shrink: 0;
+      color: var(--blue-main);
+      opacity: 0.6;
     }
-
-    .cidade-row.aberta .cidade-expand-icon { transform: rotate(90deg); }
+    @media (max-width: 600px) {
+      .modal-bairros-card { max-height: 92vh; border-radius: 20px 20px 0 0; }
+      #modal-bairros { align-items: flex-end; padding: 0; }
+    }
 </style>
 </head>
 <body>
@@ -808,29 +797,6 @@ let charts = [];
 let anoSelecionado = "2022";
 const UF = "RJ";
 
-// ── Cache JSONs de cidades ──
-const cidadeCache = {}
-
-function nomeCidadeParaArquivo(nome) {
-  return nome.toUpperCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '_')
-    .replace(/[^A-Z0-9_]/g, '')
-}
-
-async function carregarDadosCidade(cidade, ano) {
-  const key = cidade + '_' + ano
-  if (cidadeCache[key] !== undefined) return cidadeCache[key]
-  const arquivo = nomeCidadeParaArquivo(cidade)
-  try {
-    const res = await fetch(`${BASE_PATH}dados/${ano}/cidades/${arquivo}.json`)
-    if (!res.ok) { cidadeCache[key] = null; return null }
-    const data = await res.json()
-    cidadeCache[key] = data
-    return data
-  } catch { cidadeCache[key] = null; return null }
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   carregarAno(anoSelecionado);
 });
@@ -949,6 +915,8 @@ function mostrarAnalise() {
     const barW = maxPct > 0 ? (candidato.votos / dadosCidade.total_validos * 100 / maxPct * 100).toFixed(1) : 0;
 
     const tr = document.createElement("tr");
+    tr.className = 'cidade-clicavel';
+    tr.addEventListener('click', () => abrirModalBairros(cidadeNome));
     tr.innerHTML = `
       <td data-label="Cidade"><span class="city-name">${cidadeNome}</span></td>
       <td data-label="Votos"><span class="votos-num">${candidato.votos.toLocaleString('pt-BR')}</span></td>
@@ -979,83 +947,6 @@ function mostrarAnalise() {
   totalEl.innerHTML = `Total no estado:<strong>${totalVotosGeral.toLocaleString('pt-BR')}</strong>`;
 }
 
-async function renderSubtabelaBairros(trBairros, cidadeNome) {
-  const inner = trBairros.querySelector('.bairros-inner')
-  const cargo = document.getElementById("cargoSelect").value
-
-  const data = await carregarDadosCidade(cidadeNome, anoSelecionado)
-
-  if (!data) {
-    inner.innerHTML = `<div class="bairros-loading-msg">📂 Dados por bairro não disponíveis para ${cidadeNome}.</div>`
-    return
-  }
-
-  const chaveCargo = Object.keys(data).find(k => k.toUpperCase() === cargo.toUpperCase())
-  if (!chaveCargo) {
-    inner.innerHTML = `<div class="bairros-loading-msg">📂 Sem dados de "${cargo}" para ${cidadeNome}.</div>`
-    return
-  }
-
-  const cidades = data[chaveCargo].CIDADES
-  const nomeCidadeKey = Object.keys(cidades).find(
-    k => normalizarTexto(k) === normalizarTexto(cidadeNome)
-  )
-
-  if (!nomeCidadeKey || !cidades[nomeCidadeKey].BAIRROS) {
-    inner.innerHTML = `<div class="bairros-loading-msg">📂 Dados por bairro não disponíveis para ${cidadeNome}.</div>`
-    return
-  }
-
-  const bairros = cidades[nomeCidadeKey].BAIRROS
-  const bairrosArr = Object.entries(bairros).map(([nome, dados]) => {
-    const cand = (dados.candidatos || []).find(
-      c => normalizarTexto(c.nome) === normalizarTexto(candidatoSelecionado)
-    )
-    return {
-      nome,
-      votos: cand ? cand.votos : 0,
-      posicao: cand ? cand.posicao : null,
-      total_validos: dados.total_validos || 0
-    }
-  }).sort((a, b) => b.votos - a.votos)
-
-  const maxVotos = Math.max(...bairrosArr.map(b => b.votos), 1)
-  const totalVotos = bairrosArr.reduce((s, b) => s + b.votos, 0)
-
-  const rows = bairrosArr.map(b => {
-    const pct = b.total_validos > 0 ? (b.votos / b.total_validos * 100).toFixed(1) : '0.0'
-    const barW = (b.votos / maxVotos * 100).toFixed(1)
-    const posClass = b.posicao === 1 ? 'pos-1' : b.posicao === 2 ? 'pos-2' : b.posicao === 3 ? 'pos-3' : 'pos-other'
-    return `<tr>
-      <td><span class="b-nome">${b.nome}</span></td>
-      <td><span class="b-votos">${b.votos.toLocaleString('pt-BR')}</span></td>
-      <td>
-        <div class="pct-bar-wrap">
-          <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
-          <span class="pct-label">${pct}%</span>
-        </div>
-      </td>
-      <td><span class="posicao-badge ${posClass}">${b.posicao ? b.posicao + 'º' : '—'}</span></td>
-    </tr>`
-  }).join('')
-
-  inner.innerHTML = `
-    <div class="bairros-inner-header">
-      <div class="bairros-inner-titulo">🏘️ Votos por bairro — ${cidadeNome} · ${cargo}</div>
-      <span style="font-size:11px;color:var(--slate-500);font-weight:600;">Total: ${totalVotos.toLocaleString('pt-BR')} votos em ${bairrosArr.length} bairros</span>
-    </div>
-    <table class="bairros-subtable">
-      <thead><tr>
-        <th>Bairro</th>
-        <th>Votos</th>
-        <th>% Válidos</th>
-        <th>Posição</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `
-}
-
 function abrirModal(cidade) {
   document.getElementById("tituloCidade").textContent = "Perfil do eleitorado — " + cidade;
   destruirGraficos();
@@ -1072,6 +963,97 @@ function abrirModal(cidade) {
 }
 
 function fecharModal() { document.getElementById("modal").style.display = "none"; }
+
+// ── Cache dos JSONs de bairros por cidade/ano ──
+const _bCache = {};
+
+function _nomeArq(nome) {
+  return nome.toUpperCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
+}
+
+async function abrirModalBairros(cidade) {
+  const mb = document.getElementById('modal-bairros');
+  const conteudo = document.getElementById('mb-conteudo');
+  const cargo = document.getElementById('cargoSelect').value;
+
+  document.getElementById('mb-titulo').textContent = cidade;
+  document.getElementById('mb-sub').textContent =
+    candidatoSelecionado + ' · ' + cargo + ' · ' + anoSelecionado;
+  conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">⏳ Carregando...</div>';
+  mb.classList.add('aberto');
+
+  // Carrega JSON da cidade (com cache)
+  const key = _nomeArq(cidade) + '_' + anoSelecionado;
+  if (!(key in _bCache)) {
+    try {
+      const res = await fetch(BASE_PATH + 'dados/' + anoSelecionado + '/cidades/' + _nomeArq(cidade) + '.json');
+      _bCache[key] = res.ok ? await res.json() : null;
+    } catch { _bCache[key] = null; }
+  }
+  const data = _bCache[key];
+
+  if (!data) {
+    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Dados por bairro não disponíveis para esta cidade.</div>';
+    return;
+  }
+
+  // Acha o cargo no JSON
+  const chave = Object.keys(data).find(k => k.toUpperCase() === cargo.toUpperCase());
+  if (!chave) {
+    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de "' + cargo + '" para esta cidade.</div>';
+    return;
+  }
+
+  // Acha a cidade dentro do JSON
+  const cidades = data[chave].CIDADES;
+  const nomeCidade = Object.keys(cidades).find(
+    k => normalizarTexto(k) === normalizarTexto(cidade)
+  );
+  if (!nomeCidade || !cidades[nomeCidade].BAIRROS) {
+    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Dados por bairro não disponíveis.</div>';
+    return;
+  }
+
+  const bairros = cidades[nomeCidade].BAIRROS;
+  const lista = Object.entries(bairros).map(([nome, d]) => {
+    const cand = (d.candidatos || []).find(
+      c => normalizarTexto(c.nome) === normalizarTexto(candidatoSelecionado)
+    );
+    return {
+      nome,
+      votos:   cand ? cand.votos   : 0,
+      posicao: cand ? cand.posicao : null,
+      total:   d.total_validos || 0
+    };
+  }).sort((a, b) => b.votos - a.votos);
+
+  const maxVotos  = Math.max(...lista.map(b => b.votos), 1);
+  const totalVotos = lista.reduce((s, b) => s + b.votos, 0);
+
+  const rows = lista.map(b => {
+    const pct  = b.total > 0 ? (b.votos / b.total * 100).toFixed(1) : '0.0';
+    const barW = (b.votos / maxVotos * 100).toFixed(1);
+    const pc   = b.posicao === 1 ? 'pos-1' : b.posicao === 2 ? 'pos-2' : b.posicao === 3 ? 'pos-3' : 'pos-other';
+    return '<tr><td><span class="b-nome">' + b.nome + '</span></td>' +
+      '<td><span class="b-votos">' + b.votos.toLocaleString('pt-BR') + '</span></td>' +
+      '<td><div class="pct-bar-wrap"><div class="pct-bar"><div class="pct-bar-fill" style="width:' + barW + '%"></div></div>' +
+      '<span class="pct-label">' + pct + '%</span></div></td>' +
+      '<td><span class="posicao-badge ' + pc + '">' + (b.posicao ? b.posicao + 'º' : '—') + '</span></td></tr>';
+  }).join('');
+
+  conteudo.innerHTML =
+    '<table class="tb"><thead><tr><th>Bairro</th><th>Votos</th><th>% Válidos</th><th>Posição</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table>' +
+    '<div class="tb-footer"><span>' + lista.length + ' bairros</span>' +
+    '<span>Total: <strong>' + totalVotos.toLocaleString('pt-BR') + '</strong> votos</span></div>';
+}
+
+function fecharModalBairros() {
+  document.getElementById('modal-bairros').classList.remove('aberto');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModalBairros(); });
 function fecharModalFora(e) { if (e.target === document.getElementById("modal")) fecharModal(); }
 document.addEventListener("keydown", e => { if (e.key === "Escape") fecharModal(); });
 
@@ -1113,5 +1095,19 @@ function criarGrafico(id, dadosObj, cores) {
 function destruirGraficos() { charts.forEach(c => c.destroy()); charts = []; }
 </script>
 
+
+<!-- MODAL BAIRROS -->
+<div id="modal-bairros" onclick="if(event.target===this)fecharModalBairros()">
+  <div class="modal-bairros-card">
+    <div class="modal-bairros-header">
+      <div>
+        <div class="modal-bairros-titulo" id="mb-titulo"></div>
+        <div class="modal-bairros-sub" id="mb-sub"></div>
+      </div>
+      <button class="modal-close" onclick="fecharModalBairros()">✕</button>
+    </div>
+    <div id="mb-conteudo"></div>
+  </div>
+</div>
 </body>
 </html>
