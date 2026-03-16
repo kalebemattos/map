@@ -968,9 +968,11 @@ function fecharModal() { document.getElementById("modal").style.display = "none"
 const _bCache = {};
 
 function _nomeArq(nome) {
+  // Mantém acentos pois os arquivos estão nomeados com acentos
+  // ex: "Aperibé" -> "APERIBÉ", "São Gonçalo" -> "SÃO_GONÇALO"
   return nome.toUpperCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
+    .replace(/\s+/g, '_')
+    .replace(/[^A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇÑ0-9_\-]/g, '');
 }
 
 async function abrirModalBairros(cidade) {
