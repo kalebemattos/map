@@ -767,9 +767,10 @@ window.iniciarMapa = function() {
           layer.on("click", () => selecionarBairro(bairro, layer))
           const center = layer.getBounds().getCenter()
           L.marker(center, {
+            interactive: false,
             icon: L.divIcon({
-              className: "bairro-label",
-              html: bairro,
+              className: "",
+              html: `<div style="font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:600;color:rgba(15,23,42,0.55);text-shadow:0 1px 3px rgba(255,255,255,0.9);text-align:center;width:120px;line-height:1.2;opacity:0.55;pointer-events:none;user-select:none;">${bairro}</div>`,
               iconSize: [120, 20],
               iconAnchor: [60, 10]
             })

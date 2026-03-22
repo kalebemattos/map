@@ -1534,6 +1534,10 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
           <span class="regiao-totais-val" id="regiao-total-votos">0</span>
         </div>
         <div class="regiao-totais-row">
+          <span class="regiao-totais-label">🔵 Votos Célia (2022)</span>
+          <span class="regiao-totais-val" id="regiao-votos-celia">0</span>
+        </div>
+        <div class="regiao-totais-row">
           <span class="regiao-totais-label">📊 Expectativa Célia</span>
           <span class="regiao-totais-val" id="regiao-exp-celia">0</span>
         </div>
@@ -3538,6 +3542,7 @@ function calcularTotaisRegiao(key) {
   }
 
   let totalVotos = 0
+  let totalVotosCelia = 0
   let totalExpCelia = 0
   let totalExpFernando = 0
   let totalExpLideres = 0
@@ -3545,6 +3550,12 @@ function calcularTotaisRegiao(key) {
   cidades.forEach(cidade => {
     // Votos válidos
     totalVotos += (typeof votosValidos !== 'undefined' ? votosValidos[cidade] || 0 : 0)
+
+    // Votos da Célia (2022)
+    if (typeof votosCeliaJordao !== 'undefined') {
+      const norm = normalizeCityName(cidade)
+      totalVotosCelia += votosCeliaJordao[norm] || 0
+    }
 
     // Expectativa da cidade + lideranças
     const c = dataCache[cidade]
@@ -3562,6 +3573,7 @@ function calcularTotaisRegiao(key) {
   document.getElementById('regiao-totais-nome').textContent =
     (REGIOES_LABEL[key] || key) + ' · ' + cidades.length + ' municípios'
   document.getElementById('regiao-total-votos').textContent   = fmt(totalVotos)
+  document.getElementById('regiao-votos-celia').textContent   = fmt(totalVotosCelia)
   document.getElementById('regiao-exp-celia').textContent     = fmt(totalExpCelia)
   document.getElementById('regiao-exp-fernando').textContent  = fmt(totalExpFernando)
   document.getElementById('regiao-exp-total').textContent     = fmt(totalExp)
