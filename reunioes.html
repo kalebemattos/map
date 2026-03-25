@@ -146,7 +146,7 @@
       1. Crie uma conta em <a href="https://dashboard.daily.co/signup" target="_blank">dashboard.daily.co</a><br>
       2. Copie seu subdomínio (ex: <code>paralaxgestao</code>)<br>
       3. Abra o <code>reunioes.html</code> e edite a linha:<br>
-      <code>const DAILY_DOMAIN = 'https://paralaxgestao.daily.co';</code>
+      <code>const DAILY_DOMAIN = 'paralaxgestao';</code>
     </p>
     <p style="font-size:12px;color:var(--text3)">Plano gratuito: até 200 participantes simultâneos e 1.000 min/mês.</p>
   </div>
@@ -155,10 +155,10 @@
 <script>
 // ══════════════════════════════════════════════
 const API_URL      = 'https://map-backend-j88s.onrender.com';
-const DAILY_DOMAIN = 'https://paralaxgestao.daily.co'; // ← troque pelo seu subdomínio no Daily.co
+const DAILY_DOMAIN = 'paralaxgestao'; // ← troque pelo seu subdomínio no Daily.co
 // ══════════════════════════════════════════════
 
-const dailyConfigurado = DAILY_DOMAIN !== 'https://paralaxgestao.daily.co';
+const dailyConfigurado = true;
 
 let socket      = null;
 let salaAtual   = null;
