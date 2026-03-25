@@ -11,6 +11,9 @@ const bcrypt = require('bcrypt');
 const auth = require('./middleware/auth');
 const sharp = require('sharp');
 const helmet = require('helmet');
+const http = require('http');
+const { Server: SocketServer } = require('socket.io');
+const { v4: uuidv4 } = require('uuid');
 
 function allow(...niveisPermitidos) {
   return (req, res, next) => {
@@ -31,7 +34,15 @@ app.use(
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "https://kalebemattos.github.io", "https://*.supabase.co"],
+        connectSrc: [
+          "'self'",
+          "https://kalebemattos.github.io",
+          "https://*.supabase.co",
+          "https://*.100ms.live",
+          "wss://*.100ms.live",
+          "wss://paralaxgestao.online",
+          "wss://www.paralaxgestao.online"
+        ],
       }
     }
   })
@@ -1311,10 +1322,158 @@ app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
   }
 });
 /* ================= KEEP ALIVE (RENDER) ================= */
-app.get('/ping', (req, res) => {
-  res.status(200).send('pong');
+
+
+/* ================= VIDEO CONFERÊNCIA ================= */
+
+function gerarTokenHMS(salaId, usuarioId, nivel) {
+  const role = ["dono", "admin", "lider_regiao"].includes(nivel) ? "host" : "guest";
+  const payload = {
+    access_key: process.env.HMS_ACCESS_KEY,
+    room_id: String(salaId),
+    user_id: String(usuarioId),
+    role,
+    type: "app",
+    version: 2,
+    iat: Math.floor(Date.now() / 1000),
+    nbf: Math.floor(Date.now() / 1000),
+  };
+  return jwt.sign(payload, process.env.HMS_SECRET, {
+    algorithm: "HS256",
+    expiresIn: "1h",
+    jwtid: uuidv4()
+  });
+}
+
+// Criar sala de vídeo
+app.post("/api/salas-video",
+  auth,
+  allow("dono", "admin", "lider_regiao"),
+  async (req, res) => {
+    try {
+      const { nome } = req.body;
+      if (!nome?.trim()) return res.status(400).json({ error: "Nome obrigatório" });
+      const { rows } = await pool.query(
+        "INSERT INTO salas_video (nome, host_id, regiao) VALUES ($1, $2, $3) RETURNING *",
+        [nome.trim(), req.user.id, req.user.regiao]
+      );
+      res.json(rows[0]);
+    } catch (err) {
+      console.error("Erro ao criar sala:", err);
+      res.status(500).json({ error: "Erro interno" });
+    }
+  }
+);
+
+// Listar salas da mesma região (dono vê todas)
+app.get("/api/salas-video", auth, async (req, res) => {
+  try {
+    const isDono = req.user.nivel === "dono";
+    const { rows } = await pool.query(
+      isDono
+        ? "SELECT s.*, u.nome as host_nome FROM salas_video s JOIN usuarios u ON s.host_id = u.id WHERE s.ativa = true ORDER BY s.criada_em DESC"
+        : "SELECT s.*, u.nome as host_nome FROM salas_video s JOIN usuarios u ON s.host_id = u.id WHERE s.regiao = $1 AND s.ativa = true ORDER BY s.criada_em DESC",
+      isDono ? [] : [req.user.regiao]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao listar salas" });
+  }
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Backend rodando em http://localhost:${PORT}`);
+// Obter token 100ms para entrar na sala
+app.post("/api/salas-video/:id/token", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sala = await dbGet("SELECT * FROM salas_video WHERE id = $1 AND ativa = true", [id]);
+    if (!sala) return res.status(404).json({ error: "Sala não encontrada" });
+    if (req.user.nivel !== "dono" && sala.regiao !== req.user.regiao)
+      return res.status(403).json({ error: "Acesso negado" });
+    const token = gerarTokenHMS(id, req.user.id, req.user.nivel);
+    res.json({ token, salaId: id });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao gerar token" });
+  }
+});
+
+// Encerrar sala
+app.delete("/api/salas-video/:id",
+  auth,
+  allow("dono", "admin", "lider_regiao"),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = await pool.query(
+        req.user.nivel === "dono"
+          ? "UPDATE salas_video SET ativa = false WHERE id = $1 RETURNING *"
+          : "UPDATE salas_video SET ativa = false WHERE id = $1 AND (host_id = $2 OR regiao = $3) RETURNING *",
+        req.user.nivel === "dono" ? [id] : [id, req.user.id, req.user.regiao]
+      );
+      if (!result.rows.length) return res.status(403).json({ error: "Sem permissão" });
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: "Erro ao encerrar sala" });
+    }
+  }
+);
+
+/* ================= HTTP SERVER + SOCKET.IO ================= */
+
+const server = http.createServer(app);
+
+const io = new SocketServer(server, {
+  cors: { origin: allowedOrigins, credentials: true }
+});
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) return next(new Error("Token ausente"));
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.usuario = decoded;
+    next();
+  } catch {
+    next(new Error("Token inválido"));
+  }
+});
+
+io.on("connection", (socket) => {
+  const u = socket.usuario;
+
+  socket.on("entrar-sala", (salaId) => {
+    socket.join("sala:" + salaId);
+    socket.to("sala:" + salaId).emit("usuario-entrou", { id: u.id });
+  });
+
+  socket.on("mensagem", ({ salaId, texto }) => {
+    if (!texto?.trim()) return;
+    io.to("sala:" + salaId).emit("nova-mensagem", {
+      id: uuidv4(),
+      usuarioId: u.id,
+      texto: texto.trim(),
+      hora: Date.now()
+    });
+  });
+
+  socket.on("levantar-mao", (salaId) => {
+    io.to("sala:" + salaId).emit("mao-levantada", { usuarioId: u.id });
+  });
+
+  socket.on("abaixar-mao", (salaId) => {
+    io.to("sala:" + salaId).emit("mao-abaixada", { usuarioId: u.id });
+  });
+
+  socket.on("sair-sala", (salaId) => {
+    socket.leave("sala:" + salaId);
+    socket.to("sala:" + salaId).emit("usuario-saiu", { id: u.id });
+  });
+});
+
+/* ================= KEEP ALIVE (RENDER) ================= */
+app.get("/ping", (req, res) => {
+  res.status(200).send("pong");
+});
+
+server.listen(PORT, () => {
+  console.log("Backend rodando em http://localhost:" + PORT);
 });
