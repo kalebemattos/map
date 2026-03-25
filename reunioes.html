@@ -72,16 +72,6 @@
   /* DAILY IFRAME */
   #daily-frame { flex: 1; width: 100%; border: none; background: #000; }
 
-  /* AVISO DAILY */
-  #daily-setup {
-    flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 16px; padding: 32px; text-align: center;
-  }
-  #daily-setup h2 { font-size: 20px; font-weight: 600; }
-  #daily-setup p { font-size: 14px; color: var(--text2); max-width: 480px; line-height: 1.7; }
-  #daily-setup a { color: var(--accent); text-decoration: none; }
-  #daily-setup code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 13px; }
 
   @media (max-width: 640px) {
     .lobby-main { padding: 24px 16px; }
@@ -131,11 +121,9 @@
     <button class="btn" style="background:var(--red);color:#fff" onclick="sairDaSala()">✕ Sair</button>
   </div>
   <iframe id="daily-frame"
-    allow="camera; microphone; fullscreen; display-capture; autoplay"
+    allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-write"
     style="display:none">
   </iframe>
-  <div id="daily-setup">
-    <div style="font-size:48px">🎥</div>
     <h2>Configure o Daily.co</h2>
     <p>
       Para a videoconferência funcionar você precisa de uma conta gratuita no
@@ -155,10 +143,10 @@
 <script>
 // ══════════════════════════════════════════════
 const API_URL      = 'https://map-backend-j88s.onrender.com';
-const DAILY_DOMAIN = 'paralaxgestao'; // ← troque pelo seu subdomínio no Daily.co
+const JITSI_SERVER = 'meet.jit.si'; // servidor público gratuito, sem cadastro
 // ══════════════════════════════════════════════
 
-const dailyConfigurado = true;
+
 
 let socket      = null;
 let salaAtual   = null;
@@ -277,17 +265,10 @@ async function entrarSala(salaId, salaNome) {
   document.getElementById('sala-contagem').textContent = '';
 
   const iframe = document.getElementById('daily-frame');
-  const setup  = document.getElementById('daily-setup');
 
-  if (dailyConfigurado) {
-    const nome = encodeURIComponent(usuario.nome || usuario.name || 'Usuário');
-    iframe.src = `https://${DAILY_DOMAIN}.daily.co/${salaId}?userName=${nome}`;
-    iframe.style.display = 'block';
-    setup.style.display  = 'none';
-  } else {
-    iframe.style.display = 'none';
-    setup.style.display  = 'flex';
-  }
+  const nome = encodeURIComponent(usuario.nome || usuario.name || 'Usuário');
+  iframe.src = `https://${JITSI_SERVER}/${salaId}#userInfo.displayName=${nome}&config.startWithAudioMuted=false&config.startWithVideoMuted=false`;
+  iframe.style.display = 'block';
 
   if (socket) socket.emit('entrar-sala', salaId);
 

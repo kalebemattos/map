@@ -1326,31 +1326,6 @@ app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
 
 /* ================= VIDEO CONFERÊNCIA ================= */
 
-// Cria room no Daily.co automaticamente
-async function criarRoomDaily(roomName) {
-  if (!process.env.DAILY_API_KEY) return; // sem chave, ignora
-  const res = await fetch('https://api.daily.co/v1/rooms', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.DAILY_API_KEY}`
-    },
-    body: JSON.stringify({
-      name: roomName,
-      privacy: 'private',
-      properties: {
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8,
-        enable_chat: true,
-        enable_screenshare: true,
-        enable_knocking: false
-      }
-    })
-  });
-  if (!res.ok && res.status !== 409) {
-    const err = await res.json();
-    throw new Error(`Daily.co: ${JSON.stringify(err)}`);
-  }
-}
 
 function gerarTokenHMS(salaId, usuarioId, nivel) {
   const role = ["dono", "admin", "lider_regiao"].includes(nivel) ? "host" : "guest";
@@ -1386,9 +1361,6 @@ app.post("/api/salas-video",
         [nome.trim(), req.user.id, req.user.regiao]
       );
       const sala = rows[0];
-
-      // Cria a room no Daily.co com o mesmo ID do banco
-      await criarRoomDaily(sala.id);
 
       res.json(sala);
     } catch (err) {
