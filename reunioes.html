@@ -4,627 +4,102 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reuniões — Paralax Gestão</title>
-<script src="https://unpkg.com/@100mslive/hms-video-store@0.10.10/dist/index.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
   :root {
-    --bg: #0a0c10;
-    --bg2: #111318;
-    --bg3: #181c24;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --text: #e8eaf0;
-    --text2: #8b90a0;
-    --text3: #555a6a;
-    --accent: #3b7fff;
-    --accent2: #2563eb;
-    --green: #22c55e;
-    --red: #ef4444;
-    --yellow: #f59e0b;
-    --radius: 12px;
-    --radius-sm: 8px;
+    --bg: #0a0c10; --bg2: #111318; --bg3: #181c24;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0; --text2: #8b90a0; --text3: #555a6a;
+    --accent: #3b7fff; --accent2: #2563eb;
+    --green: #22c55e; --red: #ef4444; --yellow: #f59e0b;
+    --radius: 12px; --radius-sm: 8px;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* ── TELA DE LOBBY ── */
-  #lobby {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .lobby-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 32px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .lobby-logo {
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.3px;
-    color: var(--text);
-  }
-
-  .lobby-logo span { color: var(--accent); }
-
-  .lobby-user {
-    font-size: 13px;
-    color: var(--text2);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .avatar-sm {
-    width: 30px; height: 30px;
-    border-radius: 50%;
-    background: var(--accent2);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 600; color: #fff;
-  }
-
-  .lobby-main {
-    flex: 1;
-    padding: 40px 32px;
-    max-width: 900px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  .lobby-title {
-    font-size: 26px;
-    font-weight: 600;
-    letter-spacing: -0.5px;
-    margin-bottom: 4px;
-  }
-
-  .lobby-sub {
-    font-size: 14px;
-    color: var(--text2);
-    margin-bottom: 32px;
-  }
-
-  .create-box {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    display: flex;
-    gap: 12px;
-    margin-bottom: 32px;
-    align-items: center;
-  }
-
-  .create-box input {
-    flex: 1;
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-sm);
-    padding: 10px 14px;
-    font-size: 14px;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    outline: none;
-    transition: border-color .2s;
-  }
-
-  .create-box input:focus { border-color: var(--accent); }
-  .create-box input::placeholder { color: var(--text3); }
-
-  .btn {
-    padding: 10px 20px;
-    border-radius: var(--radius-sm);
-    border: none;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all .15s;
-    white-space: nowrap;
-  }
-
-  .btn-primary {
-    background: var(--accent);
-    color: #fff;
-  }
-  .btn-primary:hover { background: var(--accent2); }
-  .btn-primary:active { transform: scale(0.97); }
-
-  .btn-ghost {
-    background: transparent;
-    color: var(--text2);
-    border: 1px solid var(--border2);
-  }
-  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
-
-  .btn-danger {
-    background: var(--red);
-    color: #fff;
-  }
-  .btn-danger:hover { background: #dc2626; }
-
-  .section-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 12px;
-  }
-
-  .rooms-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 12px;
-  }
-
-  .room-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px;
-    cursor: pointer;
-    transition: border-color .2s, background .2s;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .room-card:hover {
-    border-color: var(--border2);
-    background: var(--bg3);
-  }
-
-  .room-card-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  .room-icon {
-    width: 38px; height: 38px;
-    border-radius: 10px;
-    background: rgba(59,127,255,0.12);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-
-  .room-name {
-    font-size: 15px;
-    font-weight: 500;
-    line-height: 1.3;
-    flex: 1;
-    margin-top: 2px;
-  }
-
-  .room-meta {
-    font-size: 12px;
-    color: var(--text3);
-  }
-
-  .room-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .badge-live {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--green);
-  }
-
-  .badge-live::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: var(--green);
-    border-radius: 50%;
-    animation: pulse 1.5s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.3); }
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text3);
-  }
-
-  .empty-state p { font-size: 14px; margin-top: 8px; }
-
-  /* ── TELA DA SALA ── */
-  #sala {
-    display: none;
-    height: 100vh;
-    flex-direction: column;
-    background: var(--bg);
-  }
-
-  .sala-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg2);
-    flex-shrink: 0;
-  }
-
-  .sala-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .sala-nome {
-    font-size: 15px;
-    font-weight: 500;
-  }
-
-  .sala-contagem {
-    font-size: 12px;
-    color: var(--text2);
-    background: var(--bg3);
-    padding: 3px 10px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-  }
-
-  .sala-body {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-  }
-
-  #video-grid {
-    flex: 1;
-    display: grid;
-    gap: 8px;
-    padding: 16px;
-    align-content: center;
-    overflow: auto;
-  }
-
-  .video-tile {
-    position: relative;
-    background: var(--bg3);
-    border-radius: var(--radius);
-    overflow: hidden;
-    aspect-ratio: 16/9;
-    border: 2px solid transparent;
-    transition: border-color .2s;
-  }
-
-  .video-tile.speaking {
-    border-color: var(--green);
-  }
-
-  .video-tile video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .tile-avatar {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg3);
-  }
-
-  .tile-avatar-circle {
-    width: 64px; height: 64px;
-    border-radius: 50%;
-    background: var(--accent2);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    font-weight: 600;
-    color: #fff;
-  }
-
-  .tile-label {
-    position: absolute;
-    bottom: 10px; left: 10px;
-    display: flex; align-items: center; gap: 6px;
-  }
-
-  .tile-name {
-    background: rgba(0,0,0,0.65);
-    backdrop-filter: blur(4px);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 500;
-    padding: 3px 8px;
-    border-radius: 6px;
-  }
-
-  .tile-muted {
-    background: rgba(0,0,0,0.65);
-    backdrop-filter: blur(4px);
-    padding: 3px 6px;
-    border-radius: 6px;
-    font-size: 12px;
-  }
-
-  /* ── CHAT ── */
-  #chat-panel {
-    width: 300px;
-    border-left: 1px solid var(--border);
-    display: none;
-    flex-direction: column;
-    background: var(--bg2);
-    flex-shrink: 0;
-  }
-
-  #chat-panel.open { display: flex; }
-
-  .chat-header {
-    padding: 14px 16px;
-    font-size: 13px;
-    font-weight: 500;
-    border-bottom: 1px solid var(--border);
-    color: var(--text2);
-  }
-
-  #chat-msgs {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  #chat-msgs::-webkit-scrollbar { width: 4px; }
-  #chat-msgs::-webkit-scrollbar-track { background: transparent; }
-  #chat-msgs::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-
-  .msg {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .msg-autor {
-    font-size: 11px;
-    color: var(--text3);
-    font-weight: 500;
-  }
-
-  .msg-texto {
-    font-size: 13px;
-    color: var(--text);
-    background: var(--bg3);
-    padding: 8px 10px;
-    border-radius: 8px;
-    line-height: 1.5;
-    word-break: break-word;
-  }
-
-  .msg.proprio .msg-texto {
-    background: rgba(59,127,255,0.15);
-    color: #93b8ff;
-  }
-
-  .chat-input-area {
-    padding: 12px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    gap: 8px;
-  }
-
-  .chat-input-area input {
-    flex: 1;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 8px 12px;
-    font-size: 13px;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    outline: none;
-  }
-
-  .chat-input-area input:focus { border-color: var(--accent); }
-  .chat-input-area input::placeholder { color: var(--text3); }
-
-  .chat-send {
-    background: var(--accent);
-    border: none;
-    border-radius: var(--radius-sm);
-    width: 34px; height: 34px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    color: #fff;
-    font-size: 14px;
-    transition: background .15s;
-    flex-shrink: 0;
-  }
-
-  .chat-send:hover { background: var(--accent2); }
-
-  /* ── CONTROLES ── */
-  .controls-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 16px 20px;
-    border-top: 1px solid var(--border);
-    background: var(--bg2);
-    flex-shrink: 0;
-    flex-wrap: wrap;
-  }
-
-  .ctrl-btn {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 9px 16px;
-    border-radius: 99px;
-    border: 1px solid var(--border2);
-    background: var(--bg3);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all .15s;
-  }
-
-  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  .ctrl-btn.off {
-    background: rgba(239,68,68,0.15);
-    border-color: rgba(239,68,68,0.3);
-    color: var(--red);
-  }
-
-  .ctrl-btn.active {
-    background: rgba(245,158,11,0.15);
-    border-color: rgba(245,158,11,0.3);
-    color: var(--yellow);
-  }
-
-  .ctrl-btn.chat-open {
-    background: rgba(59,127,255,0.15);
-    border-color: rgba(59,127,255,0.3);
-    color: var(--accent);
-  }
-
-  .ctrl-btn-leave {
-    background: var(--red);
-    border-color: var(--red);
-    color: #fff;
-    margin-left: 8px;
-  }
-
-  .ctrl-btn-leave:hover { background: #dc2626; border-color: #dc2626; color: #fff; }
-
-  /* ── NOTIFICAÇÕES ── */
-  #notif {
-    position: fixed;
-    top: 20px; right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    z-index: 9999;
-    pointer-events: none;
-  }
-
-  .notif-item {
-    background: var(--bg2);
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-sm);
-    padding: 10px 16px;
-    font-size: 13px;
-    color: var(--text);
-    animation: slideIn .2s ease;
-    pointer-events: auto;
-  }
-
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(20px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-
-  /* ── LOADING ── */
-  #loading {
-    position: fixed; inset: 0;
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .spinner {
-    width: 32px; height: 32px;
-    border: 2px solid var(--border2);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-  }
-
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+  /* LOADING */
+  #loading { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 100; }
+  .spinner { width: 36px; height: 36px; border: 3px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-txt { font-size: 14px; color: var(--text2); }
 
-  .loading-txt {
-    font-size: 13px;
-    color: var(--text2);
+  /* NOTIF */
+  #notif { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+  .notif-item { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); font-size: 13px; padding: 10px 16px; border-radius: var(--radius-sm); animation: fadeIn 0.2s ease; max-width: 280px; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform: none; } }
+
+  /* LOBBY */
+  #lobby { min-height: 100vh; display: flex; flex-direction: column; }
+  .lobby-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; border-bottom: 1px solid var(--border); }
+  .lobby-logo { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+  .lobby-logo span { color: var(--accent); }
+  .lobby-user { font-size: 13px; color: var(--text2); display: flex; align-items: center; gap: 8px; }
+  .avatar-sm { width: 30px; height: 30px; border-radius: 50%; background: var(--accent2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; }
+  .lobby-main { flex: 1; padding: 40px 32px; max-width: 900px; margin: 0 auto; width: 100%; }
+  .lobby-title { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 4px; }
+  .lobby-sub { font-size: 14px; color: var(--text2); margin-bottom: 32px; }
+
+  .create-box { display: flex; gap: 10px; margin-bottom: 32px; background: var(--bg2); border: 1px solid var(--border2); padding: 14px; border-radius: var(--radius); }
+  .create-box input { flex: 1; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); font-size: 14px; padding: 10px 14px; border-radius: var(--radius-sm); outline: none; font-family: inherit; }
+  .create-box input:focus { border-color: var(--accent); }
+
+  .btn { padding: 10px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; font-family: inherit; border: none; cursor: pointer; transition: opacity 0.15s; white-space: nowrap; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 14px; }
+  .rooms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 14px; }
+  .room-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; cursor: pointer; transition: border-color 0.15s; }
+  .room-card:hover { border-color: var(--accent); }
+  .room-card-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .room-icon { font-size: 28px; }
+  .room-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .room-meta { font-size: 12px; color: var(--text2); }
+  .room-footer { display: flex; align-items: center; justify-content: space-between; }
+  .badge-live { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--green); background: rgba(34,197,94,0.1); padding: 4px 8px; border-radius: 20px; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text2); }
+  .empty-state p { margin-top: 12px; font-size: 14px; }
+
+  /* SALA */
+  #sala { display: none; flex-direction: column; height: 100vh; overflow: hidden; }
+  .sala-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--bg2); flex-shrink: 0; }
+  .sala-nome { font-size: 15px; font-weight: 600; }
+  .sala-contagem { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  /* DAILY IFRAME */
+  #daily-frame { flex: 1; width: 100%; border: none; background: #000; }
+
+  /* AVISO DAILY */
+  #daily-setup {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px; padding: 32px; text-align: center;
   }
-
-  /* ── MODAL CONFIRM ── */
-  .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 200;
-    backdrop-filter: blur(4px);
-  }
-
-  .modal-box {
-    background: var(--bg2);
-    border: 1px solid var(--border2);
-    border-radius: var(--radius);
-    padding: 24px;
-    width: 340px;
-    max-width: 90vw;
-  }
-
-  .modal-box h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-  .modal-box p  { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.6; }
-
-  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+  #daily-setup h2 { font-size: 20px; font-weight: 600; }
+  #daily-setup p { font-size: 14px; color: var(--text2); max-width: 480px; line-height: 1.7; }
+  #daily-setup a { color: var(--accent); text-decoration: none; }
+  #daily-setup code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 13px; }
 
   @media (max-width: 640px) {
     .lobby-main { padding: 24px 16px; }
     .lobby-header { padding: 16px; }
     .sala-header { padding: 10px 14px; }
-    #chat-panel { width: 100%; position: absolute; bottom: 0; left: 0; right: 0; height: 60vh; border: none; border-top: 1px solid var(--border); z-index: 10; }
-    .ctrl-btn span { display: none; }
-    .ctrl-btn { padding: 9px 12px; }
   }
 </style>
 </head>
 <body>
 
-<!-- LOADING -->
 <div id="loading">
   <div class="spinner"></div>
   <div class="loading-txt">Carregando...</div>
 </div>
 
-<!-- NOTIFICAÇÕES -->
 <div id="notif"></div>
 
-<!-- ══ LOBBY ══════════════════════════════════════════════════════════ -->
+<!-- LOBBY -->
 <div id="lobby">
   <div class="lobby-header">
     <div class="lobby-logo">Paralax <span>Reuniões</span></div>
@@ -633,477 +108,222 @@
       <span id="user-nome-header"></span>
     </div>
   </div>
-
   <div class="lobby-main">
     <div class="lobby-title">Salas de reunião</div>
     <div class="lobby-sub">Crie ou entre em uma sala para iniciar uma videoconferência</div>
-
     <div class="create-box" id="create-box" style="display:none">
-      <input type="text" id="input-nome-sala" placeholder="Nome da reunião..." maxlength="80" />
+      <input type="text" id="input-nome-sala" placeholder="Nome da reunião..." maxlength="80"
+        onkeydown="if(event.key==='Enter') criarSala()" />
       <button class="btn btn-primary" onclick="criarSala()">Criar sala</button>
     </div>
-
     <div class="section-label">Salas ativas</div>
-    <div class="rooms-grid" id="rooms-grid">
-      <!-- preenchido via JS -->
-    </div>
+    <div class="rooms-grid" id="rooms-grid"></div>
   </div>
 </div>
 
-<!-- ══ SALA ══════════════════════════════════════════════════════════ -->
+<!-- SALA -->
 <div id="sala">
   <div class="sala-header">
-    <div class="sala-info">
-      <div class="sala-nome" id="sala-nome-header">Reunião</div>
-      <div class="sala-contagem" id="sala-contagem">1 participante</div>
+    <div>
+      <div class="sala-nome" id="sala-nome-header">Sala</div>
+      <div class="sala-contagem" id="sala-contagem"></div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <div id="mao-aviso" style="font-size:12px;color:var(--yellow);display:none"></div>
-    </div>
+    <button class="btn" style="background:var(--red);color:#fff" onclick="sairDaSala()">✕ Sair</button>
   </div>
-
-  <div class="sala-body">
-    <div id="video-grid"></div>
-    <div id="chat-panel">
-      <div class="chat-header">💬 Chat da reunião</div>
-      <div id="chat-msgs"></div>
-      <div class="chat-input-area">
-        <input type="text" id="chat-input" placeholder="Mensagem..." maxlength="500" />
-        <button class="chat-send" onclick="enviarMensagem()">➤</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="controls-bar">
-    <button class="ctrl-btn" id="btn-mic" onclick="toggleMic()">
-      🎙 <span>Mudo</span>
-    </button>
-    <button class="ctrl-btn" id="btn-cam" onclick="toggleCam()">
-      📷 <span>Câmera</span>
-    </button>
-    <button class="ctrl-btn" id="btn-tela" onclick="toggleTela()">
-      🖥 <span>Tela</span>
-    </button>
-    <button class="ctrl-btn" id="btn-mao" onclick="toggleMao()">
-      ✋ <span>Mão</span>
-    </button>
-    <button class="ctrl-btn" id="btn-chat" onclick="toggleChat()">
-      💬 <span>Chat</span>
-    </button>
-    <button class="ctrl-btn ctrl-btn-leave" onclick="sairDaSala()">
-      Sair
-    </button>
+  <iframe id="daily-frame"
+    allow="camera; microphone; fullscreen; display-capture; autoplay"
+    style="display:none">
+  </iframe>
+  <div id="daily-setup">
+    <div style="font-size:48px">🎥</div>
+    <h2>Configure o Daily.co</h2>
+    <p>
+      Para a videoconferência funcionar você precisa de uma conta gratuita no
+      <a href="https://dashboard.daily.co/signup" target="_blank">Daily.co</a>
+      e configurar o subdomínio no arquivo <code>reunioes.html</code>.
+    </p>
+    <p>
+      1. Crie uma conta em <a href="https://dashboard.daily.co/signup" target="_blank">dashboard.daily.co</a><br>
+      2. Copie seu subdomínio (ex: <code>paralaxgestao</code>)<br>
+      3. Abra o <code>reunioes.html</code> e edite a linha:<br>
+      <code>const DAILY_DOMAIN = 'SEU_SUBDOMINIO';</code>
+    </p>
+    <p style="font-size:12px;color:var(--text3)">Plano gratuito: até 200 participantes simultâneos e 1.000 min/mês.</p>
   </div>
 </div>
 
 <script>
 // ══════════════════════════════════════════════
-// CONFIG — altere apenas esta linha:
-const API_URL = 'https://map-backend-j88s.onrender.com'; // ← coloque a URL do seu Render
+const API_URL      = 'https://map-backend-j88s.onrender.com';
+const DAILY_DOMAIN = 'SEU_SUBDOMINIO'; // ← troque pelo seu subdomínio no Daily.co
 // ══════════════════════════════════════════════
 
-// O SDK 100ms via unpkg exporta como HMSVideoStore no escopo global
-const _HMS = window.HMSVideoStore || {};
-const HMSReactiveStore = _HMS.HMSReactiveStore;
-const hmsManager = new HMSReactiveStore();
-const hmsStore   = hmsManager.getStore();
-const hmsActions = hmsManager.getActions();
+const dailyConfigurado = DAILY_DOMAIN !== 'SEU_SUBDOMINIO';
 
-let socket        = null;
-let salaAtual     = null;
-let micAtivo      = true;
-let camAtivo      = true;
-let telaAtivo     = false;
-let maoLevantada  = false;
-let chatAberto    = false;
-let usuario       = null;
-let accessToken   = null;
+let socket      = null;
+let salaAtual   = null;
+let usuario     = null;
+let accessToken = null;
 
-// ── AUTH ──────────────────────────────────────
 async function init() {
   accessToken = localStorage.getItem('accessToken');
   const userStr = localStorage.getItem('user');
 
   if (!accessToken || !userStr) {
-    // Sem login — redireciona para a página de login do seu projeto
     window.location.href = '/index.html';
     return;
   }
 
-  // Valida token no backend
   try {
-    const r = await fetch(API_URL + '/api/validar-token', {
+    let r = await fetch(API_URL + '/api/validar-token', {
       headers: { Authorization: 'Bearer ' + accessToken }
     });
 
     if (!r.ok) {
-      // Tenta refresh
       const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
-        const r2 = await fetch(API_URL + '/api/refresh', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken })
-        });
-        if (r2.ok) {
-          const d = await r2.json();
-          accessToken = d.accessToken;
-          localStorage.setItem('accessToken', accessToken);
-        } else {
-          window.location.href = '/index.html';
-          return;
-        }
-      } else {
-        window.location.href = '/index.html';
-        return;
-      }
+      if (!refreshToken) { window.location.href = '/index.html'; return; }
+      const r2 = await fetch(API_URL + '/api/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken })
+      });
+      if (!r2.ok) { window.location.href = '/index.html'; return; }
+      accessToken = (await r2.json()).accessToken;
+      localStorage.setItem('accessToken', accessToken);
     }
 
     usuario = JSON.parse(userStr);
+    const ini = (usuario.nome || usuario.name || 'U')[0].toUpperCase();
+    document.getElementById('avatar-inicial').textContent = ini;
     document.getElementById('user-nome-header').textContent = usuario.nome || usuario.name || '';
-    const inicial = (usuario.nome || usuario.name || 'U')[0].toUpperCase();
-    document.getElementById('avatar-inicial').textContent = inicial;
 
-    // Mostrar botão criar sala só para quem pode
-    const podecriar = ['dono','admin','lider_regiao'].includes(usuario.nivel);
-    document.getElementById('create-box').style.display = podecriar ? 'flex' : 'none';
+    if (['dono','admin','lider_regiao'].includes(usuario.nivel)) {
+      document.getElementById('create-box').style.display = 'flex';
+    }
 
-    // Conectar Socket.io
     conectarSocket();
-
-    // Carregar salas
     await carregarSalas();
-
-    // Esconder loading
     document.getElementById('loading').style.display = 'none';
 
   } catch(e) {
     console.error(e);
-    document.getElementById('loading').style.display = 'none';
-    notif('Erro ao conectar. Verifique sua conexão.');
+    notif('Erro ao iniciar. Redirecionando...');
+    setTimeout(() => window.location.href = '/index.html', 2000);
   }
 }
 
-// ── SOCKET.IO ─────────────────────────────────
 function conectarSocket() {
   socket = io(API_URL, {
     auth: { token: accessToken },
-    transports: ['websocket']
+    transports: ['websocket','polling']
   });
-
-  socket.on('nova-mensagem', (msg) => {
-    renderMensagem(msg);
-  });
-
-  socket.on('mao-levantada', ({ usuarioId }) => {
-    notif('✋ Um participante levantou a mão');
-  });
-
-  socket.on('mao-abaixada', ({ usuarioId }) => {});
-
-  socket.on('usuario-entrou', ({ id }) => {
-    notif('👤 Novo participante entrou');
-  });
-
-  socket.on('usuario-saiu', ({ id }) => {
-    notif('👤 Participante saiu');
-  });
+  socket.on('connect_error', e => console.warn('Socket:', e.message));
 }
 
-// ── SALAS ─────────────────────────────────────
 async function carregarSalas() {
   try {
     const r = await fetch(API_URL + '/api/salas-video', {
       headers: { Authorization: 'Bearer ' + accessToken }
     });
-    const salas = await r.json();
-    renderSalas(salas);
-  } catch(e) {
+    if (!r.ok) throw new Error();
+    renderSalas(await r.json());
+  } catch {
     notif('Erro ao carregar salas');
   }
 }
 
 function renderSalas(salas) {
   const grid = document.getElementById('rooms-grid');
-
   if (!salas.length) {
-    grid.innerHTML = `
-      <div class="empty-state" style="grid-column:1/-1">
-        <div style="font-size:32px">📭</div>
-        <p>Nenhuma sala ativa no momento</p>
-      </div>`;
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div style="font-size:32px">📭</div>
+      <p>Nenhuma sala ativa no momento</p>
+    </div>`;
     return;
   }
-
   grid.innerHTML = salas.map(s => `
-    <div class="room-card" onclick="entrarSala('${s.id}','${s.nome}')">
+    <div class="room-card" onclick="entrarSala('${s.id}','${escHtml(s.nome)}')">
       <div class="room-card-top">
         <div class="room-icon">🎥</div>
         <div>
           <div class="room-name">${escHtml(s.nome)}</div>
-          <div class="room-meta">Host: ${escHtml(s.host_nome || '')}</div>
+          <div class="room-meta">Host: ${escHtml(s.host_nome||'')}</div>
         </div>
       </div>
       <div class="room-footer">
         <div class="badge-live">ao vivo</div>
         <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px"
-          onclick="event.stopPropagation();entrarSala('${s.id}','${s.nome}')">
-          Entrar
-        </button>
+          onclick="event.stopPropagation();entrarSala('${s.id}','${escHtml(s.nome)}')">Entrar</button>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 async function criarSala() {
   const nome = document.getElementById('input-nome-sala').value.trim();
   if (!nome) return;
-
   try {
     const r = await fetch(API_URL + '/api/salas-video', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + accessToken
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + accessToken },
       body: JSON.stringify({ nome })
     });
-
     if (!r.ok) { notif('Erro ao criar sala'); return; }
-
     const sala = await r.json();
     document.getElementById('input-nome-sala').value = '';
     notif('✅ Sala criada!');
     await entrarSala(sala.id, sala.nome);
-
-  } catch(e) {
-    notif('Erro ao criar sala');
-  }
+  } catch { notif('Erro ao criar sala'); }
 }
 
-// ── ENTRAR NA SALA ────────────────────────────
-async function entrarSala(salaId, salaName) {
+async function entrarSala(salaId, salaNome) {
   document.getElementById('loading').style.display = 'flex';
   document.querySelector('.loading-txt').textContent = 'Entrando na sala...';
 
-  try {
-    // Pegar token 100ms
-    const r = await fetch(`${API_URL}/api/salas-video/${salaId}/token`, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + accessToken }
-    });
+  salaAtual = salaId;
+  document.getElementById('sala-nome-header').textContent = salaNome;
+  document.getElementById('sala-contagem').textContent = '';
 
-    if (!r.ok) { notif('Acesso negado a esta sala'); document.getElementById('loading').style.display = 'none'; return; }
+  const iframe = document.getElementById('daily-frame');
+  const setup  = document.getElementById('daily-setup');
 
-    const { token } = await r.json();
-
-    // Entrar no 100ms
-    await hmsActions.join({
-      userName: usuario.nome || usuario.name || 'Usuário',
-      authToken: token,
-      settings: { isAudioMuted: false, isVideoMuted: false }
-    });
-
-    salaAtual = salaId;
-    document.getElementById('sala-nome-header').textContent = salaName;
-
-    // Socket.io: entrar na sala
-    socket.emit('entrar-sala', salaId);
-
-    // Mostrar tela da sala
-    document.getElementById('lobby').style.display = 'none';
-    document.getElementById('sala').style.display  = 'flex';
-    document.getElementById('loading').style.display = 'none';
-
-    // Inscrever no store 100ms
-    hmsStore.subscribe(atualizarPeers, _HMS.selectPeers);
-    hmsStore.subscribe(atualizarAudio, _HMS.selectIsLocalAudioEnabled);
-    hmsStore.subscribe(atualizarVideo, _HMS.selectIsLocalVideoEnabled);
-
-  } catch(e) {
-    console.error(e);
-    notif('Erro ao entrar na sala');
-    document.getElementById('loading').style.display = 'none';
-  }
-}
-
-// ── PEERS / VÍDEO ─────────────────────────────
-function atualizarPeers(peers) {
-  if (!peers) return;
-  const grid = document.getElementById('video-grid');
-
-  // Grid responsivo
-  const n = peers.length;
-  if (n <= 1)      grid.style.gridTemplateColumns = '1fr';
-  else if (n <= 4) grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
-  else             grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
-
-  // Atualizar contador
-  const c = peers.length;
-  document.getElementById('sala-contagem').textContent =
-    c + ' participante' + (c !== 1 ? 's' : '');
-
-  // Renderizar tiles
-  peers.forEach(peer => {
-    let tile = document.getElementById('tile-' + peer.id);
-
-    if (!tile) {
-      tile = document.createElement('div');
-      tile.className = 'video-tile';
-      tile.id = 'tile-' + peer.id;
-      tile.innerHTML = `
-        <video id="vid-${peer.id}" autoplay ${peer.isLocal ? 'muted' : ''} playsinline></video>
-        <div class="tile-avatar" id="avatar-${peer.id}">
-          <div class="tile-avatar-circle">${(peer.name||'?')[0].toUpperCase()}</div>
-        </div>
-        <div class="tile-label">
-          <div class="tile-name">${escHtml(peer.name||'')}${peer.isLocal?' (você)':''}</div>
-          <div class="tile-muted" id="muted-${peer.id}" style="display:none">🔇</div>
-        </div>`;
-      grid.appendChild(tile);
-    }
-
-    // Anexar track de vídeo
-    if (peer.videoTrack) {
-      const vid = document.getElementById('vid-' + peer.id);
-      hmsActions.attachVideo(peer.videoTrack, vid);
-      document.getElementById('avatar-' + peer.id).style.display = 'none';
-    } else {
-      document.getElementById('avatar-' + peer.id).style.display = 'flex';
-    }
-  });
-
-  // Remover tiles de quem saiu
-  grid.querySelectorAll('.video-tile').forEach(tile => {
-    const id = tile.id.replace('tile-', '');
-    if (!peers.find(p => p.id === id)) tile.remove();
-  });
-}
-
-function atualizarAudio(enabled) {
-  micAtivo = enabled;
-  const btn = document.getElementById('btn-mic');
-  if (enabled) {
-    btn.className = 'ctrl-btn';
-    btn.innerHTML = '🎙 <span>Mudo</span>';
+  if (dailyConfigurado) {
+    const nome = encodeURIComponent(usuario.nome || usuario.name || 'Usuário');
+    iframe.src = `https://${DAILY_DOMAIN}.daily.co/${salaId}?userName=${nome}`;
+    iframe.style.display = 'block';
+    setup.style.display  = 'none';
   } else {
-    btn.className = 'ctrl-btn off';
-    btn.innerHTML = '🔇 <span>Ativar mic</span>';
+    iframe.style.display = 'none';
+    setup.style.display  = 'flex';
   }
+
+  if (socket) socket.emit('entrar-sala', salaId);
+
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('sala').style.display  = 'flex';
+  document.getElementById('loading').style.display = 'none';
 }
 
-function atualizarVideo(enabled) {
-  camAtivo = enabled;
-  const btn = document.getElementById('btn-cam');
-  if (enabled) {
-    btn.className = 'ctrl-btn';
-    btn.innerHTML = '📷 <span>Câmera</span>';
-  } else {
-    btn.className = 'ctrl-btn off';
-    btn.innerHTML = '🚫 <span>Ativar cam</span>';
-  }
-}
-
-// ── CONTROLES ─────────────────────────────────
-async function toggleMic() {
-  await hmsActions.setLocalAudioEnabled(!micAtivo);
-}
-
-async function toggleCam() {
-  await hmsActions.setLocalVideoEnabled(!camAtivo);
-}
-
-async function toggleTela() {
-  try {
-    await hmsActions.setScreenShareEnabled(!telaAtivo);
-    telaAtivo = !telaAtivo;
-    const btn = document.getElementById('btn-tela');
-    btn.className = telaAtivo ? 'ctrl-btn active' : 'ctrl-btn';
-  } catch(e) {
-    notif('Não foi possível compartilhar a tela');
-  }
-}
-
-function toggleMao() {
-  maoLevantada = !maoLevantada;
-  socket.emit(maoLevantada ? 'levantar-mao' : 'abaixar-mao', salaAtual);
-  const btn = document.getElementById('btn-mao');
-  btn.className = maoLevantada ? 'ctrl-btn active' : 'ctrl-btn';
-  btn.innerHTML = maoLevantada ? '✋ <span>Abaixar mão</span>' : '✋ <span>Mão</span>';
-}
-
-function toggleChat() {
-  chatAberto = !chatAberto;
-  const panel = document.getElementById('chat-panel');
-  const btn   = document.getElementById('btn-chat');
-  panel.classList.toggle('open', chatAberto);
-  btn.className = chatAberto ? 'ctrl-btn chat-open' : 'ctrl-btn';
-}
-
-async function sairDaSala() {
-  await hmsActions.leave();
+function sairDaSala() {
+  document.getElementById('daily-frame').src = '';
   if (socket && salaAtual) socket.emit('sair-sala', salaAtual);
-
-  salaAtual    = null;
-  maoLevantada = false;
-  chatAberto   = false;
-  document.getElementById('chat-panel').classList.remove('open');
-  document.getElementById('video-grid').innerHTML = '';
-  document.getElementById('chat-msgs').innerHTML  = '';
-
+  salaAtual = null;
   document.getElementById('sala').style.display  = 'none';
   document.getElementById('lobby').style.display = 'flex';
-
-  await carregarSalas();
+  carregarSalas();
 }
 
-// ── CHAT ──────────────────────────────────────
-function enviarMensagem() {
-  const input = document.getElementById('chat-input');
-  const texto = input.value.trim();
-  if (!texto || !salaAtual) return;
-  socket.emit('mensagem', { salaId: salaAtual, texto });
-  input.value = '';
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function renderMensagem(msg) {
-  const container = document.getElementById('chat-msgs');
-  const proprio   = msg.usuarioId == (usuario.id);
-  const div = document.createElement('div');
-  div.className = 'msg' + (proprio ? ' proprio' : '');
-  div.innerHTML = `
-    <div class="msg-autor">${proprio ? 'Você' : escHtml(msg.usuarioId)}</div>
-    <div class="msg-texto">${escHtml(msg.texto)}</div>`;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-}
-
-document.getElementById('chat-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') enviarMensagem();
-});
-document.getElementById('input-nome-sala').addEventListener('keydown', e => {
-  if (e.key === 'Enter') criarSala();
-});
-
-// ── UTILITÁRIOS ───────────────────────────────
-function notif(msg, dur = 3500) {
-  const box = document.getElementById('notif');
-  const el  = document.createElement('div');
+function notif(msg) {
+  const el = document.createElement('div');
   el.className = 'notif-item';
   el.textContent = msg;
-  box.appendChild(el);
-  setTimeout(() => el.remove(), dur);
+  document.getElementById('notif').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
 }
 
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
-}
-
-// Iniciar
 init();
 </script>
 </body>
