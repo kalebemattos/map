@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reuniões — Paralax Gestão</title>
 <script src="https://cdn.jsdelivr.net/npm/@100mslive/hms-video-store@0.10.10/dist/index.umd.js"></script>
+<script>
+  // O SDK UMD pode exportar como 'HMS' dependendo da versão
+  if (typeof HMSVideoStore === 'undefined') {
+    // Tenta outros nomes possíveis
+    window.HMSVideoStore = window.HMS || window.HMSStore || window.hmsVideoStore || {};
+    // Copia seletores e classes do namespace raiz se existirem
+    const keys = ['HMSReactiveStore','selectPeers','selectIsLocalAudioEnabled','selectIsLocalVideoEnabled','selectVideoTrackByID'];
+    keys.forEach(k => { if (window[k]) window.HMSVideoStore[k] = window[k]; });
+  }
+</script>
 <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
@@ -702,7 +712,13 @@
 const API_URL = 'https://map-backend-j88s.onrender.com'; // ← coloque a URL do seu Render
 // ══════════════════════════════════════════════
 
-const { HMSReactiveStore, HMSActions } = HMSVideoStore;
+// Detecta namespace do SDK 100ms (muda entre versões UMD)
+const _HMS = (typeof HMSVideoStore !== 'undefined' && HMSVideoStore.HMSReactiveStore)
+  ? HMSVideoStore
+  : (typeof HMS !== 'undefined' && HMS.HMSReactiveStore)
+    ? HMS
+    : window;
+const HMSReactiveStore = _HMS.HMSReactiveStore;
 const hmsManager = new HMSReactiveStore();
 const hmsStore   = hmsManager.getStore();
 const hmsActions = hmsManager.getActions();
@@ -914,9 +930,9 @@ async function entrarSala(salaId, salaName) {
     document.getElementById('loading').style.display = 'none';
 
     // Inscrever no store 100ms
-    hmsStore.subscribe(atualizarPeers, HMSVideoStore.selectPeers);
-    hmsStore.subscribe(atualizarAudio, HMSVideoStore.selectIsLocalAudioEnabled);
-    hmsStore.subscribe(atualizarVideo, HMSVideoStore.selectIsLocalVideoEnabled);
+    hmsStore.subscribe(atualizarPeers, _HMS.selectPeers);
+    hmsStore.subscribe(atualizarAudio, _HMS.selectIsLocalAudioEnabled);
+    hmsStore.subscribe(atualizarVideo, _HMS.selectIsLocalVideoEnabled);
 
   } catch(e) {
     console.error(e);
