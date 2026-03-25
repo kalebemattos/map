@@ -163,10 +163,10 @@ const dailyConfigurado = true;
 let socket      = null;
 let salaAtual   = null;
 let usuario     = null;
-let accessToken = null;
+let accessToken = null; // usa chave 'token'
 
 async function init() {
-  accessToken = localStorage.getItem('accessToken');
+  accessToken = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
 
   if (!accessToken || !userStr) {
@@ -180,16 +180,9 @@ async function init() {
     });
 
     if (!r.ok) {
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) { window.location.href = '/index.html'; return; }
-      const r2 = await fetch(API_URL + '/api/refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken })
-      });
-      if (!r2.ok) { window.location.href = '/index.html'; return; }
-      accessToken = (await r2.json()).accessToken;
-      localStorage.setItem('accessToken', accessToken);
+      localStorage.clear();
+      window.location.href = '/index.html';
+      return;
     }
 
     usuario = JSON.parse(userStr);
