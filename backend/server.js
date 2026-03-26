@@ -1326,6 +1326,31 @@ app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
 
 /* ================= VIDEO CONFERÊNCIA ================= */
 
+// Cria room no Daily.co automaticamente
+async function criarRoomDaily(roomName) {
+  if (!process.env.DAILY_API_KEY) return; // sem chave, ignora
+  const res = await fetch('https://api.daily.co/v1/rooms', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.DAILY_API_KEY}`
+    },
+    body: JSON.stringify({
+      name: roomName,
+      privacy: 'private',
+      properties: {
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8,
+        enable_chat: true,
+        enable_screenshare: true,
+        enable_knocking: false
+      }
+    })
+  });
+  if (!res.ok && res.status !== 409) {
+    const err = await res.json();
+    throw new Error(`Daily.co: ${JSON.stringify(err)}`);
+  }
+}
 
 function gerarTokenHMS(salaId, usuarioId, nivel) {
   const role = ["dono", "admin", "lider_regiao"].includes(nivel) ? "host" : "guest";
@@ -1361,6 +1386,9 @@ app.post("/api/salas-video",
         [nome.trim(), req.user.id, req.user.regiao]
       );
       const sala = rows[0];
+
+      // Cria a room no Daily.co com o mesmo ID do banco
+      await criarRoomDaily(sala.id);
 
       res.json(sala);
     } catch (err) {
@@ -1442,35 +1470,81 @@ io.use((socket, next) => {
   }
 });
 
+// Mapa de presença: socketId -> { id, nome, nivel, regiao }
+const onlineUsers = new Map();
+
 io.on("connection", (socket) => {
   const u = socket.usuario;
 
-  socket.on("entrar-sala", (salaId) => {
-    socket.join("sala:" + salaId);
-    socket.to("sala:" + salaId).emit("usuario-entrou", { id: u.id });
+  // Presença online
+  socket.on("registrar-online", ({ id, nome, nivel, regiao }) => {
+    onlineUsers.set(socket.id, { id, nome, nivel, regiao });
+    socket.emit("lista-online", [...onlineUsers.values()]);
+    socket.broadcast.emit("usuario-online", { id, nome, nivel, regiao });
   });
 
+  // Convite para sala
+  socket.on("convidar-para-sala", ({ paraId, salaId, salaName, de }) => {
+    for (const [sid, info] of onlineUsers.entries()) {
+      if (info.id === paraId) { io.to(sid).emit("convite-reuniao", { salaId, salaName, de }); break; }
+    }
+  });
+
+  // WebRTC Signaling
+  socket.on("entrar-sala", ({ salaId, nome }) => {
+    socket.join("sala:" + salaId);
+    socket.salaAtual = salaId;
+    socket.nomeUsuario = nome || u.id;
+    socket.to("sala:" + salaId).emit("novo-peer", { peerId: socket.id, nome: socket.nomeUsuario });
+    const sala = io.sockets.adapter.rooms.get("sala:" + salaId);
+    const existingPeers = [];
+    if (sala) sala.forEach(sid => {
+      if (sid !== socket.id) {
+        const s = io.sockets.sockets.get(sid);
+        if (s) existingPeers.push({ peerId: sid, nome: s.nomeUsuario || sid });
+      }
+    });
+    socket.emit("peers-existentes", existingPeers);
+  });
+
+  socket.on("offer", ({ paraId, offer }) => {
+    io.to(paraId).emit("offer", { deId: socket.id, nome: socket.nomeUsuario, offer });
+  });
+  socket.on("answer", ({ paraId, answer }) => {
+    io.to(paraId).emit("answer", { deId: socket.id, answer });
+  });
+  socket.on("ice-candidate", ({ paraId, candidate }) => {
+    io.to(paraId).emit("ice-candidate", { deId: socket.id, candidate });
+  });
+
+  // Chat
   socket.on("mensagem", ({ salaId, texto }) => {
     if (!texto?.trim()) return;
     io.to("sala:" + salaId).emit("nova-mensagem", {
-      id: uuidv4(),
-      usuarioId: u.id,
-      texto: texto.trim(),
-      hora: Date.now()
+      id: uuidv4(), nome: socket.nomeUsuario || u.id,
+      texto: texto.trim(), hora: Date.now()
     });
   });
 
+  // Levantar mao
   socket.on("levantar-mao", (salaId) => {
-    io.to("sala:" + salaId).emit("mao-levantada", { usuarioId: u.id });
+    io.to("sala:" + salaId).emit("mao-levantada", { peerId: socket.id, nome: socket.nomeUsuario });
   });
-
   socket.on("abaixar-mao", (salaId) => {
-    io.to("sala:" + salaId).emit("mao-abaixada", { usuarioId: u.id });
+    io.to("sala:" + salaId).emit("mao-abaixada", { peerId: socket.id });
   });
 
+  // Sair
   socket.on("sair-sala", (salaId) => {
     socket.leave("sala:" + salaId);
-    socket.to("sala:" + salaId).emit("usuario-saiu", { id: u.id });
+    socket.to("sala:" + salaId).emit("peer-saiu", { peerId: socket.id });
+  });
+  socket.on("disconnect", () => {
+    const info = onlineUsers.get(socket.id);
+    onlineUsers.delete(socket.id);
+    if (info) socket.broadcast.emit("usuario-offline", { id: info.id });
+    const salaId = socket.salaAtual;
+    if (salaId) socket.to("sala:" + salaId).emit("peer-saiu", { peerId: socket.id });
   });
 });
 
