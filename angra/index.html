@@ -283,6 +283,17 @@ window.iniciarAplicacao = async function () {
     setTimeout(() => { if (window.map) window.map.invalidateSize() }, 50)
   }
 
+  // Trava o seletor de distrito para lider_distrito_angra
+  if (user.nivel === 'lider_distrito_angra' && user.regiao) {
+    const sel = document.getElementById('select-distrito')
+    if (sel) {
+      sel.value = user.regiao           // pré-seleciona o distrito do usuário
+      sel.disabled = true               // impede mudança
+    }
+    // Expõe a variável global para mapa.js usar ao filtrar
+    window._distritoFixo = user.regiao
+  }
+
   // Inicia o mapa (carrega GeoJSON + dados do backend)
   if (typeof window.iniciarMapa === 'function') {
     window.iniciarMapa()

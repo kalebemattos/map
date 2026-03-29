@@ -837,6 +837,11 @@ window.iniciarMapa = function() {
     })
     .then(() => {
       repaintMapa()
+      // Se o usuário é lider_zona_rj, aplica o filtro da sua zona
+      if (window._zonaFixa) {
+        filtrarDistrito(window._zonaFixa)
+        mostrarLiderDistrito(window._zonaFixa)
+      }
     })
     .catch(err => {
       console.error("Erro ao inicializar mapa:", err)

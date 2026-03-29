@@ -1243,6 +1243,47 @@ app.get('/api/usuarios',
   }
 });
 
+// Rota para editar usuário
+app.put('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, nivel, regiao_vinculada, senha } = req.body;
+
+    const niveisPermitidos = ['dono', 'admin', 'visualizador', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'];
+    if (nivel && !niveisPermitidos.includes(nivel)) {
+      return res.status(400).json({ error: 'Nível inválido' });
+    }
+
+    // Monta os campos a atualizar dinamicamente
+    const fields = [];
+    const values = [];
+    let idx = 1;
+
+    if (nome)             { fields.push(`nome = $${idx++}`);             values.push(nome); }
+    if (nivel)            { fields.push(`nivel = $${idx++}`);            values.push(nivel); }
+    if (regiao_vinculada !== undefined) { fields.push(`regiao_vinculada = $${idx++}`); values.push(regiao_vinculada); }
+    if (senha) {
+      const hash = await require('bcrypt').hash(senha, 10);
+      fields.push(`senha_hash = $${idx++}`);
+      values.push(hash);
+    }
+
+    if (!fields.length) return res.status(400).json({ error: 'Nenhum campo para atualizar.' });
+
+    values.push(id);
+    const result = await pool.query(
+      `UPDATE usuarios SET ${fields.join(', ')} WHERE id = $${idx}`,
+      values
+    );
+
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado.' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Erro ao editar usuário:', err);
+    res.status(500).json({ error: 'Erro ao editar usuário.' });
+  }
+});
+
 // Rota para excluir usuário
 app.delete('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
 

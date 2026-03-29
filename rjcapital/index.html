@@ -340,6 +340,16 @@ window.iniciarAplicacao = async function () {
     setTimeout(() => { if (window.map) window.map.invalidateSize() }, 50)
   }
 
+  // Trava o seletor de zona para lider_zona_rj
+  if (user.nivel === 'lider_zona_rj' && user.regiao) {
+    const sel = document.getElementById('select-distrito')
+    if (sel) {
+      sel.value    = user.regiao   // pré-seleciona a zona do usuário
+      sel.disabled = true          // impede mudança
+    }
+    window._zonaFixa = user.regiao
+  }
+
   if (typeof window.iniciarMapa === 'function') window.iniciarMapa()
 }
 </script>

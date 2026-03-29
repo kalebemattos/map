@@ -781,6 +781,11 @@ window.iniciarMapa = function() {
     })
     .then(() => {
       repaintMapa()
+      // Se o usuário é lider_distrito_angra, aplica o filtro do seu distrito
+      if (window._distritoFixo) {
+        filtrarDistrito(window._distritoFixo)
+        mostrarLiderDistrito(window._distritoFixo)
+      }
     })
     .catch(err => {
       console.error("Erro ao inicializar mapa:", err)

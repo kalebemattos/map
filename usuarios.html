@@ -521,10 +521,12 @@ const REGIOES_LABEL = {
 }
 
 const NIVEL_LABEL = {
-  dono:         'Dono',
-  admin:        'Administrador',
-  lider_regiao: 'Líder de Região',
-  visualizador: 'Visualizador',
+  dono:                'Dono',
+  admin:               'Administrador',
+  lider_regiao:        'Líder de Região',
+  lider_distrito_angra:'Líder de Distrito (Angra)',
+  lider_zona_rj:       'Líder de Zona (RJ)',
+  visualizador:        'Visualizador',
 }
 
 // ── Auth ──────────────────────────────────────────────────
@@ -571,13 +573,17 @@ function voltarHome() { location.href = '../index.html' }
 
 // ── UI helpers ────────────────────────────────────────────
 function toggleRegiao() {
-  document.getElementById('div_regiao').style.display =
-    document.getElementById('u_nivel').value === 'lider_regiao' ? 'block' : 'none'
+  const nivel = document.getElementById('u_nivel').value
+  document.getElementById('div_regiao').style.display          = nivel === 'lider_regiao'        ? 'block' : 'none'
+  document.getElementById('div_distrito_angra').style.display  = nivel === 'lider_distrito_angra'? 'block' : 'none'
+  document.getElementById('div_zona_rj').style.display         = nivel === 'lider_zona_rj'       ? 'block' : 'none'
 }
 
 function toggleRegiaoModal() {
-  document.getElementById('edit-div-regiao').style.display =
-    document.getElementById('edit-nivel').value === 'lider_regiao' ? 'block' : 'none'
+  const nivel = document.getElementById('edit-nivel').value
+  document.getElementById('edit-div-regiao').style.display         = nivel === 'lider_regiao'        ? 'block' : 'none'
+  document.getElementById('edit-div-distrito-angra').style.display = nivel === 'lider_distrito_angra'? 'block' : 'none'
+  document.getElementById('edit-div-zona-rj').style.display        = nivel === 'lider_zona_rj'       ? 'block' : 'none'
 }
 
 function toggleSenha(id, btn) {
@@ -617,13 +623,20 @@ function showFeedback(id, msg, tipo) {
 }
 
 // ── Validar novo usuário ──────────────────────────────────
+function getRegiaoVinculada(prefixo) {
+  const nivel = document.getElementById(prefixo + '_nivel' === 'u_nivel' ? 'u_nivel' : prefixo + '-nivel').value
+  if (nivel === 'lider_regiao')        return document.getElementById(prefixo === 'u' ? 'u_regiao' : 'edit-regiao').value
+  if (nivel === 'lider_distrito_angra') return document.getElementById(prefixo === 'u' ? 'u_distrito_angra' : 'edit-distrito-angra').value
+  if (nivel === 'lider_zona_rj')        return document.getElementById(prefixo === 'u' ? 'u_zona_rj' : 'edit-zona-rj').value
+  return null
+}
+
 function validar() {
   const nome  = document.getElementById('u_nome').value.trim()
   const user  = document.getElementById('u_user').value.trim()
   const pass  = document.getElementById('u_pass').value
   const pass2 = document.getElementById('u_pass2').value
   const nivel = document.getElementById('u_nivel').value
-  const reg   = document.getElementById('u_regiao').value
 
   if (!nome)  { showFeedback('feedback-criar','⚠️ Informe o nome completo.','error'); return false }
   if (!user)  { showFeedback('feedback-criar','⚠️ Informe o login.','error'); return false }
@@ -633,8 +646,14 @@ function validar() {
   }
   if (pass.length < 8) { showFeedback('feedback-criar','⚠️ Senha deve ter pelo menos 8 caracteres.','error'); return false }
   if (pass !== pass2)  { showFeedback('feedback-criar','⚠️ As senhas não coincidem.','error'); return false }
-  if (nivel === 'lider_regiao' && !reg) {
+  if (nivel === 'lider_regiao' && !document.getElementById('u_regiao').value) {
     showFeedback('feedback-criar','⚠️ Selecione uma região para o Líder.','error'); return false
+  }
+  if (nivel === 'lider_distrito_angra' && !document.getElementById('u_distrito_angra').value) {
+    showFeedback('feedback-criar','⚠️ Selecione um distrito de Angra dos Reis.','error'); return false
+  }
+  if (nivel === 'lider_zona_rj' && !document.getElementById('u_zona_rj').value) {
+    showFeedback('feedback-criar','⚠️ Selecione uma zona do Rio de Janeiro.','error'); return false
   }
   return true
 }
@@ -647,12 +666,17 @@ async function salvarUsuario() {
   btn.disabled = true
 
   const nivel = document.getElementById('u_nivel').value
+  let regiao_vinculada = null
+  if (nivel === 'lider_regiao')         regiao_vinculada = document.getElementById('u_regiao').value
+  if (nivel === 'lider_distrito_angra') regiao_vinculada = document.getElementById('u_distrito_angra').value
+  if (nivel === 'lider_zona_rj')        regiao_vinculada = document.getElementById('u_zona_rj').value
+
   const dados = {
     nome:    document.getElementById('u_nome').value.trim(),
     usuario: document.getElementById('u_user').value.trim().toLowerCase(),
     senha:   document.getElementById('u_pass').value,
     nivel,
-    regiao_vinculada: nivel === 'lider_regiao' ? document.getElementById('u_regiao').value : null
+    regiao_vinculada
   }
 
   try {
@@ -662,6 +686,8 @@ async function salvarUsuario() {
       ;['u_nome','u_user','u_pass','u_pass2'].forEach(id => document.getElementById(id).value = '')
       document.getElementById('u_nivel').value = 'visualizador'
       document.getElementById('div_regiao').style.display = 'none'
+      document.getElementById('div_distrito_angra').style.display = 'none'
+      document.getElementById('div_zona_rj').style.display = 'none'
       document.getElementById('strength-fill').style.width = '0'
       document.getElementById('strength-text').textContent = ''
       carregarUsuarios()
@@ -696,7 +722,7 @@ async function carregarUsuarios() {
 
     usuarios.forEach(u => {
       const initials = (u.nome || u.usuario || '?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase()
-      const nivelClass = { dono:'nivel-dono', admin:'nivel-admin', lider_regiao:'nivel-lider', visualizador:'nivel-visualizador' }[u.nivel] || 'nivel-visualizador'
+      const nivelClass = { dono:'nivel-dono', admin:'nivel-admin', lider_regiao:'nivel-lider', lider_distrito_angra:'nivel-distrito', lider_zona_rj:'nivel-zona', visualizador:'nivel-visualizador' }[u.nivel] || 'nivel-visualizador'
       const regiaoLabel = u.regiao_vinculada ? (REGIOES_LABEL[u.regiao_vinculada] || u.regiao_vinculada) : ''
       const isSelf = String(u.id) === String(meId)
 
@@ -748,7 +774,10 @@ function abrirModalEditar(u) {
   document.getElementById('edit-nome').value  = u.nome || ''
   document.getElementById('edit-pass').value  = ''
   document.getElementById('edit-nivel').value = u.nivel || 'visualizador'
-  document.getElementById('edit-regiao').value = u.regiao_vinculada || ''
+  // Pré-seleciona o sub-campo correto conforme o nível
+  document.getElementById('edit-regiao').value       = u.nivel === 'lider_regiao'         ? (u.regiao_vinculada || '') : ''
+  document.getElementById('edit-distrito-angra').value = u.nivel === 'lider_distrito_angra' ? (u.regiao_vinculada || '') : ''
+  document.getElementById('edit-zona-rj').value      = u.nivel === 'lider_zona_rj'         ? (u.regiao_vinculada || '') : ''
   toggleRegiaoModal()
   document.getElementById('feedback-editar').className = 'feedback'
   document.getElementById('modal-editar').classList.add('open')
@@ -766,19 +795,31 @@ async function salvarEdicao() {
   const nome  = document.getElementById('edit-nome').value.trim()
   const pass  = document.getElementById('edit-pass').value
   const nivel = document.getElementById('edit-nivel').value
-  const reg   = document.getElementById('edit-regiao').value
 
   if (!nome) { showFeedback('feedback-editar','⚠️ Informe o nome.','error'); return }
-  if (nivel === 'lider_regiao' && !reg) { showFeedback('feedback-editar','⚠️ Selecione uma região.','error'); return }
+  if (nivel === 'lider_regiao' && !document.getElementById('edit-regiao').value) {
+    showFeedback('feedback-editar','⚠️ Selecione uma região.','error'); return
+  }
+  if (nivel === 'lider_distrito_angra' && !document.getElementById('edit-distrito-angra').value) {
+    showFeedback('feedback-editar','⚠️ Selecione um distrito de Angra dos Reis.','error'); return
+  }
+  if (nivel === 'lider_zona_rj' && !document.getElementById('edit-zona-rj').value) {
+    showFeedback('feedback-editar','⚠️ Selecione uma zona do Rio de Janeiro.','error'); return
+  }
   if (pass && pass.length < 8) { showFeedback('feedback-editar','⚠️ Nova senha deve ter pelo menos 8 caracteres.','error'); return }
 
   const btn = document.getElementById('btn-salvar-edit')
   btn.textContent = 'Salvando...'
   btn.disabled = true
 
+  let regiao_vinculada = null
+  if (nivel === 'lider_regiao')         regiao_vinculada = document.getElementById('edit-regiao').value
+  if (nivel === 'lider_distrito_angra') regiao_vinculada = document.getElementById('edit-distrito-angra').value
+  if (nivel === 'lider_zona_rj')        regiao_vinculada = document.getElementById('edit-zona-rj').value
+
   const dados = {
     nome, nivel,
-    regiao_vinculada: nivel === 'lider_regiao' ? reg : null,
+    regiao_vinculada,
     ...(pass ? { senha: pass } : {})
   }
 
