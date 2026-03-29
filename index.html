@@ -1415,8 +1415,7 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
     <!-- EXPECTATIVA GERAL -->
     <div class="control-card">
       <div class="control-title">📊 Expectativa Geral</div>
-      <div id="total-geral-overlay-celia" class="control-value">—</div>
-      <div id="total-geral-overlay-fernando" class="control-value" style="margin-top:4px;color:#b91c1c;">—</div>
+      <div id="total-geral-overlays"><!-- preenchido por injetarCandidatos() --></div>
     </div>
 
     <!-- VISUALIZAÇÃO -->
@@ -1457,19 +1456,7 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
     <!-- Botão fechar visível apenas no mobile -->
     <button id="closeSidebarMobileBtn" onclick="document.querySelector('.sidebar').classList.add('closed');document.body.classList.add('sidebar-closed');if(window.map)setTimeout(()=>map.invalidateSize(),310);" style="display:none;position:absolute;top:12px;right:12px;z-index:10;width:36px;height:36px;border-radius:50%;border:none;background:var(--slate-100);color:var(--slate-600);font-size:18px;cursor:pointer;align-items:center;justify-content:center;font-family:inherit;">✕</button>
     <div id="seletor-campanha">
-      <div class="campanha-opcao ativa" data-campanha="ambos">
-        <img src="img/celia.jpg" alt="Célia">
-        <img src="img/fernando.jpg" alt="Fernando" style="margin-left:-8px;">
-        <span>Ambos</span>
-      </div>
-      <div class="campanha-opcao" data-campanha="celia">
-        <img src="img/celia.jpg" alt="Célia">
-        <span>Célia Jordão</span>
-      </div>
-      <div class="campanha-opcao" data-campanha="fernando">
-        <img src="img/fernando.jpg" alt="Fernando">
-        <span>Fernando Jordão</span>
-      </div>
+      <!-- preenchido dinamicamente por injetarCandidatos() -->
     </div>
     <div class="subtitle" style="margin-top:10px;margin-bottom:0;">
       Passe o mouse sobre um município no mapa para ver os 5 mais votados (2022).
@@ -1533,18 +1520,8 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
           <span class="regiao-totais-label">🗳️ Votos válidos (2022)</span>
           <span class="regiao-totais-val" id="regiao-total-votos">0</span>
         </div>
-        <div class="regiao-totais-row">
-          <span class="regiao-totais-label">🔵 Votos Célia (2022)</span>
-          <span class="regiao-totais-val" id="regiao-votos-celia">0</span>
-        </div>
-        <div class="regiao-totais-row">
-          <span class="regiao-totais-label">📊 Expectativa Célia</span>
-          <span class="regiao-totais-val" id="regiao-exp-celia">0</span>
-        </div>
-        <div class="regiao-totais-row">
-          <span class="regiao-totais-label">📊 Expectativa Fernando</span>
-          <span class="regiao-totais-val" id="regiao-exp-fernando">0</span>
-        </div>
+        <!-- linhas por candidato — preenchidas por injetarCandidatos() -->
+        <div id="regiao-cand-rows"></div>
         <div class="regiao-totais-row" style="margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.25);">
           <span class="regiao-totais-label" style="color:rgba(255,255,255,0.9);font-weight:700;">🏆 Total expectativa</span>
           <span class="regiao-totais-val highlight" id="regiao-exp-total">0</span>
@@ -1563,14 +1540,8 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
       </div>
 
       <div id="liderancas-content">
-        <div style="margin-bottom:12px;">
-          <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Expectativa Célia Jordão</label>
-          <input id="expectativa-cidade-celia" type="number" min="0" style="margin-top:4px;">
-          <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-top:8px;display:block;">Expectativa Fernando Jordão</label>
-          <input id="expectativa-cidade-fernando" type="number" min="0" style="margin-top:4px;">
-          <button id="salvar-expectativa-cidade" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;box-shadow:0 4px 12px rgba(21,101,192,0.3);">
-            Salvar expectativa
-          </button>
+        <div id="expectativa-inputs-container" style="margin-bottom:12px;">
+          <!-- inputs por candidato — preenchidos por injetarCandidatos() -->
         </div>
 
         <div id="liderancas-list"></div>
@@ -1692,6 +1663,96 @@ async function apiFetch(endpoint, options = {}) {
 
 
 
+// =================================================================
+// CONFIG DINÂMICO (candidatos, cores, mapas)
+// =================================================================
+
+let configSistema = { candidatos: [], cores: {}, mapas: [] };
+
+async function carregarConfig() {
+  try {
+    const r = await fetch(API_URL + '/config');
+    if (!r.ok) return;
+    configSistema = await r.json();
+    injetarCandidatos();
+  } catch (e) {
+    console.warn('[config] não carregada:', e);
+  }
+}
+
+function injetarCandidatos() {
+  const cands = configSistema.candidatos;
+  if (!cands || !cands.length) return;
+
+  // ── 1. Seletor campanha ─────────────────────────────────────────
+  const seletor = document.getElementById('seletor-campanha');
+  if (seletor) {
+    seletor.innerHTML =
+      `<div class="campanha-opcao ativa" data-campanha="ambos">
+        ${cands.map((c, i) =>
+          `<img src="img/${c.chave}.jpg" alt="${c.nome}"${i > 0 ? ' style="margin-left:-8px;"' : ''} onerror="this.style.display=\'none\'">`
+        ).join('')}
+        <span>Ambos</span>
+      </div>` +
+      cands.map(c =>
+        `<div class="campanha-opcao" data-campanha="${c.chave}">
+          <img src="img/${c.chave}.jpg" alt="${c.nome}" onerror="this.style.display=\'none\'">
+          <span>${c.nome}</span>
+        </div>`
+      ).join('');
+
+    seletor.querySelectorAll('.campanha-opcao').forEach(el => {
+      el.addEventListener('click', () => {
+        seletor.querySelectorAll('.campanha-opcao').forEach(e => e.classList.remove('ativa'));
+        el.classList.add('ativa');
+        filtroCampanha = el.dataset.campanha;
+        repaintMap();
+        atualizarTotalGeralOverlay();
+        if (cidadeSelecionada) renderLiderancas(cidadeSelecionada);
+      });
+    });
+  }
+
+  // ── 2. Total geral overlay (painel de controles do mapa) ────────
+  const overlaysEl = document.getElementById('total-geral-overlays');
+  if (overlaysEl) {
+    overlaysEl.innerHTML = cands.map((c, i) =>
+      `<div id="total-geral-overlay-${c.chave}" class="control-value"${i > 0 ? ' style="margin-top:4px;"' : ''}>—</div>`
+    ).join('');
+  }
+
+  // ── 3. Expectativa da cidade — inputs na sidebar ────────────────
+  const expContainer = document.getElementById('expectativa-inputs-container');
+  if (expContainer) {
+    expContainer.innerHTML =
+      cands.map((c, i) =>
+        `<label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;${i > 0 ? 'margin-top:8px;display:block;' : ''}">Expectativa ${c.nome}</label>
+        <input id="expectativa-cidade-${c.chave}" type="number" min="0" style="margin-top:4px;">`
+      ).join('') +
+      `<button id="salvar-expectativa-cidade" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;box-shadow:0 4px 12px rgba(21,101,192,0.3);">
+        Salvar expectativa
+      </button>`;
+
+    document.getElementById('salvar-expectativa-cidade')
+      .addEventListener('click', salvarExpectativaCidade);
+  }
+
+  // ── 4. Regiao-totais — linhas por candidato ─────────────────────
+  const regiaoCandsEl = document.getElementById('regiao-cand-rows');
+  if (regiaoCandsEl) {
+    regiaoCandsEl.innerHTML = cands.map(c =>
+      `<div class="regiao-totais-row">
+        <span class="regiao-totais-label">🗳️ Votos ${c.nome} (2022)</span>
+        <span class="regiao-totais-val" id="regiao-votos-${c.chave}">0</span>
+      </div>
+      <div class="regiao-totais-row">
+        <span class="regiao-totais-label">📊 Expectativa ${c.nome}</span>
+        <span class="regiao-totais-val" id="regiao-exp-${c.chave}">0</span>
+      </div>`
+    ).join('');
+  }
+}
+
 let cidadeAtiva = null;
 let map = null;
 let deputadosVisible = true;
@@ -1704,29 +1765,6 @@ let modoAdicionarPin = false;
 let novoPinLatLng = null;
 let regiaoAtiva = 'all';
 let filtroCampanha = "ambos";
-
-document.querySelectorAll(".campanha-opcao")
-.forEach(el=>{
-
-  el.addEventListener("click",()=>{
-
-    document.querySelectorAll(".campanha-opcao")
-    .forEach(e=>e.classList.remove("ativa"));
-
-    el.classList.add("ativa");
-
-    filtroCampanha = el.dataset.campanha;
-
-    repaintMap();
-    atualizarTotalGeralOverlay();
-
-    if(cidadeSelecionada){
-      renderLiderancas(cidadeSelecionada);
-    }
-
-  });
-
-});
 
 // ================================
 // REGIÕES PERSONALIZADAS
@@ -1783,32 +1821,24 @@ function getTotalExpectativa(city) {
   const c = dataCache[city];
   if (!c) return 0;
 
+  // expectativa da cidade (filtrada por campanha)
   let expectativaCidade = 0;
-
-  if (filtroCampanha === "fernando") {
-    expectativaCidade = Number(c.expectativaCidade?.fernando || 0);
+  if (filtroCampanha === 'ambos') {
+    Object.values(c.expectativaCidade || {}).forEach(v => {
+      expectativaCidade += Number(v || 0);
+    });
   } else {
-    expectativaCidade = Number(c.expectativaCidade?.celia || 0);
+    expectativaCidade = Number((c.expectativaCidade || {})[filtroCampanha] || 0);
   }
 
   const somaLiderancas = (c.liderancas || []).reduce((s, l) => {
-
-    if (filtroCampanha === "fernando") {
-      if (l.vinculo_politico === "fernando" || l.vinculo_politico === "ambos") {
+    if (filtroCampanha !== 'ambos') {
+      if (l.vinculo_politico === filtroCampanha || l.vinculo_politico === 'ambos') {
         return s + Number(l.expectativa_votos || 0);
       }
       return s;
     }
-
-    if (filtroCampanha === "celia") {
-      if (l.vinculo_politico === "celia" || l.vinculo_politico === "ambos") {
-        return s + Number(l.expectativa_votos || 0);
-      }
-      return s;
-    }
-
     return s + Number(l.expectativa_votos || 0);
-
   }, 0);
 
   return expectativaCidade + somaLiderancas;
@@ -1826,21 +1856,12 @@ function calcularExpectativaTotalGeral() {
   return total;
 }
 function atualizarTotalGeralOverlay() {
-
-  const elCelia = document.getElementById('total-geral-overlay-celia');
-  const elFernando = document.getElementById('total-geral-overlay-fernando');
-
-  if (!elCelia || !elFernando) return;
-
-  const totalCelia = calcularExpectativaTotalPor("celia");
-  const totalFernando = calcularExpectativaTotalPor("fernando");
-
-  elCelia.textContent =
-    "Célia: " + totalCelia.toLocaleString('pt-BR') + " votos";
-
-  elFernando.textContent =
-    "Fernando: " + totalFernando.toLocaleString('pt-BR') + " votos";
-
+  (configSistema.candidatos || []).forEach(c => {
+    const el = document.getElementById('total-geral-overlay-' + c.chave);
+    if (!el) return;
+    const total = calcularExpectativaTotalPor(c.chave);
+    el.textContent = c.nome + ': ' + total.toLocaleString('pt-BR') + ' votos';
+  });
 }
 function getColor(votos) {
   return votos > 500000 ? '#d73027' :
@@ -2115,10 +2136,9 @@ async function carregarTudo() {
           dataCache[c.cidade] = {
             liderancas: [],
             observacoes: [],
-            expectativaCidade: {
-  celia: 0,
-  fernando: 0
-},
+            expectativaCidade: Object.fromEntries(
+              (configSistema.candidatos || []).map(c => [c.chave, 0])
+            ),
             temComite: false
           };
         }
@@ -2144,10 +2164,9 @@ try {
         dataCache[cidade] = {
           liderancas: [],
           observacoes: [],
-          expectativaCidade: {
-  celia: 0,
-  fernando: 0
-},
+          expectativaCidade: Object.fromEntries(
+            (configSistema.candidatos || []).map(c => [c.chave, 0])
+          ),
           temComite: false
         };
       }
@@ -2178,18 +2197,19 @@ try {
         dataCache[e.cidade] = {
           liderancas: [],
           observacoes: [],
-          expectativaCidade: {
-  celia: 0,
-  fernando: 0
-},
+          expectativaCidade: Object.fromEntries(
+            (configSistema.candidatos || []).map(c => [c.chave, 0])
+          ),
           temComite: false
         };
       }
 
-      dataCache[e.cidade].expectativaCidade = {
-  celia: Number(e.expectativa_celia || 0),
-fernando: Number(e.expectativa_fernando || 0)
-};
+      dataCache[e.cidade].expectativaCidade = Object.fromEntries(
+        (configSistema.candidatos || []).map(c => [
+          c.chave,
+          Number(e['expectativa_' + c.chave] || 0)
+        ])
+      );
     });
   }
 } catch (e) {
@@ -2414,11 +2434,11 @@ async function renderLiderancas(city) {
   if (!city) return;
 
   const cidadeData = dataCache[city] || {};
-  document.getElementById('expectativa-cidade-celia').value =
-cidadeData.expectativaCidade?.celia || 0;
-
-document.getElementById('expectativa-cidade-fernando').value =
-cidadeData.expectativaCidade?.fernando || 0;
+  // preenche inputs de expectativa por candidato
+  (configSistema.candidatos || []).forEach(c => {
+    const input = document.getElementById('expectativa-cidade-' + c.chave);
+    if (input) input.value = cidadeData.expectativaCidade?.[c.chave] || 0;
+  });
 
   const total = getTotalExpectativa(city);
 
@@ -2429,8 +2449,7 @@ cidadeData.expectativaCidade?.fernando || 0;
       <hr>
       <div><b>Lideranças:</b> ${total - (cidadeData.expectativaCidade || 0)}</div>
       <div><b>Cidade:</b> ${
-  (cidadeData.expectativaCidade?.celia || 0) +
-  (cidadeData.expectativaCidade?.fernando || 0)
+  Object.values(cidadeData.expectativaCidade || {}).reduce((s, v) => s + Number(v || 0), 0)
 }</div>
     </div>
   `;
@@ -3182,61 +3201,51 @@ document.getElementById('addPinBtn').onclick = () => {
     modoAdicionarPin ? 'Clique no mapa' : '+ Pin';
 };
 
-document.getElementById('salvar-expectativa-cidade')
-  .addEventListener('click', async () => {
+async function salvarExpectativaCidade() {
 
-    // --- TRAVA PARA VISUALIZADOR ---
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user && user.nivel === 'visualizador') {
-      alert('Acesso Negado.');
+  // --- TRAVA PARA VISUALIZADOR ---
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user && user.nivel === 'visualizador') {
+    alert('Acesso Negado.');
+    return;
+  }
+
+  if (!cidadeSelecionada) {
+    alert('Selecione uma cidade');
+    return;
+  }
+
+  // monta payload dinamicamente { cidade, celia: x, fernando: y, ... }
+  const payload = { cidade: cidadeSelecionada };
+  (configSistema.candidatos || []).forEach(c => {
+    const input = document.getElementById('expectativa-cidade-' + c.chave);
+    payload[c.chave] = Number(input?.value || 0);
+  });
+
+  try {
+    const response = await apiFetch('/expectativa-cidade', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const erro = await response.text();
+      console.error('Erro backend:', erro);
+      alert('Erro ao salvar expectativa');
       return;
     }
-    // --------------------------------
 
-    if (!cidadeSelecionada) {
-      alert('Selecione uma cidade');
-      return;
-    }
+    await carregarTudo();
+    repaintMap();
+    atualizarTotalGeralOverlay();
+    renderLiderancas(cidadeSelecionada);
 
-    const celia = Number(
-document.getElementById('expectativa-cidade-celia').value || 0
-);
+  } catch (err) {
+    console.error('Erro na requisição:', err);
+    alert('Erro ao conectar com o servidor.');
+  }
 
-const fernando = Number(
-document.getElementById('expectativa-cidade-fernando').value || 0
-);
-
-    try {
-
-      const response = await apiFetch('/expectativa-cidade', {
-  method: 'POST',
-  body: JSON.stringify({
-  cidade: cidadeSelecionada,
-  celia: celia,
-  fernando: fernando
-})
-});
-
-
-      if (!response.ok) {
-        const erro = await response.text();
-        console.error('Erro backend:', erro);
-        alert('Erro ao salvar expectativa');
-        return;
-      }
-
-      // 🔄 Atualiza dados e interface
-      await carregarTudo();
-      repaintMap();
-      atualizarTotalGeralOverlay();
-      renderLiderancas(cidadeSelecionada);
-
-    } catch (err) {
-      console.error('Erro na requisição:', err);
-      alert('Erro ao conectar com o servidor.');
-    }
-
-});
+}
 
 
 // ADICIONA LISTENER PARA OS BOTÕES DE MINIMIZAR RESTAURADO
@@ -3541,42 +3550,52 @@ function calcularTotaisRegiao(key) {
     costaVerde:          'Costa Verde',
   }
 
-  let totalVotos = 0
-  let totalVotosCelia = 0
-  let totalExpCelia = 0
-  let totalExpFernando = 0
-  let totalExpLideres = 0
+  const cands = configSistema.candidatos || [];
+
+  // contadores por candidato: { chave: { votos: 0, exp: 0 } }
+  const porCand = {};
+  cands.forEach(c => { porCand[c.chave] = { votos: 0, exp: 0 }; });
+
+  let totalVotos    = 0;
+  let totalExpLideres = 0;
 
   cidades.forEach(cidade => {
     // Votos válidos
-    totalVotos += (typeof votosValidos !== 'undefined' ? votosValidos[cidade] || 0 : 0)
+    totalVotos += (typeof votosValidos !== 'undefined' ? votosValidos[cidade] || 0 : 0);
 
-    // Votos da Célia (2022)
-    if (typeof votosCeliaJordao !== 'undefined') {
-      const norm = normalizeCityName(cidade)
-      totalVotosCelia += votosCeliaJordao[norm] || 0
+    // Votos do 1º candidato na fonte histórica (votosCeliaJordao ↔ chave do 1º candidato)
+    if (cands.length > 0 && typeof votosCeliaJordao !== 'undefined') {
+      const norm = normalizeCityName(cidade);
+      porCand[cands[0].chave].votos += votosCeliaJordao[norm] || 0;
     }
 
-    // Expectativa da cidade + lideranças
-    const c = dataCache[cidade]
-    if (c) {
-      totalExpCelia    += Number(c.expectativaCidade?.celia    || 0)
-      totalExpFernando += Number(c.expectativaCidade?.fernando || 0)
-      totalExpLideres  += (c.liderancas || []).reduce((s, l) => s + Number(l.expectativa_votos || 0), 0)
+    // Expectativa da cidade por candidato
+    const cd = dataCache[cidade];
+    if (cd) {
+      cands.forEach(c => {
+        porCand[c.chave].exp += Number(cd.expectativaCidade?.[c.chave] || 0);
+      });
+      totalExpLideres += (cd.liderancas || []).reduce((s, l) => s + Number(l.expectativa_votos || 0), 0);
     }
-  })
+  });
 
-  const totalExp = totalExpCelia + totalExpFernando + totalExpLideres
+  const totalExp = cands.reduce((s, c) => s + porCand[c.chave].exp, 0) + totalExpLideres;
 
-  const fmt = n => n.toLocaleString('pt-BR')
+  const fmt = n => n.toLocaleString('pt-BR');
 
   document.getElementById('regiao-totais-nome').textContent =
-    (REGIOES_LABEL[key] || key) + ' · ' + cidades.length + ' municípios'
-  document.getElementById('regiao-total-votos').textContent   = fmt(totalVotos)
-  document.getElementById('regiao-votos-celia').textContent   = fmt(totalVotosCelia)
-  document.getElementById('regiao-exp-celia').textContent     = fmt(totalExpCelia)
-  document.getElementById('regiao-exp-fernando').textContent  = fmt(totalExpFernando)
-  document.getElementById('regiao-exp-total').textContent     = fmt(totalExp)
+    (REGIOES_LABEL[key] || key) + ' · ' + cidades.length + ' municípios';
+  document.getElementById('regiao-total-votos').textContent = fmt(totalVotos);
+
+  // atualiza colunas dinâmicas por candidato
+  cands.forEach(c => {
+    const elVotos = document.getElementById('regiao-votos-' + c.chave);
+    const elExp   = document.getElementById('regiao-exp-'   + c.chave);
+    if (elVotos) elVotos.textContent = fmt(porCand[c.chave].votos);
+    if (elExp)   elExp.textContent   = fmt(porCand[c.chave].exp);
+  });
+
+  document.getElementById('regiao-exp-total').textContent = fmt(totalExp);
 
   card.style.display = 'block'
 }
@@ -3650,6 +3669,7 @@ window.iniciarAplicacao = async function () {
 
   console.log('[BOOT] iniciarAplicacao chamada');
 
+  await carregarConfig();   // carrega candidatos/cores/mapas antes de tudo
   await carregarTudo();
   atualizarTotalGeralOverlay();
   initializeMapAndApp();
@@ -4165,19 +4185,9 @@ function calcularExpectativaTotalPor(tipo) {
 
     // lideranças
     (c.liderancas || []).forEach(l => {
-
-      if (tipo === "celia") {
-        if (l.vinculo_politico === "celia" || l.vinculo_politico === "ambos") {
-          total += Number(l.expectativa_votos || 0);
-        }
+      if (l.vinculo_politico === tipo || l.vinculo_politico === 'ambos') {
+        total += Number(l.expectativa_votos || 0);
       }
-
-      if (tipo === "fernando") {
-        if (l.vinculo_politico === "fernando" || l.vinculo_politico === "ambos") {
-          total += Number(l.expectativa_votos || 0);
-        }
-      }
-
     });
 
   });

@@ -369,8 +369,7 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
         <select id="u_nivel" onchange="toggleRegiao()">
           <option value="visualizador">Visualizador</option>
           <option value="lider_regiao">Líder de Região</option>
-          <option value="lider_distrito_angra">Líder de Distrito — Angra dos Reis</option>
-          <option value="lider_zona_rj">Líder de Zona — RJ Capital</option>
+          <!-- opções de mapa injetadas por carregarConfig() -->
           <option value="admin">Administrador</option>
           <option value="dono">Dono</option>
         </select>
@@ -389,27 +388,8 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
           <option value="costaVerde">Costa Verde</option>
         </select>
       </div>
-      <div class="form-group" id="div_distrito_angra" style="display:none;">
-        <label>Distrito de Angra dos Reis</label>
-        <select id="u_distrito_angra">
-          <option value="">Selecione um distrito</option>
-          <option value="1º DISTRITO">1º Distrito — Centro / Balneário</option>
-          <option value="2º DISTRITO">2º Distrito — Bracuí / Enseada</option>
-          <option value="3º DISTRITO">3º Distrito — Monsuaba / Jacuecanga</option>
-          <option value="4º DISTRITO">4º Distrito — Mambucaba / Frade</option>
-          <option value="5º DISTRITO">5º Distrito — Ilha Grande</option>
-        </select>
-      </div>
-      <div class="form-group" id="div_zona_rj" style="display:none;">
-        <label>Zona do Rio de Janeiro</label>
-        <select id="u_zona_rj">
-          <option value="">Selecione uma zona</option>
-          <option value="ZONA NORTE">Zona Norte</option>
-          <option value="ZONA SUL">Zona Sul</option>
-          <option value="ZONA OESTE">Zona Oeste</option>
-          <option value="ZONA LESTE">Zona Leste</option>
-        </select>
-      </div>
+      <!-- divs de sub-região por mapa injetadas por carregarConfig() -->
+      <div id="mapa-divs-criar"></div>
     </div>
 
     <button class="btn btn-primary btn-full" id="btn-criar" onclick="salvarUsuario()">
@@ -456,8 +436,7 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
         <select id="edit-nivel" onchange="toggleRegiaoModal()">
           <option value="visualizador">Visualizador</option>
           <option value="lider_regiao">Líder de Região</option>
-          <option value="lider_distrito_angra">Líder de Distrito — Angra dos Reis</option>
-          <option value="lider_zona_rj">Líder de Zona — RJ Capital</option>
+          <!-- opções de mapa injetadas por carregarConfig() -->
           <option value="admin">Administrador</option>
           <option value="dono">Dono</option>
         </select>
@@ -476,27 +455,8 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
           <option value="costaVerde">Costa Verde</option>
         </select>
       </div>
-      <div class="form-group" id="edit-div-distrito-angra" style="display:none;">
-        <label>Distrito de Angra dos Reis</label>
-        <select id="edit-distrito-angra">
-          <option value="">Selecione um distrito</option>
-          <option value="1º DISTRITO">1º Distrito — Centro / Balneário</option>
-          <option value="2º DISTRITO">2º Distrito — Bracuí / Enseada</option>
-          <option value="3º DISTRITO">3º Distrito — Monsuaba / Jacuecanga</option>
-          <option value="4º DISTRITO">4º Distrito — Mambucaba / Frade</option>
-          <option value="5º DISTRITO">5º Distrito — Ilha Grande</option>
-        </select>
-      </div>
-      <div class="form-group" id="edit-div-zona-rj" style="display:none;">
-        <label>Zona do Rio de Janeiro</label>
-        <select id="edit-zona-rj">
-          <option value="">Selecione uma zona</option>
-          <option value="ZONA NORTE">Zona Norte</option>
-          <option value="ZONA SUL">Zona Sul</option>
-          <option value="ZONA OESTE">Zona Oeste</option>
-          <option value="ZONA LESTE">Zona Leste</option>
-        </select>
-      </div>
+      <!-- divs de sub-região por mapa injetadas por carregarConfig() -->
+      <div id="mapa-divs-editar"></div>
       <div class="feedback" id="feedback-editar"></div>
       <div class="modal-actions">
         <button class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
@@ -509,6 +469,60 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
 <script>
 const API_URL = 'https://map-backend-j88s.onrender.com/api'
 
+// ── Config do sistema (carregada de /api/config) ──────────
+let configSistema = { candidatos: [], cores: {}, mapas: [] }
+
+async function carregarConfig() {
+  try {
+    const r = await fetch(API_URL + '/config')
+    if (!r.ok) return
+    configSistema = await r.json()
+    injetarMapas()
+  } catch(e) { console.warn('Config não carregada:', e) }
+}
+
+function injetarMapas() {
+  const adminOpt = (sel) => [...sel.options].find(o => o.value === 'admin')
+
+  // Injeta opções de nível nos dois selects
+  ;['u_nivel', 'edit-nivel'].forEach(id => {
+    const sel = document.getElementById(id)
+    if (!sel) return
+    const ref = adminOpt(sel)
+    configSistema.mapas.forEach(m => {
+      const opt = document.createElement('option')
+      opt.value = m.nivel_usuario
+      opt.textContent = 'Líder de ' + m.nome
+      sel.insertBefore(opt, ref)
+    })
+  })
+
+  // Injeta divs de sub-região no form de criar
+  const cCriar = document.getElementById('mapa-divs-criar')
+  if (cCriar) cCriar.innerHTML = configSistema.mapas.map(m => `
+    <div class="form-group" id="div_mapa_${m.id}" style="display:none;">
+      <label>Sub-região — ${m.nome}</label>
+      <select id="u_subregiao_${m.id}">
+        <option value="">Selecione...</option>
+        ${m.subregioes.map(s => `<option value="${s}">${s}</option>`).join('')}
+      </select>
+    </div>`).join('')
+
+  // Injeta divs de sub-região no modal de editar
+  const cEditar = document.getElementById('mapa-divs-editar')
+  if (cEditar) cEditar.innerHTML = configSistema.mapas.map(m => `
+    <div class="form-group" id="edit-div-mapa-${m.id}" style="display:none;">
+      <label>Sub-região — ${m.nome}</label>
+      <select id="edit-subregiao-${m.id}">
+        <option value="">Selecione...</option>
+        ${m.subregioes.map(s => `<option value="${s}">${s}</option>`).join('')}
+      </select>
+    </div>`).join('')
+
+  // Estende NIVEL_LABEL com os mapas
+  configSistema.mapas.forEach(m => { NIVEL_LABEL[m.nivel_usuario] = 'Líder — ' + m.nome })
+}
+
 const REGIOES_LABEL = {
   metropolitana:       'Metropolitana',
   baixadasLitoraneas:  'Baixadas Litorâneas',
@@ -520,17 +534,16 @@ const REGIOES_LABEL = {
   costaVerde:          'Costa Verde',
 }
 
+// Níveis fixos — os de mapa são adicionados dinamicamente por injetarMapas()
 const NIVEL_LABEL = {
-  dono:                'Dono',
-  admin:               'Administrador',
-  lider_regiao:        'Líder de Região',
-  lider_distrito_angra:'Líder de Distrito (Angra)',
-  lider_zona_rj:       'Líder de Zona (RJ)',
-  visualizador:        'Visualizador',
+  dono:         'Dono',
+  admin:        'Administrador',
+  lider_regiao: 'Líder de Região',
+  visualizador: 'Visualizador',
 }
 
 // ── Auth ──────────────────────────────────────────────────
-;(function init() {
+;(async function init() {
   const user  = JSON.parse(localStorage.getItem('user') || 'null')
   const token = localStorage.getItem('token')
   if (!token || !user || user.nivel !== 'dono') {
@@ -542,6 +555,8 @@ const NIVEL_LABEL = {
   document.getElementById('header-nome').textContent = nome
   document.getElementById('header-initials').textContent =
     nome.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase()
+  await carregarConfig()
+  carregarUsuarios()
 })()
 
 async function apiFetch(endpoint, options = {}) {
@@ -574,16 +589,20 @@ function voltarHome() { location.href = '../index.html' }
 // ── UI helpers ────────────────────────────────────────────
 function toggleRegiao() {
   const nivel = document.getElementById('u_nivel').value
-  document.getElementById('div_regiao').style.display          = nivel === 'lider_regiao'        ? 'block' : 'none'
-  document.getElementById('div_distrito_angra').style.display  = nivel === 'lider_distrito_angra'? 'block' : 'none'
-  document.getElementById('div_zona_rj').style.display         = nivel === 'lider_zona_rj'       ? 'block' : 'none'
+  document.getElementById('div_regiao').style.display = nivel === 'lider_regiao' ? 'block' : 'none'
+  configSistema.mapas.forEach(m => {
+    const div = document.getElementById('div_mapa_' + m.id)
+    if (div) div.style.display = nivel === m.nivel_usuario ? 'block' : 'none'
+  })
 }
 
 function toggleRegiaoModal() {
   const nivel = document.getElementById('edit-nivel').value
-  document.getElementById('edit-div-regiao').style.display         = nivel === 'lider_regiao'        ? 'block' : 'none'
-  document.getElementById('edit-div-distrito-angra').style.display = nivel === 'lider_distrito_angra'? 'block' : 'none'
-  document.getElementById('edit-div-zona-rj').style.display        = nivel === 'lider_zona_rj'       ? 'block' : 'none'
+  document.getElementById('edit-div-regiao').style.display = nivel === 'lider_regiao' ? 'block' : 'none'
+  configSistema.mapas.forEach(m => {
+    const div = document.getElementById('edit-div-mapa-' + m.id)
+    if (div) div.style.display = nivel === m.nivel_usuario ? 'block' : 'none'
+  })
 }
 
 function toggleSenha(id, btn) {
@@ -622,15 +641,22 @@ function showFeedback(id, msg, tipo) {
   setTimeout(() => { el.className = 'feedback' }, 4000)
 }
 
-// ── Validar novo usuário ──────────────────────────────────
-function getRegiaoVinculada(prefixo) {
-  const nivel = document.getElementById(prefixo + '_nivel' === 'u_nivel' ? 'u_nivel' : prefixo + '-nivel').value
-  if (nivel === 'lider_regiao')        return document.getElementById(prefixo === 'u' ? 'u_regiao' : 'edit-regiao').value
-  if (nivel === 'lider_distrito_angra') return document.getElementById(prefixo === 'u' ? 'u_distrito_angra' : 'edit-distrito-angra').value
-  if (nivel === 'lider_zona_rj')        return document.getElementById(prefixo === 'u' ? 'u_zona_rj' : 'edit-zona-rj').value
-  return null
+// ── Helpers de sub-região (genéricos via configSistema) ──
+function getRegiaoCreate() {
+  const nivel = document.getElementById('u_nivel').value
+  if (nivel === 'lider_regiao') return document.getElementById('u_regiao').value
+  const mapa = configSistema.mapas.find(m => m.nivel_usuario === nivel)
+  return mapa ? (document.getElementById('u_subregiao_' + mapa.id)?.value || '') : null
 }
 
+function getRegiaoEdit() {
+  const nivel = document.getElementById('edit-nivel').value
+  if (nivel === 'lider_regiao') return document.getElementById('edit-regiao').value
+  const mapa = configSistema.mapas.find(m => m.nivel_usuario === nivel)
+  return mapa ? (document.getElementById('edit-subregiao-' + mapa.id)?.value || '') : null
+}
+
+// ── Validar novo usuário ──────────────────────────────────
 function validar() {
   const nome  = document.getElementById('u_nome').value.trim()
   const user  = document.getElementById('u_user').value.trim()
@@ -649,11 +675,10 @@ function validar() {
   if (nivel === 'lider_regiao' && !document.getElementById('u_regiao').value) {
     showFeedback('feedback-criar','⚠️ Selecione uma região para o Líder.','error'); return false
   }
-  if (nivel === 'lider_distrito_angra' && !document.getElementById('u_distrito_angra').value) {
-    showFeedback('feedback-criar','⚠️ Selecione um distrito de Angra dos Reis.','error'); return false
-  }
-  if (nivel === 'lider_zona_rj' && !document.getElementById('u_zona_rj').value) {
-    showFeedback('feedback-criar','⚠️ Selecione uma zona do Rio de Janeiro.','error'); return false
+  // Validação genérica para qualquer mapa do config
+  const mapa = configSistema.mapas.find(m => m.nivel_usuario === nivel)
+  if (mapa && !document.getElementById('u_subregiao_' + mapa.id)?.value) {
+    showFeedback('feedback-criar', '⚠️ Selecione a sub-região de ' + mapa.nome + '.', 'error'); return false
   }
   return true
 }
@@ -666,10 +691,7 @@ async function salvarUsuario() {
   btn.disabled = true
 
   const nivel = document.getElementById('u_nivel').value
-  let regiao_vinculada = null
-  if (nivel === 'lider_regiao')         regiao_vinculada = document.getElementById('u_regiao').value
-  if (nivel === 'lider_distrito_angra') regiao_vinculada = document.getElementById('u_distrito_angra').value
-  if (nivel === 'lider_zona_rj')        regiao_vinculada = document.getElementById('u_zona_rj').value
+  const regiao_vinculada = getRegiaoCreate()
 
   const dados = {
     nome:    document.getElementById('u_nome').value.trim(),
@@ -686,8 +708,10 @@ async function salvarUsuario() {
       ;['u_nome','u_user','u_pass','u_pass2'].forEach(id => document.getElementById(id).value = '')
       document.getElementById('u_nivel').value = 'visualizador'
       document.getElementById('div_regiao').style.display = 'none'
-      document.getElementById('div_distrito_angra').style.display = 'none'
-      document.getElementById('div_zona_rj').style.display = 'none'
+      configSistema.mapas.forEach(m => {
+        const d = document.getElementById('div_mapa_' + m.id)
+        if (d) d.style.display = 'none'
+      })
       document.getElementById('strength-fill').style.width = '0'
       document.getElementById('strength-text').textContent = ''
       carregarUsuarios()
@@ -722,7 +746,10 @@ async function carregarUsuarios() {
 
     usuarios.forEach(u => {
       const initials = (u.nome || u.usuario || '?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase()
-      const nivelClass = { dono:'nivel-dono', admin:'nivel-admin', lider_regiao:'nivel-lider', lider_distrito_angra:'nivel-distrito', lider_zona_rj:'nivel-zona', visualizador:'nivel-visualizador' }[u.nivel] || 'nivel-visualizador'
+      const _nivelBase = { dono:'nivel-dono', admin:'nivel-admin', lider_regiao:'nivel-lider', visualizador:'nivel-visualizador' }
+      const nivelClass = _nivelBase[u.nivel] || 'nivel-mapa'
+      const mapaNivel  = configSistema.mapas.find(m => m.nivel_usuario === u.nivel)
+      const badgeStyle = mapaNivel ? `style="background:${mapaNivel.badge_fundo};color:${mapaNivel.badge_texto}"` : ''
       const regiaoLabel = u.regiao_vinculada ? (REGIOES_LABEL[u.regiao_vinculada] || u.regiao_vinculada) : ''
       const isSelf = String(u.id) === String(meId)
 
@@ -734,7 +761,7 @@ async function carregarUsuarios() {
           <div class="user-nome">${u.nome || '—'}${isSelf ? ' <span style="font-size:11px;color:var(--slate-400);font-weight:500;">(você)</span>' : ''}</div>
           <div class="user-sub">
             <span>@${u.usuario}</span>
-            <span class="nivel-badge ${nivelClass}">${NIVEL_LABEL[u.nivel] || u.nivel}</span>
+            <span class="nivel-badge ${nivelClass}" ${badgeStyle}>${NIVEL_LABEL[u.nivel] || u.nivel}</span>
             ${regiaoLabel ? `<span>· ${regiaoLabel}</span>` : ''}
           </div>
         </div>
@@ -775,9 +802,12 @@ function abrirModalEditar(u) {
   document.getElementById('edit-pass').value  = ''
   document.getElementById('edit-nivel').value = u.nivel || 'visualizador'
   // Pré-seleciona o sub-campo correto conforme o nível
-  document.getElementById('edit-regiao').value       = u.nivel === 'lider_regiao'         ? (u.regiao_vinculada || '') : ''
-  document.getElementById('edit-distrito-angra').value = u.nivel === 'lider_distrito_angra' ? (u.regiao_vinculada || '') : ''
-  document.getElementById('edit-zona-rj').value      = u.nivel === 'lider_zona_rj'         ? (u.regiao_vinculada || '') : ''
+  document.getElementById('edit-regiao').value = u.nivel === 'lider_regiao' ? (u.regiao_vinculada || '') : ''
+  // Pré-seleciona sub-região para qualquer mapa do config
+  configSistema.mapas.forEach(m => {
+    const sel = document.getElementById('edit-subregiao-' + m.id)
+    if (sel) sel.value = u.nivel === m.nivel_usuario ? (u.regiao_vinculada || '') : ''
+  })
   toggleRegiaoModal()
   document.getElementById('feedback-editar').className = 'feedback'
   document.getElementById('modal-editar').classList.add('open')
@@ -800,11 +830,10 @@ async function salvarEdicao() {
   if (nivel === 'lider_regiao' && !document.getElementById('edit-regiao').value) {
     showFeedback('feedback-editar','⚠️ Selecione uma região.','error'); return
   }
-  if (nivel === 'lider_distrito_angra' && !document.getElementById('edit-distrito-angra').value) {
-    showFeedback('feedback-editar','⚠️ Selecione um distrito de Angra dos Reis.','error'); return
-  }
-  if (nivel === 'lider_zona_rj' && !document.getElementById('edit-zona-rj').value) {
-    showFeedback('feedback-editar','⚠️ Selecione uma zona do Rio de Janeiro.','error'); return
+  // Validação genérica para qualquer mapa do config
+  const mapaEdit = configSistema.mapas.find(m => m.nivel_usuario === nivel)
+  if (mapaEdit && !document.getElementById('edit-subregiao-' + mapaEdit.id)?.value) {
+    showFeedback('feedback-editar', '⚠️ Selecione a sub-região de ' + mapaEdit.nome + '.', 'error'); return
   }
   if (pass && pass.length < 8) { showFeedback('feedback-editar','⚠️ Nova senha deve ter pelo menos 8 caracteres.','error'); return }
 
@@ -812,10 +841,7 @@ async function salvarEdicao() {
   btn.textContent = 'Salvando...'
   btn.disabled = true
 
-  let regiao_vinculada = null
-  if (nivel === 'lider_regiao')         regiao_vinculada = document.getElementById('edit-regiao').value
-  if (nivel === 'lider_distrito_angra') regiao_vinculada = document.getElementById('edit-distrito-angra').value
-  if (nivel === 'lider_zona_rj')        regiao_vinculada = document.getElementById('edit-zona-rj').value
+  const regiao_vinculada = getRegiaoEdit()
 
   const dados = {
     nome, nivel,

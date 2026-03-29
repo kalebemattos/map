@@ -14,15 +14,22 @@ const helmet = require('helmet');
 const http = require('http');
 const { Server: SocketServer } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
+const config = require('./config');
 
-function allow(...niveisPermitidos) {
+// Níveis derivados do config — nunca edite manualmente aqui
+const NIVEIS_MAPA   = config.mapas.map(m => m.nivel_usuario);
+const NIVEIS_TODOS  = ['dono', 'admin', 'visualizador', 'lider_regiao', ...NIVEIS_MAPA];
+
+function allow(...niveis) {
   return (req, res, next) => {
-    if (!req.user || !niveisPermitidos.includes(req.user.nivel)) {
+    if (!req.user || !niveis.includes(req.user.nivel)) {
       return res.status(403).json({ error: 'Acesso negado' });
     }
     next();
   };
 }
+// Shortcut: permite todos os níveis conhecidos
+function allowAll() { return allow(...NIVEIS_TODOS); }
 
 const app = express();
 app.use(
@@ -203,6 +210,18 @@ async function otimizarImagem(caminhoArquivo) {
   return caminhoFinal;
 }
 
+/* ================= CONFIG PÚBLICA ================= */
+// Endpoint sem autenticação — retorna apenas o que o frontend precisa para se montar
+app.get('/api/config', (req, res) => {
+  res.json({
+    candidatos: config.candidatos,
+    cores:      config.cores,
+    mapas:      config.mapas.map(({ id, nome, nivel_usuario, subregioes }) => ({
+      id, nome, nivel_usuario, subregioes,
+    })),
+  });
+});
+
 /* ================= LOGIN ================= */
 app.post('/api/login', loginLimiter, async (req, res) => {
   const { usuario, senha } = req.body;
@@ -380,7 +399,7 @@ app.get('/api/expectativa-cidade', auth,
 /* ================= GASTOS POR LIDERANÇA ================= */
 app.post('/api/gastos',
   auth,
-  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
+  allowAll(),
   async (req, res) => {
 
   try {
@@ -517,7 +536,7 @@ app.get('/api/gastos-total/:lideranca_id', auth, async (req, res) => {
 app.post('/api/liderancas',
   createLiderancaLimiter,
   auth,
-  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
+  allowAll(),
   upload.single('foto'),
   async (req, res) => {
 
@@ -632,7 +651,7 @@ await registrarAuditoria(
 /* ================= EXCLUIR LIDERANÇA ================= */
 app.delete('/api/liderancas/:id',
   auth,
-  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
+  allowAll(),
   async (req, res) => {
 
   try {
@@ -673,7 +692,7 @@ await registrarAuditoria(
 /* ================= EDITAR LIDERANÇA ================= */
 app.put('/api/liderancas/:id',
   auth,
-  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
+  allowAll(),
   upload.single('foto'),
   async (req, res) => {
 
@@ -870,7 +889,7 @@ GROUP BY cidade
 
 app.post('/api/observacoes',
   auth,
-  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
+  allowAll(),
   async (req, res) => {
   try {
     const { cidade, text } = req.body;
@@ -889,7 +908,7 @@ app.post('/api/observacoes',
 
 app.delete('/api/observacoes/:id',
   auth,
-  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
+  allowAll(),
   async (req, res) => {
   try {
     const { id } = req.params;
@@ -1055,7 +1074,7 @@ app.get('/api/expectativa-rjcapital-todas', auth, async (req, res) => {
 
 app.post('/api/pins',
   auth,
-  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
+  allowAll(),
   async (req, res) => {
 
   const { cidade, tipo, lat, lng, descricao } = req.body;
@@ -1107,7 +1126,7 @@ SELECT * FROM pins
 
 app.delete('/api/pins/:id',
   auth,
-  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
+  allowAll(),
   async (req, res) => {
   const id = req.params.id;
 
@@ -1135,7 +1154,7 @@ res.json({ ok: true });
 
 app.put('/api/pins/:id',
   auth,
-  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
+  allowAll(),
   async (req, res) => {
 
   const { id } = req.params;
@@ -1198,7 +1217,7 @@ if (!usuario || !senha || !nivel || !regiao_vinculada) {
     error: 'Usuario, senha, nivel e regiao_vinculada são obrigatórios'
   });
 }
-const niveisPermitidos = ['dono', 'admin', 'visualizador', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'];
+const niveisPermitidos = NIVEIS_TODOS;
 
 if (!niveisPermitidos.includes(nivel)) {
   return res.status(400).json({
@@ -1249,7 +1268,7 @@ app.put('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
     const { id } = req.params;
     const { nome, nivel, regiao_vinculada, senha } = req.body;
 
-    const niveisPermitidos = ['dono', 'admin', 'visualizador', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'];
+    const niveisPermitidos = NIVEIS_TODOS;
     if (nivel && !niveisPermitidos.includes(nivel)) {
       return res.status(400).json({ error: 'Nível inválido' });
     }
@@ -1416,7 +1435,7 @@ app.get('/api/aniversariantes', auth, async (req, res) => {
 // Criar sala de vídeo
 app.post("/api/salas-video",
   auth,
-  allow("dono", "admin", "lider_regiao", "lider_distrito_angra", "lider_zona_rj"),
+  allowAll(),
   async (req, res) => {
     try {
       const { nome, regiao } = req.body;
@@ -1453,7 +1472,7 @@ app.get("/api/salas-video", auth, async (req, res) => {
 // Encerrar sala
 app.delete("/api/salas-video/:id",
   auth,
-  allow("dono", "admin", "lider_regiao", "lider_distrito_angra", "lider_zona_rj"),
+  allowAll(),
   async (req, res) => {
     try {
       const { id } = req.params;
