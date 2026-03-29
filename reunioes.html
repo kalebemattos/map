@@ -6,6 +6,7 @@
 <title>Reuniões — Paralax Gestão</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
 <style>
 /* ===== TOKENS ===== */
@@ -48,8 +49,9 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
   width:var(--sidebar-w);height:100%;display:flex;flex-direction:column;
   background:var(--white);border-right:1px solid var(--slate-100);
   box-shadow:4px 0 20px rgba(0,0,0,.07);z-index:200;flex-shrink:0;
-  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  transition:width .3s cubic-bezier(.4,0,.2,1);overflow:hidden;
 }
+.sidebar.hidden{width:0;}
 .sidebar-header{
   padding:16px 14px 12px;border-bottom:1px solid var(--slate-100);flex-shrink:0;
   background:linear-gradient(135deg,var(--blue-deep) 0%,var(--blue-mid) 100%);
@@ -323,33 +325,47 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
   font-weight:800;padding:1px 5px;border-radius:20px;line-height:1.4;margin-left:4px;
 }
 
-/* ===== CONTROLES ===== */
+/* ===== CONTROLES — estilo Google Meet ===== */
 .controls-bar{
-  display:flex;align-items:center;justify-content:center;gap:5px;
-  padding:10px 12px;background:rgba(6,13,32,.95);
-  border-top:1px solid rgba(255,255,255,.05);flex-shrink:0;flex-wrap:wrap;
-  position:relative;z-index:10;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:14px 20px;background:#202124;
+  flex-shrink:0;position:relative;z-index:10;
 }
+/* Botão base */
 .ctrl-btn{
-  display:flex;align-items:center;gap:5px;
-  padding:9px 14px;border-radius:var(--radius-sm);
-  border:1.5px solid var(--ctrl-border);background:var(--ctrl-bg);
-  color:var(--ctrl-text);font-size:12px;font-weight:700;
-  cursor:pointer;font-family:var(--font);transition:all .15s;
-  min-width:0;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  background:transparent;border:none;cursor:pointer;padding:4px 2px;
+  font-family:var(--font);min-width:52px;
 }
-.ctrl-btn:hover{border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.12);}
-.ctrl-btn:active{transform:scale(.95);}
-.ctrl-btn .ctrl-icon{font-size:16px;flex-shrink:0;}
-.ctrl-btn .ctrl-label{font-size:11px;white-space:nowrap;}
-.ctrl-btn.off{background:rgba(220,38,38,.15);border-color:rgba(220,38,38,.5);color:#fca5a5;}
-.ctrl-btn.active{background:rgba(26,86,219,.25);border-color:rgba(37,99,235,.6);color:#93c5fd;}
-.ctrl-btn.danger{background:rgba(220,38,38,.2);border-color:rgba(220,38,38,.5);color:#fca5a5;}
-.ctrl-btn.danger:hover{background:#dc2626;color:#fff;border-color:#dc2626;}
-.ctrl-btn.rec-on{background:rgba(220,38,38,.2);border-color:rgba(220,38,38,.5);color:#fca5a5;}
-.rec-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:blink 1s infinite;flex-shrink:0;}
+.ctrl-btn:active .ctrl-circle{transform:scale(.91);}
+/* Círculo */
+.ctrl-circle{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:#3c4043;transition:background .15s,transform .12s;
+  flex-shrink:0;
+}
+.ctrl-btn:hover .ctrl-circle{background:#5f6368;}
+.ctrl-circle.off{background:#ea4335;}
+.ctrl-circle.active{background:#1a73e8;}
+.ctrl-circle.rec{background:#ea4335;animation:recPulse 1.8s ease infinite;}
+@keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(234,67,53,.5);}60%{box-shadow:0 0 0 8px rgba(234,67,53,0);}}
+.ctrl-btn:hover .ctrl-circle.off{background:#c62828;}
+.ctrl-btn:hover .ctrl-circle.active{background:#1557b0;}
+/* Ícone material dentro do círculo */
+.ctrl-circle .material-icons-round{font-size:22px;color:#fff;user-select:none;}
+/* Label */
+.ctrl-label{font-size:10px;color:rgba(255,255,255,.6);white-space:nowrap;font-weight:500;}
+/* Botão sair — pill vermelho maior */
+.ctrl-btn.leave .ctrl-circle{
+  background:#ea4335;width:56px;height:56px;border-radius:28px;
+}
+.ctrl-btn.leave:hover .ctrl-circle{background:#c62828;}
+.ctrl-btn.leave .ctrl-circle .material-icons-round{font-size:24px;}
+.ctrl-btn.leave .ctrl-label{color:#f28b82;}
+/* Separador */
+.ctrl-sep{width:1px;height:36px;background:rgba(255,255,255,.1);flex-shrink:0;margin:0 2px;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.25;}}
-.ctrl-sep{width:1px;height:28px;background:rgba(255,255,255,.08);flex-shrink:0;margin:0 3px;}
 
 /* ===== MODAL ===== */
 .modal-overlay{position:fixed;inset:0;background:rgba(6,13,32,.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:3000;padding:16px;}
@@ -389,19 +405,32 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
 /* ===== RESPONSIVE ===== */
 @media(max-width:768px){
   :root{--sidebar-w:290px;--thumb-h:95px;}
-  .sidebar{position:fixed;left:0;top:0;z-index:200;transform:translateX(-100%);}
-  .sidebar.open{transform:none;}
+  /* Sidebar mobile: overlay com transform */
+  .sidebar{
+    position:fixed;left:0;top:0;z-index:200;
+    width:var(--sidebar-w)!important;
+    transform:translateX(-100%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  .sidebar.hidden{transform:translateX(-100%)!important;}
+  .sidebar.open{transform:translateX(0);}
   .sidebar-overlay{display:block;}
+  /* Chat painel ocupa baixo em mobile */
   #chat-panel.open{width:100%;position:absolute;bottom:0;left:0;right:0;height:55%;z-index:50;}
+  /* Controles mobile: oculta labels, botões menores */
   .ctrl-btn .ctrl-label{display:none;}
-  .ctrl-btn{padding:10px 12px;}
-  .ctrl-btn .ctrl-icon{font-size:18px;}
-  .controls-bar{gap:4px;padding:8px 6px;}
+  .ctrl-circle{width:44px;height:44px;}
+  .ctrl-circle .material-icons-round{font-size:20px;}
+  .ctrl-btn.leave .ctrl-circle{width:50px;height:50px;}
+  .controls-bar{gap:6px;padding:10px 8px;}
   .thumb-tile{width:110px;height:82px;}
   #video-main.grid-mode .thumb-tile{width:calc(50% - 4px);height:120px;}
 }
 @media(max-width:380px){
-  .ctrl-btn{padding:9px 10px;}
+  .ctrl-circle{width:40px;height:40px;}
+  .ctrl-circle .material-icons-round{font-size:18px;}
+  .ctrl-btn.leave .ctrl-circle{width:46px;height:46px;}
+  .controls-bar{gap:4px;}
 }
 </style>
 </head>
@@ -583,30 +612,51 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
         </div>
       </div>
 
-      <!-- BARRA DE CONTROLES -->
+      <!-- BARRA DE CONTROLES — estilo Google Meet -->
       <div class="controls-bar">
-        <button class="ctrl-btn" id="btn-mic" onclick="toggleMic()">
-          <span class="ctrl-icon">🎙</span><span class="ctrl-label">Mic</span>
+        <button class="ctrl-btn" id="btn-mic" onclick="toggleMic()" title="Microfone">
+          <div class="ctrl-circle" id="btn-mic-circle">
+            <span class="material-icons-round">mic</span>
+          </div>
+          <span class="ctrl-label" id="btn-mic-label">Mic</span>
         </button>
-        <button class="ctrl-btn" id="btn-cam" onclick="toggleCam()">
-          <span class="ctrl-icon">📷</span><span class="ctrl-label">Câmera</span>
+        <button class="ctrl-btn" id="btn-cam" onclick="toggleCam()" title="Câmera">
+          <div class="ctrl-circle" id="btn-cam-circle">
+            <span class="material-icons-round">videocam</span>
+          </div>
+          <span class="ctrl-label" id="btn-cam-label">Câmera</span>
         </button>
-        <button class="ctrl-btn" id="btn-tela" onclick="toggleTela()">
-          <span class="ctrl-icon">🖥</span><span class="ctrl-label">Tela</span>
+        <button class="ctrl-btn" id="btn-tela" onclick="toggleTela()" title="Compartilhar tela">
+          <div class="ctrl-circle" id="btn-tela-circle">
+            <span class="material-icons-round">present_to_all</span>
+          </div>
+          <span class="ctrl-label" id="btn-tela-label">Tela</span>
         </button>
         <div class="ctrl-sep"></div>
-        <button class="ctrl-btn" id="btn-mao" onclick="toggleMao()">
-          <span class="ctrl-icon">✋</span><span class="ctrl-label">Mão</span>
+        <button class="ctrl-btn" id="btn-mao" onclick="toggleMao()" title="Levantar mão">
+          <div class="ctrl-circle" id="btn-mao-circle">
+            <span class="material-icons-round">back_hand</span>
+          </div>
+          <span class="ctrl-label" id="btn-mao-label">Mão</span>
         </button>
-        <button class="ctrl-btn" id="btn-chat" onclick="toggleChat()">
-          <span class="ctrl-icon">💬</span><span class="ctrl-label">Chat<span id="chat-unread"></span></span>
+        <button class="ctrl-btn" id="btn-chat" onclick="toggleChat()" title="Chat">
+          <div class="ctrl-circle" id="btn-chat-circle">
+            <span class="material-icons-round">chat_bubble</span>
+          </div>
+          <span class="ctrl-label">Chat<span id="chat-unread"></span></span>
         </button>
-        <button class="ctrl-btn" id="btn-rec" onclick="toggleGravacao()">
-          <span class="ctrl-icon" id="rec-icon">⏺</span><span class="ctrl-label">Gravar</span>
+        <button class="ctrl-btn" id="btn-rec" onclick="toggleGravacao()" title="Gravar reunião">
+          <div class="ctrl-circle" id="btn-rec-circle">
+            <span class="material-icons-round" id="rec-icon">radio_button_checked</span>
+          </div>
+          <span class="ctrl-label" id="btn-rec-label">Gravar</span>
         </button>
         <div class="ctrl-sep"></div>
-        <button class="ctrl-btn danger" onclick="sairDaSala()">
-          <span class="ctrl-icon">✕</span><span class="ctrl-label">Sair</span>
+        <button class="ctrl-btn leave" onclick="sairDaSala()" title="Sair da chamada">
+          <div class="ctrl-circle">
+            <span class="material-icons-round">call_end</span>
+          </div>
+          <span class="ctrl-label">Sair</span>
         </button>
       </div>
     </div>
@@ -1233,13 +1283,19 @@ function toggleLayout() {
   }
 }
 
+/* ====== HELPER — atualiza botão de controle ====== */
+function setCtrl(id, {circleClass, icon, label}) {
+  const c = document.getElementById(id + '-circle');
+  if (c) { c.className = circleClass || 'ctrl-circle'; if (icon) c.querySelector('.material-icons-round').textContent = icon; }
+  const l = document.getElementById(id + '-label');
+  if (l && label !== undefined) l.textContent = label;
+}
+
 /* ====== CONTROLES ====== */
 function toggleMic() {
   micAtivo = !micAtivo;
   localStream.getAudioTracks().forEach(t => t.enabled = micAtivo);
-  const b = document.getElementById('btn-mic');
-  b.className = micAtivo ? 'ctrl-btn' : 'ctrl-btn off';
-  b.innerHTML = micAtivo ? '<span class="ctrl-icon">🎙</span><span class="ctrl-label">Mic</span>' : '<span class="ctrl-icon">🔇</span><span class="ctrl-label">Mudo</span>';
+  setCtrl('btn-mic', { circleClass: micAtivo ? 'ctrl-circle' : 'ctrl-circle off', icon: micAtivo ? 'mic' : 'mic_off', label: micAtivo ? 'Mic' : 'Mudo' });
   peerMicState['local'] = micAtivo;
   if (spotlightPeerId === 'local') document.getElementById('spotlight-mic').textContent = micAtivo ? '🎙' : '🔇';
 }
@@ -1247,10 +1303,7 @@ function toggleMic() {
 function toggleCam() {
   camAtivo = !camAtivo;
   localStream.getVideoTracks().forEach(t => t.enabled = camAtivo);
-  const b = document.getElementById('btn-cam');
-  b.className = camAtivo ? 'ctrl-btn' : 'ctrl-btn off';
-  b.innerHTML = camAtivo ? '<span class="ctrl-icon">📷</span><span class="ctrl-label">Câmera</span>' : '<span class="ctrl-icon">🚫</span><span class="ctrl-label">Câm off</span>';
-  // Atualiza avatar no tile local
+  setCtrl('btn-cam', { circleClass: camAtivo ? 'ctrl-circle' : 'ctrl-circle off', icon: camAtivo ? 'videocam' : 'videocam_off', label: camAtivo ? 'Câmera' : 'Câm off' });
   const av = document.getElementById('thumbav-local');
   if (av) av.style.display = camAtivo ? 'none' : 'flex';
   if (spotlightPeerId === 'local') {
@@ -1264,16 +1317,13 @@ async function toggleTela() {
       screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' }, audio: false });
       const track = screenStream.getVideoTracks()[0];
       Object.values(peers).forEach(pc => { const s = pc.getSenders().find(s => s.track?.kind === 'video'); if (s) s.replaceTrack(track); });
-      // Atualiza thumb e spotlight local
       const compositeStream = new MediaStream([track, ...localStream.getAudioTracks()]);
       const thumbVid = document.getElementById('thumbvid-local');
       if (thumbVid) thumbVid.srcObject = compositeStream;
       if (spotlightPeerId === 'local') document.getElementById('spotlight-vid').srcObject = compositeStream;
       track.onended = () => { if (telaAtivo) toggleTela(); };
       telaAtivo = true;
-      const b = document.getElementById('btn-tela');
-      b.className = 'ctrl-btn active';
-      b.innerHTML = '<span class="ctrl-icon">🖥</span><span class="ctrl-label">Parar tela</span>';
+      setCtrl('btn-tela', { circleClass: 'ctrl-circle active', icon: 'stop_screen_share', label: 'Parar tela' });
     } catch (e) { notif('Compartilhamento cancelado', 'warn'); }
   } else {
     const cam = localStream.getVideoTracks()[0];
@@ -1283,25 +1333,21 @@ async function toggleTela() {
     if (spotlightPeerId === 'local') document.getElementById('spotlight-vid').srcObject = localStream;
     if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
     telaAtivo = false;
-    const b = document.getElementById('btn-tela');
-    b.className = 'ctrl-btn';
-    b.innerHTML = '<span class="ctrl-icon">🖥</span><span class="ctrl-label">Tela</span>';
+    setCtrl('btn-tela', { circleClass: 'ctrl-circle', icon: 'present_to_all', label: 'Tela' });
   }
 }
 
 function toggleMao() {
   maoLevantada = !maoLevantada;
   socket.emit(maoLevantada ? 'levantar-mao' : 'abaixar-mao', salaAtualId);
-  const b = document.getElementById('btn-mao');
-  b.className = maoLevantada ? 'ctrl-btn active' : 'ctrl-btn';
-  b.innerHTML = maoLevantada ? '<span class="ctrl-icon">✋</span><span class="ctrl-label">Abaixar</span>' : '<span class="ctrl-icon">✋</span><span class="ctrl-label">Mão</span>';
+  setCtrl('btn-mao', { circleClass: maoLevantada ? 'ctrl-circle active' : 'ctrl-circle', icon: 'back_hand', label: maoLevantada ? 'Abaixar' : 'Mão' });
 }
 
 function toggleChat() {
   chatAberto = !chatAberto;
   document.getElementById('chat-panel').classList.toggle('open', chatAberto);
-  const b = document.getElementById('btn-chat');
-  b.className = chatAberto ? 'ctrl-btn active' : 'ctrl-btn';
+  const c = document.getElementById('btn-chat-circle');
+  if (c) c.className = chatAberto ? 'ctrl-circle active' : 'ctrl-circle';
   if (chatAberto) { document.getElementById('chat-unread').style.display = 'none'; }
   if (chatAberto && window.innerWidth <= 768) fecharSidebar();
 }
@@ -1323,16 +1369,12 @@ function toggleGravacao() {
         a.click();
       };
       mediaRec.start(1000); gravando = true;
-      const b = document.getElementById('btn-rec');
-      b.className = 'ctrl-btn rec-on';
-      document.getElementById('rec-icon').outerHTML = '<span class="rec-dot" id="rec-icon"></span>';
+      setCtrl('btn-rec', { circleClass: 'ctrl-circle rec', icon: 'radio_button_checked', label: 'Gravando' });
       notif('⏺ Gravação iniciada');
     } catch (e) { notif('Erro ao gravar: ' + e.message, 'error'); }
   } else {
     mediaRec.stop(); gravando = false;
-    const b = document.getElementById('btn-rec');
-    b.className = 'ctrl-btn';
-    b.innerHTML = '<span class="ctrl-icon" id="rec-icon">⏺</span><span class="ctrl-label">Gravar</span>';
+    setCtrl('btn-rec', { circleClass: 'ctrl-circle', icon: 'radio_button_checked', label: 'Gravar' });
     notif('✅ Gravação salva', 'success');
   }
 }
@@ -1374,15 +1416,12 @@ async function sairDaSala() {
   chatAberto = false; maoLevantada = false; telaAtivo = false; micAtivo = true; camAtivo = true; gravando = false;
   layoutMode = 'spotlight'; spotlightPeerId = 'local';
   // Reseta controles
-  ['btn-mic', 'btn-cam', 'btn-tela', 'btn-mao', 'btn-chat', 'btn-rec'].forEach(id => {
-    const b = document.getElementById(id); if (b) b.className = 'ctrl-btn';
-  });
-  document.getElementById('btn-mic').innerHTML = '<span class="ctrl-icon">🎙</span><span class="ctrl-label">Mic</span>';
-  document.getElementById('btn-cam').innerHTML = '<span class="ctrl-icon">📷</span><span class="ctrl-label">Câmera</span>';
-  document.getElementById('btn-tela').innerHTML = '<span class="ctrl-icon">🖥</span><span class="ctrl-label">Tela</span>';
-  document.getElementById('btn-mao').innerHTML = '<span class="ctrl-icon">✋</span><span class="ctrl-label">Mão</span>';
-  document.getElementById('btn-chat').innerHTML = '<span class="ctrl-icon">💬</span><span class="ctrl-label">Chat</span>';
-  document.getElementById('btn-rec').innerHTML = '<span class="ctrl-icon" id="rec-icon">⏺</span><span class="ctrl-label">Gravar</span>';
+  setCtrl('btn-mic',  { circleClass: 'ctrl-circle', icon: 'mic',                 label: 'Mic'    });
+  setCtrl('btn-cam',  { circleClass: 'ctrl-circle', icon: 'videocam',            label: 'Câmera' });
+  setCtrl('btn-tela', { circleClass: 'ctrl-circle', icon: 'present_to_all',      label: 'Tela'   });
+  setCtrl('btn-mao',  { circleClass: 'ctrl-circle', icon: 'back_hand',           label: 'Mão'    });
+  setCtrl('btn-chat', { circleClass: 'ctrl-circle', icon: 'chat_bubble'                          });
+  setCtrl('btn-rec',  { circleClass: 'ctrl-circle', icon: 'radio_button_checked', label: 'Gravar'});
   salaAtual = null; salaAtualId = null;
   document.getElementById('video-container').style.display = 'none';
   document.getElementById('lobby-view').style.display = 'flex';
@@ -1434,21 +1473,25 @@ function abrirSidebar() {
   sidebarOpen = true;
   const sb = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
+  sb.classList.remove('hidden');
   if (window.innerWidth <= 768) {
     sb.classList.add('open');
     overlay.style.display = 'block';
     requestAnimationFrame(() => { overlay.style.opacity = '1'; overlay.style.pointerEvents = 'auto'; });
-  } else { sb.style.transform = ''; }
+  }
 }
 function fecharSidebar() {
   sidebarOpen = false;
   const sb = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  sb.classList.remove('open');
-  sb.style.transform = 'translateX(-100%)';
-  overlay.style.opacity = '0';
-  overlay.style.pointerEvents = 'none';
-  setTimeout(() => { if (!sidebarOpen) overlay.style.display = 'none'; }, 300);
+  if (window.innerWidth <= 768) {
+    sb.classList.remove('open');
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    setTimeout(() => { if (!sidebarOpen) overlay.style.display = 'none'; }, 300);
+  } else {
+    sb.classList.add('hidden');
+  }
 }
 
 function mudarTab(tab) {
