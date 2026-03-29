@@ -380,7 +380,7 @@ app.get('/api/expectativa-cidade', auth,
 /* ================= GASTOS POR LIDERANÇA ================= */
 app.post('/api/gastos',
   auth,
-  allow('admin', 'dono', 'lider_regiao'),
+  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
   async (req, res) => {
 
   try {
@@ -517,7 +517,7 @@ app.get('/api/gastos-total/:lideranca_id', auth, async (req, res) => {
 app.post('/api/liderancas',
   createLiderancaLimiter,
   auth,
-  allow('admin', 'dono', 'lider_regiao'),
+  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
   upload.single('foto'),
   async (req, res) => {
 
@@ -632,7 +632,7 @@ await registrarAuditoria(
 /* ================= EXCLUIR LIDERANÇA ================= */
 app.delete('/api/liderancas/:id',
   auth,
-  allow('admin', 'dono', 'lider_regiao'),
+  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
   async (req, res) => {
 
   try {
@@ -673,7 +673,7 @@ await registrarAuditoria(
 /* ================= EDITAR LIDERANÇA ================= */
 app.put('/api/liderancas/:id',
   auth,
-  allow('admin', 'dono', 'lider_regiao'),
+  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
   upload.single('foto'),
   async (req, res) => {
 
@@ -870,7 +870,7 @@ GROUP BY cidade
 
 app.post('/api/observacoes',
   auth,
-  allow('admin', 'dono', 'lider_regiao'),
+  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
   async (req, res) => {
   try {
     const { cidade, text } = req.body;
@@ -889,7 +889,7 @@ app.post('/api/observacoes',
 
 app.delete('/api/observacoes/:id',
   auth,
-  allow('admin', 'dono', 'lider_regiao'),
+  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
   async (req, res) => {
   try {
     const { id } = req.params;
@@ -1055,7 +1055,7 @@ app.get('/api/expectativa-rjcapital-todas', auth, async (req, res) => {
 
 app.post('/api/pins',
   auth,
-  allow('admin', 'dono', 'lider_regiao'),
+  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
   async (req, res) => {
 
   const { cidade, tipo, lat, lng, descricao } = req.body;
@@ -1107,7 +1107,7 @@ SELECT * FROM pins
 
 app.delete('/api/pins/:id',
   auth,
-  allow('admin', 'dono', 'lider_regiao'),
+  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
   async (req, res) => {
   const id = req.params.id;
 
@@ -1135,7 +1135,7 @@ res.json({ ok: true });
 
 app.put('/api/pins/:id',
   auth,
-  allow('admin', 'dono', 'lider_regiao'),
+  allow('admin', 'dono', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'),
   async (req, res) => {
 
   const { id } = req.params;
@@ -1198,7 +1198,7 @@ if (!usuario || !senha || !nivel || !regiao_vinculada) {
     error: 'Usuario, senha, nivel e regiao_vinculada são obrigatórios'
   });
 }
-const niveisPermitidos = ['dono', 'admin', 'visualizador', 'lider_regiao'];
+const niveisPermitidos = ['dono', 'admin', 'visualizador', 'lider_regiao', 'lider_distrito_angra', 'lider_zona_rj'];
 
 if (!niveisPermitidos.includes(nivel)) {
   return res.status(400).json({
@@ -1321,6 +1321,52 @@ app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
     res.status(500).json({ error: 'Erro interno' });
   }
 });
+/* ================= ANIVERSARIANTES ================= */
+
+// Helper: busca líderes com aniversário nos próximos N dias para uma região
+async function buscarAniversariantes(regiao, nivel, dias = 7) {
+  const isDono = nivel === 'dono';
+  const { rows } = await pool.query(
+    `SELECT
+       nome,
+       data_nascimento,
+       cidade,
+       regiao,
+       contato,
+       foto,
+       -- calcula quantos dias faltam para o aniversário (considerando virada de ano)
+       (
+         SELECT i FROM generate_series(0, $1) AS i
+         WHERE to_char(CURRENT_DATE + (i * INTERVAL '1 day'), 'MMDD') = to_char(data_nascimento::date, 'MMDD')
+         LIMIT 1
+       ) AS dias_para_aniversario
+     FROM liderancas
+     WHERE data_nascimento IS NOT NULL
+       AND to_char(data_nascimento::date, 'MMDD') = ANY(
+         ARRAY(
+           SELECT to_char(CURRENT_DATE + (i * INTERVAL '1 day'), 'MMDD')
+           FROM generate_series(0, $1) AS i
+         )
+       )
+       AND ($2 OR LOWER(regiao) = LOWER($3))
+     ORDER BY dias_para_aniversario ASC, nome ASC`,
+    [dias, isDono, regiao || '']
+  );
+  return rows;
+}
+
+// GET /api/aniversariantes?dias=7
+app.get('/api/aniversariantes', auth, async (req, res) => {
+  try {
+    const dias = Math.min(parseInt(req.query.dias) || 7, 30);
+    const rows = await buscarAniversariantes(req.user.regiao, req.user.nivel, dias);
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro ao buscar aniversariantes:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
 /* ================= KEEP ALIVE (RENDER) ================= */
 
 
@@ -1329,7 +1375,7 @@ app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
 // Criar sala de vídeo
 app.post("/api/salas-video",
   auth,
-  allow("dono", "admin", "lider_regiao"),
+  allow("dono", "admin", "lider_regiao", "lider_distrito_angra", "lider_zona_rj"),
   async (req, res) => {
     try {
       const { nome, regiao } = req.body;
@@ -1366,7 +1412,7 @@ app.get("/api/salas-video", auth, async (req, res) => {
 // Encerrar sala
 app.delete("/api/salas-video/:id",
   auth,
-  allow("dono", "admin", "lider_regiao"),
+  allow("dono", "admin", "lider_regiao", "lider_distrito_angra", "lider_zona_rj"),
   async (req, res) => {
     try {
       const { id } = req.params;
@@ -1411,10 +1457,20 @@ io.on("connection", (socket) => {
   const u = socket.usuario;
 
   // Presença online
-  socket.on("registrar-online", ({ id, nome, nivel, regiao }) => {
+  socket.on("registrar-online", async ({ id, nome, nivel, regiao }) => {
     onlineUsers.set(socket.id, { id, nome, nivel, regiao });
     socket.emit("lista-online", [...onlineUsers.values()]);
     socket.broadcast.emit("usuario-online", { id, nome, nivel, regiao });
+
+    // Envia aniversariantes de hoje da região do usuário
+    try {
+      const aniversariantes = await buscarAniversariantes(regiao, nivel, 7);
+      if (aniversariantes.length > 0) {
+        socket.emit("aniversariantes", aniversariantes);
+      }
+    } catch (e) {
+      console.error("Erro ao buscar aniversariantes para socket:", e);
+    }
   });
 
   // Convite para sala

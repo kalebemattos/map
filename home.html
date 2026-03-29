@@ -464,8 +464,188 @@ body {
 .card-rose   .card-icon-wrap { background: rgba(190,18,60,0.3);   box-shadow: 0 4px 12px rgba(190,18,60,0.2); }
 .card-rose:hover   { border-color: rgba(251,113,133,0.25); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(190,18,60,0.1); }
 
+.card-cyan   .card-icon-wrap { background: rgba(6,148,162,0.3);   box-shadow: 0 4px 12px rgba(6,148,162,0.2); }
+.card-cyan:hover   { border-color: rgba(34,211,238,0.25); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(6,148,162,0.12); }
+
+/* Badge "ao vivo" no card de reuniões */
+.card-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: #34d399;
+  background: rgba(52,211,153,.12);
+  border: 1px solid rgba(52,211,153,.25);
+  padding: 3px 9px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+  width: fit-content;
+}
+.card-live-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  animation: blink-live 1.4s ease infinite;
+}
+@keyframes blink-live {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .4; transform: scale(.8); }
+}
+
 /* Admin card (hidden by default) */
 #card-admin { display: none; }
+
+/* ===== PAINEL DE ANIVERSARIANTES ===== */
+#birthday-panel {
+  position: relative;
+  z-index: 1;
+  max-width: 1060px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 24px 20px;
+  animation: fadeUp 0.5s ease 0.08s both;
+  display: none;
+}
+
+.birthday-card {
+  background: rgba(8, 22, 58, 0.62);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(251,191,36,0.22);
+  border-radius: 16px;
+  padding: 16px 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.3), 0 0 0 1px rgba(251,191,36,.05);
+}
+
+.birthday-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(251,191,36,.5), rgba(251,113,133,.35), transparent);
+}
+
+.birthday-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 10px;
+}
+
+.birthday-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,.92);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.birthday-today-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: #fbbf24;
+  background: rgba(251,191,36,.12);
+  border: 1px solid rgba(251,191,36,.25);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.birthday-dismiss {
+  width: 26px; height: 26px;
+  border: none;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 7px;
+  color: rgba(255,255,255,.4);
+  cursor: pointer;
+  font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.birthday-dismiss:hover { background: rgba(255,255,255,.12); color: rgba(255,255,255,.8); }
+
+.birthday-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.birthday-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 10px;
+  padding: 8px 12px;
+  position: relative;
+}
+
+.birthday-item.hoje {
+  border-color: rgba(251,191,36,.35);
+  background: rgba(251,191,36,.07);
+}
+
+.birthday-item.hoje::after {
+  content: '🎂';
+  position: absolute;
+  top: -7px; right: -3px;
+  font-size: 14px;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.5));
+}
+
+.birthday-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: #fff;
+  flex-shrink: 0;
+}
+
+.birthday-nome {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,.9);
+  white-space: nowrap;
+}
+
+.birthday-meta {
+  font-size: 10px;
+  color: rgba(255,255,255,.4);
+  margin-top: 1px;
+  white-space: nowrap;
+}
+
+.birthday-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.birthday-tag.hoje { background: rgba(251,191,36,.18); color: #fbbf24; }
+.birthday-tag.breve { background: rgba(96,165,250,.12); color: #93c5fd; }
+
+@media (max-width: 600px) {
+  #birthday-panel { padding: 0 14px 14px; }
+  .birthday-list { gap: 7px; }
+  .birthday-item { padding: 7px 10px; gap: 7px; }
+  .birthday-avatar { width: 27px; height: 27px; font-size: 11px; }
+  .birthday-nome { font-size: 11px; }
+}
 
 /* ===== FOOTER ===== */
 footer {
@@ -494,13 +674,14 @@ footer {
   to   { opacity: 1; transform: none; }
 }
 
-.card:nth-child(1) { animation-delay: 0.12s; }
-.card:nth-child(2) { animation-delay: 0.19s; }
-.card:nth-child(3) { animation-delay: 0.26s; }
-.card:nth-child(4) { animation-delay: 0.33s; }
-.card:nth-child(5) { animation-delay: 0.40s; }
-.card:nth-child(6) { animation-delay: 0.47s; }
-.card:nth-child(7) { animation-delay: 0.54s; }
+.card:nth-child(1) { animation-delay: 0.10s; }
+.card:nth-child(2) { animation-delay: 0.17s; }
+.card:nth-child(3) { animation-delay: 0.24s; }
+.card:nth-child(4) { animation-delay: 0.31s; }
+.card:nth-child(5) { animation-delay: 0.38s; }
+.card:nth-child(6) { animation-delay: 0.45s; }
+.card:nth-child(7) { animation-delay: 0.52s; }
+.card:nth-child(8) { animation-delay: 0.59s; }
 
 /* ===== TABLET ===== */
 @media (max-width: 860px) {
@@ -642,6 +823,20 @@ setTimeout(function() {
     <p>Controle suas lideranças, acompanhe dados eleitorais e tome decisões estratégicas em tempo real.</p>
   </header>
 
+  <!-- ANIVERSARIANTES -->
+  <div id="birthday-panel">
+    <div class="birthday-card">
+      <div class="birthday-header">
+        <div class="birthday-title">
+          🎉 Aniversariantes
+          <span class="birthday-today-badge" id="birthday-today-badge" style="display:none">Hoje</span>
+        </div>
+        <button class="birthday-dismiss" onclick="dismissBirthday()" title="Dispensar">✕</button>
+      </div>
+      <div class="birthday-list" id="birthday-list"></div>
+    </div>
+  </div>
+
   <!-- CARDS -->
   <section class="cards-section">
     <div class="cards-grid">
@@ -709,6 +904,19 @@ setTimeout(function() {
         </div>
       </a>
 
+      <a href="./reunioes.html" class="card card-cyan" id="card-reunioes">
+        <div class="card-shine"></div>
+        <div class="card-icon-wrap">🎥</div>
+        <div class="card-body">
+          <div id="reunioes-live-badge" class="card-live-badge" style="display:none">
+            <span id="reunioes-live-count">0</span> sala<span id="reunioes-live-plural">s</span> ao vivo
+          </div>
+          <div class="card-title">Videoconferência</div>
+          <div class="card-desc">Reuniões por vídeo com as lideranças — salas por região, agenda, convites e chat em tempo real.</div>
+          <div class="card-cta">Abrir reuniões <div class="card-cta-arrow">→</div></div>
+        </div>
+      </a>
+
       <a href="./usuarios.html" class="card card-rose" id="card-admin">
         <div class="card-shine"></div>
         <div class="card-icon-wrap">🛡️</div>
@@ -734,6 +942,8 @@ setTimeout(function() {
 <script>
 // Definido ANTES do auth.js
 
+const API_URL = 'https://map-backend-j88s.onrender.com'
+
 window.iniciarAplicacao = function() {
   // Mostra nome do usuário no nav
   const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -750,6 +960,110 @@ window.iniciarAplicacao = function() {
     const adminCard = document.getElementById('card-admin')
     if (adminCard) adminCard.style.display = 'flex'
   }
+  // Busca salas de vídeo ativas e exibe badge
+  carregarSalasAtivas()
+  // Busca aniversariantes da região
+  carregarAniversariantes()
+}
+
+async function carregarSalasAtivas() {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    const r = await fetch(API_URL + '/api/salas-video', {
+      headers: { Authorization: 'Bearer ' + token }
+    })
+    if (!r.ok) return
+    const salas = await r.json()
+    const badge = document.getElementById('reunioes-live-badge')
+    const countEl = document.getElementById('reunioes-live-count')
+    const pluralEl = document.getElementById('reunioes-live-plural')
+    if (salas.length > 0 && badge && countEl) {
+      countEl.textContent = salas.length
+      pluralEl.textContent = salas.length === 1 ? '' : 's'
+      badge.style.display = 'inline-flex'
+    }
+  } catch (e) {
+    // silencioso
+  }
+}
+
+/* ── Aniversariantes ── */
+const BIRTHDAY_COLORS = ['#1a56db','#059669','#7c3aed','#dc2626','#d97706','#0891b2','#be185d','#0f766e']
+function bdColor(nome) {
+  let h = 0
+  for (const c of (nome || '?')) h = (h * 31 + c.charCodeAt(0)) % BIRTHDAY_COLORS.length
+  return BIRTHDAY_COLORS[h]
+}
+
+function dismissBirthday() {
+  const panel = document.getElementById('birthday-panel')
+  if (panel) panel.style.display = 'none'
+  // Guarda dismiss com a data de hoje — reaparece amanhã
+  sessionStorage.setItem('birthday_dismissed', new Date().toDateString())
+}
+
+async function carregarAniversariantes() {
+  try {
+    // Verifica se o usuário dispensou hoje
+    const dismissed = sessionStorage.getItem('birthday_dismissed')
+    if (dismissed === new Date().toDateString()) return
+
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    const r = await fetch(API_URL + '/api/aniversariantes?dias=7', {
+      headers: { Authorization: 'Bearer ' + token }
+    })
+    if (!r.ok) return
+    const lista = await r.json()
+    if (!lista.length) return
+
+    renderAniversariantes(lista)
+  } catch (e) {
+    // silencioso
+  }
+}
+
+function renderAniversariantes(lista) {
+  const panel = document.getElementById('birthday-panel')
+  const listEl = document.getElementById('birthday-list')
+  const todayBadge = document.getElementById('birthday-today-badge')
+  if (!panel || !listEl) return
+
+  const temHoje = lista.some(a => parseInt(a.dias_para_aniversario) === 0)
+  if (temHoje) todayBadge.style.display = 'inline-flex'
+
+  listEl.innerHTML = lista.map(a => {
+    const dias = parseInt(a.dias_para_aniversario)
+    const isHoje = dias === 0
+    const cor = bdColor(a.nome)
+    const ini = (a.nome || '?')[0].toUpperCase()
+    const tagTxt = isHoje ? 'Hoje!' : (dias === 1 ? 'Amanhã' : `em ${dias} dias`)
+    const tagClass = isHoje ? 'hoje' : 'breve'
+
+    // Formata a data de nascimento (dia/mês)
+    let diaMes = ''
+    if (a.data_nascimento) {
+      const d = new Date(a.data_nascimento)
+      diaMes = String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth()+1).padStart(2,'0')
+    }
+
+    return `<div class="birthday-item${isHoje ? ' hoje' : ''}">
+      <div class="birthday-avatar" style="background:${cor}">${ini}</div>
+      <div>
+        <div class="birthday-nome">${escHome(a.nome)}</div>
+        <div class="birthday-meta">${escHome(a.cidade || a.regiao || '')}${diaMes ? ' · ' + diaMes : ''}</div>
+      </div>
+      <span class="birthday-tag ${tagClass}">${tagTxt}</span>
+    </div>`
+  }).join('')
+
+  panel.style.display = 'block'
+}
+
+function escHome(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
 }
 </script>
 

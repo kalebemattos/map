@@ -800,6 +800,7 @@ function conectarSocket() {
   socket.on('usuario-offline', ({ id }) => { usuariosOnline = usuariosOnline.filter(u => u.id !== id); renderOnline(); atualizarOnlinePill(); });
   socket.on('connect', () => socket.emit('registrar-online', { id: usuario.id, nome: usuario.nome, nivel: usuario.nivel, regiao: usuario.regiao_vinculada || usuario.regiao || '' }));
   socket.on('connect_error', e => console.warn('Socket:', e.message));
+  socket.on('aniversariantes', (lista) => mostrarAniversariantesToast(lista));
   socket.on('reconnect', () => {
     if (salaAtualId) socket.emit('entrar-sala', { salaId: salaAtualId, nome: usuario.nome });
     notif('🔄 Reconectado ao servidor', 'success');
@@ -835,6 +836,49 @@ function fecharConviteToast() {
   const t = document.getElementById('convite-toast');
   t.classList.remove('show');
   setTimeout(() => { t.style.display = 'none'; }, 300);
+}
+
+/* ====== ANIVERSARIANTES TOAST ====== */
+function mostrarAniversariantesToast(lista) {
+  if (!lista || !lista.length) return;
+  // Verifica se já dispensou hoje nesta sessão
+  const dismissed = sessionStorage.getItem('bday_reunioes');
+  if (dismissed === new Date().toDateString()) return;
+
+  const hoje = lista.filter(a => parseInt(a.dias_para_aniversario) === 0);
+  const breve = lista.filter(a => parseInt(a.dias_para_aniversario) > 0);
+
+  // Monta o texto do toast
+  let linhas = [];
+  if (hoje.length) {
+    linhas.push('🎂 <strong>Hoje:</strong> ' + hoje.map(a => escHtml(a.nome) + (a.cidade ? ' (' + escHtml(a.cidade) + ')' : '')).join(', '));
+  }
+  if (breve.length) {
+    // Agrupa por dia
+    const grupos = {};
+    breve.forEach(a => {
+      const d = parseInt(a.dias_para_aniversario);
+      if (!grupos[d]) grupos[d] = [];
+      grupos[d].push(a);
+    });
+    Object.keys(grupos).sort((a,b)=>a-b).forEach(d => {
+      const label = d == 1 ? 'Amanhã' : 'Em ' + d + ' dias';
+      linhas.push('📅 <strong>' + label + ':</strong> ' + grupos[d].map(a => escHtml(a.nome)).join(', '));
+    });
+  }
+
+  // Exibe via notif customizado em vez do notif() simples
+  const el = document.createElement('div');
+  el.className = 'notif-item';
+  el.style.cssText = 'max-width:320px;cursor:pointer;border-color:#f59e0b;background:#fffbeb;';
+  el.innerHTML = linhas.join('<br>');
+  el.onclick = () => { el.remove(); sessionStorage.setItem('bday_reunioes', new Date().toDateString()); };
+  document.getElementById('notif').appendChild(el);
+  // Auto-remove após 12 segundos
+  setTimeout(() => {
+    if (el.parentNode) el.remove();
+    sessionStorage.setItem('bday_reunioes', new Date().toDateString());
+  }, 12000);
 }
 
 /* ====== SALAS ====== */

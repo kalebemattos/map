@@ -235,6 +235,8 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
 .nivel-dono        { background: #fef3c7; color: #b45309; }
 .nivel-admin       { background: var(--blue-light); color: var(--blue-main); }
 .nivel-lider       { background: #f0fdf4; color: #15803d; }
+.nivel-distrito    { background: #fef9c3; color: #713f12; }
+.nivel-zona        { background: #fce7f3; color: #9d174d; }
 .nivel-visualizador{ background: var(--slate-100); color: var(--slate-500); }
 
 .user-actions { display: flex; gap: 6px; flex-shrink: 0; }
@@ -367,6 +369,8 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
         <select id="u_nivel" onchange="toggleRegiao()">
           <option value="visualizador">Visualizador</option>
           <option value="lider_regiao">Líder de Região</option>
+          <option value="lider_distrito_angra">Líder de Distrito — Angra dos Reis</option>
+          <option value="lider_zona_rj">Líder de Zona — RJ Capital</option>
           <option value="admin">Administrador</option>
           <option value="dono">Dono</option>
         </select>
@@ -383,6 +387,27 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
           <option value="centroSulFluminense">Centro-Sul Fluminense</option>
           <option value="medioParaiba">Médio Paraíba</option>
           <option value="costaVerde">Costa Verde</option>
+        </select>
+      </div>
+      <div class="form-group" id="div_distrito_angra" style="display:none;">
+        <label>Distrito de Angra dos Reis</label>
+        <select id="u_distrito_angra">
+          <option value="">Selecione um distrito</option>
+          <option value="1º DISTRITO">1º Distrito — Centro / Balneário</option>
+          <option value="2º DISTRITO">2º Distrito — Bracuí / Enseada</option>
+          <option value="3º DISTRITO">3º Distrito — Monsuaba / Jacuecanga</option>
+          <option value="4º DISTRITO">4º Distrito — Mambucaba / Frade</option>
+          <option value="5º DISTRITO">5º Distrito — Ilha Grande</option>
+        </select>
+      </div>
+      <div class="form-group" id="div_zona_rj" style="display:none;">
+        <label>Zona do Rio de Janeiro</label>
+        <select id="u_zona_rj">
+          <option value="">Selecione uma zona</option>
+          <option value="ZONA NORTE">Zona Norte</option>
+          <option value="ZONA SUL">Zona Sul</option>
+          <option value="ZONA OESTE">Zona Oeste</option>
+          <option value="ZONA LESTE">Zona Leste</option>
         </select>
       </div>
     </div>
@@ -431,6 +456,8 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
         <select id="edit-nivel" onchange="toggleRegiaoModal()">
           <option value="visualizador">Visualizador</option>
           <option value="lider_regiao">Líder de Região</option>
+          <option value="lider_distrito_angra">Líder de Distrito — Angra dos Reis</option>
+          <option value="lider_zona_rj">Líder de Zona — RJ Capital</option>
           <option value="admin">Administrador</option>
           <option value="dono">Dono</option>
         </select>
@@ -447,6 +474,27 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
           <option value="centroSulFluminense">Centro-Sul Fluminense</option>
           <option value="medioParaiba">Médio Paraíba</option>
           <option value="costaVerde">Costa Verde</option>
+        </select>
+      </div>
+      <div class="form-group" id="edit-div-distrito-angra" style="display:none;">
+        <label>Distrito de Angra dos Reis</label>
+        <select id="edit-distrito-angra">
+          <option value="">Selecione um distrito</option>
+          <option value="1º DISTRITO">1º Distrito — Centro / Balneário</option>
+          <option value="2º DISTRITO">2º Distrito — Bracuí / Enseada</option>
+          <option value="3º DISTRITO">3º Distrito — Monsuaba / Jacuecanga</option>
+          <option value="4º DISTRITO">4º Distrito — Mambucaba / Frade</option>
+          <option value="5º DISTRITO">5º Distrito — Ilha Grande</option>
+        </select>
+      </div>
+      <div class="form-group" id="edit-div-zona-rj" style="display:none;">
+        <label>Zona do Rio de Janeiro</label>
+        <select id="edit-zona-rj">
+          <option value="">Selecione uma zona</option>
+          <option value="ZONA NORTE">Zona Norte</option>
+          <option value="ZONA SUL">Zona Sul</option>
+          <option value="ZONA OESTE">Zona Oeste</option>
+          <option value="ZONA LESTE">Zona Leste</option>
         </select>
       </div>
       <div class="feedback" id="feedback-editar"></div>
