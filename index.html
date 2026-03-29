@@ -1503,15 +1503,8 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
     <div class="city-card">
       <h3>Filtrar por Região</h3>
       <select id="regionSelect">
+        <!-- opções preenchidas dinamicamente por injetarRegioes() -->
         <option value="all">Mapa completo</option>
-        <option value="metropolitana">Metropolitana</option>
-        <option value="baixadasLitoraneas">Baixadas Litorâneas</option>
-        <option value="norteFluminense">Norte Fluminense</option>
-        <option value="noroesteFluminense">Noroeste Fluminense</option>
-        <option value="serrana">Serrana</option>
-        <option value="centroSulFluminense">Centro-Sul Fluminense</option>
-        <option value="medioParaiba">Médio Paraíba</option>
-        <option value="costaVerde">Costa Verde</option>
       </select>
 
       <div id="regiao-totais-card">
@@ -1667,7 +1660,7 @@ async function apiFetch(endpoint, options = {}) {
 // CONFIG DINÂMICO (candidatos, cores, mapas)
 // =================================================================
 
-let configSistema = { candidatos: [], cores: {}, mapas: [] };
+let configSistema = { candidatos: [], cores: {}, mapas: [], regioes: [] };
 
 async function carregarConfig() {
   try {
@@ -1675,9 +1668,32 @@ async function carregarConfig() {
     if (!r.ok) return;
     configSistema = await r.json();
     injetarCandidatos();
+    injetarRegioes();
   } catch (e) {
     console.warn('[config] não carregada:', e);
   }
+}
+
+function injetarRegioes() {
+  const regs = configSistema.regioes;
+  if (!regs || !regs.length) return;
+
+  // ── Reconstrói os objetos globais usados pelo mapa ──────────────
+  regions = { all: null };
+  lideresRegiao = {};
+  regs.forEach(r => {
+    regions[r.chave]       = r.cidades;
+    lideresRegiao[r.chave] = r.lideres || [];
+  });
+
+  // ── Reconstrói o <select id="regionSelect"> ─────────────────────
+  const sel = document.getElementById('regionSelect');
+  if (!sel) return;
+
+  sel.innerHTML = '<option value="all">Mapa completo</option>' +
+    regs.map(r =>
+      `<option value="${r.chave}">${r.label}</option>`
+    ).join('');
 }
 
 function injetarCandidatos() {
@@ -3539,16 +3555,10 @@ function calcularTotaisRegiao(key) {
   const cidades = (typeof regions !== 'undefined' && regions[key]) || []
   if (!cidades.length) { card.style.display = 'none'; return }
 
-  const REGIOES_LABEL = {
-    metropolitana:       'Metropolitana',
-    baixadasLitoraneas:  'Baixadas Litorâneas',
-    norteFluminense:     'Norte Fluminense',
-    noroesteFluminense:  'Noroeste Fluminense',
-    serrana:             'Serrana',
-    centroSulFluminense: 'Centro-Sul Fluminense',
-    medioParaiba:        'Médio Paraíba',
-    costaVerde:          'Costa Verde',
-  }
+  // labels vindas do config (fallback para a própria chave)
+  const REGIOES_LABEL = Object.fromEntries(
+    (configSistema.regioes || []).map(r => [r.chave, r.label])
+  );
 
   const cands = configSistema.candidatos || [];
 

@@ -219,6 +219,9 @@ app.get('/api/config', (req, res) => {
     mapas:      config.mapas.map(({ id, nome, nivel_usuario, subregioes }) => ({
       id, nome, nivel_usuario, subregioes,
     })),
+    regioes:    config.regioes.map(({ chave, label, cidades, lideres }) => ({
+      chave, label, cidades, lideres,
+    })),
   });
 });
 

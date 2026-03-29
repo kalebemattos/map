@@ -129,8 +129,8 @@ const deputadosByCity = {
   "Volta Redonda":[{"name":"MUNIR NETO","votes":27350},{"name":"JARI","votes":22032},{"name":"RENAN CURY","votes":15517},{"name":"BETINHO ALBERTASSI","votes":13122},{"name":"NELSON GONÇALVES","votes":5291}]
 };
 
-/* ===== Regiões oficiais (92 municípios) (mantido) ===== */
-const regions = {
+/* ===== Regiões oficiais — fallback estático (substituído pelo /api/config em runtime) ===== */
+let regions = {
   all: null,
   metropolitana: [
     "Rio de Janeiro","Niterói","São Gonçalo","Itaboraí","Maricá","Tanguá","Rio Bonito",
@@ -167,9 +167,9 @@ const regions = {
     "Angra dos Reis","Paraty","Mangaratiba"
   ]
 };
-/* ===== Líderes por Região (Objeto Completo) ===== */
+/* ===== Líderes por Região — fallback estático (substituído pelo /api/config em runtime) ===== */
 
-const lideresRegiao = {
+let lideresRegiao = {
   metropolitana: [
     {
       nome: "Léo Marmoraria",
