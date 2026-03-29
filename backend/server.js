@@ -1324,52 +1324,7 @@ app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
 /* ================= KEEP ALIVE (RENDER) ================= */
 
 
-/* ================= VIDEO CONFERÊNCIA ================= */
-
-// Cria room no Daily.co automaticamente
-async function criarRoomDaily(roomName) {
-  if (!process.env.DAILY_API_KEY) return; // sem chave, ignora
-  const res = await fetch('https://api.daily.co/v1/rooms', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.DAILY_API_KEY}`
-    },
-    body: JSON.stringify({
-      name: roomName,
-      privacy: 'private',
-      properties: {
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8,
-        enable_chat: true,
-        enable_screenshare: true,
-        enable_knocking: false
-      }
-    })
-  });
-  if (!res.ok && res.status !== 409) {
-    const err = await res.json();
-    throw new Error(`Daily.co: ${JSON.stringify(err)}`);
-  }
-}
-
-function gerarTokenHMS(salaId, usuarioId, nivel) {
-  const role = ["dono", "admin", "lider_regiao"].includes(nivel) ? "host" : "guest";
-  const payload = {
-    access_key: process.env.HMS_ACCESS_KEY,
-    room_id: String(salaId),
-    user_id: String(usuarioId),
-    role,
-    type: "app",
-    version: 2,
-    iat: Math.floor(Date.now() / 1000),
-    nbf: Math.floor(Date.now() / 1000),
-  };
-  return jwt.sign(payload, process.env.HMS_SECRET, {
-    algorithm: "HS256",
-    expiresIn: "1h",
-    jwtid: uuidv4()
-  });
-}
+/* ================= VIDEO CONFERÊNCIA (WebRTC via Socket.io) ================= */
 
 // Criar sala de vídeo
 app.post("/api/salas-video",
@@ -1377,20 +1332,14 @@ app.post("/api/salas-video",
   allow("dono", "admin", "lider_regiao"),
   async (req, res) => {
     try {
-      const { nome } = req.body;
+      const { nome, regiao } = req.body;
       if (!nome?.trim()) return res.status(400).json({ error: "Nome obrigatório" });
 
-      // Insere no banco primeiro para gerar o UUID
       const { rows } = await pool.query(
         "INSERT INTO salas_video (nome, host_id, regiao) VALUES ($1, $2, $3) RETURNING *",
-        [nome.trim(), req.user.id, req.user.regiao]
+        [nome.trim(), req.user.id, regiao || req.user.regiao]
       );
-      const sala = rows[0];
-
-      // Cria a room no Daily.co com o mesmo ID do banco
-      await criarRoomDaily(sala.id);
-
-      res.json(sala);
+      res.json(rows[0]);
     } catch (err) {
       console.error("Erro ao criar sala:", err);
       res.status(500).json({ error: "Erro interno" });
@@ -1411,21 +1360,6 @@ app.get("/api/salas-video", auth, async (req, res) => {
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: "Erro ao listar salas" });
-  }
-});
-
-// Obter token 100ms para entrar na sala
-app.post("/api/salas-video/:id/token", auth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const sala = await dbGet("SELECT * FROM salas_video WHERE id = $1 AND ativa = true", [id]);
-    if (!sala) return res.status(404).json({ error: "Sala não encontrada" });
-    if (req.user.nivel !== "dono" && sala.regiao !== req.user.regiao)
-      return res.status(403).json({ error: "Acesso negado" });
-    const token = gerarTokenHMS(id, req.user.id, req.user.nivel);
-    res.json({ token, salaId: id });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao gerar token" });
   }
 });
 
@@ -1522,7 +1456,7 @@ io.on("connection", (socket) => {
     if (!texto?.trim()) return;
     io.to("sala:" + salaId).emit("nova-mensagem", {
       id: uuidv4(), nome: socket.nomeUsuario || u.id,
-      texto: texto.trim(), hora: Date.now()
+      userId: u.id, texto: texto.trim(), hora: Date.now()
     });
   });
 
