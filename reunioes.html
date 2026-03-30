@@ -1185,7 +1185,10 @@ async function criarPC(peerId, deveOfertar) {
   localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
 
   pc.ontrack = (e) => {
+    if (!e.streams || !e.streams[0]) return;
     const stream = e.streams[0];
+    // ontrack dispara uma vez por faixa (áudio + vídeo = 2x). Ignorar se já processamos este stream.
+    if (peerStreams[peerId] === stream) return;
     peerStreams[peerId] = stream;
     adicionarThumb(peerId, peerNomes[peerId] || peerId, stream, false);
     atualizarContagem();
@@ -1209,16 +1212,10 @@ async function criarPC(peerId, deveOfertar) {
     if (pc.connectionState === 'closed') removerPeer(peerId);
   };
 
-  // Quando a negociação precisa ser reiniciada (ex: compartilhamento de tela)
-  pc.onnegotiationneeded = async () => {
-    if (!deveOfertar) return;
-    try {
-      const offer = await pc.createOffer();
-      if (pc.signalingState !== 'stable') return; // evitar conflito
-      await pc.setLocalDescription(offer);
-      socket.emit('offer', { paraId: peerId, offer });
-    } catch (e) { console.warn('onnegotiationneeded:', e); }
-  };
+  // NÃO usar onnegotiationneeded aqui: addTrack() agenda o evento de forma assíncrona,
+  // e ele dispararia concorrentemente com o bloco "if (deveOfertar)" abaixo, causando
+  // duas ofertas simultâneas e renegociação indevida (~1s após conexão).
+  // O compartilhamento de tela usa replaceTrack() (não addTrack), portanto não precisa deste evento.
 
   if (deveOfertar) {
     const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
