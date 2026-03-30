@@ -1,4 +1,7 @@
-const votosCeliaJordao = {
+// Dados históricos da eleição 2022 por candidato.
+// Para adicionar outro candidato: window.votosHistoricos['chave'] = { "CIDADE": votos, ... }
+window.votosHistoricos = window.votosHistoricos || {};
+window.votosHistoricos['celia'] = {
   "ANGRA DOS REIS": 31363, "APERIBE": 5, "ARARUAMA": 32, "AREAL": 5, "ARMACAO DOS BUZIOS": 8, "ARRAIAL DO CABO": 22,
   "BARRA DO PIRAI": 104, "BARRA MANSA": 1013, "BELFORD ROXO": 68, "BOM JARDIM": 2, "BOM JESUS DO ITABAPOANA": 23,
   "CABO FRIO": 177, "CACHOEIRAS DE MACACU": 9, "CAMBUCI": 144, "CAMPOS DOS GOYTACAZES": 1350, "CANTAGALO": 11,

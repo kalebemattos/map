@@ -20,8 +20,7 @@
       --amber-light: #fef3c7;
       --red: #dc2626;
       --red-light: #fee2e2;
-      --celia: #1565c0;
-      --fernando: #b91c1c;
+      /* --celia e --fernando removidos — cores vêm de configSistema */
       --slate-900: #0f172a;
       --slate-700: #334155;
       --slate-500: #64748b;
@@ -436,15 +435,7 @@
       letter-spacing: 0.2px;
     }
 
-    .badge-celia {
-      background: #dbeafe;
-      color: #1d4ed8;
-    }
-
-    .badge-fernando {
-      background: #fee2e2;
-      color: #b91c1c;
-    }
+    /* .badge-celia e .badge-fernando removidos — estilos vêm inline de configSistema */
 
     .badge-ambos {
       background: #f0fdf4;
@@ -1078,8 +1069,7 @@
           <span class="filter-label">Campanha</span>
           <select id="filtro-campanha">
             <option value="todas">Todas</option>
-            <option value="celia">Célia Jordão</option>
-            <option value="fernando">Fernando Jordão</option>
+            <!-- opções por candidato — preenchidas por injetarCandidatosLiderancas() -->
             <option value="ambos">Ambos</option>
           </select>
         </div>
@@ -1161,6 +1151,37 @@
     let todasLiderancas = [];
     let listaFiltrada = [];
 
+    // ===== CONFIG DINÂMICA =====
+    let configSistema = { candidatos: [], cores: {}, mapas: [] };
+
+    async function carregarConfig() {
+      try {
+        const r = await fetch(API + '/api/config');
+        if (!r.ok) return;
+        configSistema = await r.json();
+        injetarCandidatosLiderancas();
+      } catch (e) { console.warn('[config] não carregada:', e); }
+    }
+
+    function injetarCandidatosLiderancas() {
+      const cands = configSistema.candidatos || [];
+      if (!cands.length) return;
+
+      // Preenche select #filtro-campanha (mantém "Todas" e "Ambos", insere candidatos no meio)
+      const sel = document.getElementById('filtro-campanha');
+      if (sel) {
+        Array.from(sel.options).filter(o => o.value !== 'todas' && o.value !== 'ambos').forEach(o => o.remove());
+        // Insere candidatos antes de "Ambos"
+        const ambosOpt = Array.from(sel.options).find(o => o.value === 'ambos');
+        cands.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.chave;
+          opt.textContent = c.nome;
+          sel.insertBefore(opt, ambosOpt);
+        });
+      }
+    }
+
     // ===== LOGIN =====
     async function login() {
       const usuario = document.getElementById('login-user').value.trim();
@@ -1188,9 +1209,10 @@
       }
     }
 
-    function iniciarLista() {
+    async function iniciarLista() {
       document.getElementById('login-card').style.display = 'none';
       document.getElementById('conteudo-lista').style.display = 'block';
+      await carregarConfig();
       carregarLiderancas();
     }
 
@@ -1421,8 +1443,8 @@
 
     // ===== RENDERIZAR =====
     function getBadgeCampanha(vinculo) {
-      if (vinculo === 'celia') return `<span class="badge badge-celia">🔵 Célia</span>`;
-      if (vinculo === 'fernando') return `<span class="badge badge-fernando">🔴 Fernando</span>`;
+      const cand = (configSistema.candidatos || []).find(c => c.chave === vinculo);
+      if (cand) return `<span class="badge" style="background:${cand.cor_fundo};color:${cand.cor_texto};">● ${cand.nome.split(' ')[0]}</span>`;
       return `<span class="badge badge-ambos">🟢 Ambos</span>`;
     }
 

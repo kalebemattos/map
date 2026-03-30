@@ -454,11 +454,8 @@ body.sidebar-closed #map {
   flex-shrink: 0;
 }
 
-/* ===== CELIA CARD ===== */
-#celia-jordao-card {
-  background: var(--amber-light) !important;
-  border-color: rgba(217,119,6,0.3) !important;
-}
+/* ===== CARDS DE VOTOS HISTÓRICOS POR CANDIDATO ===== */
+/* estilos gerados inline por injetarCandidatos() */
 
 /* ===== LIDERANÇA ITEMS ===== */
 .lideranca-foto {
@@ -1569,16 +1566,8 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
       </div>
     </div>
 
-    <!-- CÉLIA JORDÃO VOTOS -->
-    <div id="celia-jordao-card" class="city-card" style="display:none;">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:46px;height:46px;border-radius:50%;background:white;border:2px solid rgba(217,119,6,.4);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👩‍💼</div>
-        <div>
-          <h3 style="margin:0;margin-bottom:4px;color:#92400e;">Votação Célia Jordão</h3>
-          <div id="celia-votos-display" style="font-family:'Sora',sans-serif;font-weight:800;color:#d97706;font-size:18px;">0 votos</div>
-        </div>
-      </div>
-    </div>
+    <!-- VOTOS HISTÓRICOS POR CANDIDATO — preenchido por injetarCandidatos() -->
+    <div id="candidatos-votos-cards"></div>
 
     <!-- INFO CIDADE -->
     <div id="city-info" class="city-card">
@@ -1764,6 +1753,23 @@ function injetarCandidatos() {
       <div class="regiao-totais-row">
         <span class="regiao-totais-label">📊 Expectativa ${c.nome}</span>
         <span class="regiao-totais-val" id="regiao-exp-${c.chave}">0</span>
+      </div>`
+    ).join('');
+  }
+
+  // ── 5. Cards de votos históricos por candidato ──────────────────
+  const votosCardsEl = document.getElementById('candidatos-votos-cards');
+  if (votosCardsEl) {
+    votosCardsEl.innerHTML = cands.map(c =>
+      `<div id="votos-card-${c.chave}" class="city-card" style="display:none;background:${c.cor_fundo};border-color:${c.cor_texto}33;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <img src="img/${c.chave}.jpg" onerror="this.style.display='none'"
+            style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid ${c.cor_texto}44;flex-shrink:0;">
+          <div>
+            <h3 style="margin:0;margin-bottom:4px;color:${c.cor_texto};">Votação ${c.nome} (2022)</h3>
+            <div id="votos-display-${c.chave}" style="font-family:'Sora',sans-serif;font-weight:800;color:${c.cor_texto};font-size:18px;">0 votos</div>
+          </div>
+        </div>
       </div>`
     ).join('');
   }
@@ -2394,9 +2400,10 @@ if (layerRJ && regiaoAtiva === 'all') {
   layerRJ.eachLayer(l => layerRJ.resetStyle(l));
 }
 
-  if (document.getElementById('celia-jordao-card')) {
-    document.getElementById('celia-jordao-card').style.display = 'none';
-  }
+  (configSistema.candidatos || []).forEach(c => {
+    const card = document.getElementById('votos-card-' + c.chave);
+    if (card) card.style.display = 'none';
+  });
 }
 
 function updateSidebar(cityName, votos) {
@@ -2410,14 +2417,14 @@ function updateSidebar(cityName, votos) {
       cityInfoEl.style.display = 'none';
   }
 const normalized = normalizeCityName(cityName);
-  const vCelia = votosCeliaJordao[normalized] || 0;
-  const cardCelia = document.getElementById('celia-jordao-card');
-  const displayCelia = document.getElementById('celia-votos-display');
-
-  if (cardCelia && displayCelia) {
-    cardCelia.style.display = 'block';
-    displayCelia.textContent = fmt(vCelia) + ' votos';
-  }
+  (configSistema.candidatos || []).forEach(c => {
+    const card    = document.getElementById('votos-card-' + c.chave);
+    const display = document.getElementById('votos-display-' + c.chave);
+    if (!card || !display) return;
+    const votos = ((window.votosHistoricos || {})[c.chave] || {})[normalized] || 0;
+    card.style.display = 'block';
+    display.textContent = fmt(votos) + ' votos';
+  });
   renderLiderancas(cityName);
   renderObservacoes(cityName);
   const user = JSON.parse(localStorage.getItem('user'));
@@ -3573,11 +3580,11 @@ function calcularTotaisRegiao(key) {
     // Votos válidos
     totalVotos += (typeof votosValidos !== 'undefined' ? votosValidos[cidade] || 0 : 0);
 
-    // Votos do 1º candidato na fonte histórica (votosCeliaJordao ↔ chave do 1º candidato)
-    if (cands.length > 0 && typeof votosCeliaJordao !== 'undefined') {
-      const norm = normalizeCityName(cidade);
-      porCand[cands[0].chave].votos += votosCeliaJordao[norm] || 0;
-    }
+    // Votos históricos por candidato (vindos de window.votosHistoricos[chave])
+    const norm = normalizeCityName(cidade);
+    cands.forEach(c => {
+      porCand[c.chave].votos += ((window.votosHistoricos || {})[c.chave] || {})[norm] || 0;
+    });
 
     // Expectativa da cidade por candidato
     const cd = dataCache[cidade];

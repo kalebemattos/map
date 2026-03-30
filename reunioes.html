@@ -702,19 +702,18 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
 <script>
 const API_URL = 'https://map-backend-j88s.onrender.com';
 
-// ICE servers — STUN público + fallback
+// ICE servers — STUN público + TURN fallback
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  { urls: 'stun:stun.stunprotocol.org:3478' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  { urls: 'stun:stun.nextcloud.com:443' },
   {
-    urls: 'turn:openrelay.metered.ca:80',
-    username: 'openrelayproject',
-    credential: 'openrelayproject'
-  },
-  {
-    urls: 'turn:openrelay.metered.ca:443',
+    urls: [
+      'turn:openrelay.metered.ca:80',
+      'turn:openrelay.metered.ca:443',
+      'turns:openrelay.metered.ca:443'
+    ],
     username: 'openrelayproject',
     credential: 'openrelayproject'
   }
@@ -724,6 +723,7 @@ const ICE_SERVERS = [
 let socket = null, salaAtual = null, salaAtualId = null, usuario = null, accessToken = null;
 let localStream = null, screenStream = null;
 let peers = {}, peerNomes = {}, peerMicState = {}, peerStreams = {};
+let iceCandidateBuffer = {}; // candidatos ICE recebidos antes do setRemoteDescription
 let micAtivo = true, camAtivo = true, telaAtivo = false, maoLevantada = false, chatAberto = false;
 let gravando = false, mediaRec = null, recChunks = [];
 let usuariosOnline = [], salaConvidarId = null, salaConvidarNome = null;
@@ -823,16 +823,32 @@ function conectarSocket() {
   socket.on('novo-peer', async ({ peerId, nome }) => { peerNomes[peerId] = nome; await criarPC(peerId, false); });
   socket.on('offer', async ({ deId, nome, offer }) => {
     peerNomes[deId] = nome;
+    // Se pc está em estado inválido, recriar
+    if (peers[deId] && ['failed', 'closed'].includes(peers[deId].connectionState)) {
+      peers[deId].close(); delete peers[deId];
+    }
     let pc = peers[deId] || await criarPC(deId, false);
     await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    await flushIceCandidates(deId); // aplicar candidatos que chegaram antes da oferta
     const ans = await pc.createAnswer(); await pc.setLocalDescription(ans);
     socket.emit('answer', { paraId: deId, answer: ans });
   });
-  socket.on('answer', async ({ deId, answer }) => { const pc = peers[deId]; if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer)); });
-  socket.on('ice-candidate', async ({ deId, candidate }) => {
+  socket.on('answer', async ({ deId, answer }) => {
     const pc = peers[deId];
-    if (pc && candidate) {
+    if (pc) {
+      await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      await flushIceCandidates(deId); // aplicar candidatos bufferizados
+    }
+  });
+  socket.on('ice-candidate', async ({ deId, candidate }) => {
+    if (!candidate) return;
+    const pc = peers[deId];
+    // Se remoteDescription já foi definida, aplicar agora; caso contrário, bufferizar
+    if (pc && pc.remoteDescription) {
       try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch (e) {}
+    } else {
+      if (!iceCandidateBuffer[deId]) iceCandidateBuffer[deId] = [];
+      iceCandidateBuffer[deId].push(candidate);
     }
   });
   socket.on('peer-saiu', ({ peerId }) => removerPeer(peerId));
@@ -848,13 +864,27 @@ function conectarSocket() {
   socket.on('lista-online', (lista) => { usuariosOnline = lista; renderOnline(); atualizarOnlinePill(); });
   socket.on('usuario-online', (u) => { if (!usuariosOnline.find(x => x.id === u.id)) { usuariosOnline.push(u); renderOnline(); atualizarOnlinePill(); } });
   socket.on('usuario-offline', ({ id }) => { usuariosOnline = usuariosOnline.filter(u => u.id !== id); renderOnline(); atualizarOnlinePill(); });
-  socket.on('connect', () => socket.emit('registrar-online', { id: usuario.id, nome: usuario.nome, nivel: usuario.nivel, regiao: usuario.regiao_vinculada || usuario.regiao || '' }));
+  socket.on('connect', () => {
+    socket.emit('registrar-online', { id: usuario.id, nome: usuario.nome, nivel: usuario.nivel, regiao: usuario.regiao_vinculada || usuario.regiao || '' });
+    // No Socket.IO v4, 'connect' dispara tanto na conexão inicial quanto após reconexão.
+    // Se estava numa sala, reconstruir peers (socket.id mudou após reconexão).
+    if (salaAtualId) {
+      Object.keys(peers).forEach(pid => {
+        if (peers[pid]) peers[pid].close();
+        const t = document.getElementById('thumb-' + pid);
+        if (t) t.remove();
+      });
+      peers = {};
+      const lNome = peerNomes['local'], lStream = peerStreams['local'];
+      peerNomes = { local: lNome }; peerStreams = { local: lStream };
+      peerMicState = {}; iceCandidateBuffer = {};
+      if (lStream) renderSpotlight('local');
+      socket.emit('entrar-sala', { salaId: salaAtualId, nome: usuario.nome });
+      notif('🔄 Reconectado — reconstruindo sala...', 'warn');
+    }
+  });
   socket.on('connect_error', e => console.warn('Socket:', e.message));
   socket.on('aniversariantes', (lista) => mostrarAniversariantesToast(lista));
-  socket.on('reconnect', () => {
-    if (salaAtualId) socket.emit('entrar-sala', { salaId: salaAtualId, nome: usuario.nome });
-    notif('🔄 Reconectado ao servidor', 'success');
-  });
 }
 
 function atualizarOnlinePill() {
@@ -1109,10 +1139,19 @@ function enviarConvites() {
 async function entrarSala(salaId, salaNome) {
   document.getElementById('loading').style.display = 'flex';
   document.querySelector('.loading-txt').textContent = 'Acessando câmera e microfone...';
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }, audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
-  } catch (e) {
-    try { localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: { echoCancellation: true, noiseSuppression: true } }); notif('Câmera indisponível — só áudio', 'warn'); }
+  const audioC = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+  const videoTentativas = [
+    { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, facingMode: 'user' },
+    { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+    true
+  ];
+  let capturou = false;
+  for (const vc of videoTentativas) {
+    try { localStream = await navigator.mediaDevices.getUserMedia({ video: vc, audio: audioC }); capturou = true; break; }
+    catch (e) { /* tentar próxima resolução */ }
+  }
+  if (!capturou) {
+    try { localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: audioC }); notif('Câmera indisponível — só áudio', 'warn'); }
     catch (e2) { notif('Sem acesso à câmera/microfone', 'error'); document.getElementById('loading').style.display = 'none'; return; }
   }
 
@@ -1159,11 +1198,26 @@ async function criarPC(peerId, deveOfertar) {
   pc.onicecandidate = (e) => { if (e.candidate) socket.emit('ice-candidate', { paraId: peerId, candidate: e.candidate }); };
 
   pc.onconnectionstatechange = () => {
-    if (['disconnected', 'failed'].includes(pc.connectionState)) {
+    if (pc.connectionState === 'disconnected') {
       notif('⚠️ Conexão instável com ' + (peerNomes[peerId] || 'participante'), 'warn');
       tentarReconexao(peerId, deveOfertar);
     }
+    if (pc.connectionState === 'failed') {
+      notif('❌ Falha de conexão com ' + (peerNomes[peerId] || 'participante'), 'warn');
+      tentarReconexao(peerId, deveOfertar);
+    }
     if (pc.connectionState === 'closed') removerPeer(peerId);
+  };
+
+  // Quando a negociação precisa ser reiniciada (ex: compartilhamento de tela)
+  pc.onnegotiationneeded = async () => {
+    if (!deveOfertar) return;
+    try {
+      const offer = await pc.createOffer();
+      if (pc.signalingState !== 'stable') return; // evitar conflito
+      await pc.setLocalDescription(offer);
+      socket.emit('offer', { paraId: peerId, offer });
+    } catch (e) { console.warn('onnegotiationneeded:', e); }
   };
 
   if (deveOfertar) {
@@ -1175,18 +1229,36 @@ async function criarPC(peerId, deveOfertar) {
 }
 
 async function tentarReconexao(peerId, deveOfertar) {
-  if (!peers[peerId]) return;
+  await new Promise(r => setTimeout(r, 2000)); // aguardar antes de tentar
   const pc = peers[peerId];
-  if (pc.connectionState === 'failed') {
-    // Tenta ICE restart
-    try {
-      if (deveOfertar) {
-        const offer = await pc.createOffer({ iceRestart: true });
-        await pc.setLocalDescription(offer);
-        socket.emit('offer', { paraId: peerId, offer });
-      }
-    } catch (e) { console.warn('Reconexão falhou:', e); }
+  if (!pc || !localStream) return;
+  const state = pc.connectionState;
+  if (state === 'connected') return; // já recuperou
+  try {
+    if (deveOfertar) {
+      // ICE restart: reenvia oferta com novos candidatos ICE
+      const offer = await pc.createOffer({ iceRestart: true });
+      await pc.setLocalDescription(offer);
+      socket.emit('offer', { paraId: peerId, offer });
+    } else {
+      // Lado respondedor: se falhou totalmente, fechar e aguardar re-oferta do outro lado
+      if (state === 'failed') removerPeer(peerId);
+      // Se 'disconnected', aguardar recuperação automática (pode resolver em até 30s)
+    }
+  } catch (e) {
+    console.warn('Reconexão falhou:', e);
+    removerPeer(peerId);
   }
+}
+
+// Aplica candidatos ICE que chegaram antes do setRemoteDescription
+async function flushIceCandidates(peerId) {
+  const pc = peers[peerId];
+  if (!pc || !iceCandidateBuffer[peerId]) return;
+  for (const c of iceCandidateBuffer[peerId]) {
+    try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) {}
+  }
+  delete iceCandidateBuffer[peerId];
 }
 
 function removerPeer(peerId) {
@@ -1194,6 +1266,7 @@ function removerPeer(peerId) {
   delete peerNomes[peerId];
   delete peerStreams[peerId];
   delete peerMicState[peerId];
+  delete iceCandidateBuffer[peerId];
   const t = document.getElementById('thumb-' + peerId); if (t) t.remove();
   // Se era o spotlight, volta para local
   if (spotlightPeerId === peerId) renderSpotlight('local');
