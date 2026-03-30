@@ -119,11 +119,28 @@
 
 <div id="content-wrapper" style="display:none;">
 
-<!-- OVERLAY TOTAL -->
-<div id="overlay-total">
-  <div class="overlay-label">Expectativa Total</div>
-  <div id="total-expectativa">0</div>
-  <div id="overlay-campanha-badge">Ambos</div>
+<!-- CONTROLES FLUTUANTES DO MAPA -->
+<div id="map-left-controls">
+
+  <!-- Expectativa geral -->
+  <div id="overlay-total">
+    <div class="overlay-label">Expectativa Total</div>
+    <div id="total-expectativa">0</div>
+    <div id="overlay-campanha-badge">Ambos</div>
+  </div>
+
+  <!-- Painel de controles (visualização) -->
+  <div id="map-controles">
+    <div class="ctrl-card">
+      <div class="ctrl-titulo">🗳️ Visualização</div>
+      <div class="ctrl-modos-col">
+        <button class="modo-btn ativa" data-modo="expectativa">Expectativa</button>
+        <button class="modo-btn" data-modo="votosValidos">Votos 2022</button>
+        <button class="modo-btn" data-modo="liderancas">Lideranças</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- TOGGLE -->

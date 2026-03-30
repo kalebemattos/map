@@ -50,19 +50,104 @@ html, body {
 .leaflet-interactive { transition: fill-opacity 0.2s ease; }
 
 /* ===== OVERLAY TOTAL ===== */
-#overlay-total {
+/* Container posicionado — engloba expectativa + controles do mapa */
+#map-left-controls {
   position: absolute;
   top: 18px;
   left: 18px;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeUp .4s ease;
+}
+
+#overlay-total {
   background: rgba(255,255,255,0.97);
   backdrop-filter: blur(10px);
   padding: 14px 18px;
   border-radius: 16px;
   box-shadow: var(--shadow-lg);
-  z-index: 1001;
   border: 1px solid rgba(255,255,255,0.5);
   min-width: 160px;
-  animation: fadeUp .4s ease;
+}
+
+/* ===== CONTROLES FLUTUANTES ===== */
+#map-controles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ctrl-card {
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(10px);
+  padding: 12px 14px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255,255,255,0.5);
+  min-width: 160px;
+}
+
+.ctrl-titulo {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--slate-500);
+  margin-bottom: 8px;
+}
+
+/* modo-btn dentro do overlay sempre em tema claro */
+.ctrl-modos-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ctrl-modos-col .modo-btn {
+  border-color: var(--slate-200);
+  background: var(--slate-50);
+  color: var(--slate-600);
+}
+.ctrl-modos-col .modo-btn:hover {
+  background: var(--blue-light);
+  border-color: rgba(21,101,192,0.3);
+  color: var(--blue-main);
+}
+.ctrl-modos-col .modo-btn.ativa {
+  background: var(--blue-deep);
+  color: white;
+  border-color: var(--blue-deep);
+  box-shadow: 0 3px 10px rgba(13,45,107,0.3);
+}
+
+.ctrl-pins-row {
+  display: flex;
+  gap: 6px;
+}
+
+.ctrl-pin-btn {
+  flex: 1;
+  padding: 7px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1.5px solid var(--slate-200);
+  background: var(--slate-50);
+  color: var(--slate-600);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.ctrl-pin-btn.ctrl-pin-ativo {
+  background: var(--blue-deep);
+  color: #fff;
+  border-color: var(--blue-deep);
+}
+.ctrl-pin-btn.ctrl-pin-alerta {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
 }
 
 .overlay-label {
@@ -941,6 +1026,6 @@ input:focus, select:focus, textarea:focus {
   #sidebar { width: 100%; }
   #toggleSidebar { top: 12px; right: 12px; }
   #toggleSidebar.sidebar-closed-btn { right: 12px; }
-  #overlay-total { top: 12px; left: 12px; }
+  #map-left-controls { top: 12px; left: 12px; }
   #legenda { display: none; }
 }

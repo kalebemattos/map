@@ -52,11 +52,35 @@
 
 <div id="content-wrapper" style="display:none;">
 
-<!-- OVERLAY TOTAL -->
-<div id="overlay-total">
-  <div class="overlay-label">Expectativa Total</div>
-  <div id="total-expectativa">0</div>
-  <div id="overlay-campanha-badge">Ambos</div>
+<!-- CONTROLES FLUTUANTES DO MAPA -->
+<div id="map-left-controls">
+
+  <!-- Expectativa geral -->
+  <div id="overlay-total">
+    <div class="overlay-label">Expectativa Total</div>
+    <div id="total-expectativa">0</div>
+    <div id="overlay-campanha-badge">Ambos</div>
+  </div>
+
+  <!-- Painel de controles (visualização + pins) -->
+  <div id="map-controles">
+    <div class="ctrl-card">
+      <div class="ctrl-titulo">🗳️ Visualização</div>
+      <div class="ctrl-modos-col">
+        <button class="modo-btn ativa" data-modo="expectativa">Expectativa</button>
+        <button class="modo-btn" data-modo="votosValidos">Votos 2022</button>
+        <button class="modo-btn" data-modo="liderancas">Lideranças</button>
+      </div>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-titulo">📍 Pins</div>
+      <div class="ctrl-pins-row">
+        <button id="togglePinsOverlay" class="ctrl-pin-btn ctrl-pin-ativo">ON</button>
+        <button id="addPinOverlay" class="ctrl-pin-btn">＋ Pin</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- TOGGLE -->
@@ -401,9 +425,7 @@ function iniciarPinsLayer() {
   window.map.on('click', function(e) {
     if (!modoAdicionarPin) return;
     modoAdicionarPin = false;
-    document.getElementById('addPinBtn').textContent = '＋ Pin';
-    document.getElementById('addPinBtn').style.background = 'linear-gradient(135deg,#0d2d6b,#1565c0)';
-    document.getElementById('pins-modo-aviso').style.display = 'none';
+    syncBotoesPins();
     novoPinLatLng = e.latlng;
     abrirModalPin();
   });
@@ -501,37 +523,56 @@ document.addEventListener('click', async (e) => {
   }
 });
 
+// ---------- sincronizar visualmente todos os botões de pins ----------
+function syncBotoesPins() {
+  const sb = document.getElementById('togglePins');
+  if (sb) {
+    sb.textContent = pinsVisiveis ? '📍 Pins: ON' : '📍 Pins: OFF';
+    sb.style.background = pinsVisiveis ? '#f8fafc' : '#fee2e2';
+    sb.style.color      = pinsVisiveis ? '#334155' : '#dc2626';
+  }
+  const ot = document.getElementById('togglePinsOverlay');
+  if (ot) {
+    ot.textContent = pinsVisiveis ? 'ON' : 'OFF';
+    ot.classList.toggle('ctrl-pin-ativo',   pinsVisiveis);
+    ot.classList.toggle('ctrl-pin-alerta', !pinsVisiveis);
+  }
+  const sa = document.getElementById('addPinBtn');
+  if (sa) {
+    sa.textContent   = modoAdicionarPin ? '✕ Cancelar' : '＋ Pin';
+    sa.style.background = modoAdicionarPin
+      ? 'linear-gradient(135deg,#991b1b,#dc2626)'
+      : 'linear-gradient(135deg,#0d2d6b,#1565c0)';
+  }
+  const oa = document.getElementById('addPinOverlay');
+  if (oa) {
+    oa.textContent = modoAdicionarPin ? '✕' : '＋ Pin';
+    oa.classList.toggle('ctrl-pin-alerta', modoAdicionarPin);
+  }
+  const av = document.getElementById('pins-modo-aviso');
+  if (av) av.style.display = modoAdicionarPin ? 'block' : 'none';
+}
+
 // ---------- toggle visibilidade ----------
 document.getElementById('togglePins').addEventListener('click', () => {
   pinsVisiveis = !pinsVisiveis;
-  const btn = document.getElementById('togglePins');
-  if (pinsVisiveis) {
-    if (pinsLayer) pinsLayer.addTo(window.map);
-    btn.textContent = '📍 Pins: ON';
-    btn.style.background = '#f8fafc';
-    btn.style.color = '#334155';
-  } else {
-    if (pinsLayer && window.map) window.map.removeLayer(pinsLayer);
-    btn.textContent = '📍 Pins: OFF';
-    btn.style.background = '#fee2e2';
-    btn.style.color = '#dc2626';
-  }
+  if (pinsVisiveis) { if (pinsLayer) pinsLayer.addTo(window.map); }
+  else              { if (pinsLayer && window.map) window.map.removeLayer(pinsLayer); }
+  syncBotoesPins();
 });
 
 // ---------- modo adicionar ----------
 document.getElementById('addPinBtn').addEventListener('click', () => {
   modoAdicionarPin = !modoAdicionarPin;
-  const btn = document.getElementById('addPinBtn');
-  const aviso = document.getElementById('pins-modo-aviso');
-  if (modoAdicionarPin) {
-    btn.textContent = '✕ Cancelar';
-    btn.style.background = 'linear-gradient(135deg,#991b1b,#dc2626)';
-    aviso.style.display = 'block';
-  } else {
-    btn.textContent = '＋ Pin';
-    btn.style.background = 'linear-gradient(135deg,#0d2d6b,#1565c0)';
-    aviso.style.display = 'none';
-  }
+  syncBotoesPins();
+});
+
+// ---------- overlay delega para sidebar (que já chama syncBotoesPins) ----------
+document.getElementById('togglePinsOverlay').addEventListener('click', () => {
+  document.getElementById('togglePins').click();
+});
+document.getElementById('addPinOverlay').addEventListener('click', () => {
+  document.getElementById('addPinBtn').click();
 });
 
 // ---------- modal tipo ----------
