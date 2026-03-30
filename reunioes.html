@@ -1144,8 +1144,9 @@ async function entrarSala(salaId, salaNome) {
   document.querySelector('.loading-txt').textContent = 'Acessando câmera e microfone...';
   const audioC = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
   const videoTentativas = [
-    { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, facingMode: 'user' },
-    { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+    { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 }, facingMode: 'user' },
+    { width: { ideal: 1280 }, height: { ideal: 720  }, frameRate: { ideal: 30 }, facingMode: 'user' },
+    { width: { ideal: 640  }, height: { ideal: 480  }, facingMode: 'user' },
     true
   ];
   let capturou = false;
@@ -1562,11 +1563,34 @@ function decidirQualidade(nivel) {
 // Aplica bitrate e resolução a todos os senders de vídeo ativos
 async function aplicarQualidade(q) {
   const cfgs = {
-    good:   { maxBitrate: 1_000_000, scaleResolutionDownBy: 1,   maxFramerate: 30 },
-    medium: { maxBitrate:   400_000, scaleResolutionDownBy: 1.5, maxFramerate: 20 },
-    bad:    { maxBitrate:   120_000, scaleResolutionDownBy: 3,   maxFramerate: 10 },
+    // good: bitrate alto + sem redução — a câmera captura até 1080p sem restrição
+    good:   { maxBitrate: 2_500_000, scaleResolutionDownBy: 1,   maxFramerate: 30,
+              camWidth: 1920, camHeight: 1080 },
+    // medium: reduz para ~720p e limita a 500 Kbps
+    medium: { maxBitrate:   500_000, scaleResolutionDownBy: 1.5, maxFramerate: 20,
+              camWidth: 1280, camHeight: 720  },
+    // bad: reduz para ~360p e limita a 120 Kbps
+    bad:    { maxBitrate:   120_000, scaleResolutionDownBy: 3,   maxFramerate: 10,
+              camWidth: 640,  camHeight: 360  },
   };
   const cfg = cfgs[q];
+
+  // 1. Ajustar o que a câmera captura (applyConstraints) — economiza CPU e melhora qualidade
+  //    Não alterar se estiver compartilhando tela
+  if (localStream && !telaAtivo) {
+    const vt = localStream.getVideoTracks()[0];
+    if (vt) {
+      try {
+        await vt.applyConstraints({
+          width:     { ideal: cfg.camWidth  },
+          height:    { ideal: cfg.camHeight },
+          frameRate: { ideal: cfg.maxFramerate },
+        });
+      } catch (e) { /* o dispositivo pode não suportar; continua */ }
+    }
+  }
+
+  // 2. Ajustar bitrate e escala no encoder (setParameters) para cada peer
   for (const pc of Object.values(peers)) {
     const sender = pc.getSenders().find(s => s.track?.kind === 'video');
     if (!sender) continue;
@@ -1577,6 +1601,9 @@ async function aplicarQualidade(q) {
         enc.maxBitrate            = cfg.maxBitrate;
         enc.scaleResolutionDownBy = cfg.scaleResolutionDownBy;
         enc.maxFramerate          = cfg.maxFramerate;
+        // prioridade alta quando conexão está boa
+        enc.priority              = q === 'good' ? 'high' : 'low';
+        enc.networkPriority       = q === 'good' ? 'high' : 'low';
       });
       await sender.setParameters(params);
     } catch (e) { console.warn('aplicarQualidade:', e); }
