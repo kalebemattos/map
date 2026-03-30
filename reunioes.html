@@ -734,6 +734,9 @@ let spotlightPeerId = 'local'; // quem está em destaque
 let layoutMode = 'spotlight'; // 'spotlight' ou 'grid'
 let convitePendente = null;
 let qualityInterval = null;
+let qualidadeAtual = 'good';   // nível atual aplicado
+let nivelPendente = null;       // nível candidato esperando confirmação
+let ciclosQualidade = 0;        // ciclos consecutivos no nível pendente
 
 /* ====== INIT ====== */
 async function init() {
@@ -1201,6 +1204,10 @@ async function criarPC(peerId, deveOfertar) {
   pc.onicecandidate = (e) => { if (e.candidate) socket.emit('ice-candidate', { paraId: peerId, candidate: e.candidate }); };
 
   pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'connected') {
+      // Ao conectar, aplicar o nível de qualidade atual (caso já esteja fraco)
+      if (qualidadeAtual !== 'good') aplicarQualidade(qualidadeAtual);
+    }
     if (pc.connectionState === 'disconnected') {
       notif('⚠️ Conexão instável com ' + (peerNomes[peerId] || 'participante'), 'warn');
       tentarReconexao(peerId, deveOfertar);
@@ -1485,6 +1492,7 @@ async function sairDaSala() {
   document.getElementById('video-main').classList.remove('grid-mode');
   chatAberto = false; maoLevantada = false; telaAtivo = false; micAtivo = true; camAtivo = true; gravando = false;
   layoutMode = 'spotlight'; spotlightPeerId = 'local';
+  qualidadeAtual = 'good'; nivelPendente = null; ciclosQualidade = 0;
   // Reseta controles
   setCtrl('btn-mic',  { circleClass: 'ctrl-circle', icon: 'mic',                 label: 'Mic'    });
   setCtrl('btn-cam',  { circleClass: 'ctrl-circle', icon: 'videocam',            label: 'Câmera' });
@@ -1501,27 +1509,78 @@ async function sairDaSala() {
   await carregarSalas();
 }
 
-/* ====== QUALIDADE DE CONEXÃO ====== */
+/* ====== QUALIDADE DE CONEXÃO ADAPTATIVA ====== */
 function iniciarMonitoramentoQualidade() {
+  qualidadeAtual = 'good'; nivelPendente = null; ciclosQualidade = 0;
   document.getElementById('quality-badge').style.display = 'flex';
   qualityInterval = setInterval(async () => {
-    if (!Object.keys(peers).length) { setQuality('good'); return; }
+    if (!Object.keys(peers).length) { decidirQualidade('good'); return; }
     try {
-      const pc = Object.values(peers)[0];
-      const stats = await pc.getStats();
-      let rtt = null, loss = null;
-      stats.forEach(s => {
-        if (s.type === 'remote-inbound-rtp' && s.kind === 'video') {
-          rtt = s.roundTripTime;
-          loss = s.fractionLost;
-        }
-      });
-      if (rtt === null) { setQuality('good'); return; }
-      if (rtt < 0.15 && loss < 0.02) setQuality('good');
-      else if (rtt < 0.35 && loss < 0.08) setQuality('medium');
-      else setQuality('bad');
-    } catch { setQuality('good'); }
+      let pior = 'good';
+      for (const pc of Object.values(peers)) {
+        const stats = await pc.getStats();
+        let rtt = null, loss = 0, jitter = 0;
+        stats.forEach(s => {
+          // remote-inbound-rtp: stats de como o remoto está recebendo o que enviamos
+          if (s.type === 'remote-inbound-rtp' && s.kind === 'video') {
+            rtt    = s.roundTripTime ?? rtt;
+            loss   = s.fractionLost  ?? 0;
+            jitter = s.jitter        ?? 0;
+          }
+        });
+        if (rtt === null) continue;
+        let n = 'good';
+        if      (rtt > 0.40 || loss > 0.10 || jitter > 0.06) n = 'bad';
+        else if (rtt > 0.20 || loss > 0.03 || jitter > 0.03) n = 'medium';
+        if (n === 'bad')                             { pior = 'bad'; break; }
+        if (n === 'medium' && pior !== 'bad') pior = 'medium';
+      }
+      decidirQualidade(pior);
+    } catch { /* silencioso */ }
   }, 3000);
+}
+
+// Hysteresis: downgrade é imediato, upgrade exige 4 ciclos consecutivos bons
+function decidirQualidade(nivel) {
+  if (nivel === qualidadeAtual) { nivelPendente = null; ciclosQualidade = 0; return; }
+
+  const ehDowngrade =
+    (qualidadeAtual === 'good'   && nivel !== 'good') ||
+    (qualidadeAtual === 'medium' && nivel === 'bad');
+
+  if (nivel !== nivelPendente) { nivelPendente = nivel; ciclosQualidade = 0; }
+  ciclosQualidade++;
+
+  if (ehDowngrade || ciclosQualidade >= 4) {
+    qualidadeAtual = nivel;
+    setQuality(nivel);
+    aplicarQualidade(nivel);
+    nivelPendente = null; ciclosQualidade = 0;
+  }
+}
+
+// Aplica bitrate e resolução a todos os senders de vídeo ativos
+async function aplicarQualidade(q) {
+  const cfgs = {
+    good:   { maxBitrate: 1_000_000, scaleResolutionDownBy: 1,   maxFramerate: 30 },
+    medium: { maxBitrate:   400_000, scaleResolutionDownBy: 1.5, maxFramerate: 20 },
+    bad:    { maxBitrate:   120_000, scaleResolutionDownBy: 3,   maxFramerate: 10 },
+  };
+  const cfg = cfgs[q];
+  for (const pc of Object.values(peers)) {
+    const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+    if (!sender) continue;
+    try {
+      const params = sender.getParameters();
+      if (!params.encodings?.length) params.encodings = [{}];
+      params.encodings.forEach(enc => {
+        enc.maxBitrate            = cfg.maxBitrate;
+        enc.scaleResolutionDownBy = cfg.scaleResolutionDownBy;
+        enc.maxFramerate          = cfg.maxFramerate;
+      });
+      await sender.setParameters(params);
+    } catch (e) { console.warn('aplicarQualidade:', e); }
+  }
 }
 
 function pararMonitoramentoQualidade() { if (qualityInterval) { clearInterval(qualityInterval); qualityInterval = null; } }
@@ -1532,9 +1591,9 @@ function setQuality(q) {
   b.className = 'quality-badge quality-' + q;
   txt.textContent = { good: 'Boa', medium: 'Média', bad: 'Ruim' }[q];
   const bars = [document.getElementById('qb1'), document.getElementById('qb2'), document.getElementById('qb3')];
-  if (q === 'good') { bars.forEach(b => { if (b) b.style.opacity = '1'; }); }
+  if (q === 'good')        { bars.forEach(b => { if (b) b.style.opacity = '1'; }); }
   else if (q === 'medium') { if (bars[0]) bars[0].style.opacity = '1'; if (bars[1]) bars[1].style.opacity = '1'; if (bars[2]) bars[2].style.opacity = '.3'; }
-  else { if (bars[0]) bars[0].style.opacity = '1'; if (bars[1]) bars[1].style.opacity = '.3'; if (bars[2]) bars[2].style.opacity = '.3'; }
+  else                     { if (bars[0]) bars[0].style.opacity = '1'; if (bars[1]) bars[1].style.opacity = '.3'; if (bars[2]) bars[2].style.opacity = '.3'; }
 }
 
 /* ====== SIDEBAR / NAV ====== */
