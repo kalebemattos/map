@@ -37,7 +37,7 @@ let bairroAtual      = null
 let layerSelecionado = null
 let filtroCampanha   = "ambos"
 
-// Cache local: { "CENTRO": { liderancas:[], expectativaCidade:{ celia:0, fernando:0 } }, ... }
+// Cache local: { "CENTRO": { liderancas:[], expectativaCidade:{ [chave]: 0, ... } }, ... }
 const dataCache = {}
 
 // ─────────────────────────────────────────────
@@ -71,6 +71,90 @@ async function apiFetch(endpoint, options = {}) {
 }
 
 // ─────────────────────────────────────────────
+// CONFIG DINÂMICA (candidatos)
+// ─────────────────────────────────────────────
+let configSistema = { candidatos: [], cores: {}, mapas: [] }
+
+async function carregarConfig() {
+  try {
+    const r = await fetch(window.API_URL + '/config')
+    if (!r.ok) return
+    configSistema = await r.json()
+    injetarCandidatosAngra()
+  } catch (e) { console.warn('[config] não carregada:', e) }
+}
+
+// Helper: dado vinculo_politico, retorna { cls, style, label }
+function getBadge(vinculo) {
+  const cand = (configSistema.candidatos || []).find(c => c.chave === vinculo)
+  if (cand) return {
+    cls:   'badge-cand',
+    style: `background:${cand.cor_fundo};color:${cand.cor_texto};`,
+    label: cand.nome.split(' ')[0]
+  }
+  return { cls: 'badge-ambos', style: '', label: 'Ambos' }
+}
+
+function injetarCandidatosAngra() {
+  const cands = configSistema.candidatos || []
+  if (!cands.length) return
+
+  // 1. Seletor campanha
+  const seletor = document.getElementById('seletor-campanha')
+  if (seletor) {
+    const ambosImgs = cands.map(c =>
+      `<img src="../img/${c.chave}.jpg" onerror="this.style.display='none'" alt="">`
+    ).join('')
+    seletor.innerHTML =
+      `<div class="campanha-opcao ativa" data-campanha="ambos">${ambosImgs}<span>Ambos</span></div>` +
+      cands.map(c => `
+        <div class="campanha-opcao" data-campanha="${c.chave}">
+          <img src="../img/${c.chave}.jpg" onerror="this.style.display='none'" alt="">
+          <span>${c.nome}</span>
+        </div>`).join('')
+    seletor.querySelectorAll('.campanha-opcao').forEach(el => {
+      el.addEventListener('click', () => {
+        seletor.querySelectorAll('.campanha-opcao').forEach(e => e.classList.remove('ativa'))
+        el.classList.add('ativa')
+        filtroCampanha = el.dataset.campanha
+        const badgeEl = document.getElementById('overlay-campanha-badge')
+        if (badgeEl) {
+          if (filtroCampanha === 'ambos') {
+            badgeEl.textContent = 'Ambos'
+          } else {
+            const cand = cands.find(c => c.chave === filtroCampanha)
+            badgeEl.textContent = cand ? cand.nome.split(' ')[0] : filtroCampanha
+          }
+        }
+        if (bairroAtual) renderLiderancas(bairroAtual)
+        repaintMapa()
+      })
+    })
+  }
+
+  // 2. Inputs de expectativa por bairro
+  const expContainer = document.getElementById('exp-inputs-container')
+  if (expContainer) {
+    expContainer.innerHTML = `<div class="exp-grid">` +
+      cands.map(c => `
+        <div class="exp-field">
+          <span class="exp-label" style="background:${c.cor_fundo};color:${c.cor_texto};">${c.nome.split(' ')[0]}</span>
+          <input id="valor-exp-${c.chave}" type="number" min="0" value="0" placeholder="0">
+        </div>`).join('') +
+      `</div>`
+  }
+
+  // 3. Selects de vínculo político
+  const optsCands = cands.map(c => `<option value="${c.chave}">${c.nome}</option>`).join('')
+  ;['lideranca-vinculo', 'edit-vinculo'].forEach(id => {
+    const sel = document.getElementById(id)
+    if (!sel) return
+    Array.from(sel.options).filter(o => o.value !== 'ambos').forEach(o => o.remove())
+    sel.insertAdjacentHTML('beforeend', optsCands)
+  })
+}
+
+// ─────────────────────────────────────────────
 // CARREGAR TUDO DO BACKEND
 // ─────────────────────────────────────────────
 async function carregarTudo() {
@@ -96,10 +180,9 @@ async function carregarTudo() {
       lista.forEach(e => {
         const raw = e.bairro || e.cidade
         initCache(raw)
-        getCacheEntry(raw).expectativaCidade = {
-          celia:    Number(e.expectativa_celia    || 0),
-          fernando: Number(e.expectativa_fernando || 0)
-        }
+        getCacheEntry(raw).expectativaCidade = Object.fromEntries(
+          (configSistema.candidatos || []).map(c => [c.chave, Number(e['expectativa_' + c.chave] || 0)])
+        )
       })
     }
   } catch (e) { console.error('Erro expectativas:', e) }
@@ -136,14 +219,14 @@ function initCache(bairro) {
   if (!dataCache[bairro]) {
     dataCache[bairro] = {
       liderancas: [],
-      expectativaCidade: { celia: 0, fernando: 0 }
+      expectativaCidade: Object.fromEntries((configSistema.candidatos || []).map(c => [c.chave, 0]))
     }
   }
   _cacheIndex[norm] = bairro
 }
 
 function getCacheEntry(bairro) {
-  if (!bairro) return { liderancas: [], expectativaCidade: { celia: 0, fernando: 0 } }
+  if (!bairro) return { liderancas: [], expectativaCidade: Object.fromEntries((configSistema.candidatos || []).map(c => [c.chave, 0])) }
   // Tenta direto
   if (dataCache[bairro]) return dataCache[bairro]
   // Tenta via normalização
@@ -187,15 +270,17 @@ function getTotalExpectativa(bairro) {
   const c = dataCache[bairro]
   if (!c) return 0
 
-  const expCidade = filtroCampanha === "fernando"
-    ? Number(c.expectativaCidade?.fernando || 0)
-    : Number(c.expectativaCidade?.celia    || 0)
+  let expCidade
+  if (filtroCampanha === 'ambos') {
+    expCidade = Object.values(c.expectativaCidade || {}).reduce((s, v) => s + Number(v || 0), 0)
+  } else {
+    expCidade = Number((c.expectativaCidade || {})[filtroCampanha] || 0)
+  }
 
   const somaLiderancas = (c.liderancas || []).reduce((s, l) => {
     const v = Number(l.expectativa_votos || 0)
-    if (filtroCampanha === "ambos")    return s + v
-    if (filtroCampanha === "fernando") return (l.vinculo_politico === "fernando" || l.vinculo_politico === "ambos") ? s + v : s
-    return (l.vinculo_politico === "celia" || l.vinculo_politico === "ambos") ? s + v : s
+    if (filtroCampanha === 'ambos') return s + v
+    return (l.vinculo_politico === filtroCampanha || l.vinculo_politico === 'ambos') ? s + v : s
   }, 0)
 
   return expCidade + somaLiderancas
@@ -336,8 +421,10 @@ function renderLiderancas(bairro) {
   const c = getCacheEntry(bairro)
 
   // Preencher inputs de expectativa separados
-  document.getElementById("valor-exp-celia").value    = c.expectativaCidade?.celia    || 0
-  document.getElementById("valor-exp-fernando").value = c.expectativaCidade?.fernando || 0
+  ;(configSistema.candidatos || []).forEach(cand => {
+    const input = document.getElementById('valor-exp-' + cand.chave)
+    if (input) input.value = c.expectativaCidade?.[cand.chave] || 0
+  })
 
   // Filtrar por campanha ativa
   let liderancas = c.liderancas || []
@@ -351,22 +438,20 @@ function renderLiderancas(bairro) {
   liderancas = [...liderancas].sort((a, b) => (b.expectativa_votos||0) - (a.expectativa_votos||0))
 
   // Totais do painel
-  const expCelia    = c.expectativaCidade?.celia    || 0
-  const expFernando = c.expectativaCidade?.fernando || 0
-  const somaLider   = (c.liderancas || []).reduce((s, l) => s + Number(l.expectativa_votos||0), 0)
-  const totalGeral  = getTotalExpectativa(bairro)
+  const somaLider  = (c.liderancas || []).reduce((s, l) => s + Number(l.expectativa_votos||0), 0)
+  const totalGeral = getTotalExpectativa(bairro)
 
   totaisEl.style.display = "block"
+  const rowsCands = (configSistema.candidatos || []).map(cand => {
+    const exp = c.expectativaCidade?.[cand.chave] || 0
+    return `<div class="total-row">
+      <span>Expectativa ${cand.nome.split(' ')[0]}</span>
+      <strong style="color:${cand.cor_texto};">${exp.toLocaleString('pt-BR')}</strong>
+    </div>`
+  }).join('')
   totaisEl.innerHTML = `
     <div class="total-title">Total filtrado: ${totalGeral.toLocaleString("pt-BR")} votos</div>
-    <div class="total-row">
-      <span>Expectativa Célia</span>
-      <strong style="color:#9d174d;">${expCelia.toLocaleString("pt-BR")}</strong>
-    </div>
-    <div class="total-row">
-      <span>Expectativa Fernando</span>
-      <strong style="color:#5b21b6;">${expFernando.toLocaleString("pt-BR")}</strong>
-    </div>
+    ${rowsCands}
     <div class="total-row">
       <span>Soma das lideranças</span>
       <strong>${somaLider.toLocaleString("pt-BR")}</strong>
@@ -389,12 +474,10 @@ function renderLiderancas(bairro) {
     div.className = "lideranca-item"
 
     const rankClass  = i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : ""
-    const badgeClass = l.vinculo_politico === "celia"    ? "badge-celia"
-                     : l.vinculo_politico === "fernando" ? "badge-fernando"
-                     : "badge-ambos"
-    const badgeLabel = l.vinculo_politico === "celia"    ? "Célia"
-                     : l.vinculo_politico === "fernando" ? "Fernando"
-                     : "Ambos"
+    const badge      = getBadge(l.vinculo_politico)
+    const badgeClass = badge.cls
+    const badgeStyle = badge.style
+    const badgeLabel = badge.label
 
     const fotoHtml   = l.foto
       ? `<img src="${l.foto}" alt="" onerror="this.parentElement.innerHTML='👤'">`
@@ -415,7 +498,7 @@ function renderLiderancas(bairro) {
         <div class="lideranca-contato">${l.contato || ""}</div>
       </div>
       <span class="lideranca-votos">${(l.expectativa_votos||0).toLocaleString("pt-BR")}</span>
-      <span class="lideranca-vinculo-badge ${badgeClass}">${badgeLabel}</span>
+      <span class="lideranca-vinculo-badge ${badgeClass}" style="${badgeStyle}">${badgeLabel}</span>
       ${botoesHtml}
     `
 
@@ -438,8 +521,10 @@ function renderLiderancas(bairro) {
 function abrirModalLideranca(l, bairro) {
   const conteudo  = document.getElementById("modal-lideranca-conteudo")
   const distrito  = getDistritoDoBairro(bairro || bairroAtual)
-  const badgeClass = l.vinculo_politico === "celia" ? "badge-celia" : l.vinculo_politico === "fernando" ? "badge-fernando" : "badge-ambos"
-  const badgeLabel = l.vinculo_politico === "celia" ? "Célia Jordão" : l.vinculo_politico === "fernando" ? "Fernando Jordão" : "Ambos"
+  const _badge     = getBadge(l.vinculo_politico)
+  const badgeClass = _badge.cls
+  const badgeStyle = _badge.style
+  const badgeLabel = (configSistema.candidatos || []).find(c => c.chave === l.vinculo_politico)?.nome || _badge.label
   const fotoHtml   = l.foto ? `<img src="${l.foto}" alt="" onerror="this.parentElement.innerHTML='👤'">` : `👤`
 
   conteudo.innerHTML = `
@@ -453,7 +538,7 @@ function abrirModalLideranca(l, bairro) {
     <div class="modal-grid">
       <div class="modal-field"><div class="modal-field-label">Contato</div><div class="modal-field-value">${l.contato || "—"}</div></div>
       <div class="modal-field"><div class="modal-field-label">Expectativa</div><div class="modal-field-value" style="color:var(--blue-main);font-family:'Sora',sans-serif;">${(l.expectativa_votos||0).toLocaleString("pt-BR")} votos</div></div>
-      <div class="modal-field"><div class="modal-field-label">Campanha</div><div class="modal-field-value"><span class="lideranca-vinculo-badge ${badgeClass}">${badgeLabel}</span></div></div>
+      <div class="modal-field"><div class="modal-field-label">Campanha</div><div class="modal-field-value"><span class="lideranca-vinculo-badge ${badgeClass}" style="${badgeStyle}">${badgeLabel}</span></div></div>
       <div class="modal-field"><div class="modal-field-label">Bairro</div><div class="modal-field-value">${bairro || bairroAtual || "—"}</div></div>
     </div>
   `
@@ -534,17 +619,22 @@ document.getElementById("salvar-exp").addEventListener("click", async () => {
   if (user.nivel === 'visualizador') { alert('Acesso Negado.'); return }
   if (!bairroAtual) return
 
-  const celia    = Number(document.getElementById("valor-exp-celia").value)    || 0
-  const fernando = Number(document.getElementById("valor-exp-fernando").value) || 0
+  const payload = { cidade: bairroAtual }
+  ;(configSistema.candidatos || []).forEach(c => {
+    payload[c.chave] = Number(document.getElementById('valor-exp-' + c.chave)?.value) || 0
+  })
 
   try {
     await apiFetch('/expectativa-angra', {
       method: 'POST',
-      body: JSON.stringify({ cidade: bairroAtual, celia, fernando })
+      body: JSON.stringify(payload)
     })
 
     // Atualiza cache local imediatamente
-    getCacheEntry(bairroAtual).expectativaCidade = { celia, fernando }
+    const novaExp = Object.fromEntries(
+      (configSistema.candidatos || []).map(c => [c.chave, payload[c.chave]])
+    )
+    getCacheEntry(bairroAtual).expectativaCidade = novaExp
 
     renderLiderancas(bairroAtual)
     repaintMapa()
@@ -561,20 +651,7 @@ document.getElementById("salvar-exp").addEventListener("click", async () => {
   }
 })
 
-// ─────────────────────────────────────────────
-// SELETOR DE CAMPANHA
-// ─────────────────────────────────────────────
-document.querySelectorAll(".campanha-opcao").forEach(el => {
-  el.addEventListener("click", () => {
-    document.querySelectorAll(".campanha-opcao").forEach(e => e.classList.remove("ativa"))
-    el.classList.add("ativa")
-    filtroCampanha = el.dataset.campanha
-    document.getElementById("overlay-campanha-badge").textContent =
-      filtroCampanha === "ambos" ? "Ambos" : filtroCampanha === "celia" ? "Célia" : "Fernando"
-    if (bairroAtual) renderLiderancas(bairroAtual)
-    repaintMapa()
-  })
-})
+// Seletor de campanha: listeners registrados dinamicamente por injetarCandidatosAngra()
 
 // ─────────────────────────────────────────────
 // SELECIONAR BAIRRO
@@ -740,7 +817,8 @@ function atualizarLegenda() {
 // ─────────────────────────────────────────────
 // GEOJSON — chamado pelo iniciarAplicacao() após login
 // ─────────────────────────────────────────────
-window.iniciarMapa = function() {
+window.iniciarMapa = async function() {
+  await carregarConfig()
   map = L.map('map').setView([-23.01, -44.32], 11)
   setTimeout(() => map.invalidateSize(), 200)
 

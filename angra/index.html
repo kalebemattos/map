@@ -121,21 +121,7 @@
     <!-- SELETOR DE CAMPANHA -->
     <div class="sidebar-block">
       <label class="block-label">Campanha</label>
-      <div id="seletor-campanha">
-        <div class="campanha-opcao ativa" data-campanha="ambos">
-          <img src="../img/celia.jpg" onerror="this.style.display='none'" alt="">
-          <img src="../img/fernando.jpg" onerror="this.style.display='none'" alt="" style="margin-left:-6px;">
-          <span>Ambos</span>
-        </div>
-        <div class="campanha-opcao" data-campanha="celia">
-          <img src="../img/celia.jpg" onerror="this.style.display='none'" alt="">
-          <span>Célia Jordão</span>
-        </div>
-        <div class="campanha-opcao" data-campanha="fernando">
-          <img src="../img/fernando.jpg" onerror="this.style.display='none'" alt="">
-          <span>Fernando Jordão</span>
-        </div>
-      </div>
+      <div id="seletor-campanha"><!-- preenchido dinamicamente por injetarCandidatosAngra() --></div>
     </div>
 
     <!-- SELETOR DE DISTRITO -->
@@ -188,16 +174,7 @@
     <!-- EXPECTATIVA DO BAIRRO (separada por campanha) -->
     <div class="sidebar-block">
       <label class="block-label">Expectativa do bairro</label>
-      <div class="exp-grid">
-        <div class="exp-field">
-          <span class="exp-label badge-celia-label">Célia</span>
-          <input id="valor-exp-celia" type="number" min="0" value="0" placeholder="0">
-        </div>
-        <div class="exp-field">
-          <span class="exp-label badge-fernando-label">Fernando</span>
-          <input id="valor-exp-fernando" type="number" min="0" value="0" placeholder="0">
-        </div>
-      </div>
+      <div id="exp-inputs-container"><!-- inputs por candidato — preenchidos por injetarCandidatosAngra() --></div>
       <button id="salvar-exp">Salvar expectativa</button>
     </div>
 
@@ -226,8 +203,7 @@
           <div class="form-row">
             <select id="lideranca-vinculo" class="form-input">
               <option value="ambos">Ambos</option>
-              <option value="celia">Célia Jordão</option>
-              <option value="fernando">Fernando Jordão</option>
+              <!-- opções por candidato — preenchidas por injetarCandidatosAngra() -->
             </select>
             <input id="lideranca-votos" type="number" min="0" value="0" placeholder="Votos" class="form-input">
           </div>
@@ -371,8 +347,7 @@ document.addEventListener("keydown", e => {
       <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Campanha</label>
       <select id="edit-vinculo" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;background:white;">
         <option value="ambos">Ambos</option>
-        <option value="celia">Célia Jordão</option>
-        <option value="fernando">Fernando Jordão</option>
+        <!-- opções por candidato — preenchidas por injetarCandidatosAngra() -->
       </select>
     </div>
     <div style="display:flex;gap:8px;margin-top:4px;">
