@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Command Center — Paralax</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0f1e;
+      --surface: #111827;
+      --surface2: #1a2236;
+      --border: #1e2d45;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --accent: #3b82f6;
+      --accent2: #6366f1;
+      --green: #10b981;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --purple: #a855f7;
+      --cyan: #06b6d4;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ===== LOGIN MODAL ===== */
+    #login-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    #login-overlay.hidden { display: none; }
+    .login-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      width: 360px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .login-box h2 { font-size: 20px; font-weight: 700; color: var(--text); }
+    .login-box p { font-size: 13px; color: var(--muted); margin-top: -8px; }
+    .login-box input {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px; font-size: 14px;
+      color: var(--text); outline: none; transition: border 0.2s;
+    }
+    .login-box input:focus { border-color: var(--accent); }
+    .login-box button {
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 8px; padding: 11px; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .login-box button:hover { opacity: 0.85; }
+    #login-error { color: var(--red); font-size: 13px; display: none; }
+
+    /* ===== LAYOUT ===== */
+    #app { display: none; flex-direction: column; min-height: 100vh; }
+    #app.visible { display: flex; }
+
+    /* ===== HEADER ===== */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-logo {
+      width: 32px; height: 32px; background: var(--accent);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 900; color: #fff;
+    }
+    .header-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .header-subtitle { font-size: 12px; color: var(--muted); }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    #last-update { font-size: 12px; color: var(--muted); }
+    .btn-refresh {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 6px 14px;
+      font-size: 12px; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-refresh:hover { border-color: var(--accent); color: var(--accent); }
+    .user-chip {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--muted);
+    }
+    .btn-logout {
+      background: none; border: none; color: var(--muted);
+      font-size: 12px; cursor: pointer; transition: color 0.2s;
+    }
+    .btn-logout:hover { color: var(--red); }
+
+    /* ===== MAIN CONTENT ===== */
+    main {
+      flex: 1;
+      padding: 28px 32px;
+      display: flex; flex-direction: column; gap: 24px;
+      max-width: 1600px; width: 100%; margin: 0 auto;
+    }
+
+    /* ===== SECTION LABEL ===== */
+    .section-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: -12px;
+    }
+
+    /* ===== KPI GRID ===== */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 6px;
+      transition: border-color 0.2s;
+    }
+    .kpi-card:hover { border-color: var(--accent); }
+    .kpi-label { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+    .kpi-value { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1; }
+    .kpi-sub { font-size: 11px; color: var(--muted); }
+    .kpi-icon { font-size: 20px; margin-bottom: 4px; }
+    .kpi-card.blue .kpi-value { color: var(--accent); }
+    .kpi-card.green .kpi-value { color: var(--green); }
+    .kpi-card.purple .kpi-value { color: var(--purple); }
+    .kpi-card.yellow .kpi-value { color: var(--yellow); }
+    .kpi-card.cyan .kpi-value { color: var(--cyan); }
+    .kpi-card.red .kpi-value { color: var(--red); }
+
+    /* ===== TWO COLUMN ===== */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+    @media (max-width: 1100px) {
+      .two-col { grid-template-columns: 1fr; }
+      .three-col { grid-template-columns: 1fr; }
+    }
+
+    /* ===== CARD ===== */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-title {
+      font-size: 14px; font-weight: 700; color: var(--text);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-badge {
+      font-size: 11px; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--muted); padding: 2px 8px; border-radius: 20px;
+    }
+
+    /* ===== RANKING TABLE ===== */
+    .ranking-list { display: flex; flex-direction: column; gap: 8px; }
+    .ranking-item {
+      display: grid;
+      grid-template-columns: 24px 1fr auto auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      transition: border-color 0.15s;
+    }
+    .ranking-item:hover { border-color: var(--accent); }
+    .rank-pos {
+      font-size: 12px; font-weight: 800; color: var(--muted);
+      text-align: center;
+    }
+    .rank-pos.gold { color: #f59e0b; }
+    .rank-pos.silver { color: #94a3b8; }
+    .rank-pos.bronze { color: #b45309; }
+    .rank-info { min-width: 0; }
+    .rank-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-city { font-size: 11px; color: var(--muted); }
+    .rank-votos { font-size: 14px; font-weight: 800; color: var(--green); text-align: right; }
+    .rank-status {
+      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
+      text-transform: uppercase;
+    }
+    .rank-status.ativo { background: rgba(16,185,129,0.15); color: var(--green); }
+    .rank-status.inativo { background: rgba(239,68,68,0.15); color: var(--red); }
+    .rank-status.pendente { background: rgba(245,158,11,0.15); color: var(--yellow); }
+
+    /* ===== ALERTAS ===== */
+    .alert-list { display: flex; flex-direction: column; gap: 8px; }
+    .alert-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border-left: 3px solid;
+    }
+    .alert-item.danger { background: rgba(239,68,68,0.08); border-color: var(--red); }
+    .alert-item.warning { background: rgba(245,158,11,0.08); border-color: var(--yellow); }
+    .alert-item.info { background: rgba(59,130,246,0.08); border-color: var(--accent); }
+    .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .alert-text { font-size: 12px; color: var(--text); line-height: 1.5; }
+    .alert-text strong { color: var(--text); }
+    .alert-text span { color: var(--muted); display: block; margin-top: 1px; }
+
+    /* ===== AGENDA ===== */
+    .agenda-list { display: flex; flex-direction: column; gap: 8px; }
+    .agenda-item {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 12px;
+      background: var(--surface2);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .agenda-bullet {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0; margin-top: 5px;
+    }
+    .agenda-bullet.high { background: var(--red); }
+    .agenda-bullet.mid { background: var(--yellow); }
+    .agenda-bullet.low { background: var(--accent); }
+    .agenda-content {}
+    .agenda-action { font-size: 13px; font-weight: 600; color: var(--text); }
+    .agenda-why { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ===== CHARTS ===== */
+    .chart-wrapper { position: relative; height: 200px; }
+    .chart-wrapper.tall { height: 240px; }
+
+    /* ===== MAPA DE VOTOS POR REGIÃO ===== */
+    .regiao-grid { display: flex; flex-direction: column; gap: 8px; }
+    .regiao-item { display: flex; align-items: center; gap: 10px; }
+    .regiao-label { font-size: 12px; color: var(--muted); min-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .regiao-bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; }
+    .regiao-bar { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.8s ease; }
+    .regiao-votos { font-size: 12px; font-weight: 700; color: var(--text); min-width: 50px; text-align: right; }
+
+    /* ===== AUDITORIA ===== */
+    .audit-list { display: flex; flex-direction: column; gap: 6px; }
+    .audit-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px;
+      background: var(--surface2);
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .audit-acao {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--cyan);
+      text-transform: uppercase;
+    }
+    .audit-info { flex: 1; color: var(--muted); }
+    .audit-time { color: var(--muted); font-size: 11px; flex-shrink: 0; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 20px; }
+
+    /* ===== LOADING ===== */
+    .loading-dots { display: flex; gap: 4px; align-items: center; justify-content: center; padding: 24px; }
+    .loading-dots span {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div>
+      <h2>🎯 Command Center</h2>
+      <p>Entre com suas credenciais para acessar</p>
+    </div>
+    <input type="text" id="login-user" placeholder="Usuário" autocomplete="username" />
+    <input type="password" id="login-pass" placeholder="Senha" autocomplete="current-password" />
+    <div id="login-error"></div>
+    <button id="login-btn">Entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-left">
+      <div class="header-logo">⚡</div>
+      <div>
+        <div class="header-title">Command Center</div>
+        <div class="header-subtitle">Central de Decisão Estratégica</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="last-update">—</span>
+      <button class="btn-refresh" onclick="carregarTudo()">↺ Atualizar</button>
+      <span class="user-chip" id="user-chip">—</span>
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- KPIs -->
+    <div class="section-label">Visão Geral</div>
+    <div class="kpi-grid" id="kpi-grid">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+    </div>
+
+    <!-- Ranking + Alertas -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🏆 Ranking de Lideranças</div>
+          <span class="card-badge" id="ranking-badge">top 20</span>
+        </div>
+        <div class="ranking-list" id="ranking-list">
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🚨 Alertas de Risco</div>
+          </div>
+          <div class="alert-list" id="alert-list">
+            <div class="loading-dots"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📋 Últimas Ações</div>
+          </div>
+          <div class="audit-list" id="audit-list">
+            <div class="loading-dots"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Crescimento + Votos por Região -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📈 Gastos por Mês</div>
+        </div>
+        <div class="chart-wrapper tall">
+          <canvas id="chart-gastos"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🗺️ Votos por Região</div>
+        </div>
+        <div class="regiao-grid" id="regiao-grid">
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agenda Inteligente + Lideranças sem interação -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📅 Agenda Inteligente</div>
+          <span class="card-badge">O que fazer hoje</span>
+        </div>
+        <div class="agenda-list" id="agenda-list">
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔇 Sem Interação (30 dias)</div>
+          <span class="card-badge" id="sem-interacao-badge">—</span>
+        </div>
+        <div class="ranking-list" id="sem-interacao-list">
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfico votos por região -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📊 Distribuição de Votos por Região</div>
+      </div>
+      <div class="chart-wrapper tall">
+        <canvas id="chart-regioes"></canvas>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const API_URL = 'https://map-backend-j88s.onrender.com/api';
+
+// ===== AUTH =====
+function getToken() { return localStorage.getItem('token'); }
+
+async function apiFetch(path, opts = {}) {
+  const token = getToken();
+  const res = await fetch(API_URL + path, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
+      ...(opts.headers || {})
+    }
+  });
+  if (res.status === 401 || res.status === 403) {
+    logout();
+    throw new Error('Unauthorized');
+  }
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+function logout() {
+  localStorage.clear();
+  location.reload();
+}
+
+// ===== LOGIN =====
+document.getElementById('login-btn').addEventListener('click', async () => {
+  const usuario = document.getElementById('login-user').value.trim();
+  const senha = document.getElementById('login-pass').value.trim();
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  errEl.style.display = 'none';
+  if (!usuario || !senha) { errEl.textContent = 'Preencha todos os campos'; errEl.style.display = 'block'; return; }
+  btn.textContent = 'Entrando...'; btn.disabled = true;
+  try {
+    const data = await fetch(API_URL + '/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario, senha })
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); });
+
+    localStorage.setItem('token', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    iniciarApp(data.user);
+  } catch {
+    errEl.textContent = 'Usuário ou senha inválidos';
+    errEl.style.display = 'block';
+  } finally {
+    btn.textContent = 'Entrar'; btn.disabled = false;
+  }
+});
+
+// ===== INIT =====
+function iniciarApp(user) {
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('user-chip').textContent = user.nome || user.usuario || '—';
+  carregarTudo();
+}
+
+async function validarSessao() {
+  const token = getToken();
+  if (!token) return false;
+  try {
+    const res = await fetch(API_URL + '/validar-token', {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+// ===== CHARTS =====
+let chartGastos = null;
+let chartRegioes = null;
+
+function criarChartGastos(labels, valores) {
+  const ctx = document.getElementById('chart-gastos').getContext('2d');
+  if (chartGastos) chartGastos.destroy();
+  chartGastos = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Gastos (R$)',
+        data: valores,
+        backgroundColor: 'rgba(59,130,246,0.7)',
+        borderColor: '#3b82f6',
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#64748b', font: { size: 11 } }, grid: { color: '#1e2d45' } },
+        y: { ticks: { color: '#64748b', font: { size: 11 }, callback: v => 'R$' + v.toLocaleString('pt-BR') }, grid: { color: '#1e2d45' } }
+      }
+    }
+  });
+}
+
+function criarChartRegioes(labels, valores) {
+  const ctx = document.getElementById('chart-regioes').getContext('2d');
+  if (chartRegioes) chartRegioes.destroy();
+  const colors = ['#3b82f6','#6366f1','#10b981','#f59e0b','#ef4444','#a855f7','#06b6d4','#ec4899'];
+  chartRegioes = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Votos Esperados',
+        data: valores,
+        backgroundColor: colors.slice(0, labels.length).map(c => c + 'bb'),
+        borderColor: colors.slice(0, labels.length),
+        borderWidth: 2,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#64748b', font: { size: 11 } }, grid: { color: '#1e2d45' } },
+        y: { ticks: { color: '#e2e8f0', font: { size: 11 } }, grid: { color: '#1e2d45' } }
+      }
+    }
+  });
+}
+
+// ===== RENDER FUNCTIONS =====
+function renderKpis(d) {
+  const eficiencia = d.votosTotal > 0 && d.gastosTotal > 0
+    ? Math.round(d.gastosTotal / d.votosTotal)
+    : 0;
+
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card blue">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-label">Total Lideranças</div>
+      <div class="kpi-value">${d.totalLiderancas}</div>
+      <div class="kpi-sub">${d.ativas} ativas</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-icon">🗳️</div>
+      <div class="kpi-label">Votos Esperados</div>
+      <div class="kpi-value">${d.votosTotal.toLocaleString('pt-BR')}</div>
+      <div class="kpi-sub">total da campanha</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-icon">💙</div>
+      <div class="kpi-label">Célia Jordão</div>
+      <div class="kpi-value">${d.votosCelia.toLocaleString('pt-BR')}</div>
+      <div class="kpi-sub">votos vinculados</div>
+    </div>
+    <div class="kpi-card cyan">
+      <div class="kpi-icon">🤝</div>
+      <div class="kpi-label">Fernando Jordão</div>
+      <div class="kpi-value">${d.votosFernando.toLocaleString('pt-BR')}</div>
+      <div class="kpi-sub">votos vinculados</div>
+    </div>
+    <div class="kpi-card yellow">
+      <div class="kpi-icon">🗺️</div>
+      <div class="kpi-label">Regiões Cobertas</div>
+      <div class="kpi-value">${d.regioesAtivas}</div>
+      <div class="kpi-sub">de 8 regiões</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-icon">💸</div>
+      <div class="kpi-label">Gastos (30 dias)</div>
+      <div class="kpi-value">R$${(d.gastosUlt30/1000).toFixed(1)}k</div>
+      <div class="kpi-sub">total: R$${(d.gastosTotal/1000).toFixed(1)}k</div>
+    </div>
+    ${eficiencia > 0 ? `
+    <div class="kpi-card">
+      <div class="kpi-icon">⚡</div>
+      <div class="kpi-label">Custo/Voto</div>
+      <div class="kpi-value">R$${eficiencia}</div>
+      <div class="kpi-sub">eficiência de campanha</div>
+    </div>` : ''}
+  `;
+}
+
+function posClass(i) {
+  if (i === 0) return 'gold';
+  if (i === 1) return 'silver';
+  if (i === 2) return 'bronze';
+  return '';
+}
+
+function renderRanking(rows) {
+  if (!rows.length) { document.getElementById('ranking-list').innerHTML = '<div class="empty">Nenhuma liderança encontrada</div>'; return; }
+  document.getElementById('ranking-badge').textContent = `top ${rows.length}`;
+  document.getElementById('ranking-list').innerHTML = rows.map((r, i) => `
+    <div class="ranking-item">
+      <div class="rank-pos ${posClass(i)}">${i + 1}</div>
+      <div class="rank-info">
+        <div class="rank-name">${r.nome}</div>
+        <div class="rank-city">${r.cidade || '—'} · ${r.regiao || '—'}</div>
+      </div>
+      <div class="rank-votos">${Number(r.expectativa_votos || 0).toLocaleString('pt-BR')} v</div>
+      <div class="rank-status ${r.status || 'pendente'}">${r.status || '?'}</div>
+    </div>
+  `).join('');
+}
+
+function renderAlertas(d) {
+  const items = [];
+
+  if (d.regioesSemLider && d.regioesSemLider.length) {
+    d.regioesSemLider.forEach(r => {
+      items.push(`<div class="alert-item danger">
+        <div class="alert-icon">🚨</div>
+        <div class="alert-text"><strong>${r.regiao}</strong><span>Nenhuma liderança ativa nesta região</span></div>
+      </div>`);
+    });
+  }
+
+  if (d.liderancasInativas && d.liderancasInativas.length) {
+    d.liderancasInativas.slice(0,5).forEach(l => {
+      items.push(`<div class="alert-item warning">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-text"><strong>${l.nome}</strong><span>Inativa — ${l.expectativa_votos} votos em risco · ${l.cidade || l.regiao}</span></div>
+      </div>`);
+    });
+  }
+
+  if (d.semVotos && d.semVotos.length) {
+    items.push(`<div class="alert-item info">
+      <div class="alert-icon">ℹ️</div>
+      <div class="alert-text"><strong>${d.semVotos.length} liderança(s)</strong><span>Sem expectativa de votos definida</span></div>
+    </div>`);
+  }
+
+  if (!items.length) {
+    items.push('<div class="empty">✅ Nenhum alerta crítico</div>');
+  }
+
+  document.getElementById('alert-list').innerHTML = items.join('');
+}
+
+function renderAudit(d) {
+  if (!d.auditRecentes || !d.auditRecentes.length) {
+    document.getElementById('audit-list').innerHTML = '<div class="empty">Sem registros</div>';
+    return;
+  }
+  document.getElementById('audit-list').innerHTML = d.auditRecentes.map(a => {
+    const quando = a.created_at ? new Date(a.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+    return `
+      <div class="audit-item">
+        <span class="audit-acao">${a.acao || '?'}</span>
+        <span class="audit-info">${a.entidade || ''} ${a.usuario ? '· ' + a.usuario : ''}</span>
+        <span class="audit-time">${quando}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCrescimento(d) {
+  const meses = d.gastosPorMes || [];
+  const labels = meses.map(m => {
+    const [ano, mes] = m.mes.split('-');
+    const nomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    return nomes[parseInt(mes) - 1] + '/' + ano.slice(2);
+  });
+  const valores = meses.map(m => parseFloat(m.total_gastos || 0));
+  criarChartGastos(labels.length ? labels : ['Sem dados'], valores.length ? valores : [0]);
+
+  // Mapa de votos por região
+  const regioes = d.votosEvolucao || [];
+  const maxVotos = Math.max(...regioes.map(r => parseInt(r.votos || 0)), 1);
+  document.getElementById('regiao-grid').innerHTML = regioes.map(r => {
+    const votos = parseInt(r.votos || 0);
+    const pct = Math.round((votos / maxVotos) * 100);
+    return `
+      <div class="regiao-item">
+        <div class="regiao-label">${r.regiao}</div>
+        <div class="regiao-bar-wrap"><div class="regiao-bar" style="width:${pct}%"></div></div>
+        <div class="regiao-votos">${votos.toLocaleString('pt-BR')}</div>
+      </div>
+    `;
+  }).join('') || '<div class="empty">Sem dados</div>';
+
+  // Gráfico de barras horizontais
+  if (regioes.length) {
+    criarChartRegioes(
+      regioes.map(r => r.regiao),
+      regioes.map(r => parseInt(r.votos || 0))
+    );
+  }
+}
+
+function renderAgenda(d) {
+  const items = [];
+
+  // Regiões fracas — visitar
+  if (d.regioesFracas && d.regioesFracas.length) {
+    d.regioesFracas.slice(0,3).forEach(r => {
+      items.push({ priority: 'high', action: `Visitar região: ${r.regiao}`, why: `Apenas ${r.votos} votos mapeados com ${r.total_lideres} liderança(s)` });
+    });
+  }
+
+  // Lideranças sem interação
+  if (d.semInteracao && d.semInteracao.length) {
+    d.semInteracao.slice(0,3).forEach(l => {
+      items.push({ priority: 'mid', action: `Contatar ${l.nome}`, why: `Sem interação há +30 dias · ${l.expectativa_votos || 0} votos · ${l.cidade || l.regiao}` });
+    });
+  }
+
+  // Top cidades para reforçar
+  if (d.topCidades && d.topCidades.length) {
+    d.topCidades.slice(0,2).forEach(c => {
+      items.push({ priority: 'low', action: `Reforçar presença em ${c.cidade}`, why: `${c.votos_potenciais} votos potenciais com ${c.lideres} liderança(s) ativas` });
+    });
+  }
+
+  document.getElementById('agenda-list').innerHTML = items.length
+    ? items.map(it => `
+      <div class="agenda-item">
+        <div class="agenda-bullet ${it.priority}"></div>
+        <div class="agenda-content">
+          <div class="agenda-action">${it.action}</div>
+          <div class="agenda-why">${it.why}</div>
+        </div>
+      </div>
+    `).join('')
+    : '<div class="empty">Nenhuma sugestão de agenda</div>';
+
+  // Sem interação lista
+  const sem = d.semInteracao || [];
+  document.getElementById('sem-interacao-badge').textContent = sem.length + ' lideranças';
+  document.getElementById('sem-interacao-list').innerHTML = sem.length
+    ? sem.map((l, i) => `
+      <div class="ranking-item">
+        <div class="rank-pos ${posClass(i)}">${i + 1}</div>
+        <div class="rank-info">
+          <div class="rank-name">${l.nome}</div>
+          <div class="rank-city">${l.cidade || '—'} · ${l.regiao || '—'}</div>
+        </div>
+        <div class="rank-votos">${Number(l.expectativa_votos || 0).toLocaleString('pt-BR')} v</div>
+        <div></div>
+      </div>
+    `).join('')
+    : '<div class="empty">✅ Todas as lideranças foram contatadas</div>';
+}
+
+// ===== MAIN LOAD =====
+async function carregarTudo() {
+  try {
+    const [kpis, ranking, alertas, crescimento, agenda] = await Promise.all([
+      apiFetch('/dashboard/kpis'),
+      apiFetch('/dashboard/ranking'),
+      apiFetch('/dashboard/alertas'),
+      apiFetch('/dashboard/crescimento'),
+      apiFetch('/dashboard/agenda'),
+    ]);
+
+    renderKpis(kpis);
+    renderRanking(ranking);
+    renderAlertas(alertas);
+    renderAudit(alertas);
+    renderCrescimento(crescimento);
+    renderAgenda(agenda);
+
+    document.getElementById('last-update').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  } catch (err) {
+    console.error('Erro ao carregar dashboard:', err);
+  }
+}
+
+// ===== BOOT =====
+(async () => {
+  const ok = await validarSessao();
+  if (ok) {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    iniciarApp(user);
+  }
+})();
+</script>
+</body>
+</html>

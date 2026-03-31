@@ -1601,6 +1601,182 @@ io.on("connection", (socket) => {
   });
 });
 
+/* ================= DASHBOARD COMMAND CENTER ================= */
+
+// KPIs gerais
+app.get('/api/dashboard/kpis', auth, allow('dono', 'admin'), async (req, res) => {
+  try {
+    const totalLiderancas = await dbGet('SELECT COUNT(*) as total FROM liderancas');
+    const ativasCount = await dbGet("SELECT COUNT(*) as total FROM liderancas WHERE status = 'ativo'");
+    const votosTotal = await dbGet('SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas');
+    const votosCelia = await dbGet("SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE LOWER(vinculo_politico) LIKE '%celia%' OR LOWER(vinculo_politico) LIKE '%célia%'");
+    const votosFernando = await dbGet("SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE LOWER(vinculo_politico) LIKE '%fernando%'");
+    const regioesAtivas = await dbGet('SELECT COUNT(DISTINCT regiao) as total FROM liderancas');
+    const gastosTotal = await dbGet('SELECT COALESCE(SUM(valor),0) as total FROM gastos_lideranca');
+    const gastosUlt30 = await dbGet("SELECT COALESCE(SUM(valor),0) as total FROM gastos_lideranca WHERE data::date >= NOW() - INTERVAL '30 days'");
+
+    res.json({
+      totalLiderancas: parseInt(totalLiderancas.total),
+      ativas: parseInt(ativasCount.total),
+      votosTotal: parseInt(votosTotal.total),
+      votosCelia: parseInt(votosCelia.total),
+      votosFernando: parseInt(votosFernando.total),
+      regioesAtivas: parseInt(regioesAtivas.total),
+      gastosTotal: parseFloat(gastosTotal.total),
+      gastosUlt30: parseFloat(gastosUlt30.total)
+    });
+  } catch (err) {
+    console.error('Erro dashboard/kpis:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+// Ranking de lideranças por votos
+app.get('/api/dashboard/ranking', auth, allow('dono', 'admin'), async (req, res) => {
+  try {
+    const rows = await dbAll(`
+      SELECT
+        l.id, l.nome, l.cidade, l.regiao, l.status,
+        l.expectativa_votos, l.vinculo_politico,
+        COALESCE(SUM(g.valor), 0) as total_gastos,
+        COUNT(g.id) as num_gastos
+      FROM liderancas l
+      LEFT JOIN gastos_lideranca g ON g.lideranca_id = l.id
+      GROUP BY l.id, l.nome, l.cidade, l.regiao, l.status, l.expectativa_votos, l.vinculo_politico
+      ORDER BY l.expectativa_votos DESC NULLS LAST
+      LIMIT 20
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro dashboard/ranking:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+// Alertas de risco
+app.get('/api/dashboard/alertas', auth, allow('dono', 'admin'), async (req, res) => {
+  try {
+    // Lideranças inativas com votos relevantes
+    const inativas = await dbAll(`
+      SELECT id, nome, cidade, regiao, expectativa_votos
+      FROM liderancas
+      WHERE status != 'ativo' AND expectativa_votos > 50
+      ORDER BY expectativa_votos DESC
+      LIMIT 10
+    `);
+
+    // Regiões sem lideranças ativas
+    const regioesSemLider = await dbAll(`
+      SELECT regiao, COUNT(*) FILTER (WHERE status = 'ativo') as ativos
+      FROM liderancas
+      GROUP BY regiao
+      HAVING COUNT(*) FILTER (WHERE status = 'ativo') = 0
+    `);
+
+    // Lideranças sem votos definidos
+    const semVotos = await dbAll(`
+      SELECT id, nome, cidade, regiao
+      FROM liderancas
+      WHERE expectativa_votos IS NULL OR expectativa_votos = 0
+      LIMIT 10
+    `);
+
+    // Últimas ações de auditoria
+    const auditRecentes = await dbAll(`
+      SELECT a.acao, a.entidade, a.created_at, u.nome as usuario
+      FROM auditoria a
+      LEFT JOIN usuarios u ON u.id = a.usuario_id
+      ORDER BY a.created_at DESC
+      LIMIT 10
+    `);
+
+    res.json({
+      liderancasInativas: inativas,
+      regioesSemLider,
+      semVotos,
+      auditRecentes
+    });
+  } catch (err) {
+    console.error('Erro dashboard/alertas:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+// Crescimento: gastos e votos por mês
+app.get('/api/dashboard/crescimento', auth, allow('dono', 'admin'), async (req, res) => {
+  try {
+    const gastosPorMes = await dbAll(`
+      SELECT
+        TO_CHAR(data::date, 'YYYY-MM') as mes,
+        SUM(valor) as total_gastos,
+        COUNT(DISTINCT lideranca_id) as liderancas_ativas
+      FROM gastos_lideranca
+      WHERE data::date >= NOW() - INTERVAL '12 months'
+      GROUP BY mes
+      ORDER BY mes ASC
+    `);
+
+    const votosEvolucao = await dbAll(`
+      SELECT
+        regiao,
+        COALESCE(SUM(expectativa_votos), 0) as votos,
+        COUNT(*) FILTER (WHERE status = 'ativo') as liderancas_ativas
+      FROM liderancas
+      GROUP BY regiao
+      ORDER BY votos DESC
+    `);
+
+    res.json({ gastosPorMes, votosEvolucao });
+  } catch (err) {
+    console.error('Erro dashboard/crescimento:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+// Agenda inteligente — sugestões estratégicas
+app.get('/api/dashboard/agenda', auth, allow('dono', 'admin'), async (req, res) => {
+  try {
+    // Regiões mais fracas (menos votos)
+    const regioesFracas = await dbAll(`
+      SELECT regiao, COALESCE(SUM(expectativa_votos),0) as votos, COUNT(*) as total_lideres
+      FROM liderancas
+      GROUP BY regiao
+      ORDER BY votos ASC
+      LIMIT 5
+    `);
+
+    // Lideranças sem interação recente (sem gastos nos últimos 30 dias)
+    const semInteracao = await dbAll(`
+      SELECT l.id, l.nome, l.cidade, l.regiao, l.expectativa_votos
+      FROM liderancas l
+      WHERE l.status = 'ativo'
+        AND l.id NOT IN (
+          SELECT DISTINCT lideranca_id FROM gastos_lideranca
+          WHERE data::date >= NOW() - INTERVAL '30 days'
+        )
+      ORDER BY l.expectativa_votos DESC NULLS LAST
+      LIMIT 10
+    `);
+
+    // Cidades com maior expectativa por candidato
+    const topCidades = await dbAll(`
+      SELECT cidade, regiao,
+        COALESCE(SUM(expectativa_votos),0) as votos_potenciais,
+        COUNT(*) as lideres
+      FROM liderancas
+      WHERE status = 'ativo'
+      GROUP BY cidade, regiao
+      ORDER BY votos_potenciais DESC
+      LIMIT 8
+    `);
+
+    res.json({ regioesFracas, semInteracao, topCidades });
+  } catch (err) {
+    console.error('Erro dashboard/agenda:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
 /* ================= KEEP ALIVE (RENDER) ================= */
 app.get("/ping", (req, res) => {
   res.status(200).send("pong");
