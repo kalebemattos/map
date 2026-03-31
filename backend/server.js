@@ -1608,22 +1608,36 @@ app.get('/api/dashboard/kpis', auth, allow('dono', 'admin'), async (req, res) =>
   try {
     const totalLiderancas = await dbGet('SELECT COUNT(*) as total FROM liderancas');
     const ativasCount = await dbGet("SELECT COUNT(*) as total FROM liderancas WHERE status = 'ativo'");
+    const inativasCount = await dbGet("SELECT COUNT(*) as total FROM liderancas WHERE status != 'ativo'");
     const votosTotal = await dbGet('SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas');
     const votosCelia = await dbGet("SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE LOWER(vinculo_politico) LIKE '%celia%' OR LOWER(vinculo_politico) LIKE '%célia%'");
     const votosFernando = await dbGet("SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE LOWER(vinculo_politico) LIKE '%fernando%'");
     const regioesAtivas = await dbGet('SELECT COUNT(DISTINCT regiao) as total FROM liderancas');
     const gastosTotal = await dbGet('SELECT COALESCE(SUM(valor),0) as total FROM gastos_lideranca');
     const gastosUlt30 = await dbGet("SELECT COALESCE(SUM(valor),0) as total FROM gastos_lideranca WHERE data::date >= NOW() - INTERVAL '30 days'");
+    // Meta: soma das expectativas por cidade
+    const metaCelia = await dbGet('SELECT COALESCE(SUM(expectativa_celia),0) as total FROM expectativa_cidade');
+    const metaFernando = await dbGet('SELECT COALESCE(SUM(expectativa_fernando),0) as total FROM expectativa_cidade');
+    // Status breakdown
+    const statusBreakdown = await dbAll("SELECT COALESCE(status,'indefinido') as status, COUNT(*) as total FROM liderancas GROUP BY status");
+    // Votos por vinculo político (candidato)
+    const votosPorVinculo = await dbAll("SELECT COALESCE(vinculo_politico,'Indefinido') as candidato, COALESCE(SUM(expectativa_votos),0) as votos FROM liderancas GROUP BY vinculo_politico ORDER BY votos DESC");
 
     res.json({
       totalLiderancas: parseInt(totalLiderancas.total),
       ativas: parseInt(ativasCount.total),
+      inativas: parseInt(inativasCount.total),
       votosTotal: parseInt(votosTotal.total),
       votosCelia: parseInt(votosCelia.total),
       votosFernando: parseInt(votosFernando.total),
       regioesAtivas: parseInt(regioesAtivas.total),
       gastosTotal: parseFloat(gastosTotal.total),
-      gastosUlt30: parseFloat(gastosUlt30.total)
+      gastosUlt30: parseFloat(gastosUlt30.total),
+      metaCelia: parseInt(metaCelia.total),
+      metaFernando: parseInt(metaFernando.total),
+      metaTotal: parseInt(metaCelia.total) + parseInt(metaFernando.total),
+      statusBreakdown,
+      votosPorVinculo
     });
   } catch (err) {
     console.error('Erro dashboard/kpis:', err);
