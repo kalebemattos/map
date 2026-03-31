@@ -132,6 +132,35 @@ width:100%;
   box-shadow: 0 3px 10px rgba(13,45,107,0.3);
 }
 
+.ctrl-pins-row {
+  display: flex;
+  gap: 6px;
+}
+
+.ctrl-pin-btn {
+  flex: 1;
+  padding: 7px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1.5px solid var(--slate-200);
+  background: var(--slate-50);
+  color: var(--slate-600);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.ctrl-pin-btn.ctrl-pin-ativo {
+  background: var(--blue-deep);
+  color: #fff;
+  border-color: var(--blue-deep);
+}
+.ctrl-pin-btn.ctrl-pin-alerta {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
 .overlay-label {
   font-size: 10px;
   font-weight: 700;

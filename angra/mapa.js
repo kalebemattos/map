@@ -842,7 +842,17 @@ window.iniciarMapa = async function() {
         },
         onEachFeature: (feature, layer) => {
           const bairro = feature.properties[BAIRRO_PROP]
-          layer.on("click", () => selecionarBairro(bairro, layer))
+          layer.on("click", (e) => {
+            // Modo adicionar pin: intercepta o clique no bairro
+            if (window.modoAdicionarPin) {
+              window.modoAdicionarPin = false
+              if (typeof window.syncBotoesPins === 'function') window.syncBotoesPins()
+              window.novoPinLatLng = e.latlng
+              if (typeof window.abrirModalPin === 'function') window.abrirModalPin()
+              return
+            }
+            selecionarBairro(bairro, layer)
+          })
           const center = layer.getBounds().getCenter()
           L.marker(center, {
             interactive: false,

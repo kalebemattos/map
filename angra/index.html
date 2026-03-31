@@ -132,16 +132,6 @@
   <!-- BODY SCROLLÁVEL -->
   <div class="sidebar-body">
 
-    <!-- SELETOR DE VISUALIZAÇÃO -->
-    <div class="sidebar-block">
-      <label class="block-label">Visualização</label>
-      <div class="modos-container">
-        <button class="modo-btn ativa" data-modo="expectativa">Expectativa</button>
-        <button class="modo-btn" data-modo="votosValidos">Votos 2022</button>
-        <button class="modo-btn" data-modo="liderancas">Lideranças</button>
-      </div>
-    </div>
-
     <!-- SELETOR DE CAMPANHA -->
     <div class="sidebar-block">
       <label class="block-label">Campanha</label>
@@ -233,18 +223,6 @@
           </div>
           <button id="add-lideranca" class="btn-add">+ Adicionar</button>
         </div>
-      </div>
-    </div>
-
-    <!-- PINS -->
-    <div class="sidebar-block">
-      <label class="block-label">Pins no mapa</label>
-      <div style="display:flex;gap:8px;margin-top:4px;">
-        <button id="togglePins" style="flex:1;padding:9px 12px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#334155;transition:all .2s;">📍 Pins: ON</button>
-        <button id="addPinBtn" style="flex:1;padding:9px 12px;border-radius:10px;border:none;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;">＋ Pin</button>
-      </div>
-      <div id="pins-modo-aviso" style="display:none;margin-top:8px;padding:8px 12px;background:#fef3c7;border-radius:8px;font-size:12px;font-weight:600;color:#92400e;">
-        Clique em qualquer ponto no mapa para adicionar o pin
       </div>
     </div>
 
@@ -396,10 +374,10 @@ document.addEventListener("keydown", e => {
 <!-- ===== SISTEMA DE PINS ===== -->
 <script>
 // ---------- estado ----------
-let pinsLayer   = null;
+let pinsLayer    = null;
 let pinsVisiveis = true;
-let modoAdicionarPin = false;
-let novoPinLatLng = null;
+var modoAdicionarPin = false;   // var → window.modoAdicionarPin acessível em mapa.js
+var novoPinLatLng = null;
 
 const PIN_TYPES = {
   comite:              { label: '🏠 Comitê',            color: '#8e44ad' },
@@ -420,15 +398,8 @@ function iniciarPinsLayer() {
   if (pinsLayer) return; // já existe
   pinsLayer = L.layerGroup().addTo(window.map);
   carregarPins();
-
-  // Intercepta clique no mapa para modo adicionar pin
-  window.map.on('click', function(e) {
-    if (!modoAdicionarPin) return;
-    modoAdicionarPin = false;
-    syncBotoesPins();
-    novoPinLatLng = e.latlng;
-    abrirModalPin();
-  });
+  // Nota: o clique para adicionar pin é interceptado dentro do handler
+  // onEachFeature do GeoJSON em mapa.js (os cliques nos bairros não propagam para o mapa)
 }
 
 // ---------- carregar ----------
@@ -524,58 +495,39 @@ document.addEventListener('click', async (e) => {
 });
 
 // ---------- sincronizar visualmente todos os botões de pins ----------
+window.syncBotoesPins =
 function syncBotoesPins() {
-  const sb = document.getElementById('togglePins');
-  if (sb) {
-    sb.textContent = pinsVisiveis ? '📍 Pins: ON' : '📍 Pins: OFF';
-    sb.style.background = pinsVisiveis ? '#f8fafc' : '#fee2e2';
-    sb.style.color      = pinsVisiveis ? '#334155' : '#dc2626';
-  }
+  // Toggle visibilidade (overlay)
   const ot = document.getElementById('togglePinsOverlay');
   if (ot) {
     ot.textContent = pinsVisiveis ? 'ON' : 'OFF';
     ot.classList.toggle('ctrl-pin-ativo',   pinsVisiveis);
     ot.classList.toggle('ctrl-pin-alerta', !pinsVisiveis);
   }
-  const sa = document.getElementById('addPinBtn');
-  if (sa) {
-    sa.textContent   = modoAdicionarPin ? '✕ Cancelar' : '＋ Pin';
-    sa.style.background = modoAdicionarPin
-      ? 'linear-gradient(135deg,#991b1b,#dc2626)'
-      : 'linear-gradient(135deg,#0d2d6b,#1565c0)';
-  }
+  // Botão adicionar pin (overlay)
   const oa = document.getElementById('addPinOverlay');
   if (oa) {
     oa.textContent = modoAdicionarPin ? '✕' : '＋ Pin';
     oa.classList.toggle('ctrl-pin-alerta', modoAdicionarPin);
   }
-  const av = document.getElementById('pins-modo-aviso');
-  if (av) av.style.display = modoAdicionarPin ? 'block' : 'none';
 }
 
-// ---------- toggle visibilidade ----------
-document.getElementById('togglePins').addEventListener('click', () => {
+// ---------- toggle visibilidade (agora controlado diretamente pelo overlay) ----------
+document.getElementById('togglePinsOverlay').addEventListener('click', () => {
   pinsVisiveis = !pinsVisiveis;
   if (pinsVisiveis) { if (pinsLayer) pinsLayer.addTo(window.map); }
   else              { if (pinsLayer && window.map) window.map.removeLayer(pinsLayer); }
   syncBotoesPins();
 });
 
-// ---------- modo adicionar ----------
-document.getElementById('addPinBtn').addEventListener('click', () => {
+// ---------- modo adicionar (agora controlado diretamente pelo overlay) ----------
+document.getElementById('addPinOverlay').addEventListener('click', () => {
   modoAdicionarPin = !modoAdicionarPin;
   syncBotoesPins();
 });
 
-// ---------- overlay delega para sidebar (que já chama syncBotoesPins) ----------
-document.getElementById('togglePinsOverlay').addEventListener('click', () => {
-  document.getElementById('togglePins').click();
-});
-document.getElementById('addPinOverlay').addEventListener('click', () => {
-  document.getElementById('addPinBtn').click();
-});
-
 // ---------- modal tipo ----------
+window.abrirModalPin =
 function abrirModalPin() {
   const container = document.getElementById('pin-type-selector');
   container.innerHTML = '';
