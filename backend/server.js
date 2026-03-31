@@ -1681,14 +1681,19 @@ app.get('/api/dashboard/alertas', auth, allow('dono', 'admin'), async (req, res)
       LIMIT 10
     `);
 
-    // Últimas ações de auditoria
-    const auditRecentes = await dbAll(`
-      SELECT a.acao, a.entidade, a.created_at, u.nome as usuario
-      FROM auditoria a
-      LEFT JOIN usuarios u ON u.id = a.usuario_id
-      ORDER BY a.created_at DESC
-      LIMIT 10
-    `);
+    // Últimas ações de auditoria — sem coluna de timestamp para evitar erro de schema
+    let auditRecentes = [];
+    try {
+      auditRecentes = await dbAll(`
+        SELECT a.id, a.acao, a.entidade, u.nome as usuario
+        FROM auditoria a
+        LEFT JOIN usuarios u ON u.id = a.usuario_id
+        ORDER BY a.id DESC
+        LIMIT 10
+      `);
+    } catch (_) {
+      // não quebra o endpoint se a auditoria falhar
+    }
 
     res.json({
       liderancasInativas: inativas,
