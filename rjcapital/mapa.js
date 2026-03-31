@@ -869,6 +869,7 @@ function atualizarLegenda() {
 window.iniciarMapa = async function() {
   await carregarConfig()
   map = L.map('map').setView([-22.91, -43.17], 11)
+  window.map = map   // expõe para index.html (pins, invalidateSize, etc.)
   setTimeout(() => map.invalidateSize(), 200)
 
   fetch("geo/riobairros.geojson")
@@ -892,7 +893,8 @@ window.iniciarMapa = async function() {
             if (window.modoAdicionarPin) {
               window.modoAdicionarPin = false
               if (typeof window.syncBotoesPins === 'function') window.syncBotoesPins()
-              window.novoPinLatLng = e.latlng
+              window.novoPinLatLng  = e.latlng
+              window.novoPinCidade  = bairro
               if (typeof window.abrirModalPin === 'function') window.abrirModalPin()
               return
             }

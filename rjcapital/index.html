@@ -577,7 +577,7 @@ function abrirModalPin() {
             tipo: key,
             lat: novoPinLatLng.lat,
             lng: novoPinLatLng.lng,
-            cidade: (window.bairroAtual || '')
+            cidade: (window.novoPinCidade || '')
           })
         });
         await carregarPins();

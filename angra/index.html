@@ -552,7 +552,7 @@ function abrirModalPin() {
             tipo: key,
             lat: novoPinLatLng.lat,
             lng: novoPinLatLng.lng,
-            cidade: (window.bairrroSelecionado || window.distritoCorrents || '')
+            cidade: (window.novoPinCidade || '')
           })
         });
         await carregarPins();
