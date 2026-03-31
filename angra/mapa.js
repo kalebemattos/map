@@ -823,6 +823,18 @@ window.iniciarMapa = async function() {
   window.map = map   // expõe para index.html (pins, invalidateSize, etc.)
   setTimeout(() => map.invalidateSize(), 200)
 
+  // Handler de pin para cliques em áreas sem polígono de bairro
+  // (para bairros com polígono, o onEachFeature já cuida — e zera o flag antes deste rodar)
+  map.on('click', function(e) {
+    if (!window.modoAdicionarPin) return
+    // Se chegou aqui, o clique foi em área sem bairro (GeoJSON handler já limpou o flag para bairros)
+    window.modoAdicionarPin = false
+    if (typeof window.syncBotoesPins === 'function') window.syncBotoesPins()
+    window.novoPinLatLng = e.latlng
+    window.novoPinCidade = ''
+    if (typeof window.abrirModalPin === 'function') window.abrirModalPin()
+  })
+
   fetch("geo/angra_limite.geojson")
     .then(r => r.json())
     .then(data => {
@@ -906,7 +918,15 @@ function fecharModalEditar() {
   _editBairro    = null
 }
 
-document.getElementById('edit-salvar-btn').addEventListener('click', async () => {
+// Guarda null: edit-salvar-btn pode não existir no DOM quando este script carrega
+;(function() {
+  const el = document.getElementById('edit-salvar-btn')
+  if (el) { el.addEventListener('click', handler); return }
+  document.addEventListener('DOMContentLoaded', () => {
+    const e2 = document.getElementById('edit-salvar-btn')
+    if (e2) e2.addEventListener('click', handler)
+  })
+  async function handler() {
   if (!_editLideranca) return
   const btn = document.getElementById('edit-salvar-btn')
   btn.textContent = 'Salvando...'
@@ -932,7 +952,8 @@ document.getElementById('edit-salvar-btn').addEventListener('click', async () =>
     btn.textContent = 'Salvar'
     btn.disabled = false
   }
-})
+  }
+})()
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') fecharModalEditar()
