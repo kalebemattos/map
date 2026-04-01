@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Command Center — Paralax</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="data.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
@@ -217,6 +218,7 @@
 
     .kpi.blue   { border-color:rgba(59,130,246,0.28); }
     .kpi.green  { border-color:rgba(16,185,129,0.28); }
+    .kpi.teal   { border-color:rgba(20,184,166,0.28); }
     .kpi.purple { border-color:rgba(168,85,247,0.28); }
     .kpi.cyan   { border-color:rgba(6,182,212,0.28); }
     .kpi.yellow { border-color:rgba(245,158,11,0.28); }
@@ -224,6 +226,7 @@
 
     .kpi:hover.blue   { box-shadow:0 12px 32px rgba(59,130,246,0.14); border-color:var(--accent); }
     .kpi:hover.green  { box-shadow:0 12px 32px rgba(16,185,129,0.14); border-color:var(--green); }
+    .kpi:hover.teal   { box-shadow:0 12px 32px rgba(20,184,166,0.14); border-color:#14b8a6; }
     .kpi:hover.purple { box-shadow:0 12px 32px rgba(168,85,247,0.14); border-color:var(--purple); }
     .kpi:hover.cyan   { box-shadow:0 12px 32px rgba(6,182,212,0.14);  border-color:var(--cyan); }
     .kpi:hover.yellow { box-shadow:0 12px 32px rgba(245,158,11,0.14); border-color:var(--yellow); }
@@ -294,6 +297,12 @@
     .donut-legend { display:flex; flex-wrap:wrap; gap:8px 16px; }
     .dl-item { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text2); }
     .dl-dot  { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+    /* ─── EXP TOTAL ROW ─── */
+    .exp-total-row { display:flex; flex-direction:column; align-items:center; padding:10px 0 4px; gap:3px; }
+    .exp-total-num { font-size:36px; font-weight:900; letter-spacing:-0.04em; background:linear-gradient(135deg,#3b82f6,#10b981); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1; }
+    .exp-total-lbl { font-size:11px; color:var(--muted); font-weight:500; }
+    .chart-h180    { height:180px; }
 
     /* ─── RANKING ─── */
     .rank-list { display:flex; flex-direction:column; gap:6px; }
@@ -486,24 +495,46 @@
       <div class="loading"><span></span><span></span><span></span></div>
     </div>
 
-    <!-- ══ META GAUGE + STATUS + CANDIDATOS ══ -->
-    <div class="section-label">Metas e Distribuição</div>
-    <div class="g3">
+    <!-- ══ EXPECTATIVAS SEPARADAS ══ -->
+    <div class="section-label">Expectativas</div>
+    <div class="g2">
 
+      <!-- Expectativa das Lideranças -->
       <div class="card">
         <div class="card-hdr">
-          <div class="card-title">🎯 Meta de Votos</div>
-          <span class="badge" id="meta-badge">—%</span>
+          <div class="card-title">🗳️ Expectativa das Lideranças</div>
+          <span class="badge" id="badge-lid-total">—</span>
         </div>
-        <div class="gauge-wrap">
-          <canvas id="chart-meta"></canvas>
-          <div class="gauge-center">
-            <div class="gauge-pct" id="gauge-num">—</div>
-            <div class="gauge-lbl">atingido</div>
-          </div>
+        <div class="exp-total-row">
+          <div class="exp-total-num" id="lid-total-num">0</div>
+          <div class="exp-total-lbl">votos esperados pelos líderes</div>
         </div>
-        <div class="donut-legend" id="meta-legend"></div>
+        <div class="chart-h180" style="display:flex;align-items:center;justify-content:center;">
+          <canvas id="chart-lid-cand"></canvas>
+        </div>
+        <div class="donut-legend" id="lid-cand-legend"></div>
       </div>
+
+      <!-- Expectativa das Cidades/Bairros -->
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">🏙️ Expectativa Cidades/Bairros</div>
+          <span class="badge" id="badge-cid-total">—</span>
+        </div>
+        <div class="exp-total-row">
+          <div class="exp-total-num" id="cid-total-num">0</div>
+          <div class="exp-total-lbl">votos esperados por cidade/bairro</div>
+        </div>
+        <div class="chart-h180" style="display:flex;align-items:center;justify-content:center;">
+          <canvas id="chart-cid-cand"></canvas>
+        </div>
+        <div class="donut-legend" id="cid-cand-legend"></div>
+      </div>
+
+    </div>
+
+    <!-- ══ STATUS + CANDIDATOS ══ -->
+    <div class="g2">
 
       <div class="card">
         <div class="card-hdr">
@@ -517,7 +548,7 @@
 
       <div class="card">
         <div class="card-hdr">
-          <div class="card-title">🗳️ Votos por Candidato</div>
+          <div class="card-title">🗳️ Distribuição por Vínculo Político</div>
         </div>
         <div class="chart-h200" style="display:flex;align-items:center;justify-content:center;">
           <canvas id="chart-cand"></canvas>
@@ -572,9 +603,11 @@
 
       <div class="card">
         <div class="card-hdr">
-          <div class="card-title">🗺️ Votos Válidos por Região</div>
+          <div class="card-title">🗳️ Eleitorado por Região</div>
+          <span class="badge">votos válidos reais</span>
         </div>
         <div class="chart-h240"><canvas id="chart-votos-reg"></canvas></div>
+        <div id="votos-validos-total" style="font-size:11px;color:var(--muted);text-align:right;margin-top:-8px;"></div>
       </div>
     </div>
 
@@ -750,15 +783,16 @@ async function checkSession() {
    RENDER: KPIs
 ══════════════════════════════════════════ */
 function renderKpis(d) {
-  const pct = d.metaTotal > 0 ? Math.round((d.votosTotal / d.metaTotal) * 100) : 0;
+  const lidPctCelia    = d.liderancasTotal > 0 ? Math.round((d.liderancasCelia    / d.liderancasTotal) * 100) : 0;
+  const lidPctFernando = d.liderancasTotal > 0 ? Math.round((d.liderancasFernando / d.liderancasTotal) * 100) : 0;
 
   const cards = [
-    { cls:'blue',   icon:'👥', label:'Total Lideranças', val:d.totalLiderancas,  sub:`${d.ativas} ativas · ${d.inativas||0} inativas`, bar:d.totalLiderancas>0?Math.round((d.ativas/d.totalLiderancas)*100):0, barLbl:'% ativas' },
-    { cls:'green',  icon:'🗳️', label:'Votos Mapeados',   val:d.votosTotal,       sub:`meta: ${fmt(d.metaTotal)}`, bar:pct, barLbl:`${pct}% da meta` },
-    { cls:'purple', icon:'💙', label:'Célia Jordão',      val:d.votosCelia,       sub:`meta: ${fmt(d.metaCelia)}`, bar:d.metaCelia>0?Math.round((d.votosCelia/d.metaCelia)*100):0, barLbl:'% da meta' },
-    { cls:'cyan',   icon:'🤝', label:'Fernando Jordão',   val:d.votosFernando,    sub:`meta: ${fmt(d.metaFernando)}`, bar:d.metaFernando>0?Math.round((d.votosFernando/d.metaFernando)*100):0, barLbl:'% da meta' },
-    { cls:'yellow', icon:'🗺️', label:'Regiões Cobertas',  val:d.regioesAtivas,    sub:'de 8 regiões RJ', bar:Math.round((d.regioesAtivas/8)*100), barLbl:'% do estado' },
-    { cls:'orange', icon:'👤', label:'Líderes Ativos',    val:d.ativas,           sub:'status = ativo', bar:null },
+    { cls:'blue',   icon:'👥', label:'Total Lideranças',        val:d.totalLiderancas,      sub:`${d.ativas} ativas · ${d.inativas||0} inativas`, bar:d.totalLiderancas>0?Math.round((d.ativas/d.totalLiderancas)*100):0, barLbl:'% ativas' },
+    { cls:'green',  icon:'🗳️', label:'Exp. Lideranças',         val:d.liderancasTotal,      sub:`💙 ${fmt(d.liderancasCelia)} · 🤝 ${fmt(d.liderancasFernando)}`, bar:lidPctCelia, barLbl:`${lidPctCelia}% Célia` },
+    { cls:'teal',   icon:'🏙️', label:'Exp. Cidades/Bairros',    val:d.cidadesTotal,         sub:`💙 ${fmt(d.cidadesCelia)} · 🤝 ${fmt(d.cidadesFernando)}`, bar:d.cidadesTotal>0?Math.round((d.cidadesCelia/d.cidadesTotal)*100):0, barLbl:`${d.cidadesTotal>0?Math.round((d.cidadesCelia/d.cidadesTotal)*100):0}% Célia` },
+    { cls:'purple', icon:'💙', label:'Célia Jordão',             val:d.liderancasCelia,      sub:`Lideranças · Cidades: ${fmt(d.cidadesCelia)}`, bar:null },
+    { cls:'cyan',   icon:'🤝', label:'Fernando Jordão',          val:d.liderancasFernando,   sub:`Lideranças · Cidades: ${fmt(d.cidadesFernando)}`, bar:null },
+    { cls:'yellow', icon:'🗺️', label:'Regiões Cobertas',         val:d.regioesAtivas,        sub:'de 8 regiões RJ', bar:Math.round((d.regioesAtivas/8)*100), barLbl:'% do estado' },
   ];
 
   document.getElementById('kpi-grid').innerHTML = cards.map((c,i) => `
@@ -789,47 +823,51 @@ function renderKpis(d) {
 }
 
 /* ══════════════════════════════════════════
-   RENDER: META GAUGE
+   RENDER: EXPECTATIVAS (LIDERANÇAS + CIDADES)
 ══════════════════════════════════════════ */
-function renderMeta(d) {
-  const pct  = d.metaTotal > 0 ? Math.min(Math.round((d.votosTotal/d.metaTotal)*100), 100) : 0;
-  const rest = 100 - pct;
-  const cor  = pct >= 80 ? '#10b981' : pct >= 50 ? '#3b82f6' : '#f59e0b';
+function renderExpectativas(d) {
+  const COR_CELIA    = '#8b5cf6';
+  const COR_FERNANDO = '#06b6d4';
+  const COR_EMPTY    = 'rgba(30,48,80,0.45)';
 
-  document.getElementById('meta-badge').textContent = pct + '%';
-  animCount(document.getElementById('gauge-num'), pct, 1200);
-  document.getElementById('gauge-num').textContent = '0%';
-  // override to show %
-  const el = document.getElementById('gauge-num');
-  const start = performance.now();
-  (function step(now) {
-    const p = Math.min((now-start)/1200, 1);
-    el.textContent = Math.round(pct * (1-Math.pow(1-p,3))) + '%';
-    if (p < 1) requestAnimationFrame(step);
-  })(start);
+  function donutExpectativa(canvasId, legendId, badgeId, numId, valCelia, valFernando, label) {
+    const total = valCelia + valFernando;
+    const el = document.getElementById(badgeId);
+    if (el) el.textContent = fmt(total);
+    const numEl = document.getElementById(numId);
+    if (numEl) animCount(numEl, total, 1200);
 
-  kill('meta');
-  charts['meta'] = new Chart(document.getElementById('chart-meta').getContext('2d'), {
-    type:'doughnut',
-    data:{
-      datasets:[{
-        data:[pct, rest],
-        backgroundColor:[cor, 'rgba(30,48,80,0.5)'],
-        borderWidth:0,
-        circumference:180,
-        rotation:270
-      }]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false, cutout:'72%',
-      plugins:{ legend:{display:false}, tooltip:{enabled:false} },
-      animation:{ animateRotate:true, duration:1300 }
-    }
-  });
+    const data   = total > 0 ? [valCelia, valFernando] : [1, 1];
+    const colors = total > 0 ? [COR_CELIA+'cc', COR_FERNANDO+'cc'] : [COR_EMPTY, COR_EMPTY];
+    const borders= total > 0 ? [COR_CELIA, COR_FERNANDO] : [COR_EMPTY, COR_EMPTY];
+    const labels = ['Célia Jordão', 'Fernando Jordão'];
 
-  document.getElementById('meta-legend').innerHTML = `
-    <div class="dl-item"><div class="dl-dot" style="background:${cor}"></div>${fmt(d.votosTotal)} mapeados</div>
-    <div class="dl-item"><div class="dl-dot" style="background:rgba(30,48,80,0.9);border:1px solid #1e3050"></div>${fmt(Math.max(d.metaTotal-d.votosTotal,0))} restantes</div>`;
+    kill(canvasId);
+    charts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
+      type:'doughnut',
+      data:{ labels, datasets:[{ data, backgroundColor:colors, borderColor:borders, borderWidth:2, hoverOffset:8 }] },
+      options:{
+        responsive:true, maintainAspectRatio:false, cutout:'65%',
+        plugins:{
+          legend:{ display:false },
+          tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${fmt(ctx.parsed)}` } }
+        },
+        animation:{ animateRotate:true, duration:1100 }
+      }
+    });
+
+    const leg = document.getElementById(legendId);
+    if (leg) leg.innerHTML = [
+      `<div class="dl-item"><div class="dl-dot" style="background:${COR_CELIA}"></div>Célia: <strong style="color:var(--text);margin-left:3px">${fmt(valCelia)}</strong></div>`,
+      `<div class="dl-item"><div class="dl-dot" style="background:${COR_FERNANDO}"></div>Fernando: <strong style="color:var(--text);margin-left:3px">${fmt(valFernando)}</strong></div>`,
+    ].join('');
+  }
+
+  donutExpectativa('chart-lid-cand', 'lid-cand-legend', 'badge-lid-total', 'lid-total-num',
+    d.liderancasCelia, d.liderancasFernando, 'Lideranças');
+
+  donutExpectativa('chart-cid-cand', 'cid-cand-legend', 'badge-cid-total', 'cid-total-num',
+    d.cidadesCelia, d.cidadesFernando, 'Cidades');
 }
 
 /* ══════════════════════════════════════════
@@ -985,10 +1023,12 @@ function renderExpRegioes(regioes) {
 ══════════════════════════════════════════ */
 function renderRadar(regioes) {
   if (!regioes.length) return;
+
+  // Ordena pelo label do config para alinhar com votosValidos
   const labels = regioes.map(r=>r.regiao);
-  const vals   = regioes.map(r=>r.votos_mapeados);
-  const metas  = regioes.map(r=>r.meta_total);
-  const maxV   = Math.max(...vals,...metas,1);
+  const mapeado = regioes.map(r=>r.votos_mapeados);
+  const meta    = regioes.map(r=>r.meta_total);
+  const maxV    = Math.max(...mapeado,...meta,1);
 
   kill('radar');
   charts['radar'] = new Chart(document.getElementById('chart-radar').getContext('2d'), {
@@ -996,13 +1036,30 @@ function renderRadar(regioes) {
     data:{
       labels,
       datasets:[
-        { label:'Mapeado', data:vals, backgroundColor:'rgba(16,185,129,0.15)', borderColor:'#10b981', borderWidth:2, pointBackgroundColor:'#10b981', pointBorderColor:'#fff', pointBorderWidth:1.5, pointRadius:4 },
-        { label:'Meta',    data:metas, backgroundColor:'rgba(59,130,246,0.08)', borderColor:'#3b82f6aa', borderWidth:1.5, borderDash:[5,4], pointBackgroundColor:'#3b82f6', pointBorderColor:'#fff', pointBorderWidth:1, pointRadius:3 }
+        {
+          label:'Mapeado',
+          data:mapeado,
+          backgroundColor:'rgba(16,185,129,0.14)',
+          borderColor:'#10b981', borderWidth:2,
+          pointBackgroundColor:'#10b981', pointBorderColor:'#fff',
+          pointBorderWidth:1.5, pointRadius:4
+        },
+        {
+          label:'Meta',
+          data:meta,
+          backgroundColor:'rgba(59,130,246,0.07)',
+          borderColor:'#3b82f6bb', borderWidth:1.5, borderDash:[5,4],
+          pointBackgroundColor:'#3b82f6', pointBorderColor:'#fff',
+          pointBorderWidth:1, pointRadius:3
+        }
       ]
     },
     options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ display:true, labels:{ color:'#a8b8d0', boxWidth:10, boxHeight:10, padding:12, font:{size:11} } } },
+      plugins:{
+        legend:{ display:true, labels:{ color:'#a8b8d0', boxWidth:10, boxHeight:10, padding:12, font:{size:11} } },
+        tooltip:{ callbacks:{ label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.r)}` } }
+      },
       scales:{
         r:{
           grid:{ color:'rgba(30,48,80,0.7)' },
@@ -1018,30 +1075,68 @@ function renderRadar(regioes) {
 }
 
 /* ══════════════════════════════════════════
-   RENDER: VOTOS VÁLIDOS POR REGIÃO (horizontal)
+   VOTOS VÁLIDOS REAIS: calcula eleitorado por região
+   usando data.js (votosValidos) + mapeamento do config
 ══════════════════════════════════════════ */
-function renderVotosReg(regioes) {
-  if (!regioes.length) return;
+// Mapeamento local (espelho do config.js) — independente de auth
+const REGIAO_CIDADES = {
+  'Metropolitana':      ['Rio de Janeiro','Niterói','São Gonçalo','Itaboraí','Maricá','Tanguá','Rio Bonito','Cachoeiras de Macacu','Guapimirim','Magé','Duque de Caxias','Nova Iguaçu','Belford Roxo','São João de Meriti','Nilópolis','Mesquita','Queimados','Japeri','Seropédica','Itaguaí'],
+  'Baixadas Litorâneas':['Araruama','Arraial do Cabo','Cabo Frio','Iguaba Grande','São Pedro da Aldeia','Saquarema','Silva Jardim','Casimiro de Abreu','Rio das Ostras'],
+  'Norte Fluminense':   ['Campos dos Goytacazes','São João da Barra','São Francisco de Itabapoana','Macaé','Carapebus','Quissamã','Conceição de Macabu'],
+  'Noroeste Fluminense':['Itaperuna','Bom Jesus do Itabapoana','Natividade','Porciúncula','Varre-Sai','Miracema','Cambuci','Italva','Cardoso Moreira','Laje do Muriaé','Aperibé','Santo Antônio de Pádua','São José de Ubá','Itaocara'],
+  'Serrana':            ['Petrópolis','Teresópolis','Nova Friburgo','Bom Jardim','Sumidouro','Cantagalo','Cordeiro','Santa Maria Madalena','Trajano de Moraes','São Sebastião do Alto','Macuco'],
+  'Centro-Sul Fluminense':['Paraíba do Sul','Três Rios','Sapucaia','Comendador Levy Gasparian','Areal','Paty do Alferes','Miguel Pereira','Vassouras','Engenheiro Paulo de Frontin','Mendes','Rio Claro','Piraí'],
+  'Médio Paraíba':      ['Barra Mansa','Volta Redonda','Resende','Quatis','Porto Real','Pinheiral','Valença','Rio das Flores','Barra do Piraí'],
+  'Costa Verde':        ['Angra dos Reis','Paraty','Mangaratiba'],
+};
+
+function calcVotosValidosPorRegiao() {
+  // votosValidos vem do data.js carregado globalmente
+  if (typeof votosValidos === 'undefined') return [];
+  return Object.entries(REGIAO_CIDADES).map(([regiao, cidades]) => {
+    const total = cidades.reduce((sum, c) => sum + (votosValidos[c] || 0), 0);
+    return { regiao, total, cidades: cidades.length };
+  }).sort((a, b) => b.total - a.total);
+}
+
+function renderVotosReg(expRegioes) {
+  const dados = calcVotosValidosPorRegiao();
+  if (!dados.length) return;
+
+  const total = dados.reduce((s,d)=>s+d.total,0);
+  const el = document.getElementById('votos-validos-total');
+  if (el) el.textContent = `Total RJ: ${fmt(total)} eleitores`;
+
   kill('votos-reg');
   charts['votos-reg'] = new Chart(document.getElementById('chart-votos-reg').getContext('2d'), {
     type:'bar',
     data:{
-      labels: regioes.map(r=>r.regiao),
+      labels: dados.map(d=>d.regiao),
       datasets:[{
-        label:'Votos Mapeados',
-        data: regioes.map(r=>r.votos_mapeados),
-        backgroundColor: PAL.slice(0,regioes.length).map(c=>c+'aa'),
-        borderColor:     PAL.slice(0,regioes.length),
+        label:'Eleitorado Real',
+        data: dados.map(d=>d.total),
+        backgroundColor: PAL.slice(0,dados.length).map(c=>c+'99'),
+        borderColor:     PAL.slice(0,dados.length),
         borderWidth:1.5, borderRadius:6, borderSkipped:false
       }]
     },
     options:{
       indexAxis:'y',
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx=>` ${fmt(ctx.parsed.x)} votos` } } },
+      plugins:{
+        legend:{display:false},
+        tooltip:{ callbacks:{
+          label: ctx => ` ${fmt(ctx.parsed.x)} eleitores`,
+          afterLabel: ctx => {
+            const d = dados[ctx.dataIndex];
+            const pct = Math.round((d.total/total)*100);
+            return ` ${pct}% do estado · ${d.cidades} cidades`;
+          }
+        }}
+      },
       scales:{
         ...darkGrid(
-          { ticks:{ callback:v=>fmt(v), color:'#4d6480', font:{size:10} } },
+          { ticks:{ callback:v=>{ const k=v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'k':v; return k; }, color:'#4d6480', font:{size:10} } },
           { ticks:{ color:'#a8b8d0', font:{size:11} } }
         )
       },
@@ -1188,13 +1283,13 @@ async function carregarTudo() {
     ]);
 
     renderKpis(kpis);
-    renderMeta(kpis);
+    renderExpectativas(kpis);
     renderStatus(kpis);
     renderCandidatos(kpis);
 
     renderExpRegioes(expRegioes);
     renderRadar(expRegioes);
-    renderVotosReg(expRegioes);
+    renderVotosReg(expRegioes); // usa data.js internamente para eleitorado real
 
     renderRanking(ranking);
     renderAniversariantes(aniversariantes);

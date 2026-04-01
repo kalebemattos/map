@@ -31,6 +31,9 @@ function allow(...niveis) {
 // Shortcut: permite todos os níveis conhecidos
 function allowAll() { return allow(...NIVEIS_TODOS); }
 
+// Helper: níveis com acesso irrestrito a dados (sem filtro de região)
+function isPrivileged(nivel) { return nivel === 'dono' || nivel === 'admin'; }
+
 const app = express();
 app.use(
   helmet({
@@ -383,7 +386,7 @@ app.get('/api/expectativa-cidade', auth,
   let query;
   let params;
 
-  if (req.user.nivel === 'dono') {
+  if (isPrivileged(req.user.nivel)) {
     query = 'SELECT expectativa_celia, expectativa_fernando FROM expectativa_cidade WHERE cidade = $1';
     params = [cidade];
   } else {
@@ -436,7 +439,7 @@ if (valorNumerico <= 0) {
 
     // 🔒 2️⃣ Validação de multi-tenant
     if (
-      req.user.nivel !== 'dono' &&
+      !isPrivileged(req.user.nivel) &&
       lideranca.regiao !== req.user.regiao
     ) {
       return res.status(403).json({ error: 'Acesso negado' });
@@ -469,7 +472,7 @@ app.get('/api/gastos/:lideranca_id', auth, async (req, res) => {
     let query;
     let params;
 
-    if (req.user.nivel === 'dono') {
+    if (isPrivileged(req.user.nivel)) {
       query = `
         SELECT g.*
         FROM gastos_lideranca g
@@ -506,7 +509,7 @@ app.get('/api/gastos-total/:lideranca_id', auth, async (req, res) => {
     let query;
     let params;
 
-    if (req.user.nivel === 'dono') {
+    if (isPrivileged(req.user.nivel)) {
       query = `
         SELECT SUM(g.valor) as total
         FROM gastos_lideranca g
@@ -662,7 +665,7 @@ app.delete('/api/liderancas/:id',
 
     let result;
 
-    if (req.user.nivel === 'dono') {
+    if (isPrivileged(req.user.nivel)) {
       result = await pool.query(
         'DELETE FROM liderancas WHERE id = $1',
         [id]
@@ -750,7 +753,7 @@ if (!atual) {
 }
 
 if (
-  req.user.nivel !== 'dono' &&
+  !isPrivileged(req.user.nivel) &&
   atual.regiao !== req.user.regiao
 ) {
   return res.status(403).json({ error: 'Acesso negado' });
@@ -806,7 +809,7 @@ cidade=$9,
 vinculo_politico=$10,
 regiao=COALESCE($12, regiao),
 data_nascimento=$13
-WHERE id=$11 AND (LOWER(regiao)=LOWER($12) OR $14='dono')
+WHERE id=$11 AND (LOWER(regiao)=LOWER($12) OR $14 = ANY(ARRAY['dono','admin']))
   `,
   [
   nome,
@@ -917,7 +920,7 @@ app.delete('/api/observacoes/:id',
     const { id } = req.params;
     let result;
 
-if (req.user.nivel === 'dono') {
+if (isPrivileged(req.user.nivel)) {
   result = await pool.query(
     'DELETE FROM observacoes WHERE id = $1',
     [id]
@@ -949,7 +952,7 @@ app.get('/api/data', auth, async (req, res) => {
     let observacoesQuery;
     let params = [];
 
-    if (req.user.nivel === 'dono') {
+    if (isPrivileged(req.user.nivel)) {
       liderancasQuery = 'SELECT * FROM liderancas';
       observacoesQuery = 'SELECT * FROM observacoes';
     } else {
@@ -1135,7 +1138,7 @@ app.delete('/api/pins/:id',
 
 let result;
 
-if (req.user.nivel === 'dono') {
+if (isPrivileged(req.user.nivel)) {
   result = await pool.query(
     'DELETE FROM pins WHERE id = $1',
     [id]
@@ -1167,7 +1170,7 @@ app.put('/api/pins/:id',
 
     let result;
 
-    if (req.user.nivel === 'dono') {
+    if (isPrivileged(req.user.nivel)) {
       result = await pool.query(
         `
         UPDATE pins
@@ -1215,9 +1218,12 @@ app.post('/api/usuarios',
   try {
     const { usuario, senha, nome, nivel, regiao_vinculada } = req.body;
     // 🔎 Validação básica
-if (!usuario || !senha || !nivel || !regiao_vinculada) {
+const precisaRegiao = nivel !== 'admin' && nivel !== 'dono';
+if (!usuario || !senha || !nivel || (precisaRegiao && !regiao_vinculada)) {
   return res.status(400).json({
-    error: 'Usuario, senha, nivel e regiao_vinculada são obrigatórios'
+    error: precisaRegiao
+      ? 'Usuario, senha, nivel e regiao_vinculada são obrigatórios'
+      : 'Usuario, senha e nivel são obrigatórios'
   });
 }
 const niveisPermitidos = NIVEIS_TODOS;
@@ -1347,8 +1353,8 @@ app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
 
     let row;
 
-    if (req.user.nivel === 'dono') {
-      // Dono pode consultar qualquer região
+    if (isPrivileged(req.user.nivel)) {
+      // Dono/admin pode consultar qualquer região
       row = await dbGet(
         `SELECT id, nome, usuario, regiao_vinculada
          FROM usuarios
@@ -1388,7 +1394,7 @@ app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
 
 // Helper: busca líderes com aniversário nos próximos N dias para uma região
 async function buscarAniversariantes(regiao, nivel, dias = 7) {
-  const isDono = nivel === 'dono';
+  const isDono = isPrivileged(nivel);
   const { rows } = await pool.query(
     `SELECT
        nome,
@@ -1512,7 +1518,7 @@ app.post("/api/salas-video",
 // Listar salas da mesma região (dono vê todas)
 app.get("/api/salas-video", auth, async (req, res) => {
   try {
-    const isDono = req.user.nivel === "dono";
+    const isDono = isPrivileged(req.user.nivel);
     const { rows } = await pool.query(
       isDono
         ? "SELECT s.*, u.nome as host_nome FROM salas_video s JOIN usuarios u ON s.host_id = u.id WHERE s.ativa = true ORDER BY s.criada_em DESC"
@@ -1533,10 +1539,10 @@ app.delete("/api/salas-video/:id",
     try {
       const { id } = req.params;
       const result = await pool.query(
-        req.user.nivel === "dono"
+        isPrivileged(req.user.nivel)
           ? "UPDATE salas_video SET ativa = false WHERE id = $1 RETURNING *"
           : "UPDATE salas_video SET ativa = false WHERE id = $1 AND (host_id = $2 OR regiao = $3) RETURNING *",
-        req.user.nivel === "dono" ? [id] : [id, req.user.id, req.user.regiao]
+        isPrivileged(req.user.nivel) ? [id] : [id, req.user.id, req.user.regiao]
       );
       if (!result.rows.length) return res.status(403).json({ error: "Sem permissão" });
       res.json({ ok: true });
@@ -1680,17 +1686,19 @@ app.get('/api/dashboard/kpis', auth, allow('dono', 'admin'), async (req, res) =>
       totalLiderancas: parseInt(totalLiderancas.total),
       ativas: parseInt(ativasCount.total),
       inativas: parseInt(inativasCount.total),
-      votosTotal: parseInt(votosTotal.total),
-      votosCelia: parseInt(votosCelia.total),
-      votosFernando: parseInt(votosFernando.total),
       regioesAtivas: parseInt(regioesAtivas.total),
       gastosTotal: parseFloat(gastosTotal.total),
       gastosUlt30: parseFloat(gastosUlt30.total),
-      metaCelia: parseInt(metaCelia.total),
-      metaFernando: parseInt(metaFernando.total),
-      metaTotal: parseInt(metaCelia.total) + parseInt(metaFernando.total),
       statusBreakdown,
-      votosPorVinculo
+      votosPorVinculo,
+      // ── Expectativa das Lideranças (soma de liderancas.expectativa_votos) ──
+      liderancasTotal:    parseInt(votosTotal.total),
+      liderancasCelia:    parseInt(votosCelia.total),
+      liderancasFernando: parseInt(votosFernando.total),
+      // ── Expectativa das Cidades/Bairros (soma de expectativa_cidade) ──
+      cidadesTotal:    parseInt(metaCelia.total) + parseInt(metaFernando.total),
+      cidadesCelia:    parseInt(metaCelia.total),
+      cidadesFernando: parseInt(metaFernando.total),
     });
   } catch (err) {
     console.error('Erro dashboard/kpis:', err);
