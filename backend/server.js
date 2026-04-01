@@ -1430,6 +1430,59 @@ app.get('/api/aniversariantes', auth, async (req, res) => {
   }
 });
 
+// Expectativa vs Mapeado por região
+app.get('/api/dashboard/expectativa-regioes', auth, allow('dono', 'admin'), async (req, res) => {
+  try {
+    const metas = await dbAll(`
+      SELECT regiao,
+        COALESCE(SUM(expectativa_celia), 0)    AS meta_celia,
+        COALESCE(SUM(expectativa_fernando), 0) AS meta_fernando,
+        COALESCE(SUM(expectativa_celia + expectativa_fernando), 0) AS meta_total
+      FROM expectativa_cidade
+      WHERE regiao IS NOT NULL AND regiao <> ''
+      GROUP BY regiao
+    `);
+    const mapeados = await dbAll(`
+      SELECT regiao,
+        COALESCE(SUM(expectativa_votos), 0) AS votos_mapeados,
+        COUNT(*) AS total_lideres,
+        COUNT(*) FILTER (WHERE status = 'ativo') AS lideres_ativos
+      FROM liderancas
+      WHERE regiao IS NOT NULL AND regiao <> ''
+      GROUP BY regiao
+    `);
+    const mapaMap = {};
+    mapeados.forEach(m => { mapaMap[m.regiao] = m; });
+    const resultado = metas.map(r => ({
+      regiao: r.regiao,
+      meta_total: parseInt(r.meta_total),
+      meta_celia: parseInt(r.meta_celia),
+      meta_fernando: parseInt(r.meta_fernando),
+      votos_mapeados: parseInt(mapaMap[r.regiao]?.votos_mapeados || 0),
+      total_lideres: parseInt(mapaMap[r.regiao]?.total_lideres || 0),
+      lideres_ativos: parseInt(mapaMap[r.regiao]?.lideres_ativos || 0),
+      pct_atingido: parseInt(r.meta_total) > 0
+        ? Math.round((parseInt(mapaMap[r.regiao]?.votos_mapeados || 0) / parseInt(r.meta_total)) * 100)
+        : 0
+    })).sort((a, b) => b.meta_total - a.meta_total);
+    mapeados.forEach(m => {
+      if (!metas.find(r => r.regiao === m.regiao)) {
+        resultado.push({
+          regiao: m.regiao, meta_total: 0, meta_celia: 0, meta_fernando: 0,
+          votos_mapeados: parseInt(m.votos_mapeados),
+          total_lideres: parseInt(m.total_lideres),
+          lideres_ativos: parseInt(m.lideres_ativos),
+          pct_atingido: 0
+        });
+      }
+    });
+    res.json(resultado);
+  } catch (err) {
+    console.error('Erro dashboard/expectativa-regioes:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
 /* ================= KEEP ALIVE (RENDER) ================= */
 
 

@@ -20,25 +20,16 @@
       --text2:     #a8b8d0;
       --muted:     #4d6480;
       --accent:    #3b82f6;
-      --accent2:   #6366f1;
       --green:     #10b981;
-      --green2:    #059669;
       --red:       #ef4444;
       --yellow:    #f59e0b;
       --purple:    #a855f7;
       --cyan:      #06b6d4;
-      --pink:      #ec4899;
       --orange:    #f97316;
-      --grad-blue: linear-gradient(135deg, #3b82f6, #6366f1);
-      --grad-green: linear-gradient(135deg, #10b981, #059669);
-      --grad-purple: linear-gradient(135deg, #a855f7, #6366f1);
-      --grad-cyan: linear-gradient(135deg, #06b6d4, #3b82f6);
-      --grad-orange: linear-gradient(135deg, #f97316, #f59e0b);
-      --grad-red: linear-gradient(135deg, #ef4444, #dc2626);
+      --pink:      #ec4899;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     html { scroll-behavior: smooth; }
 
     body {
@@ -47,485 +38,412 @@
       color: var(--text);
       min-height: 100vh;
       overflow-x: hidden;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+      background-size: 48px 48px;
     }
 
-    /* ===== NOISE TEXTURE ===== */
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-      pointer-events: none; z-index: 0;
-    }
-
-    /* ===== LOGIN ===== */
+    /* ─── LOGIN ─── */
     #login-overlay {
       position: fixed; inset: 0;
-      background: radial-gradient(ellipse at 50% 40%, rgba(59,130,246,0.12) 0%, rgba(7,12,24,0.98) 70%);
+      background: radial-gradient(ellipse at 50% 40%, rgba(59,130,246,0.1) 0%, rgba(7,12,24,0.98) 70%);
       display: flex; align-items: center; justify-content: center;
-      z-index: 9999; backdrop-filter: blur(4px);
+      z-index: 9999; backdrop-filter: blur(6px);
     }
     #login-overlay.hidden { display: none; }
     .login-box {
-      background: rgba(16,24,40,0.95);
-      border: 1px solid var(--border2);
-      border-radius: 20px;
-      padding: 44px 40px;
-      width: 380px;
-      display: flex; flex-direction: column; gap: 18px;
-      box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
-      animation: loginPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+      background: rgba(16,24,40,0.96); border: 1px solid var(--border2);
+      border-radius: 22px; padding: 44px 40px; width: 380px;
+      display: flex; flex-direction: column; gap: 16px;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+      animation: loginPop 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
     }
     @keyframes loginPop {
-      from { opacity: 0; transform: scale(0.92) translateY(12px); }
+      from { opacity: 0; transform: scale(0.9) translateY(16px); }
       to   { opacity: 1; transform: scale(1) translateY(0); }
     }
     .login-logo {
-      width: 48px; height: 48px;
-      background: var(--grad-blue);
-      border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px;
-      box-shadow: 0 8px 24px rgba(59,130,246,0.4);
-      margin-bottom: 4px;
+      width: 50px; height: 50px;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      border-radius: 14px; display: flex; align-items: center;
+      justify-content: center; font-size: 24px;
+      box-shadow: 0 8px 24px rgba(59,130,246,0.45);
     }
-    .login-box h2 { font-size: 22px; font-weight: 800; color: var(--text); }
-    .login-box p { font-size: 13px; color: var(--text2); margin-top: -10px; }
+    .login-box h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+    .login-box p  { font-size: 13px; color: var(--text2); margin-top: -6px; }
     .login-box input {
-      background: var(--surface2);
-      border: 1px solid var(--border);
+      background: var(--surface2); border: 1px solid var(--border);
       border-radius: 10px; padding: 11px 14px; font-size: 14px;
-      color: var(--text); outline: none;
+      color: var(--text); outline: none; font-family: inherit;
       transition: border 0.2s, box-shadow 0.2s;
-      font-family: inherit;
-    }
-    .login-box input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
     }
     .login-box input::placeholder { color: var(--muted); }
+    .login-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.14); }
     .login-box button {
-      background: var(--grad-blue); color: #fff; border: none;
+      background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; border: none;
       border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 700;
-      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
-      font-family: inherit; letter-spacing: 0.02em;
-      box-shadow: 0 4px 16px rgba(59,130,246,0.3);
+      cursor: pointer; font-family: inherit; letter-spacing: 0.02em;
+      box-shadow: 0 4px 18px rgba(59,130,246,0.35);
+      transition: opacity 0.2s, transform 0.15s;
     }
-    .login-box button:hover { opacity: 0.9; transform: translateY(-1px); }
+    .login-box button:hover  { opacity: 0.9; transform: translateY(-1px); }
     .login-box button:active { transform: translateY(0); }
     #login-error { color: var(--red); font-size: 13px; display: none; }
 
-    /* ===== APP ===== */
-    #app { display: none; flex-direction: column; min-height: 100vh; position: relative; z-index: 1; }
+    /* ─── APP ─── */
+    #app { display: none; flex-direction: column; min-height: 100vh; }
     #app.visible { display: flex; }
 
-    /* ===== HEADER ===== */
+    /* ─── HEADER ─── */
     header {
-      background: rgba(16,24,40,0.85);
-      border-bottom: 1px solid var(--border);
-      padding: 0 32px;
-      height: 60px;
+      background: rgba(16,24,40,0.88); border-bottom: 1px solid var(--border);
+      padding: 0 32px; height: 60px;
       display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 100;
-      backdrop-filter: blur(20px);
+      position: sticky; top: 0; z-index: 200; backdrop-filter: blur(20px);
     }
-    .header-left { display: flex; align-items: center; gap: 14px; }
-    .header-logo {
+    .hdr-left { display: flex; align-items: center; gap: 13px; }
+    .hdr-logo {
       width: 36px; height: 36px;
-      background: var(--grad-blue);
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; font-weight: 900; color: #fff;
-      box-shadow: 0 4px 12px rgba(59,130,246,0.35);
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      border-radius: 10px; display: flex; align-items: center;
+      justify-content: center; font-size: 18px;
+      box-shadow: 0 4px 14px rgba(59,130,246,0.35);
     }
-    .header-title { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
-    .header-subtitle { font-size: 11px; color: var(--muted); }
-    .header-right { display: flex; align-items: center; gap: 12px; }
-    #last-update { font-size: 12px; color: var(--muted); }
+    .hdr-title    { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; }
+    .hdr-subtitle { font-size: 11px; color: var(--muted); }
+    .hdr-right { display: flex; align-items: center; gap: 12px; }
     .pulse-dot {
-      width: 7px; height: 7px; border-radius: 50%; background: var(--green);
-      display: inline-block; margin-right: 4px;
-      animation: pulse-live 2s ease-in-out infinite;
+      display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); margin-right: 4px;
+      animation: pulseAlive 2s ease-in-out infinite;
     }
-    @keyframes pulse-live {
-      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
-      50% { opacity: 0.7; box-shadow: 0 0 0 5px rgba(16,185,129,0); }
+    @keyframes pulseAlive {
+      0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+      50%      { opacity:0.7; box-shadow: 0 0 0 5px rgba(16,185,129,0); }
     }
-    .btn-refresh {
+    #last-update { font-size: 12px; color: var(--muted); }
+    .btn-hdr {
       background: var(--surface2); border: 1px solid var(--border2);
       color: var(--text2); border-radius: 8px; padding: 6px 14px;
-      font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit;
+      font-size: 12px; cursor: pointer; font-family: inherit;
+      transition: all 0.2s;
     }
-    .btn-refresh:hover { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.08); }
+    .btn-hdr:hover { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.07); }
     .user-chip {
       background: var(--surface2); border: 1px solid var(--border);
       border-radius: 20px; padding: 5px 13px; font-size: 12px; color: var(--text2);
     }
     .btn-logout {
       background: none; border: none; color: var(--muted);
-      font-size: 12px; cursor: pointer; transition: color 0.2s; font-family: inherit;
+      font-size: 12px; cursor: pointer; font-family: inherit; transition: color 0.2s;
     }
     .btn-logout:hover { color: var(--red); }
 
-    /* ===== MAIN ===== */
+    /* ─── LAYOUT ─── */
     main {
       flex: 1; padding: 28px 32px;
       display: flex; flex-direction: column; gap: 28px;
       max-width: 1700px; width: 100%; margin: 0 auto;
     }
 
-    /* ===== SECTION LABEL ===== */
+    /* ─── SECTION LABEL ─── */
     .section-label {
       font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
       text-transform: uppercase; color: var(--muted);
       display: flex; align-items: center; gap: 10px;
     }
-    .section-label::after {
-      content: ''; flex: 1; height: 1px; background: var(--border);
-    }
+    .section-label::after { content:''; flex:1; height:1px; background: var(--border); }
 
-    /* ===== ANIMATIONS ===== */
+    /* ─── ANIMATIONS ─── */
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from { opacity:0; transform:translateY(18px); }
+      to   { opacity:1; transform:translateY(0); }
     }
-    @keyframes fadeIn {
-      from { opacity: 0; } to { opacity: 1; }
-    }
-    @keyframes shimmer {
-      0%   { background-position: -1000px 0; }
-      100% { background-position: 1000px 0; }
-    }
-    @keyframes countUp {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 
-    .anim-fadeup { animation: fadeUp 0.5s ease both; }
-    .anim-fadeup:nth-child(1) { animation-delay: 0.05s; }
-    .anim-fadeup:nth-child(2) { animation-delay: 0.10s; }
-    .anim-fadeup:nth-child(3) { animation-delay: 0.15s; }
-    .anim-fadeup:nth-child(4) { animation-delay: 0.20s; }
-    .anim-fadeup:nth-child(5) { animation-delay: 0.25s; }
-    .anim-fadeup:nth-child(6) { animation-delay: 0.30s; }
-    .anim-fadeup:nth-child(7) { animation-delay: 0.35s; }
+    .anim { animation: fadeUp 0.5s ease both; }
+    .anim:nth-child(1){animation-delay:.04s}
+    .anim:nth-child(2){animation-delay:.08s}
+    .anim:nth-child(3){animation-delay:.12s}
+    .anim:nth-child(4){animation-delay:.16s}
+    .anim:nth-child(5){animation-delay:.20s}
+    .anim:nth-child(6){animation-delay:.24s}
+    .anim:nth-child(7){animation-delay:.28s}
+    .anim:nth-child(8){animation-delay:.32s}
 
-    /* ===== KPI GRID ===== */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-    }
-    .kpi-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 22px 20px 18px;
-      display: flex; flex-direction: column; gap: 8px;
-      position: relative; overflow: hidden;
-      transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
-      cursor: default;
-    }
-    .kpi-card::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 60%);
-      pointer-events: none;
-    }
-    .kpi-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px rgba(0,0,0,0.4);
-    }
-    .kpi-card.blue  { border-color: rgba(59,130,246,0.25); }
-    .kpi-card.green { border-color: rgba(16,185,129,0.25); }
-    .kpi-card.purple{ border-color: rgba(168,85,247,0.25); }
-    .kpi-card.yellow{ border-color: rgba(245,158,11,0.25); }
-    .kpi-card.cyan  { border-color: rgba(6,182,212,0.25); }
-    .kpi-card.red   { border-color: rgba(239,68,68,0.25); }
-    .kpi-card.orange{ border-color: rgba(249,115,22,0.25); }
+    /* ─── GRIDS ─── */
+    .g2 { display:grid; grid-template-columns:1fr 1fr;     gap:20px; }
+    .g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
+    .g31{ display:grid; grid-template-columns:2fr 1fr;     gap:20px; }
+    .g13{ display:grid; grid-template-columns:1fr 2fr;     gap:20px; }
+    @media(max-width:1200px){ .g2,.g3,.g31,.g13{ grid-template-columns:1fr; } }
 
-    .kpi-card:hover.blue   { border-color: var(--accent);  box-shadow: 0 12px 32px rgba(59,130,246,0.15); }
-    .kpi-card:hover.green  { border-color: var(--green);   box-shadow: 0 12px 32px rgba(16,185,129,0.15); }
-    .kpi-card:hover.purple { border-color: var(--purple);  box-shadow: 0 12px 32px rgba(168,85,247,0.15); }
-    .kpi-card:hover.yellow { border-color: var(--yellow);  box-shadow: 0 12px 32px rgba(245,158,11,0.15); }
-    .kpi-card:hover.cyan   { border-color: var(--cyan);    box-shadow: 0 12px 32px rgba(6,182,212,0.15); }
-    .kpi-card:hover.red    { border-color: var(--red);     box-shadow: 0 12px 32px rgba(239,68,68,0.15); }
-    .kpi-card:hover.orange { border-color: var(--orange);  box-shadow: 0 12px 32px rgba(249,115,22,0.15); }
-
-    .kpi-glow {
-      position: absolute; top: -20px; right: -20px;
-      width: 80px; height: 80px; border-radius: 50%;
-      opacity: 0.12; filter: blur(20px);
-      pointer-events: none;
-    }
-    .blue  .kpi-glow { background: var(--accent); }
-    .green .kpi-glow { background: var(--green); }
-    .purple .kpi-glow { background: var(--purple); }
-    .yellow .kpi-glow { background: var(--yellow); }
-    .cyan  .kpi-glow { background: var(--cyan); }
-    .red   .kpi-glow { background: var(--red); }
-    .orange .kpi-glow { background: var(--orange); }
-
-    .kpi-icon-wrap {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 2px;
-    }
-    .kpi-icon {
-      width: 34px; height: 34px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 17px;
-    }
-    .blue   .kpi-icon { background: rgba(59,130,246,0.15); }
-    .green  .kpi-icon { background: rgba(16,185,129,0.15); }
-    .purple .kpi-icon { background: rgba(168,85,247,0.15); }
-    .yellow .kpi-icon { background: rgba(245,158,11,0.15); }
-    .cyan   .kpi-icon { background: rgba(6,182,212,0.15); }
-    .red    .kpi-icon { background: rgba(239,68,68,0.15); }
-    .orange .kpi-icon { background: rgba(249,115,22,0.15); }
-    .kpi-trend { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
-    .kpi-trend.up   { background: rgba(16,185,129,0.15); color: var(--green); }
-    .kpi-trend.down { background: rgba(239,68,68,0.15); color: var(--red); }
-    .kpi-trend.neu  { background: rgba(100,116,139,0.15); color: var(--muted); }
-
-    .kpi-label { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
-    .kpi-value {
-      font-size: 30px; font-weight: 900; line-height: 1;
-      letter-spacing: -0.03em;
-      animation: countUp 0.4s ease both;
-    }
-    .blue   .kpi-value { color: var(--accent); }
-    .green  .kpi-value { color: var(--green); }
-    .purple .kpi-value { color: var(--purple); }
-    .yellow .kpi-value { color: var(--yellow); }
-    .cyan   .kpi-value { color: var(--cyan); }
-    .red    .kpi-value { color: var(--red); }
-    .orange .kpi-value { color: var(--orange); }
-    .kpi-sub { font-size: 12px; color: var(--text2); }
-
-    /* ===== PROGRESS BAR KPI ===== */
-    .kpi-progress-wrap { margin-top: 4px; }
-    .kpi-progress-bar {
-      height: 4px; border-radius: 2px;
-      background: var(--surface3);
-      overflow: hidden;
-    }
-    .kpi-progress-fill {
-      height: 100%; border-radius: 2px;
-      transition: width 1s cubic-bezier(0.4,0,0.2,1);
-    }
-    .blue   .kpi-progress-fill { background: var(--grad-blue); }
-    .green  .kpi-progress-fill { background: var(--grad-green); }
-    .purple .kpi-progress-fill { background: var(--grad-purple); }
-    .yellow .kpi-progress-fill { background: var(--grad-orange); }
-    .cyan   .kpi-progress-fill { background: var(--grad-cyan); }
-    .kpi-progress-label { font-size: 10px; color: var(--muted); margin-top: 4px; }
-
-    /* ===== GRID LAYOUTS ===== */
-    .two-col   { display: grid; grid-template-columns: 1fr 1fr;       gap: 20px; }
-    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr;   gap: 20px; }
-    .col-3-1   { display: grid; grid-template-columns: 2fr 1fr;       gap: 20px; }
-    .col-1-3   { display: grid; grid-template-columns: 1fr 2fr;       gap: 20px; }
-
-    @media (max-width: 1200px) {
-      .two-col, .three-col, .col-3-1, .col-1-3 { grid-template-columns: 1fr; }
-    }
-
-    /* ===== CARD ===== */
+    /* ─── CARD ─── */
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 22px;
-      display: flex; flex-direction: column; gap: 18px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 22px;
+      display: flex; flex-direction: column; gap: 16px;
       animation: fadeUp 0.5s ease both;
     }
-    .card-header {
-      display: flex; align-items: center; justify-content: space-between;
-    }
+    .card-hdr { display:flex; align-items:center; justify-content:space-between; }
     .card-title {
       font-size: 14px; font-weight: 700; color: var(--text);
       display: flex; align-items: center; gap: 8px; letter-spacing: -0.01em;
     }
-    .card-badge {
+    .badge {
       font-size: 11px; background: var(--surface2); border: 1px solid var(--border);
       color: var(--muted); padding: 3px 9px; border-radius: 20px; font-weight: 500;
     }
-    .card-badge.live {
-      background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3);
-      color: var(--green);
-    }
+    .badge.live { background:rgba(16,185,129,0.1); border-color:rgba(16,185,129,0.3); color:var(--green); }
+    .badge.warn { background:rgba(239,68,68,0.1);  border-color:rgba(239,68,68,0.3);  color:var(--red); }
 
-    /* ===== CHART WRAPPERS ===== */
-    .chart-wrapper         { position: relative; height: 220px; }
-    .chart-wrapper.tall    { height: 260px; }
-    .chart-wrapper.short   { height: 180px; }
-    .chart-wrapper.square  { height: 240px; display: flex; align-items: center; justify-content: center; }
-    .chart-wrapper canvas  { animation: fadeIn 0.6s ease both; }
+    /* ─── KPI CARDS ─── */
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(195px,1fr)); gap:16px; }
 
-    /* ===== META / GAUGE ===== */
-    .meta-gauge-wrap {
-      display: flex; align-items: center; justify-content: center;
-      flex-direction: column; gap: 0;
-      position: relative;
+    .kpi {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 18px 16px;
+      position: relative; overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.25s, border-color 0.25s;
+      cursor: default;
     }
-    .meta-gauge-wrap canvas { max-width: 220px; }
-    .meta-center-text {
-      position: absolute;
-      display: flex; flex-direction: column; align-items: center;
-      pointer-events: none;
+    .kpi::before {
+      content:''; position:absolute; inset:0;
+      background: linear-gradient(135deg,rgba(255,255,255,0.03) 0%,transparent 60%);
+      pointer-events:none;
     }
-    .meta-pct {
-      font-size: 36px; font-weight: 900; color: var(--text); line-height: 1;
-      letter-spacing: -0.04em;
-    }
-    .meta-lbl { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+    .kpi:hover { transform: translateY(-2px); }
 
-    /* ===== RANKING ===== */
-    .ranking-list { display: flex; flex-direction: column; gap: 6px; }
-    .ranking-item {
-      display: grid;
-      grid-template-columns: 28px 1fr auto auto;
-      align-items: center; gap: 10px;
-      padding: 10px 13px;
-      background: var(--surface2);
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      transition: border-color 0.15s, transform 0.15s, background 0.15s;
+    .kpi.blue   { border-color:rgba(59,130,246,0.28); }
+    .kpi.green  { border-color:rgba(16,185,129,0.28); }
+    .kpi.purple { border-color:rgba(168,85,247,0.28); }
+    .kpi.cyan   { border-color:rgba(6,182,212,0.28); }
+    .kpi.yellow { border-color:rgba(245,158,11,0.28); }
+    .kpi.orange { border-color:rgba(249,115,22,0.28); }
+
+    .kpi:hover.blue   { box-shadow:0 12px 32px rgba(59,130,246,0.14); border-color:var(--accent); }
+    .kpi:hover.green  { box-shadow:0 12px 32px rgba(16,185,129,0.14); border-color:var(--green); }
+    .kpi:hover.purple { box-shadow:0 12px 32px rgba(168,85,247,0.14); border-color:var(--purple); }
+    .kpi:hover.cyan   { box-shadow:0 12px 32px rgba(6,182,212,0.14);  border-color:var(--cyan); }
+    .kpi:hover.yellow { box-shadow:0 12px 32px rgba(245,158,11,0.14); border-color:var(--yellow); }
+    .kpi:hover.orange { box-shadow:0 12px 32px rgba(249,115,22,0.14); border-color:var(--orange); }
+
+    .kpi-glow {
+      position:absolute; top:-24px; right:-24px;
+      width:90px; height:90px; border-radius:50%;
+      opacity:0.1; filter:blur(22px); pointer-events:none;
+    }
+    .blue .kpi-glow   { background:var(--accent); }
+    .green .kpi-glow  { background:var(--green); }
+    .purple .kpi-glow { background:var(--purple); }
+    .cyan .kpi-glow   { background:var(--cyan); }
+    .yellow .kpi-glow { background:var(--yellow); }
+    .orange .kpi-glow { background:var(--orange); }
+
+    .kpi-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .kpi-icon {
+      width:34px; height:34px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center; font-size:17px;
+    }
+    .blue .kpi-icon   { background:rgba(59,130,246,0.14); }
+    .green .kpi-icon  { background:rgba(16,185,129,0.14); }
+    .purple .kpi-icon { background:rgba(168,85,247,0.14); }
+    .cyan .kpi-icon   { background:rgba(6,182,212,0.14); }
+    .yellow .kpi-icon { background:rgba(245,158,11,0.14); }
+    .orange .kpi-icon { background:rgba(249,115,22,0.14); }
+
+    .kpi-label { font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); }
+    .kpi-value { font-size:29px; font-weight:900; line-height:1; letter-spacing:-0.03em; }
+    .blue .kpi-value   { color:var(--accent); }
+    .green .kpi-value  { color:var(--green); }
+    .purple .kpi-value { color:var(--purple); }
+    .cyan .kpi-value   { color:var(--cyan); }
+    .yellow .kpi-value { color:var(--yellow); }
+    .orange .kpi-value { color:var(--orange); }
+    .kpi-sub { font-size:12px; color:var(--text2); margin-top:2px; }
+
+    /* ─── KPI PROGRESS ─── */
+    .kpi-bar-wrap { margin-top:8px; }
+    .kpi-bar-bg   { height:4px; border-radius:2px; background:var(--surface3); overflow:hidden; }
+    .kpi-bar-fill { height:100%; border-radius:2px; width:0; transition:width 1.1s cubic-bezier(0.4,0,0.2,1); }
+    .blue .kpi-bar-fill   { background:linear-gradient(90deg,#3b82f6,#6366f1); }
+    .green .kpi-bar-fill  { background:linear-gradient(90deg,#10b981,#059669); }
+    .purple .kpi-bar-fill { background:linear-gradient(90deg,#a855f7,#6366f1); }
+    .cyan .kpi-bar-fill   { background:linear-gradient(90deg,#06b6d4,#3b82f6); }
+    .yellow .kpi-bar-fill { background:linear-gradient(90deg,#f59e0b,#f97316); }
+    .kpi-bar-lbl { font-size:10px; color:var(--muted); margin-top:4px; }
+
+    /* ─── CHART WRAPPERS ─── */
+    .chart-h200 { position:relative; height:200px; }
+    .chart-h240 { position:relative; height:240px; }
+    .chart-h280 { position:relative; height:280px; }
+    .chart-h320 { position:relative; height:320px; }
+
+    /* ─── META GAUGE ─── */
+    .gauge-wrap { position:relative; width:100%; height:160px; display:flex; align-items:center; justify-content:center; }
+    .gauge-wrap canvas { max-width:260px; max-height:160px; }
+    .gauge-center {
+      position:absolute; bottom:4px;
+      display:flex; flex-direction:column; align-items:center; pointer-events:none;
+    }
+    .gauge-pct  { font-size:38px; font-weight:900; line-height:1; letter-spacing:-0.04em; }
+    .gauge-lbl  { font-size:11px; color:var(--muted); font-weight:600; margin-top:2px; }
+
+    /* ─── DONUT LEGEND ─── */
+    .donut-legend { display:flex; flex-wrap:wrap; gap:8px 16px; }
+    .dl-item { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text2); }
+    .dl-dot  { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+    /* ─── RANKING ─── */
+    .rank-list { display:flex; flex-direction:column; gap:6px; }
+    .rank-item {
+      display:grid; grid-template-columns:28px 1fr auto auto;
+      align-items:center; gap:10px;
+      padding:10px 13px; background:var(--surface2);
+      border-radius:10px; border:1px solid var(--border);
+      transition:border-color 0.15s, transform 0.15s, background 0.15s;
       animation: fadeUp 0.4s ease both;
     }
-    .ranking-item:nth-child(1) { animation-delay: 0.05s; }
-    .ranking-item:nth-child(2) { animation-delay: 0.10s; }
-    .ranking-item:nth-child(3) { animation-delay: 0.15s; }
-    .ranking-item:nth-child(n+4) { animation-delay: 0.20s; }
-    .ranking-item:hover {
-      border-color: rgba(59,130,246,0.4);
-      background: var(--surface3);
-      transform: translateX(2px);
-    }
-    .rank-pos {
-      font-size: 12px; font-weight: 800; color: var(--muted); text-align: center;
-    }
-    .rank-pos.gold   { color: #f59e0b; text-shadow: 0 0 8px rgba(245,158,11,0.5); }
-    .rank-pos.silver { color: #94a3b8; }
-    .rank-pos.bronze { color: #cd7c2f; }
-    .rank-info { min-width: 0; }
-    .rank-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rank-city { font-size: 11px; color: var(--muted); }
-    .rank-votos { font-size: 13px; font-weight: 800; color: var(--green); text-align: right; white-space: nowrap; }
-    .rank-status {
-      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
-      text-transform: uppercase; letter-spacing: 0.04em;
-    }
-    .rank-status.ativo    { background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
-    .rank-status.inativo  { background: rgba(239,68,68,0.12);  color: var(--red);   border: 1px solid rgba(239,68,68,0.2); }
-    .rank-status.pendente { background: rgba(245,158,11,0.12); color: var(--yellow);border: 1px solid rgba(245,158,11,0.2); }
+    .rank-item:hover { border-color:rgba(59,130,246,0.4); background:var(--surface3); transform:translateX(3px); }
+    .rank-pos { font-size:12px; font-weight:800; color:var(--muted); text-align:center; }
+    .rank-pos.g { color:#f59e0b; text-shadow:0 0 10px rgba(245,158,11,0.5); }
+    .rank-pos.s { color:#94a3b8; }
+    .rank-pos.b { color:#cd7c2f; }
+    .rank-info  { min-width:0; }
+    .rank-name  { font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .rank-city  { font-size:11px; color:var(--muted); }
+    .rank-votos { font-size:13px; font-weight:800; color:var(--green); text-align:right; white-space:nowrap; }
+    .rank-status { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; text-transform:uppercase; }
+    .rank-status.ativo   { background:rgba(16,185,129,0.12); color:var(--green);  border:1px solid rgba(16,185,129,0.2); }
+    .rank-status.inativo { background:rgba(239,68,68,0.12);  color:var(--red);    border:1px solid rgba(239,68,68,0.2); }
+    .rank-status.pendente{ background:rgba(245,158,11,0.12); color:var(--yellow); border:1px solid rgba(245,158,11,0.2); }
 
-    /* ===== ALERTAS ===== */
-    .alert-list { display: flex; flex-direction: column; gap: 8px; }
+    /* ─── EXPECTATIVA POR REGIÃO ─── */
+    .exp-list { display:flex; flex-direction:column; gap:12px; }
+    .exp-item { display:flex; flex-direction:column; gap:5px; animation: fadeUp 0.4s ease both; }
+    .exp-top  { display:flex; align-items:center; justify-content:space-between; }
+    .exp-name { font-size:12px; font-weight:600; color:var(--text2); }
+    .exp-nums { font-size:11px; color:var(--muted); display:flex; gap:10px; }
+    .exp-num-mapped { color:var(--green); font-weight:700; }
+    .exp-num-meta   { color:var(--muted); }
+    .exp-pct-lbl    { font-size:10px; font-weight:700; }
+    .exp-bars { display:grid; grid-template-columns:1fr; gap:3px; }
+    .exp-bar-row { display:flex; align-items:center; gap:6px; }
+    .exp-bar-label { font-size:10px; color:var(--muted); width:44px; text-align:right; flex-shrink:0; }
+    .exp-bar-track { flex:1; height:6px; background:var(--surface3); border-radius:3px; overflow:hidden; }
+    .exp-bar-fill  { height:100%; border-radius:3px; width:0; transition:width 1.1s cubic-bezier(0.4,0,0.2,1); }
+    .exp-bar-fill.mapped { background:linear-gradient(90deg,#10b981,#059669); }
+    .exp-bar-fill.meta   { background:linear-gradient(90deg,#3b82f6aa,#6366f1aa); }
+    .exp-pct-chip {
+      font-size:10px; font-weight:700; padding:1px 7px; border-radius:10px;
+      flex-shrink:0; min-width:38px; text-align:center;
+    }
+    .pct-high { background:rgba(16,185,129,0.15); color:var(--green); }
+    .pct-mid  { background:rgba(59,130,246,0.15);  color:var(--accent); }
+    .pct-low  { background:rgba(245,158,11,0.15);  color:var(--yellow); }
+    .pct-zero { background:rgba(239,68,68,0.12);   color:var(--red); }
+
+    /* ─── ANIVERSARIANTES ─── */
+    .bday-grid { display:flex; flex-direction:column; gap:8px; }
+    .bday-item {
+      display:flex; align-items:center; gap:12px;
+      padding:11px 13px; background:var(--surface2);
+      border-radius:10px; border:1px solid var(--border);
+      transition:border-color 0.15s, transform 0.15s;
+      animation: fadeUp 0.4s ease both;
+    }
+    .bday-item:hover { border-color:rgba(236,72,153,0.4); transform:translateX(3px); }
+    .bday-item.today { border-color:rgba(236,72,153,0.4); background:rgba(236,72,153,0.06); }
+    .bday-avatar {
+      width:38px; height:38px; border-radius:50%;
+      background:linear-gradient(135deg,#a855f7,#ec4899);
+      display:flex; align-items:center; justify-content:center;
+      font-size:15px; font-weight:800; color:#fff; flex-shrink:0;
+      overflow:hidden;
+    }
+    .bday-avatar img { width:100%; height:100%; object-fit:cover; }
+    .bday-info { flex:1; min-width:0; }
+    .bday-name { font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .bday-city { font-size:11px; color:var(--muted); }
+    .bday-chip {
+      font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; flex-shrink:0;
+    }
+    .bday-chip.hoje   { background:rgba(236,72,153,0.18); color:var(--pink); border:1px solid rgba(236,72,153,0.3); }
+    .bday-chip.amanha { background:rgba(168,85,247,0.14); color:var(--purple); border:1px solid rgba(168,85,247,0.25); }
+    .bday-chip.dias   { background:rgba(59,130,246,0.1); color:var(--accent); border:1px solid rgba(59,130,246,0.2); }
+
+    /* ─── ALERTAS ─── */
+    .alert-list { display:flex; flex-direction:column; gap:8px; }
     .alert-item {
-      display: flex; align-items: flex-start; gap: 10px;
-      padding: 11px 13px; border-radius: 10px; border-left: 3px solid;
+      display:flex; align-items:flex-start; gap:10px;
+      padding:11px 13px; border-radius:10px; border-left:3px solid;
       animation: fadeUp 0.4s ease both;
     }
-    .alert-item.danger  { background: rgba(239,68,68,0.07);   border-color: var(--red); }
-    .alert-item.warning { background: rgba(245,158,11,0.07);  border-color: var(--yellow); }
-    .alert-item.info    { background: rgba(59,130,246,0.07);  border-color: var(--accent); }
-    .alert-icon { font-size: 16px; flex-shrink: 0; }
-    .alert-text { font-size: 12px; color: var(--text); line-height: 1.5; }
-    .alert-text strong { color: var(--text); font-weight: 600; }
-    .alert-text span   { color: var(--text2); display: block; margin-top: 1px; font-size: 11px; }
+    .alert-item.danger  { background:rgba(239,68,68,0.07);  border-color:var(--red); }
+    .alert-item.warning { background:rgba(245,158,11,0.07); border-color:var(--yellow); }
+    .alert-item.info    { background:rgba(59,130,246,0.07); border-color:var(--accent); }
+    .alert-icon { font-size:15px; flex-shrink:0; margin-top:1px; }
+    .alert-text { font-size:12px; color:var(--text); line-height:1.5; }
+    .alert-text strong { font-weight:600; }
+    .alert-text span   { color:var(--text2); display:block; font-size:11px; }
 
-    /* ===== AGENDA ===== */
-    .agenda-list { display: flex; flex-direction: column; gap: 8px; }
+    /* ─── AGENDA ─── */
+    .agenda-list { display:flex; flex-direction:column; gap:8px; }
     .agenda-item {
-      display: flex; gap: 12px; align-items: flex-start;
-      padding: 13px; background: var(--surface2); border-radius: 10px;
-      border: 1px solid var(--border);
-      transition: border-color 0.15s, transform 0.15s;
+      display:flex; gap:11px; align-items:flex-start;
+      padding:12px 13px; background:var(--surface2);
+      border-radius:10px; border:1px solid var(--border);
+      transition:border-color 0.15s, transform 0.15s;
       animation: fadeUp 0.4s ease both;
     }
-    .agenda-item:hover { border-color: var(--border2); transform: translateX(2px); }
+    .agenda-item:hover { border-color:var(--border2); transform:translateX(3px); }
     .agenda-bullet {
-      width: 8px; height: 8px; border-radius: 50%;
-      flex-shrink: 0; margin-top: 5px;
-      box-shadow: 0 0 8px currentColor;
+      width:8px; height:8px; border-radius:50%;
+      flex-shrink:0; margin-top:5px;
     }
-    .agenda-bullet.high   { background: var(--red);    color: var(--red); }
-    .agenda-bullet.mid    { background: var(--yellow);  color: var(--yellow); }
-    .agenda-bullet.low    { background: var(--accent);  color: var(--accent); }
-    .agenda-action { font-size: 13px; font-weight: 600; color: var(--text); }
-    .agenda-why    { font-size: 11px; color: var(--text2); margin-top: 3px; }
+    .agenda-bullet.high   { background:var(--red);    box-shadow:0 0 8px var(--red); }
+    .agenda-bullet.mid    { background:var(--yellow);  box-shadow:0 0 8px var(--yellow); }
+    .agenda-bullet.low    { background:var(--accent);  box-shadow:0 0 8px var(--accent); }
+    .agenda-action { font-size:13px; font-weight:600; color:var(--text); }
+    .agenda-why    { font-size:11px; color:var(--text2); margin-top:3px; }
 
-    /* ===== BARRAS DE REGIÃO ===== */
-    .regiao-grid { display: flex; flex-direction: column; gap: 10px; }
-    .regiao-item { display: flex; align-items: center; gap: 10px; }
-    .regiao-label { font-size: 12px; color: var(--text2); min-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .regiao-bar-wrap {
-      flex: 1; background: var(--surface3); border-radius: 4px; height: 6px;
-      overflow: hidden;
-    }
-    .regiao-bar {
-      height: 100%; border-radius: 4px;
-      background: var(--grad-blue);
-      width: 0;
-      transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
-    }
-    .regiao-votos { font-size: 12px; font-weight: 700; color: var(--text); min-width: 54px; text-align: right; }
-
-    /* ===== AUDITORIA ===== */
-    .audit-list { display: flex; flex-direction: column; gap: 6px; }
+    /* ─── AUDIT ─── */
+    .audit-list { display:flex; flex-direction:column; gap:6px; }
     .audit-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 11px; background: var(--surface2); border-radius: 8px;
-      font-size: 12px; animation: fadeUp 0.3s ease both;
+      display:flex; align-items:center; gap:10px;
+      padding:8px 11px; background:var(--surface2); border-radius:8px; font-size:12px;
     }
     .audit-acao {
-      background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.2);
-      border-radius: 5px; padding: 2px 7px;
-      font-size: 10px; font-weight: 700; color: var(--cyan);
-      text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0;
+      background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2);
+      border-radius:5px; padding:2px 7px;
+      font-size:10px; font-weight:700; color:var(--cyan);
+      text-transform:uppercase; flex-shrink:0;
     }
-    .audit-info { flex: 1; color: var(--text2); }
-    .audit-time { color: var(--muted); font-size: 11px; flex-shrink: 0; }
+    .audit-info { flex:1; color:var(--text2); }
+    .audit-time { color:var(--muted); font-size:11px; flex-shrink:0; }
 
-    /* ===== DONUT LEGEND ===== */
-    .donut-legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 4px; }
-    .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); }
-    .legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-    /* ===== MIXED CHART LABELS ===== */
-    .chart-labels { display: flex; gap: 16px; flex-wrap: wrap; }
-    .chart-lbl { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); }
-    .chart-lbl-dot { width: 10px; height: 3px; border-radius: 2px; }
-
-    /* ===== EMPTY / LOADING ===== */
-    .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px; }
-    .loading-dots { display: flex; gap: 5px; align-items: center; justify-content: center; padding: 28px; }
-    .loading-dots span {
-      width: 7px; height: 7px; border-radius: 50%; background: rgba(59,130,246,0.5);
-      animation: bounce 1.2s ease-in-out infinite;
+    /* ─── EMPTY / LOADING ─── */
+    .empty { color:var(--muted); font-size:13px; text-align:center; padding:24px 0; }
+    .loading { display:flex; gap:5px; align-items:center; justify-content:center; padding:28px; }
+    .loading span {
+      width:7px; height:7px; border-radius:50%;
+      background:rgba(59,130,246,0.5); animation:bounce 1.2s ease-in-out infinite;
     }
-    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+    .loading span:nth-child(2){animation-delay:.2s}
+    .loading span:nth-child(3){animation-delay:.4s}
     @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
-      40% { transform: scale(1); opacity: 1; }
+      0%,80%,100%{transform:scale(0.6);opacity:0.3}
+      40%        {transform:scale(1);  opacity:1}
     }
 
-    /* ===== SCROLLBAR ===== */
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-    /* ===== GRID BG ===== */
-    .grid-bg {
-      background-image:
-        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-      background-size: 40px 40px;
-    }
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar{width:5px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
   </style>
 </head>
-<body class="grid-bg">
+<body>
 
 <!-- LOGIN -->
 <div id="login-overlay">
@@ -535,8 +453,8 @@
       <h2>Command Center</h2>
       <p>Painel estratégico de campanha</p>
     </div>
-    <input type="text" id="login-user" placeholder="Usuário" autocomplete="username" />
-    <input type="password" id="login-pass" placeholder="Senha" autocomplete="current-password" />
+    <input type="text"     id="login-user" placeholder="Usuário"  autocomplete="username" />
+    <input type="password" id="login-pass" placeholder="Senha"    autocomplete="current-password" />
     <div id="login-error"></div>
     <button id="login-btn">Acessar →</button>
   </div>
@@ -545,16 +463,16 @@
 <!-- APP -->
 <div id="app">
   <header>
-    <div class="header-left">
-      <div class="header-logo">⚡</div>
+    <div class="hdr-left">
+      <div class="hdr-logo">⚡</div>
       <div>
-        <div class="header-title">Command Center</div>
-        <div class="header-subtitle">Central de Decisão Estratégica</div>
+        <div class="hdr-title">Command Center</div>
+        <div class="hdr-subtitle">Central de Decisão Estratégica</div>
       </div>
     </div>
-    <div class="header-right">
-      <span id="last-update" style="font-size:12px;color:var(--muted)"><span class="pulse-dot"></span>ao vivo</span>
-      <button class="btn-refresh" onclick="carregarTudo()">↺ Atualizar</button>
+    <div class="hdr-right">
+      <span id="last-update"><span class="pulse-dot"></span>ao vivo</span>
+      <button class="btn-hdr" onclick="carregarTudo()">↺ Atualizar</button>
       <span class="user-chip" id="user-chip">—</span>
       <button class="btn-logout" onclick="logout()">Sair</button>
     </div>
@@ -562,179 +480,186 @@
 
   <main>
 
-    <!-- ── SEÇÃO 1: KPIs ── -->
-    <div class="section-label">Visão Geral da Campanha</div>
+    <!-- ══ KPIs ══ -->
+    <div class="section-label">Visão Geral</div>
     <div class="kpi-grid" id="kpi-grid">
-      <div class="loading-dots"><span></span><span></span><span></span></div>
+      <div class="loading"><span></span><span></span><span></span></div>
     </div>
 
-    <!-- ── SEÇÃO 2: META + STATUS + CANDIDATOS ── -->
+    <!-- ══ META GAUGE + STATUS + CANDIDATOS ══ -->
     <div class="section-label">Metas e Distribuição</div>
-    <div class="three-col">
+    <div class="g3">
 
-      <!-- Meta Geral (gauge) -->
       <div class="card">
-        <div class="card-header">
+        <div class="card-hdr">
           <div class="card-title">🎯 Meta de Votos</div>
-          <span class="card-badge" id="meta-pct-badge">—%</span>
+          <span class="badge" id="meta-badge">—%</span>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-          <div class="meta-gauge-wrap" style="position:relative;width:220px;height:130px;">
-            <canvas id="chart-meta" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
-            <div class="meta-center-text" style="bottom:8px;">
-              <div class="meta-pct" id="meta-num">—</div>
-              <div class="meta-lbl">atingido</div>
-            </div>
+        <div class="gauge-wrap">
+          <canvas id="chart-meta"></canvas>
+          <div class="gauge-center">
+            <div class="gauge-pct" id="gauge-num">—</div>
+            <div class="gauge-lbl">atingido</div>
           </div>
-          <div class="donut-legend" id="meta-legend"></div>
         </div>
+        <div class="donut-legend" id="meta-legend"></div>
       </div>
 
-      <!-- Status das lideranças (donut) -->
       <div class="card">
-        <div class="card-header">
+        <div class="card-hdr">
           <div class="card-title">👥 Status das Lideranças</div>
         </div>
-        <div class="chart-wrapper square" style="height:220px;">
+        <div class="chart-h200" style="display:flex;align-items:center;justify-content:center;">
           <canvas id="chart-status"></canvas>
         </div>
         <div class="donut-legend" id="status-legend"></div>
       </div>
 
-      <!-- Votos por candidato (donut) -->
       <div class="card">
-        <div class="card-header">
+        <div class="card-hdr">
           <div class="card-title">🗳️ Votos por Candidato</div>
         </div>
-        <div class="chart-wrapper square" style="height:220px;">
-          <canvas id="chart-candidatos"></canvas>
+        <div class="chart-h200" style="display:flex;align-items:center;justify-content:center;">
+          <canvas id="chart-cand"></canvas>
         </div>
-        <div class="donut-legend" id="candidatos-legend"></div>
+        <div class="donut-legend" id="cand-legend"></div>
       </div>
 
     </div>
 
-    <!-- ── SEÇÃO 3: RANKING + ALERTAS ── -->
-    <div class="section-label">Lideranças e Riscos</div>
-    <div class="col-3-1">
+    <!-- ══ EXPECTATIVA POR REGIÃO (NOVO, CORRETO) ══ -->
+    <div class="section-label">Expectativa vs Mapeado por Região</div>
+    <div class="g2">
+
+      <!-- Barras comparativas -->
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">📊 Meta vs Mapeado</div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)">
+              <span style="width:10px;height:4px;border-radius:2px;background:var(--green);display:inline-block"></span>Mapeado
+            </span>
+            <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)">
+              <span style="width:10px;height:4px;border-radius:2px;background:#3b82f6aa;display:inline-block"></span>Meta
+            </span>
+          </div>
+        </div>
+        <div class="exp-list" id="exp-list">
+          <div class="loading"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+
+      <!-- Gráfico grouped bar -->
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">📈 Comparativo por Região</div>
+          <span class="badge">expectativa vs meta</span>
+        </div>
+        <div class="chart-h280"><canvas id="chart-exp-regioes"></canvas></div>
+      </div>
+
+    </div>
+
+    <!-- ══ RADAR + DISTRIBUIÇÃO VOTOS ══ -->
+    <div class="g2">
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">📡 Cobertura Regional</div>
+          <span class="badge">votos mapeados</span>
+        </div>
+        <div class="chart-h240"><canvas id="chart-radar"></canvas></div>
+      </div>
 
       <div class="card">
-        <div class="card-header">
-          <div class="card-title">🏆 Ranking de Lideranças</div>
-          <span class="card-badge live" id="ranking-badge">top 20</span>
+        <div class="card-hdr">
+          <div class="card-title">🗺️ Votos Válidos por Região</div>
         </div>
-        <div class="ranking-list" id="ranking-list">
-          <div class="loading-dots"><span></span><span></span><span></span></div>
+        <div class="chart-h240"><canvas id="chart-votos-reg"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ══ RANKING + ANIVERSARIANTES ══ -->
+    <div class="section-label">Lideranças e Pessoas</div>
+    <div class="g2">
+
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">🏆 Ranking de Lideranças</div>
+          <span class="badge live" id="ranking-badge">top 20</span>
+        </div>
+        <div class="rank-list" id="ranking-list">
+          <div class="loading"><span></span><span></span><span></span></div>
         </div>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:20px;">
+
+        <!-- Aniversariantes -->
         <div class="card">
-          <div class="card-header"><div class="card-title">🚨 Alertas</div></div>
+          <div class="card-hdr">
+            <div class="card-title">🎂 Aniversariantes</div>
+            <span class="badge" id="bday-badge">próximos 7 dias</span>
+          </div>
+          <div class="bday-grid" id="bday-grid">
+            <div class="loading"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+
+        <!-- Alertas -->
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">🚨 Alertas de Risco</div></div>
           <div class="alert-list" id="alert-list">
-            <div class="loading-dots"><span></span><span></span><span></span></div>
+            <div class="loading"><span></span><span></span><span></span></div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-header"><div class="card-title">📋 Últimas Ações</div></div>
-          <div class="audit-list" id="audit-list">
-            <div class="loading-dots"><span></span><span></span><span></span></div>
-          </div>
-        </div>
-      </div>
 
+      </div>
     </div>
 
-    <!-- ── SEÇÃO 4: GRÁFICOS DE CRESCIMENTO ── -->
-    <div class="section-label">Crescimento e Territórios</div>
-    <div class="two-col">
-
-      <!-- Gastos por mês -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">📈 Gastos por Mês</div>
-        </div>
-        <div class="chart-wrapper tall"><canvas id="chart-gastos"></canvas></div>
-      </div>
-
-      <!-- Votos por região — barras horizontais animadas -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">🗺️ Votos por Região</div>
-        </div>
-        <div class="regiao-grid" id="regiao-grid">
-          <div class="loading-dots"><span></span><span></span><span></span></div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ── SEÇÃO 5: VOTOS VÁLIDOS (RADAR) + GASTOS vs VOTOS ── -->
-    <div class="two-col">
-
-      <!-- Radar de cobertura regional -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">📡 Cobertura por Região</div>
-          <span class="card-badge">expectativa vs meta</span>
-        </div>
-        <div class="chart-wrapper tall"><canvas id="chart-radar"></canvas></div>
-      </div>
-
-      <!-- Votos válidos distribuição -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">📊 Distribuição de Votos</div>
-        </div>
-        <div class="chart-wrapper tall"><canvas id="chart-regioes"></canvas></div>
-      </div>
-
-    </div>
-
-    <!-- ── SEÇÃO 6: AGENDA + SEM INTERAÇÃO ── -->
+    <!-- ══ AGENDA + AUDITORIA ══ -->
     <div class="section-label">Ações Estratégicas</div>
-    <div class="two-col">
-
+    <div class="g2">
       <div class="card">
-        <div class="card-header">
+        <div class="card-hdr">
           <div class="card-title">📅 Agenda Inteligente</div>
-          <span class="card-badge">o que fazer hoje</span>
+          <span class="badge">o que fazer hoje</span>
         </div>
         <div class="agenda-list" id="agenda-list">
-          <div class="loading-dots"><span></span><span></span><span></span></div>
+          <div class="loading"><span></span><span></span><span></span></div>
         </div>
       </div>
-
       <div class="card">
-        <div class="card-header">
-          <div class="card-title">🔇 Sem Interação (30 dias)</div>
-          <span class="card-badge" id="sem-interacao-badge">—</span>
+        <div class="card-hdr">
+          <div class="card-title">📋 Últimas Ações</div>
+          <span class="badge live">tempo real</span>
         </div>
-        <div class="ranking-list" id="sem-interacao-list">
-          <div class="loading-dots"><span></span><span></span><span></span></div>
+        <div class="audit-list" id="audit-list">
+          <div class="loading"><span></span><span></span><span></span></div>
         </div>
       </div>
-
     </div>
 
   </main>
 </div>
 
 <script>
-const API_URL = 'https://map-backend-j88s.onrender.com/api';
+/* ══════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════ */
+const API = 'https://map-backend-j88s.onrender.com/api';
 
-/* ===== UTILS ===== */
-function getToken() { return localStorage.getItem('token'); }
+/* ══════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════ */
+const fmt  = n => Number(n||0).toLocaleString('pt-BR');
+const fmtK = n => { const v=Number(n||0); return v>=1e6?'R$'+(v/1e6).toFixed(1)+'M':v>=1e3?'R$'+(v/1e3).toFixed(0)+'k':'R$'+v.toFixed(0); };
+const getToken = () => localStorage.getItem('token');
 
 async function apiFetch(path, opts = {}) {
   const token = getToken();
-  const res = await fetch(API_URL + path, {
+  const res = await fetch(API + path, {
     ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: 'Bearer ' + token } : {}),
-      ...(opts.headers || {})
-    }
+    headers: { 'Content-Type':'application/json', ...(token?{Authorization:'Bearer '+token}:{}), ...(opts.headers||{}) }
   });
   if (res.status === 401 || res.status === 403) { logout(); throw new Error('Unauthorized'); }
   if (!res.ok) throw new Error(await res.text());
@@ -743,605 +668,554 @@ async function apiFetch(path, opts = {}) {
 
 function logout() { localStorage.clear(); location.reload(); }
 
-function fmt(n) { return Number(n || 0).toLocaleString('pt-BR'); }
-function fmtR(n) {
-  const v = Number(n || 0);
-  if (v >= 1000000) return 'R$' + (v/1000000).toFixed(1) + 'M';
-  if (v >= 1000)    return 'R$' + (v/1000).toFixed(1) + 'k';
-  return 'R$' + v.toFixed(0);
-}
-
-/* ===== ANIMATED COUNTER ===== */
-function animateCount(el, target, duration = 1000, prefix = '', suffix = '') {
+/* ── Animated counter ── */
+function animCount(el, target, ms = 1100) {
+  if (typeof target !== 'number') { el.textContent = target; return; }
   const start = performance.now();
-  const isFloat = typeof target === 'number' && !Number.isInteger(target);
-  function step(now) {
-    const p = Math.min((now - start) / duration, 1);
-    const ease = 1 - Math.pow(1 - p, 3);
-    const val = isFloat
-      ? (target * ease).toFixed(1)
-      : Math.round(target * ease).toLocaleString('pt-BR');
-    el.textContent = prefix + val + suffix;
+  const int = !Number.isInteger(target);
+  (function step(now) {
+    const p = Math.min((now - start) / ms, 1);
+    const e = 1 - Math.pow(1-p, 3);
+    el.textContent = int ? (target*e).toFixed(1) : Math.round(target*e).toLocaleString('pt-BR');
     if (p < 1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
+  })(start);
 }
 
-/* ===== CHART.JS DEFAULTS ===== */
+/* ══════════════════════════════════════════
+   CHART.JS DEFAULTS
+══════════════════════════════════════════ */
 Chart.defaults.color = '#4d6480';
-Chart.defaults.font.family = "'Inter', 'Segoe UI', system-ui, sans-serif";
-Chart.defaults.animation.duration = 900;
+Chart.defaults.font.family = "'Inter','Segoe UI',system-ui,sans-serif";
+Chart.defaults.animation.duration = 950;
 
-const COLORS = ['#3b82f6','#10b981','#a855f7','#f59e0b','#ef4444','#06b6d4','#ec4899','#f97316'];
-const COLORS_ALPHA = COLORS.map(c => c + '99');
+const PAL = ['#3b82f6','#10b981','#a855f7','#f59e0b','#ef4444','#06b6d4','#ec4899','#f97316'];
 
-function darkScales(opts = {}) {
+function darkGrid(extraX={}, extraY={}) {
   return {
-    x: {
-      ticks: { color: '#4d6480', font: { size: 11 } },
-      grid: { color: 'rgba(30,48,80,0.8)' },
-      border: { color: 'rgba(30,48,80,0.4)' },
-      ...opts.x
-    },
-    y: {
-      ticks: { color: '#4d6480', font: { size: 11 } },
-      grid: { color: 'rgba(30,48,80,0.8)' },
-      border: { color: 'rgba(30,48,80,0.4)' },
-      ...opts.y
-    }
+    x: { ticks:{color:'#4d6480',font:{size:11}}, grid:{color:'rgba(30,48,80,0.7)'}, border:{color:'rgba(30,48,80,0.3)'}, ...extraX },
+    y: { ticks:{color:'#4d6480',font:{size:11}}, grid:{color:'rgba(30,48,80,0.7)'}, border:{color:'rgba(30,48,80,0.3)'}, ...extraY }
   };
 }
 
-/* ===== CHART INSTANCES ===== */
 const charts = {};
-function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function kill(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
-/* ===== LOGIN ===== */
-document.getElementById('login-btn').addEventListener('click', async () => {
-  const usuario = document.getElementById('login-user').value.trim();
-  const senha = document.getElementById('login-pass').value.trim();
-  const errEl = document.getElementById('login-error');
+/* ══════════════════════════════════════════
+   LOGIN
+══════════════════════════════════════════ */
+document.getElementById('login-btn').addEventListener('click', doLogin);
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+async function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value.trim();
+  const err = document.getElementById('login-error');
   const btn = document.getElementById('login-btn');
-  errEl.style.display = 'none';
-  if (!usuario || !senha) { errEl.textContent = 'Preencha todos os campos'; errEl.style.display = 'block'; return; }
+  err.style.display = 'none';
+  if (!u || !p) { err.textContent='Preencha todos os campos'; err.style.display='block'; return; }
   btn.textContent = 'Entrando...'; btn.disabled = true;
   try {
-    const data = await fetch(API_URL + '/login', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario, senha })
-    }).then(r => { if (!r.ok) throw new Error(); return r.json(); });
-    localStorage.setItem('token', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    iniciarApp(data.user);
-  } catch {
-    errEl.textContent = 'Usuário ou senha inválidos';
-    errEl.style.display = 'block';
-  } finally { btn.textContent = 'Acessar →'; btn.disabled = false; }
-});
+    const d = await fetch(API+'/login', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({usuario:u,senha:p})
+    }).then(r => { if(!r.ok) throw new Error(); return r.json(); });
+    localStorage.setItem('token', d.accessToken);
+    localStorage.setItem('refreshToken', d.refreshToken);
+    localStorage.setItem('user', JSON.stringify(d.user));
+    startApp(d.user);
+  } catch { err.textContent='Usuário ou senha inválidos'; err.style.display='block'; }
+  finally   { btn.textContent='Acessar →'; btn.disabled=false; }
+}
 
-document.getElementById('login-pass').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('login-btn').click();
-});
-
-/* ===== INIT ===== */
-function iniciarApp(user) {
+/* ══════════════════════════════════════════
+   APP START
+══════════════════════════════════════════ */
+function startApp(user) {
   document.getElementById('login-overlay').classList.add('hidden');
   document.getElementById('app').classList.add('visible');
   document.getElementById('user-chip').textContent = user.nome || user.usuario || '—';
   carregarTudo();
 }
 
-async function validarSessao() {
+async function checkSession() {
   const token = getToken();
-  if (!token) return false;
+  if (!token) return null;
   try {
-    const res = await fetch(API_URL + '/validar-token', { headers: { Authorization: 'Bearer ' + token } });
-    if (res.ok) {
-      const d = await res.json();
-      return d.user || true;
-    }
-    return false;
-  } catch { return false; }
+    const r = await fetch(API+'/validar-token', { headers:{ Authorization:'Bearer '+token } });
+    if (!r.ok) return null;
+    return (await r.json()).user || {};
+  } catch { return null; }
 }
 
-/* ============================================================
-   RENDER FUNCTIONS
-   ============================================================ */
-
-/* ── KPIs ── */
+/* ══════════════════════════════════════════
+   RENDER: KPIs
+══════════════════════════════════════════ */
 function renderKpis(d) {
   const pct = d.metaTotal > 0 ? Math.round((d.votosTotal / d.metaTotal) * 100) : 0;
-  const efic = d.votosTotal > 0 && d.gastosTotal > 0 ? Math.round(d.gastosTotal / d.votosTotal) : 0;
 
   const cards = [
-    {
-      cls: 'blue', icon: '👥', label: 'Total Lideranças',
-      value: d.totalLiderancas, sub: `${d.ativas} ativas · ${d.inativas} inativas`,
-      pct: d.totalLiderancas > 0 ? Math.round((d.ativas / d.totalLiderancas) * 100) : 0,
-      pctLabel: '% ativas', trend: null
-    },
-    {
-      cls: 'green', icon: '🗳️', label: 'Votos Mapeados',
-      value: d.votosTotal, sub: `meta: ${fmt(d.metaTotal)}`,
-      pct, pctLabel: `${pct}% da meta`, trend: pct >= 80 ? 'up' : pct >= 50 ? 'neu' : 'down'
-    },
-    {
-      cls: 'purple', icon: '💙', label: 'Célia Jordão',
-      value: d.votosCelia, sub: `meta: ${fmt(d.metaCelia)}`,
-      pct: d.metaCelia > 0 ? Math.round((d.votosCelia / d.metaCelia) * 100) : 0,
-      pctLabel: '% da meta', trend: null
-    },
-    {
-      cls: 'cyan', icon: '🤝', label: 'Fernando Jordão',
-      value: d.votosFernando, sub: `meta: ${fmt(d.metaFernando)}`,
-      pct: d.metaFernando > 0 ? Math.round((d.votosFernando / d.metaFernando) * 100) : 0,
-      pctLabel: '% da meta', trend: null
-    },
-    {
-      cls: 'yellow', icon: '🗺️', label: 'Regiões Cobertas',
-      value: d.regioesAtivas, sub: `de 8 regiões RJ`,
-      pct: Math.round((d.regioesAtivas / 8) * 100),
-      pctLabel: '% do estado', trend: null
-    },
-    {
-      cls: 'red', icon: '💸', label: 'Gastos 30 dias',
-      value: fmtR(d.gastosUlt30), sub: `total: ${fmtR(d.gastosTotal)}`,
-      rawValue: null, pct: null, trend: null
-    },
-    {
-      cls: 'orange', icon: '⚡', label: 'Custo por Voto',
-      value: efic > 0 ? `R$${efic}` : '—', sub: 'eficiência de campanha',
-      rawValue: null, pct: null, trend: null
-    },
+    { cls:'blue',   icon:'👥', label:'Total Lideranças', val:d.totalLiderancas,  sub:`${d.ativas} ativas · ${d.inativas||0} inativas`, bar:d.totalLiderancas>0?Math.round((d.ativas/d.totalLiderancas)*100):0, barLbl:'% ativas' },
+    { cls:'green',  icon:'🗳️', label:'Votos Mapeados',   val:d.votosTotal,       sub:`meta: ${fmt(d.metaTotal)}`, bar:pct, barLbl:`${pct}% da meta` },
+    { cls:'purple', icon:'💙', label:'Célia Jordão',      val:d.votosCelia,       sub:`meta: ${fmt(d.metaCelia)}`, bar:d.metaCelia>0?Math.round((d.votosCelia/d.metaCelia)*100):0, barLbl:'% da meta' },
+    { cls:'cyan',   icon:'🤝', label:'Fernando Jordão',   val:d.votosFernando,    sub:`meta: ${fmt(d.metaFernando)}`, bar:d.metaFernando>0?Math.round((d.votosFernando/d.metaFernando)*100):0, barLbl:'% da meta' },
+    { cls:'yellow', icon:'🗺️', label:'Regiões Cobertas',  val:d.regioesAtivas,    sub:'de 8 regiões RJ', bar:Math.round((d.regioesAtivas/8)*100), barLbl:'% do estado' },
+    { cls:'orange', icon:'👤', label:'Líderes Ativos',    val:d.ativas,           sub:'status = ativo', bar:null },
   ];
 
-  document.getElementById('kpi-grid').innerHTML = cards.map((c, i) => `
-    <div class="kpi-card ${c.cls} anim-fadeup" style="animation-delay:${i*0.06}s">
+  document.getElementById('kpi-grid').innerHTML = cards.map((c,i) => `
+    <div class="kpi ${c.cls} anim" style="animation-delay:${i*0.06}s">
       <div class="kpi-glow"></div>
-      <div class="kpi-icon-wrap">
+      <div class="kpi-top">
         <div class="kpi-icon">${c.icon}</div>
-        ${c.trend ? `<span class="kpi-trend ${c.trend}">${c.trend==='up'?'↑ Bom':c.trend==='down'?'↓ Atenção':'→ Ok'}</span>` : ''}
       </div>
       <div class="kpi-label">${c.label}</div>
-      <div class="kpi-value" id="kpi-val-${i}">${typeof c.value === 'number' ? '0' : c.value}</div>
+      <div class="kpi-value" id="kv${i}">0</div>
       <div class="kpi-sub">${c.sub}</div>
-      ${c.pct !== null ? `
-        <div class="kpi-progress-wrap">
-          <div class="kpi-progress-bar">
-            <div class="kpi-progress-fill" id="kpi-bar-${i}" style="width:0%"></div>
-          </div>
-          <div class="kpi-progress-label" id="kpi-bar-lbl-${i}"></div>
-        </div>
-      ` : ''}
-    </div>
-  `).join('');
+      ${c.bar!==null ? `
+        <div class="kpi-bar-wrap">
+          <div class="kpi-bar-bg"><div class="kpi-bar-fill" id="kb${i}"></div></div>
+          <div class="kpi-bar-lbl">${c.barLbl}</div>
+        </div>` : ''}
+    </div>`).join('');
 
-  // Animate counters + bars
-  cards.forEach((c, i) => {
-    if (typeof c.value === 'number') {
-      const el = document.getElementById(`kpi-val-${i}`);
-      animateCount(el, c.value, 1200);
-    }
-    if (c.pct !== null) {
-      const bar = document.getElementById(`kpi-bar-${i}`);
-      const lbl = document.getElementById(`kpi-bar-lbl-${i}`);
-      const p = Math.min(c.pct, 100);
-      setTimeout(() => { if (bar) bar.style.width = p + '%'; }, 300 + i * 60);
-      if (lbl) lbl.textContent = c.pctLabel;
+  cards.forEach((c,i) => {
+    animCount(document.getElementById(`kv${i}`), c.val);
+    if (c.bar !== null) {
+      setTimeout(() => {
+        const el = document.getElementById(`kb${i}`);
+        if (el) el.style.width = Math.min(c.bar,100) + '%';
+      }, 250 + i*60);
     }
   });
-
-  // Store for other charts
-  window._kpis = d;
 }
 
-/* ── META GAUGE (Doughnut semicircular) ── */
+/* ══════════════════════════════════════════
+   RENDER: META GAUGE
+══════════════════════════════════════════ */
 function renderMeta(d) {
-  const atual = d.votosTotal || 0;
-  const meta  = d.metaTotal  || 1;
-  const pct   = Math.min(Math.round((atual / meta) * 100), 100);
-  const resto = 100 - pct;
+  const pct  = d.metaTotal > 0 ? Math.min(Math.round((d.votosTotal/d.metaTotal)*100), 100) : 0;
+  const rest = 100 - pct;
+  const cor  = pct >= 80 ? '#10b981' : pct >= 50 ? '#3b82f6' : '#f59e0b';
 
-  document.getElementById('meta-pct-badge').textContent = pct + '%';
+  document.getElementById('meta-badge').textContent = pct + '%';
+  animCount(document.getElementById('gauge-num'), pct, 1200);
+  document.getElementById('gauge-num').textContent = '0%';
+  // override to show %
+  const el = document.getElementById('gauge-num');
+  const start = performance.now();
+  (function step(now) {
+    const p = Math.min((now-start)/1200, 1);
+    el.textContent = Math.round(pct * (1-Math.pow(1-p,3))) + '%';
+    if (p < 1) requestAnimationFrame(step);
+  })(start);
 
-  const metaNum = document.getElementById('meta-num');
-  animateCount(metaNum, pct, 1200, '', '%');
-
-  destroyChart('meta');
-  const ctx = document.getElementById('chart-meta').getContext('2d');
-  charts['meta'] = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      datasets: [{
-        data: [pct, resto],
-        backgroundColor: [
-          pct >= 80 ? '#10b981' : pct >= 50 ? '#3b82f6' : '#f59e0b',
-          'rgba(30,48,80,0.5)'
-        ],
-        borderWidth: 0,
-        circumference: 180,
-        rotation: 270,
+  kill('meta');
+  charts['meta'] = new Chart(document.getElementById('chart-meta').getContext('2d'), {
+    type:'doughnut',
+    data:{
+      datasets:[{
+        data:[pct, rest],
+        backgroundColor:[cor, 'rgba(30,48,80,0.5)'],
+        borderWidth:0,
+        circumference:180,
+        rotation:270
       }]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      cutout: '72%',
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      animation: { animateRotate: true, duration: 1200 }
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'72%',
+      plugins:{ legend:{display:false}, tooltip:{enabled:false} },
+      animation:{ animateRotate:true, duration:1300 }
     }
   });
 
   document.getElementById('meta-legend').innerHTML = `
-    <div class="legend-item"><div class="legend-dot" style="background:${pct>=80?'#10b981':pct>=50?'#3b82f6':'#f59e0b'}"></div>${fmt(atual)} atingidos</div>
-    <div class="legend-item"><div class="legend-dot" style="background:rgba(30,48,80,0.8);border:1px solid #1e3050"></div>${fmt(meta - atual)} restantes</div>
-  `;
+    <div class="dl-item"><div class="dl-dot" style="background:${cor}"></div>${fmt(d.votosTotal)} mapeados</div>
+    <div class="dl-item"><div class="dl-dot" style="background:rgba(30,48,80,0.9);border:1px solid #1e3050"></div>${fmt(Math.max(d.metaTotal-d.votosTotal,0))} restantes</div>`;
 }
 
-/* ── STATUS DONUT ── */
-function renderStatusDonut(d) {
-  if (!d.statusBreakdown || !d.statusBreakdown.length) return;
+/* ══════════════════════════════════════════
+   RENDER: STATUS DONUT
+══════════════════════════════════════════ */
+function renderStatus(d) {
+  if (!d.statusBreakdown?.length) return;
+  const corMap = { ativo:'#10b981', inativo:'#ef4444', pendente:'#f59e0b', indefinido:'#4d6480' };
   const labels = d.statusBreakdown.map(s => s.status);
-  const valores = d.statusBreakdown.map(s => parseInt(s.total));
-  const colorMap = { ativo: '#10b981', inativo: '#ef4444', pendente: '#f59e0b', indefinido: '#4d6480' };
-  const colors = labels.map(l => colorMap[l] || COLORS[0]);
+  const vals   = d.statusBreakdown.map(s => parseInt(s.total));
+  const cores  = labels.map(l => corMap[l] || PAL[0]);
 
-  destroyChart('status');
+  kill('status');
   charts['status'] = new Chart(document.getElementById('chart-status').getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{
-        data: valores,
-        backgroundColor: colors.map(c => c + 'cc'),
-        borderColor: colors,
-        borderWidth: 2,
-        hoverOffset: 8
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '65%',
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} lideranças` }
-        }
-      },
-      animation: { animateRotate: true, duration: 1000 }
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:vals, backgroundColor:cores.map(c=>c+'cc'), borderColor:cores, borderWidth:2, hoverOffset:8 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'65%',
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.parsed}` } } },
+      animation:{ animateRotate:true, duration:1000 }
     }
   });
 
-  document.getElementById('status-legend').innerHTML = labels.map((l, i) => `
-    <div class="legend-item">
-      <div class="legend-dot" style="background:${colors[i]}"></div>
-      ${l}: <strong style="color:var(--text);margin-left:3px">${valores[i]}</strong>
-    </div>
-  `).join('');
+  document.getElementById('status-legend').innerHTML = labels.map((l,i) =>
+    `<div class="dl-item"><div class="dl-dot" style="background:${cores[i]}"></div>${l}: <strong style="color:var(--text);margin-left:3px">${vals[i]}</strong></div>`
+  ).join('');
 }
 
-/* ── CANDIDATOS DONUT ── */
-function renderCandidatosDonut(d) {
-  if (!d.votosPorVinculo || !d.votosPorVinculo.length) return;
-  const rows = d.votosPorVinculo.slice(0, 6);
+/* ══════════════════════════════════════════
+   RENDER: CANDIDATOS DONUT
+══════════════════════════════════════════ */
+function renderCandidatos(d) {
+  if (!d.votosPorVinculo?.length) return;
+  const rows  = d.votosPorVinculo.slice(0,6);
   const labels = rows.map(r => r.candidato || 'Indefinido');
-  const valores = rows.map(r => parseInt(r.votos || 0));
+  const vals   = rows.map(r => parseInt(r.votos||0));
 
-  destroyChart('candidatos');
-  charts['candidatos'] = new Chart(document.getElementById('chart-candidatos').getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{
-        data: valores,
-        backgroundColor: COLORS.slice(0, labels.length).map(c => c + 'bb'),
-        borderColor: COLORS.slice(0, labels.length),
-        borderWidth: 2,
-        hoverOffset: 8
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '60%',
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.parsed)} votos` }
-        }
-      },
-      animation: { animateRotate: true, duration: 1000 }
+  kill('cand');
+  charts['cand'] = new Chart(document.getElementById('chart-cand').getContext('2d'), {
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:vals, backgroundColor:PAL.slice(0,labels.length).map(c=>c+'bb'), borderColor:PAL.slice(0,labels.length), borderWidth:2, hoverOffset:8 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'60%',
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${fmt(ctx.parsed)} votos` } } },
+      animation:{ animateRotate:true, duration:1000 }
     }
   });
 
-  document.getElementById('candidatos-legend').innerHTML = rows.map((r, i) => `
-    <div class="legend-item">
-      <div class="legend-dot" style="background:${COLORS[i]}"></div>
-      <span style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${labels[i]}</span>:
-      <strong style="color:var(--text);margin-left:3px">${fmt(valores[i])}</strong>
-    </div>
-  `).join('');
+  document.getElementById('cand-legend').innerHTML = rows.map((r,i) =>
+    `<div class="dl-item"><div class="dl-dot" style="background:${PAL[i]}"></div>
+     <span style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${labels[i]}</span>: <strong style="color:var(--text);margin-left:3px">${fmt(vals[i])}</strong></div>`
+  ).join('');
 }
 
-/* ── RANKING ── */
-function posClass(i) { return i===0?'gold':i===1?'silver':i===2?'bronze':''; }
+/* ══════════════════════════════════════════
+   RENDER: EXPECTATIVA POR REGIÃO
+══════════════════════════════════════════ */
+function pctClass(p) { return p>=80?'pct-high':p>=50?'pct-mid':p>0?'pct-low':'pct-zero'; }
+
+function renderExpRegioes(regioes) {
+  if (!regioes.length) {
+    document.getElementById('exp-list').innerHTML = '<div class="empty">Sem dados de expectativa</div>';
+    return;
+  }
+
+  const maxMeta    = Math.max(...regioes.map(r=>r.meta_total), 1);
+  const maxMapeado = Math.max(...regioes.map(r=>r.votos_mapeados), 1);
+  const maxGlobal  = Math.max(maxMeta, maxMapeado);
+
+  document.getElementById('exp-list').innerHTML = regioes.map((r, i) => {
+    const pctMeta    = Math.round((r.meta_total    / maxGlobal) * 100);
+    const pctMapeado = Math.round((r.votos_mapeados / maxGlobal) * 100);
+    const pct        = r.pct_atingido;
+    return `
+      <div class="exp-item" style="animation-delay:${i*0.05}s">
+        <div class="exp-top">
+          <span class="exp-name">${r.regiao}</span>
+          <div class="exp-nums">
+            <span class="exp-num-mapped">${fmt(r.votos_mapeados)} mapeados</span>
+            <span class="exp-num-meta">/ meta ${fmt(r.meta_total)}</span>
+            <span class="exp-pct-chip ${pctClass(pct)}">${pct}%</span>
+          </div>
+        </div>
+        <div class="exp-bars">
+          <div class="exp-bar-row">
+            <span class="exp-bar-label">Mapeado</span>
+            <div class="exp-bar-track">
+              <div class="exp-bar-fill mapped" id="em${i}" style="width:0"></div>
+            </div>
+          </div>
+          <div class="exp-bar-row">
+            <span class="exp-bar-label">Meta</span>
+            <div class="exp-bar-track">
+              <div class="exp-bar-fill meta" id="et${i}" style="width:0"></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  regioes.forEach((r, i) => {
+    const pctMeta    = Math.round((r.meta_total    / maxGlobal) * 100);
+    const pctMapeado = Math.round((r.votos_mapeados / maxGlobal) * 100);
+    setTimeout(() => {
+      const em = document.getElementById(`em${i}`);
+      const et = document.getElementById(`et${i}`);
+      if (em) em.style.width = pctMapeado + '%';
+      if (et) et.style.width = pctMeta + '%';
+    }, 200 + i * 80);
+  });
+
+  // Grouped bar chart
+  kill('exp-regioes');
+  charts['exp-regioes'] = new Chart(document.getElementById('chart-exp-regioes').getContext('2d'), {
+    type:'bar',
+    data:{
+      labels: regioes.map(r => r.regiao.length > 16 ? r.regiao.slice(0,14)+'…' : r.regiao),
+      datasets:[
+        {
+          label:'Votos Mapeados',
+          data: regioes.map(r=>r.votos_mapeados),
+          backgroundColor:'rgba(16,185,129,0.75)',
+          borderColor:'#10b981', borderWidth:1.5,
+          borderRadius:5, borderSkipped:false
+        },
+        {
+          label:'Meta',
+          data: regioes.map(r=>r.meta_total),
+          backgroundColor:'rgba(59,130,246,0.35)',
+          borderColor:'#3b82f6', borderWidth:1.5,
+          borderRadius:5, borderSkipped:false
+        }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{ display:true, labels:{ color:'#a8b8d0', boxWidth:10, boxHeight:10, padding:14, font:{size:11} } }
+      },
+      scales:{
+        ...darkGrid(
+          { ticks:{color:'#a8b8d0',font:{size:10},maxRotation:40} },
+          { ticks:{ callback:v=>fmt(v), color:'#4d6480',font:{size:10} } }
+        )
+      },
+      animation:{ duration:1000 }
+    }
+  });
+}
+
+/* ══════════════════════════════════════════
+   RENDER: RADAR
+══════════════════════════════════════════ */
+function renderRadar(regioes) {
+  if (!regioes.length) return;
+  const labels = regioes.map(r=>r.regiao);
+  const vals   = regioes.map(r=>r.votos_mapeados);
+  const metas  = regioes.map(r=>r.meta_total);
+  const maxV   = Math.max(...vals,...metas,1);
+
+  kill('radar');
+  charts['radar'] = new Chart(document.getElementById('chart-radar').getContext('2d'), {
+    type:'radar',
+    data:{
+      labels,
+      datasets:[
+        { label:'Mapeado', data:vals, backgroundColor:'rgba(16,185,129,0.15)', borderColor:'#10b981', borderWidth:2, pointBackgroundColor:'#10b981', pointBorderColor:'#fff', pointBorderWidth:1.5, pointRadius:4 },
+        { label:'Meta',    data:metas, backgroundColor:'rgba(59,130,246,0.08)', borderColor:'#3b82f6aa', borderWidth:1.5, borderDash:[5,4], pointBackgroundColor:'#3b82f6', pointBorderColor:'#fff', pointBorderWidth:1, pointRadius:3 }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:true, labels:{ color:'#a8b8d0', boxWidth:10, boxHeight:10, padding:12, font:{size:11} } } },
+      scales:{
+        r:{
+          grid:{ color:'rgba(30,48,80,0.7)' },
+          angleLines:{ color:'rgba(30,48,80,0.7)' },
+          pointLabels:{ color:'#a8b8d0', font:{size:10} },
+          ticks:{ display:false },
+          suggestedMin:0, suggestedMax:maxV
+        }
+      },
+      animation:{ duration:1100 }
+    }
+  });
+}
+
+/* ══════════════════════════════════════════
+   RENDER: VOTOS VÁLIDOS POR REGIÃO (horizontal)
+══════════════════════════════════════════ */
+function renderVotosReg(regioes) {
+  if (!regioes.length) return;
+  kill('votos-reg');
+  charts['votos-reg'] = new Chart(document.getElementById('chart-votos-reg').getContext('2d'), {
+    type:'bar',
+    data:{
+      labels: regioes.map(r=>r.regiao),
+      datasets:[{
+        label:'Votos Mapeados',
+        data: regioes.map(r=>r.votos_mapeados),
+        backgroundColor: PAL.slice(0,regioes.length).map(c=>c+'aa'),
+        borderColor:     PAL.slice(0,regioes.length),
+        borderWidth:1.5, borderRadius:6, borderSkipped:false
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx=>` ${fmt(ctx.parsed.x)} votos` } } },
+      scales:{
+        ...darkGrid(
+          { ticks:{ callback:v=>fmt(v), color:'#4d6480', font:{size:10} } },
+          { ticks:{ color:'#a8b8d0', font:{size:11} } }
+        )
+      },
+      animation:{ duration:1000 }
+    }
+  });
+}
+
+/* ══════════════════════════════════════════
+   RENDER: RANKING
+══════════════════════════════════════════ */
+function posC(i) { return i===0?'g':i===1?'s':i===2?'b':''; }
 
 function renderRanking(rows) {
-  if (!rows.length) { document.getElementById('ranking-list').innerHTML = '<div class="empty">Sem dados</div>'; return; }
   document.getElementById('ranking-badge').textContent = `top ${rows.length}`;
-  document.getElementById('ranking-list').innerHTML = rows.map((r, i) => `
-    <div class="ranking-item">
-      <div class="rank-pos ${posClass(i)}">${i + 1}</div>
-      <div class="rank-info">
-        <div class="rank-name">${r.nome}</div>
-        <div class="rank-city">${r.cidade || '—'} · ${r.regiao || '—'}</div>
-      </div>
-      <div class="rank-votos">${fmt(r.expectativa_votos)} v</div>
-      <div class="rank-status ${r.status || 'pendente'}">${r.status || '?'}</div>
-    </div>
-  `).join('');
+  document.getElementById('ranking-list').innerHTML = rows.length
+    ? rows.map((r,i) => `
+        <div class="rank-item" style="animation-delay:${i*0.04}s">
+          <div class="rank-pos ${posC(i)}">${i+1}</div>
+          <div class="rank-info">
+            <div class="rank-name">${r.nome}</div>
+            <div class="rank-city">${r.cidade||'—'} · ${r.regiao||'—'}</div>
+          </div>
+          <div class="rank-votos">${fmt(r.expectativa_votos)} v</div>
+          <div class="rank-status ${r.status||'pendente'}">${r.status||'?'}</div>
+        </div>`).join('')
+    : '<div class="empty">Sem dados</div>';
 }
 
-/* ── ALERTAS ── */
+/* ══════════════════════════════════════════
+   RENDER: ANIVERSARIANTES
+══════════════════════════════════════════ */
+function renderAniversariantes(rows) {
+  const badge = document.getElementById('bday-badge');
+  if (!rows.length) {
+    badge.textContent = 'nenhum';
+    badge.classList.add('warn');
+    document.getElementById('bday-grid').innerHTML = '<div class="empty">🎉 Nenhum aniversariante nos próximos 7 dias</div>';
+    return;
+  }
+  badge.textContent = `${rows.length} pessoa${rows.length>1?'s':''}`;
+
+  document.getElementById('bday-grid').innerHTML = rows.map((p, i) => {
+    const dias = parseInt(p.dias_para_aniversario || 0);
+    let chipCls = 'dias', chipTxt = `em ${dias} dia${dias!==1?'s':''}`;
+    if (dias === 0) { chipCls='hoje'; chipTxt='🎂 Hoje!'; }
+    else if (dias === 1) { chipCls='amanha'; chipTxt='Amanhã'; }
+
+    const initials = (p.nome||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    const avatarInner = p.foto
+      ? `<img src="${p.foto}" alt="${p.nome}" onerror="this.style.display='none';this.parentElement.textContent='${initials}'">`
+      : initials;
+
+    const dn = p.data_nascimento ? new Date(p.data_nascimento) : null;
+    const anoBirthday = dn
+      ? `${String(dn.getUTCDate()).padStart(2,'0')}/${String(dn.getUTCMonth()+1).padStart(2,'0')}`
+      : '';
+
+    return `
+      <div class="bday-item ${dias===0?'today':''}" style="animation-delay:${i*0.06}s">
+        <div class="bday-avatar">${avatarInner}</div>
+        <div class="bday-info">
+          <div class="bday-name">${p.nome}</div>
+          <div class="bday-city">${p.cidade||p.regiao||'—'}${anoBirthday?' · '+anoBirthday:''}</div>
+        </div>
+        <span class="bday-chip ${chipCls}">${chipTxt}</span>
+      </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════
+   RENDER: ALERTAS
+══════════════════════════════════════════ */
 function renderAlertas(d) {
   const items = [];
-  (d.regioesSemLider || []).forEach(r => {
-    items.push(`<div class="alert-item danger">
-      <div class="alert-icon">🚨</div>
-      <div class="alert-text"><strong>${r.regiao}</strong><span>Nenhuma liderança ativa nesta região</span></div>
-    </div>`);
+  (d.regioesSemLider||[]).forEach(r => {
+    items.push(`<div class="alert-item danger"><div class="alert-icon">🚨</div><div class="alert-text"><strong>${r.regiao}</strong><span>Nenhuma liderança ativa nesta região</span></div></div>`);
   });
-  (d.liderancasInativas || []).slice(0, 5).forEach(l => {
-    items.push(`<div class="alert-item warning">
-      <div class="alert-icon">⚠️</div>
-      <div class="alert-text"><strong>${l.nome}</strong><span>Inativa — ${fmt(l.expectativa_votos)} votos em risco · ${l.cidade || l.regiao}</span></div>
-    </div>`);
+  (d.liderancasInativas||[]).slice(0,5).forEach(l => {
+    items.push(`<div class="alert-item warning"><div class="alert-icon">⚠️</div><div class="alert-text"><strong>${l.nome}</strong><span>Inativa — ${fmt(l.expectativa_votos)} votos em risco · ${l.cidade||l.regiao}</span></div></div>`);
   });
-  if ((d.semVotos || []).length) {
-    items.push(`<div class="alert-item info">
-      <div class="alert-icon">ℹ️</div>
-      <div class="alert-text"><strong>${d.semVotos.length} liderança(s)</strong><span>Sem expectativa de votos definida</span></div>
-    </div>`);
+  if ((d.semVotos||[]).length) {
+    items.push(`<div class="alert-item info"><div class="alert-icon">ℹ️</div><div class="alert-text"><strong>${d.semVotos.length} liderança(s)</strong><span>Sem expectativa de votos definida</span></div></div>`);
   }
   document.getElementById('alert-list').innerHTML = items.length
-    ? items.join('')
-    : '<div class="empty">✅ Nenhum alerta crítico</div>';
+    ? items.join('') : '<div class="empty">✅ Nenhum alerta crítico</div>';
 }
 
-/* ── AUDITORIA ── */
+/* ══════════════════════════════════════════
+   RENDER: AUDITORIA
+══════════════════════════════════════════ */
 function renderAudit(d) {
-  if (!d.auditRecentes || !d.auditRecentes.length) {
+  if (!d.auditRecentes?.length) {
     document.getElementById('audit-list').innerHTML = '<div class="empty">Sem registros</div>'; return;
   }
   document.getElementById('audit-list').innerHTML = d.auditRecentes.map(a => {
     const ts = a.created_at || a.created || null;
     const quando = ts
-      ? new Date(ts).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
+      ? new Date(ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
       : `#${a.id}`;
-    return `
-      <div class="audit-item">
-        <span class="audit-acao">${a.acao || '?'}</span>
-        <span class="audit-info">${a.entidade || ''} ${a.usuario ? '· ' + a.usuario : ''}</span>
-        <span class="audit-time">${quando}</span>
-      </div>`;
+    return `<div class="audit-item">
+      <span class="audit-acao">${a.acao||'?'}</span>
+      <span class="audit-info">${a.entidade||''} ${a.usuario?'· '+a.usuario:''}</span>
+      <span class="audit-time">${quando}</span>
+    </div>`;
   }).join('');
 }
 
-/* ── GASTOS (Bar) ── */
-function renderGastos(meses) {
-  const labels  = meses.map(m => {
-    const [ano, mes] = m.mes.split('-');
-    return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(mes)-1] + '/' + ano.slice(2);
-  });
-  const valores = meses.map(m => parseFloat(m.total_gastos || 0));
-
-  destroyChart('gastos');
-  charts['gastos'] = new Chart(document.getElementById('chart-gastos').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: labels.length ? labels : ['Sem dados'],
-      datasets: [{
-        label: 'Gastos (R$)',
-        data: valores.length ? valores : [0],
-        backgroundColor: COLORS[0] + '99',
-        borderColor: COLORS[0],
-        borderWidth: 1.5,
-        borderRadius: 7,
-        borderSkipped: false,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        ...darkScales({
-          y: { ticks: { callback: v => fmtR(v), color: '#4d6480', font: { size: 11 } } }
-        })
-      },
-      animation: { duration: 900 }
-    }
-  });
-}
-
-/* ── REGIAO BARRAS ── */
-function renderRegiaoBarras(regioes) {
-  const max = Math.max(...regioes.map(r => parseInt(r.votos || 0)), 1);
-  const regionColors = ['#3b82f6','#10b981','#a855f7','#f59e0b','#ef4444','#06b6d4','#ec4899','#f97316'];
-  document.getElementById('regiao-grid').innerHTML = regioes.map((r, i) => {
-    const votos = parseInt(r.votos || 0);
-    const pct = Math.round((votos / max) * 100);
-    return `
-      <div class="regiao-item">
-        <div class="regiao-label">${r.regiao}</div>
-        <div class="regiao-bar-wrap">
-          <div class="regiao-bar" id="rbar-${i}" style="background:${regionColors[i%8]+'bb'}"></div>
-        </div>
-        <div class="regiao-votos">${fmt(votos)}</div>
-      </div>`;
-  }).join('');
-  // Animate bars after render
-  regioes.forEach((r, i) => {
-    const votos = parseInt(r.votos || 0);
-    const pct = Math.round((votos / max) * 100);
-    setTimeout(() => {
-      const bar = document.getElementById(`rbar-${i}`);
-      if (bar) bar.style.width = pct + '%';
-    }, 200 + i * 60);
-  });
-}
-
-/* ── RADAR ── */
-function renderRadar(regioes) {
-  const labels  = regioes.map(r => r.regiao);
-  const valores = regioes.map(r => parseInt(r.votos || 0));
-  const max = Math.max(...valores, 1);
-
-  destroyChart('radar');
-  charts['radar'] = new Chart(document.getElementById('chart-radar').getContext('2d'), {
-    type: 'radar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Votos Mapeados',
-        data: valores,
-        backgroundColor: 'rgba(59,130,246,0.15)',
-        borderColor: '#3b82f6',
-        borderWidth: 2,
-        pointBackgroundColor: '#3b82f6',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 1.5,
-        pointRadius: 4,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        r: {
-          grid: { color: 'rgba(30,48,80,0.8)' },
-          angleLines: { color: 'rgba(30,48,80,0.8)' },
-          pointLabels: { color: '#a8b8d0', font: { size: 10 } },
-          ticks: {
-            display: false,
-            stepSize: Math.round(max / 4),
-          },
-          suggestedMin: 0,
-          suggestedMax: max
-        }
-      },
-      animation: { duration: 1000 }
-    }
-  });
-}
-
-/* ── DISTRIBUIÇÃO HORIZONTAL ── */
-function renderDistribuicao(regioes) {
-  destroyChart('regioes');
-  charts['regioes'] = new Chart(document.getElementById('chart-regioes').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: regioes.map(r => r.regiao),
-      datasets: [{
-        label: 'Votos Esperados',
-        data: regioes.map(r => parseInt(r.votos || 0)),
-        backgroundColor: COLORS.slice(0, regioes.length).map(c => c + 'aa'),
-        borderColor: COLORS.slice(0, regioes.length),
-        borderWidth: 1.5,
-        borderRadius: 6,
-        borderSkipped: false,
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        ...darkScales({
-          x: { ticks: { callback: v => fmt(v), color: '#4d6480', font: { size: 10 } } },
-          y: { ticks: { color: '#a8b8d0', font: { size: 11 } } }
-        })
-      },
-      animation: { duration: 1000 }
-    }
-  });
-}
-
-/* ── AGENDA ── */
+/* ══════════════════════════════════════════
+   RENDER: AGENDA
+══════════════════════════════════════════ */
 function renderAgenda(d) {
   const items = [];
-  (d.regioesFracas || []).slice(0, 3).forEach(r => {
-    items.push({ p: 'high', a: `Visitar região: ${r.regiao}`, w: `Apenas ${fmt(r.votos)} votos com ${r.total_lideres} liderança(s)` });
+  (d.regioesFracas||[]).slice(0,3).forEach(r => {
+    items.push({p:'high', a:`Visitar: ${r.regiao}`, w:`Apenas ${fmt(r.votos)} votos com ${r.total_lideres} liderança(s)`});
   });
-  (d.semInteracao || []).slice(0, 3).forEach(l => {
-    items.push({ p: 'mid', a: `Contatar ${l.nome}`, w: `Sem interação +30 dias · ${fmt(l.expectativa_votos)} votos · ${l.cidade || l.regiao}` });
+  (d.semInteracao||[]).slice(0,3).forEach(l => {
+    items.push({p:'mid', a:`Contatar ${l.nome}`, w:`Sem interação +30 dias · ${fmt(l.expectativa_votos)} votos · ${l.cidade||l.regiao}`});
   });
-  (d.topCidades || []).slice(0, 2).forEach(c => {
-    items.push({ p: 'low', a: `Reforçar: ${c.cidade}`, w: `${fmt(c.votos_potenciais)} votos potenciais · ${c.lideres} liderança(s) ativas` });
+  (d.topCidades||[]).slice(0,2).forEach(c => {
+    items.push({p:'low', a:`Reforçar: ${c.cidade}`, w:`${fmt(c.votos_potenciais)} votos potenciais · ${c.lideres} liderança(s)`});
   });
   document.getElementById('agenda-list').innerHTML = items.length
-    ? items.map(it => `
+    ? items.map(it=>`
         <div class="agenda-item">
           <div class="agenda-bullet ${it.p}"></div>
           <div><div class="agenda-action">${it.a}</div><div class="agenda-why">${it.w}</div></div>
         </div>`).join('')
-    : '<div class="empty">Nenhuma sugestão</div>';
-
-  const sem = d.semInteracao || [];
-  document.getElementById('sem-interacao-badge').textContent = `${sem.length} lideranças`;
-  document.getElementById('sem-interacao-list').innerHTML = sem.length
-    ? sem.map((l, i) => `
-        <div class="ranking-item">
-          <div class="rank-pos ${posClass(i)}">${i+1}</div>
-          <div class="rank-info">
-            <div class="rank-name">${l.nome}</div>
-            <div class="rank-city">${l.cidade||'—'} · ${l.regiao||'—'}</div>
-          </div>
-          <div class="rank-votos">${fmt(l.expectativa_votos)} v</div>
-          <div></div>
-        </div>`).join('')
-    : '<div class="empty">✅ Todas contactadas</div>';
+    : '<div class="empty">Nenhuma sugestão de agenda</div>';
 }
 
-/* ============================================================
+/* ══════════════════════════════════════════
    MAIN LOADER
-   ============================================================ */
+══════════════════════════════════════════ */
 async function carregarTudo() {
   try {
-    const [kpis, ranking, alertas, crescimento, agenda] = await Promise.all([
+    const [kpis, ranking, alertas, expRegioes, agenda, aniversariantes] = await Promise.all([
       apiFetch('/dashboard/kpis'),
       apiFetch('/dashboard/ranking'),
       apiFetch('/dashboard/alertas'),
-      apiFetch('/dashboard/crescimento'),
+      apiFetch('/dashboard/expectativa-regioes'),
       apiFetch('/dashboard/agenda'),
+      apiFetch('/aniversariantes?dias=7'),
     ]);
 
     renderKpis(kpis);
     renderMeta(kpis);
-    renderStatusDonut(kpis);
-    renderCandidatosDonut(kpis);
+    renderStatus(kpis);
+    renderCandidatos(kpis);
+
+    renderExpRegioes(expRegioes);
+    renderRadar(expRegioes);
+    renderVotosReg(expRegioes);
+
     renderRanking(ranking);
+    renderAniversariantes(aniversariantes);
     renderAlertas(alertas);
     renderAudit(alertas);
-
-    const regioes = crescimento.votosEvolucao || [];
-    renderGastos(crescimento.gastosPorMes || []);
-    renderRegiaoBarras(regioes);
-    renderRadar(regioes);
-    renderDistribuicao(regioes);
     renderAgenda(agenda);
 
     document.getElementById('last-update').innerHTML =
-      `<span class="pulse-dot"></span>atualizado às ${new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' })}`;
+      `<span class="pulse-dot"></span>atualizado às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
 
   } catch (err) {
     console.error('Erro ao carregar dashboard:', err);
   }
 }
 
-/* ===== BOOT ===== */
+/* ══════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════ */
 (async () => {
-  const user = await validarSessao();
-  if (user) {
-    const saved = JSON.parse(localStorage.getItem('user') || '{}');
-    iniciarApp(saved);
-  }
+  const u = await checkSession();
+  if (u) startApp(JSON.parse(localStorage.getItem('user')||'{}'));
 })();
 </script>
 </body>
