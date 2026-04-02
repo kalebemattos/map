@@ -18,12 +18,14 @@ module.exports = {
       nome:            'Célia Jordão',
       cor_fundo:       '#fce7f3',   // badge background
       cor_texto:       '#9d174d',   // badge text
+      tem_votos_2022:  true,        // foi candidata em 2022 → exibe card de votação
     },
     {
       chave:           'fernando',
       nome:            'Fernando Jordão',
       cor_fundo:       '#ede9fe',
       cor_texto:       '#5b21b6',
+      tem_votos_2022:  false,       // não foi candidato em 2022 → sem card de votação
     },
   ],
 

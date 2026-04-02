@@ -1596,18 +1596,20 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
     <!-- VOTOS HISTÓRICOS POR CANDIDATO — preenchido por injetarCandidatos() -->
     <div id="candidatos-votos-cards"></div>
 
-    <!-- INFO CIDADE -->
+    <!-- INFO CIDADE — DEPUTADOS ESTADUAIS -->
     <div id="city-info" class="city-card">
       <div class="city-name">Passe o mouse no mapa</div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--slate-400);margin-bottom:4px;">🏛️ Top 5 Deputados Estaduais – 2022</div>
       <div class="votos">Votos válidos: —</div>
       <ul class="deputado-list"></ul>
       <div class="hint">Dados oficiais – Eleição 2022</div>
     </div>
 
-    <!-- FEDERAIS -->
+    <!-- DEPUTADOS FEDERAIS -->
     <div id="city-info-federal" class="city-card">
-      <div class="city-name" id="city-name-federal">Deputados Federais – 2022</div>
-      <div class="votos" id="votos-federal">Passe o mouse no mapa</div>
+      <div class="city-name" id="city-name-federal">Passe o mouse no mapa</div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--slate-400);margin-bottom:4px;">🏛️ Top 5 Deputados Federais – 2022</div>
+      <div class="votos" id="votos-federal">Votos válidos: —</div>
       <ul class="deputado-list" id="deputado-list-federal"></ul>
       <div class="hint">Dados oficiais – Eleição 2022</div>
     </div>
@@ -1803,20 +1805,23 @@ function injetarCandidatos() {
   }
 
   // ── 5. Cards de votos históricos por candidato ──────────────────
+  // ── 5. Cards de votos históricos — apenas candidatos com tem_votos_2022 = true ──
   const votosCardsEl = document.getElementById('candidatos-votos-cards');
   if (votosCardsEl) {
-    votosCardsEl.innerHTML = cands.map(c =>
-      `<div id="votos-card-${c.chave}" class="city-card" style="display:none;background:${c.cor_fundo};border-color:${c.cor_texto}33;">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <img src="img/${c.chave}.jpg" onerror="this.style.display='none'"
-            style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid ${c.cor_texto}44;flex-shrink:0;">
-          <div>
-            <h3 style="margin:0;margin-bottom:4px;color:${c.cor_texto};">Votação ${c.nome} (2022)</h3>
-            <div id="votos-display-${c.chave}" style="font-family:'Sora',sans-serif;font-weight:800;color:${c.cor_texto};font-size:18px;">0 votos</div>
+    votosCardsEl.innerHTML = cands
+      .filter(c => c.tem_votos_2022)
+      .map(c =>
+        `<div id="votos-card-${c.chave}" class="city-card" style="display:none;background:${c.cor_fundo};border-color:${c.cor_texto}33;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img src="img/${c.chave}.jpg" onerror="this.style.display='none'"
+              style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid ${c.cor_texto}44;flex-shrink:0;">
+            <div>
+              <h3 style="margin:0;margin-bottom:4px;color:${c.cor_texto};">Votação ${c.nome} (2022)</h3>
+              <div id="votos-display-${c.chave}" style="font-family:'Sora',sans-serif;font-weight:800;color:${c.cor_texto};font-size:18px;">0 votos</div>
+            </div>
           </div>
-        </div>
-      </div>`
-    ).join('');
+        </div>`
+      ).join('');
   }
 }
 
@@ -2021,7 +2026,7 @@ function updateSidebarDeputadosFederais(cityName) {
   const top5 = deputadosFederaisByCity[cityKey];
 
   cityEl.textContent = cityName;
-  votosEl.textContent = 'Top 5 Deputados Federais – 2022';
+  votosEl.textContent = 'Votos válidos: —';
 
   top5.forEach((d, i) => {
     const li = document.createElement('li');
@@ -2469,7 +2474,7 @@ if (layerRJ && regiaoAtiva === 'all') {
   layerRJ.eachLayer(l => layerRJ.resetStyle(l));
 }
 
-  (configSistema.candidatos || []).forEach(c => {
+  (configSistema.candidatos || []).filter(c => c.tem_votos_2022).forEach(c => {
     const card = document.getElementById('votos-card-' + c.chave);
     if (card) card.style.display = 'none';
   });
@@ -2486,7 +2491,7 @@ function updateSidebar(cityName, votos) {
       cityInfoEl.style.display = 'none';
   }
 const normalized = normalizeCityName(cityName);
-  (configSistema.candidatos || []).forEach(c => {
+  (configSistema.candidatos || []).filter(c => c.tem_votos_2022).forEach(c => {
     const card    = document.getElementById('votos-card-' + c.chave);
     const display = document.getElementById('votos-display-' + c.chave);
     if (!card || !display) return;
