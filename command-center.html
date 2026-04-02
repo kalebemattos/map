@@ -304,10 +304,51 @@
     .exp-total-lbl { font-size:11px; color:var(--muted); font-weight:500; }
     .chart-h180    { height:180px; }
 
+    /* ─── RESUMO POR REGIÃO ─── */
+    .regiao-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 4px;
+    }
+    .regiao-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: fadeUp 0.4s ease both;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .regiao-card:hover { border-color: rgba(59,130,246,0.35); box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+    .regiao-card-title {
+      font-size: 13px; font-weight: 700; color: var(--text);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .regiao-card-badge {
+      font-size: 10px; font-weight: 600; padding: 2px 8px;
+      border-radius: 20px; background: rgba(59,130,246,0.15);
+      color: var(--accent); letter-spacing: .03em;
+    }
+    .regiao-metric-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 0; border-bottom: 1px solid var(--border);
+    }
+    .regiao-metric-row:last-child { border-bottom: none; }
+    .regiao-metric-label { font-size: 11px; color: var(--text2); display: flex; align-items: center; gap: 5px; }
+    .regiao-metric-val   { font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+    .regiao-cob-bar {
+      height: 4px; border-radius: 2px; background: var(--surface3);
+      margin-top: 4px; overflow: hidden;
+    }
+    .regiao-cob-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+
     /* ─── RANKING ─── */
     .rank-list { display:flex; flex-direction:column; gap:6px; }
     .rank-item {
-      display:grid; grid-template-columns:28px 1fr auto auto;
+      display:grid; grid-template-columns:28px 34px 1fr auto auto;
       align-items:center; gap:10px;
       padding:10px 13px; background:var(--surface2);
       border-radius:10px; border:1px solid var(--border);
@@ -568,7 +609,7 @@
           <div class="card-title">📊 Meta vs Mapeado</div>
           <div style="display:flex;gap:10px;align-items:center">
             <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)">
-              <span style="width:10px;height:4px;border-radius:2px;background:var(--green);display:inline-block"></span>Mapeado
+              <span style="width:10px;height:4px;border-radius:2px;background:var(--green);display:inline-block"></span>Exp. Lideranças
             </span>
             <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)">
               <span style="width:10px;height:4px;border-radius:2px;background:#3b82f6aa;display:inline-block"></span>Meta
@@ -609,6 +650,12 @@
         <div class="chart-h240"><canvas id="chart-votos-reg"></canvas></div>
         <div id="votos-validos-total" style="font-size:11px;color:var(--muted);text-align:right;margin-top:-8px;"></div>
       </div>
+    </div>
+
+    <!-- ══ RESUMO POR REGIÃO ══ -->
+    <div class="section-label">Resumo por Região</div>
+    <div class="regiao-grid" id="regiao-grid">
+      <div class="loading"><span></span><span></span><span></span></div>
     </div>
 
     <!-- ══ RANKING + ANIVERSARIANTES ══ -->
@@ -946,14 +993,14 @@ function renderExpRegioes(regioes) {
         <div class="exp-top">
           <span class="exp-name">${r.regiao}</span>
           <div class="exp-nums">
-            <span class="exp-num-mapped">${fmt(r.votos_mapeados)} mapeados</span>
+            <span class="exp-num-mapped">${fmt(r.votos_mapeados)} lideranças</span>
             <span class="exp-num-meta">/ meta ${fmt(r.meta_total)}</span>
             <span class="exp-pct-chip ${pctClass(pct)}">${pct}%</span>
           </div>
         </div>
         <div class="exp-bars">
           <div class="exp-bar-row">
-            <span class="exp-bar-label">Mapeado</span>
+            <span class="exp-bar-label">Exp. Lideranças</span>
             <div class="exp-bar-track">
               <div class="exp-bar-fill mapped" id="em${i}" style="width:0"></div>
             </div>
@@ -987,7 +1034,7 @@ function renderExpRegioes(regioes) {
       labels: regioes.map(r => r.regiao.length > 16 ? r.regiao.slice(0,14)+'…' : r.regiao),
       datasets:[
         {
-          label:'Votos Mapeados',
+          label:'Exp. Lideranças',
           data: regioes.map(r=>r.votos_mapeados),
           backgroundColor:'rgba(16,185,129,0.75)',
           borderColor:'#10b981', borderWidth:1.5,
@@ -1037,7 +1084,7 @@ function renderRadar(regioes) {
       labels,
       datasets:[
         {
-          label:'Mapeado',
+          label:'Exp. Lideranças',
           data:mapeado,
           backgroundColor:'rgba(16,185,129,0.14)',
           borderColor:'#10b981', borderWidth:2,
@@ -1153,16 +1200,23 @@ function posC(i) { return i===0?'g':i===1?'s':i===2?'b':''; }
 function renderRanking(rows) {
   document.getElementById('ranking-badge').textContent = `top ${rows.length}`;
   document.getElementById('ranking-list').innerHTML = rows.length
-    ? rows.map((r,i) => `
+    ? rows.map((r,i) => {
+        const initials = (r.nome||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+        const avatar = r.foto
+          ? `<img src="${r.foto}" alt="${r.nome}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='${initials}'">`
+          : initials;
+        return `
         <div class="rank-item" style="animation-delay:${i*0.04}s">
           <div class="rank-pos ${posC(i)}">${i+1}</div>
+          <div class="rank-avatar" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#3b82f655,#6366f155);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text2);flex-shrink:0;overflow:hidden;">${avatar}</div>
           <div class="rank-info">
             <div class="rank-name">${r.nome}</div>
             <div class="rank-city">${r.cidade||'—'} · ${r.regiao||'—'}</div>
           </div>
           <div class="rank-votos">${fmt(r.expectativa_votos)} v</div>
           <div class="rank-status ${r.status||'pendente'}">${r.status||'?'}</div>
-        </div>`).join('')
+        </div>`;
+      }).join('')
     : '<div class="empty">Sem dados</div>';
 }
 
@@ -1269,6 +1323,89 @@ function renderAgenda(d) {
 }
 
 /* ══════════════════════════════════════════
+   RENDER: RESUMO POR REGIÃO
+══════════════════════════════════════════ */
+function renderResumoRegioes(expRegioes) {
+  const grid = document.getElementById('regiao-grid');
+  if (!grid) return;
+
+  // Eleitorado real por região (data.js)
+  const votosReg = {};
+  if (typeof votosValidos !== 'undefined') {
+    Object.entries(REGIAO_CIDADES).forEach(([reg, cidades]) => {
+      votosReg[reg] = cidades.reduce((s, c) => s + (votosValidos[c] || 0), 0);
+    });
+  }
+
+  // Indexa dados do backend por região
+  const apiMap = {};
+  (expRegioes || []).forEach(r => { apiMap[r.regiao] = r; });
+
+  const regioes = Object.keys(REGIAO_CIDADES);
+
+  grid.innerHTML = regioes.map((reg, i) => {
+    const api      = apiMap[reg] || {};
+    const eleitor  = votosReg[reg] || 0;
+    const meta     = api.meta_total      || 0;
+    const expLid   = api.votos_mapeados  || 0;
+    const nLideres = api.total_lideres   || 0;
+    const cidades  = REGIAO_CIDADES[reg].length;
+
+    const cob       = meta > 0 ? Math.min(Math.round((expLid / meta) * 100), 100) : 0;
+    const cobColor  = cob >= 80 ? '#10b981' : cob >= 50 ? '#f59e0b' : cob > 0 ? '#ef4444' : '#4d6480';
+    const pctMeta   = eleitor > 0 ? ((meta / eleitor) * 100).toFixed(1) : '—';
+
+    return `
+    <div class="regiao-card" style="animation-delay:${i*0.05}s">
+      <div class="regiao-card-title">
+        <span>${reg}</span>
+        <span class="regiao-card-badge">${cidades} cidades</span>
+      </div>
+
+      <div class="regiao-metric-row">
+        <span class="regiao-metric-label">🗳️ Eleitorado real</span>
+        <span class="regiao-metric-val" style="color:var(--text2)">${fmt(eleitor)}</span>
+      </div>
+      <div class="regiao-metric-row">
+        <span class="regiao-metric-label">🏙️ Meta (cidades)</span>
+        <span class="regiao-metric-val" style="color:var(--accent)">${fmt(meta)} <small style="font-size:10px;color:var(--muted);font-weight:400">${pctMeta !== '—' ? pctMeta+'%' : ''}</small></span>
+      </div>
+      <div class="regiao-metric-row">
+        <span class="regiao-metric-label">🤝 Exp. Lideranças</span>
+        <span class="regiao-metric-val" style="color:var(--green)">${fmt(expLid)}</span>
+      </div>
+      <div class="regiao-metric-row">
+        <span class="regiao-metric-label">👥 Lideranças</span>
+        <span class="regiao-metric-val">${nLideres}</span>
+      </div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <span style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.04em">COBERTURA LID/META</span>
+          <span style="font-size:12px;font-weight:700;color:${cobColor}">${cob}%</span>
+        </div>
+        <div class="regiao-cob-bar">
+          <div class="regiao-cob-fill" id="rcb${i}" style="width:0;background:${cobColor};"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Anima as barras de cobertura
+  regioes.forEach((_, i) => {
+    const reg    = regioes[i];
+    const api    = apiMap[reg] || {};
+    const meta   = api.meta_total     || 0;
+    const expLid = api.votos_mapeados || 0;
+    const cob    = meta > 0 ? Math.min(Math.round((expLid / meta) * 100), 100) : 0;
+    setTimeout(() => {
+      const el = document.getElementById(`rcb${i}`);
+      if (el) el.style.width = cob + '%';
+    }, 300 + i * 60);
+  });
+}
+
+/* ══════════════════════════════════════════
    MAIN LOADER
 ══════════════════════════════════════════ */
 async function carregarTudo() {
@@ -1290,6 +1427,7 @@ async function carregarTudo() {
     renderExpRegioes(expRegioes);
     renderRadar(expRegioes);
     renderVotosReg(expRegioes); // usa data.js internamente para eleitorado real
+    renderResumoRegioes(expRegioes);
 
     renderRanking(ranking);
     renderAniversariantes(aniversariantes);

@@ -499,6 +499,12 @@ body {
 /* Admin card (hidden by default) */
 #card-admin { display: none; }
 
+/* Command Center card (hidden by default) */
+#card-command-center { display: none; }
+
+.card-indigo .card-icon-wrap { background: rgba(99,102,241,0.3); box-shadow: 0 4px 12px rgba(99,102,241,0.25); }
+.card-indigo:hover { border-color: rgba(165,180,252,0.3); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(99,102,241,0.15); }
+
 /* ===== PAINEL DE ANIVERSARIANTES ===== */
 #birthday-panel {
   position: relative;
@@ -917,6 +923,16 @@ setTimeout(function() {
         </div>
       </a>
 
+      <a href="./command-center.html" class="card card-indigo" id="card-command-center">
+        <div class="card-shine"></div>
+        <div class="card-icon-wrap">📡</div>
+        <div class="card-body">
+          <div class="card-title">Command Center</div>
+          <div class="card-desc">Painel estratégico com KPIs, metas, expectativas de lideranças, alertas e resumo por região em tempo real.</div>
+          <div class="card-cta">Abrir command center <div class="card-cta-arrow">→</div></div>
+        </div>
+      </a>
+
       <a href="./usuarios.html" class="card card-rose" id="card-admin">
         <div class="card-shine"></div>
         <div class="card-icon-wrap">🛡️</div>
@@ -959,6 +975,11 @@ window.iniciarAplicacao = function() {
   if (user.nivel === 'dono') {
     const adminCard = document.getElementById('card-admin')
     if (adminCard) adminCard.style.display = 'flex'
+  }
+  // Mostra command center para dono e admin
+  if (user.nivel === 'dono' || user.nivel === 'admin') {
+    const ccCard = document.getElementById('card-command-center')
+    if (ccCard) ccCard.style.display = 'flex'
   }
   // Busca salas de vídeo ativas e exibe badge
   carregarSalasAtivas()

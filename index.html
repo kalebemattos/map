@@ -1473,8 +1473,20 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
     <div id="seletor-campanha">
       <!-- preenchido dinamicamente por injetarCandidatos() -->
     </div>
-    <div class="subtitle" style="margin-top:10px;margin-bottom:0;">
-      Passe o mouse sobre um município no mapa para ver os 5 mais votados (2022).
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+      <div class="subtitle" style="margin-bottom:0;">
+        Passe o mouse sobre um município no mapa para ver os 5 mais votados (2022).
+      </div>
+      <a href="command-center.html" target="_blank"
+         style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;
+                background:linear-gradient(135deg,#0d2d6b,#1565c0);color:#fff;
+                border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;
+                white-space:nowrap;box-shadow:0 2px 8px rgba(21,101,192,0.35);
+                transition:opacity .2s,transform .15s;flex-shrink:0;"
+         onmouseover="this.style.opacity='.88';this.style.transform='translateY(-1px)'"
+         onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">
+        📊 Command Center
+      </a>
     </div>
   </div>
 
