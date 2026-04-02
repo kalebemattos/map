@@ -130,16 +130,16 @@ const deputadosByCity = {
 };
 
 /* ===== Regiões oficiais (92 municípios) (mantido) ===== */
-const regions = {
+let regions = {
   all: null,
   metropolitana: [
     "Rio de Janeiro","Niterói","São Gonçalo","Itaboraí","Maricá","Tanguá","Rio Bonito",
     "Cachoeiras de Macacu","Guapimirim","Magé","Duque de Caxias","Nova Iguaçu","Belford Roxo",
-    "São João de Meriti","Nilópolis","Mesquita","Queimados","Japeri","Seropédica","Itaguaí"
+    "São João de Meriti","Nilópolis","Mesquita","Queimados","Japeri","Seropédica","Itaguaí","Paracambi"
   ],
   baixadasLitoraneas: [
     "Araruama","Arraial do Cabo","Cabo Frio","Iguaba Grande","São Pedro da Aldeia",
-    "Saquarema","Silva Jardim","Casimiro de Abreu","Rio das Ostras,"
+    "Saquarema","Silva Jardim","Casimiro de Abreu","Rio das Ostras","Armação dos Búzios"
   ],
   norteFluminense: [
     "Campos dos Goytacazes","São João da Barra","São Francisco de Itabapoana",
@@ -152,16 +152,16 @@ const regions = {
   ],
   serrana: [
     "Petrópolis","Teresópolis","Nova Friburgo","Bom Jardim","Sumidouro","Cantagalo",
-    "Cordeiro","Santa Maria Madalena","Trajano de Moraes","São Sebastião do Alto","Macuco"
+    "Cordeiro","Santa Maria Madalena","Trajano de Moraes","São Sebastião do Alto","Macuco","Carmo","São José do Vale do Rio Preto"
   ],
   centroSulFluminense: [
     "Paraíba do Sul","Três Rios","Sapucaia","Comendador Levy Gasparian","Areal",
     "Paty do Alferes","Miguel Pereira","Vassouras","Engenheiro Paulo de Frontin",
-    "Mendes","Rio Claro","Piraí"
+    "Mendes","Piraí"
   ],
   medioParaiba: [
     "Barra Mansa","Volta Redonda","Resende","Quatis","Porto Real","Pinheiral",
-    "Valença","Rio das Flores","Barra do Piraí"
+    "Valença","Rio das Flores","Barra do Piraí","Rio Claro"
   ],
   costaVerde: [
     "Angra dos Reis","Paraty","Mangaratiba"
