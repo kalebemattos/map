@@ -496,7 +496,7 @@
     </div>
 
     <!-- ══ EXPECTATIVAS SEPARADAS ══ -->
-    <div class="section-label">Expectativas</div>
+    <div class="section-label">Metas e Expectativas</div>
     <div class="g2">
 
       <!-- Expectativa das Lideranças -->
@@ -515,10 +515,10 @@
         <div class="donut-legend" id="lid-cand-legend"></div>
       </div>
 
-      <!-- Expectativa das Cidades/Bairros -->
+      <!-- Meta das Cidades/Bairros -->
       <div class="card">
         <div class="card-hdr">
-          <div class="card-title">🏙️ Expectativa Cidades/Bairros</div>
+          <div class="card-title">🏙️ Meta Cidades/Bairros</div>
           <span class="badge" id="badge-cid-total">—</span>
         </div>
         <div class="exp-total-row">
@@ -559,7 +559,7 @@
     </div>
 
     <!-- ══ EXPECTATIVA POR REGIÃO (NOVO, CORRETO) ══ -->
-    <div class="section-label">Expectativa vs Mapeado por Região</div>
+    <div class="section-label">Meta vs Mapeado por Região</div>
     <div class="g2">
 
       <!-- Barras comparativas -->
@@ -584,7 +584,7 @@
       <div class="card">
         <div class="card-hdr">
           <div class="card-title">📈 Comparativo por Região</div>
-          <span class="badge">expectativa vs meta</span>
+          <span class="badge">meta vs mapeado</span>
         </div>
         <div class="chart-h280"><canvas id="chart-exp-regioes"></canvas></div>
       </div>
@@ -867,7 +867,7 @@ function renderExpectativas(d) {
     d.liderancasCelia, d.liderancasFernando, 'Lideranças');
 
   donutExpectativa('chart-cid-cand', 'cid-cand-legend', 'badge-cid-total', 'cid-total-num',
-    d.cidadesCelia, d.cidadesFernando, 'Cidades');
+    d.cidadesCelia, d.cidadesFernando, 'Meta');
 }
 
 /* ══════════════════════════════════════════
@@ -929,7 +929,7 @@ function pctClass(p) { return p>=80?'pct-high':p>=50?'pct-mid':p>0?'pct-low':'pc
 
 function renderExpRegioes(regioes) {
   if (!regioes.length) {
-    document.getElementById('exp-list').innerHTML = '<div class="empty">Sem dados de expectativa</div>';
+    document.getElementById('exp-list').innerHTML = '<div class="empty">Sem dados de meta</div>';
     return;
   }
 

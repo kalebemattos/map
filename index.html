@@ -1428,7 +1428,7 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
 
     <!-- EXPECTATIVA GERAL -->
     <div class="control-card">
-      <div class="control-title">📊 Expectativa Geral</div>
+      <div class="control-title">📊 Meta Geral</div>
       <div id="total-geral-overlays"><!-- preenchido por injetarCandidatos() --></div>
     </div>
 
@@ -1437,7 +1437,7 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
       <div class="control-title">🗳️ Visualização</div>
       <div class="control-group">
         <button class="mode-btn active" data-mode="validVotes">Votos</button>
-        <button class="mode-btn" data-mode="expectedVotes">Expectativa</button>
+        <button class="mode-btn" data-mode="expectedVotes">Meta</button>
         <button class="mode-btn" data-mode="leaders">Lideranças</button>
       </div>
     </div>
@@ -1531,7 +1531,7 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
         <div id="regiao-cand-rows"></div>
         <div style="margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.25);display:flex;flex-direction:column;gap:3px;">
           <div class="regiao-totais-row">
-            <span class="regiao-totais-label" style="color:rgba(255,255,255,0.9);font-weight:700;">🏙️ Total Cidades</span>
+            <span class="regiao-totais-label" style="color:rgba(255,255,255,0.9);font-weight:700;">🏙️ Meta Cidades</span>
             <span class="regiao-totais-val highlight" id="regiao-exp-total-cid">0</span>
           </div>
           <div class="regiao-totais-row">
@@ -1754,7 +1754,7 @@ function injetarCandidatos() {
       `<div class="exp-overlay-bloco"${i > 0 ? ' style="margin-top:8px;border-top:1px solid rgba(0,0,0,0.08);padding-top:8px;"' : ''}>
         <div class="exp-overlay-cand-nome">${c.nome}</div>
         <div class="exp-overlay-row">
-          <span class="exp-overlay-label">🏙️ Cidades</span>
+          <span class="exp-overlay-label">🏙️ Meta</span>
           <span class="control-value exp-overlay-val" id="ov-cid-${c.chave}">—</span>
         </div>
         <div class="exp-overlay-row">
@@ -1774,11 +1774,11 @@ function injetarCandidatos() {
   if (expContainer) {
     expContainer.innerHTML =
       cands.map((c, i) =>
-        `<label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;${i > 0 ? 'margin-top:8px;display:block;' : ''}">Expectativa ${c.nome}</label>
+        `<label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;${i > 0 ? 'margin-top:8px;display:block;' : ''}">Meta ${c.nome}</label>
         <input id="expectativa-cidade-${c.chave}" type="number" min="0" style="margin-top:4px;">`
       ).join('') +
       `<button id="salvar-expectativa-cidade" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;box-shadow:0 4px 12px rgba(21,101,192,0.3);">
-        Salvar expectativa
+        Salvar meta
       </button>`;
 
     document.getElementById('salvar-expectativa-cidade')
@@ -1794,7 +1794,7 @@ function injetarCandidatos() {
         <span class="regiao-totais-val" id="regiao-votos-${c.chave}">0</span>
       </div>
       <div class="regiao-totais-row">
-        <span class="regiao-totais-label">🏙️ Exp. Cidades ${c.nome}</span>
+        <span class="regiao-totais-label">🏙️ Meta ${c.nome}</span>
         <span class="regiao-totais-val" id="regiao-exp-${c.chave}">0</span>
       </div>
       <div class="regiao-totais-row">
@@ -2546,7 +2546,7 @@ async function renderLiderancas(city) {
   list.innerHTML = `
     <div style="padding:10px 12px;background:#eef3ff;border-radius:10px;display:flex;flex-direction:column;gap:7px;margin-bottom:4px;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:11px;font-weight:600;color:#475569;">🏙️ Exp. Cidades</span>
+        <span style="font-size:11px;font-weight:600;color:#475569;">🏙️ Meta Cidades</span>
         <b style="font-family:'Sora',sans-serif;color:#0d2d6b;font-size:14px;">${expCid.toLocaleString('pt-BR')}</b>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -3069,12 +3069,12 @@ function updateLegendByMode() {
       { color: '#cb181d', label: '1.000 – 1.999',  sub: 'moderado' },
       { color: '#fb6a4a', label: '300 – 999',       sub: 'baixo' },
       { color: '#fcae91', label: '1 – 299',         sub: 'muito baixo' },
-      { color: '#fee5d9', label: 'Nenhuma',         sub: 'sem expectativa' },
+      { color: '#fee5d9', label: 'Nenhuma',         sub: 'sem meta' },
     ];
     div.innerHTML = `
       <div class="legend-title">
         <div class="legend-title-icon">📈</div>
-        <span class="legend-title-text">Expectativa de votos</span>
+        <span class="legend-title-text">Meta de votos</span>
       </div>
       <div class="legend-gradient-wrap">
         <div class="legend-gradient-bar" style="background:linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d);"></div>
@@ -3337,7 +3337,7 @@ async function salvarExpectativaCidade() {
     if (!response.ok) {
       const erro = await response.text();
       console.error('Erro backend:', erro);
-      alert('Erro ao salvar expectativa');
+      alert('Erro ao salvar meta');
       return;
     }
 
@@ -3505,7 +3505,7 @@ layersPorCidade[nomeCidade] = layer;
               const expLid = getExpLiderancas(nome);
               const cob    = expCid > 0 ? Math.round((expLid / expCid) * 100) : 0;
               return `<b>${nome}</b><br>
-🏙️ Cidades: ${expCid.toLocaleString('pt-BR')}<br>
+🏙️ Meta: ${expCid.toLocaleString('pt-BR')}<br>
 🗳️ Lideranças: ${expLid.toLocaleString('pt-BR')}<br>
 📊 Cobertura: ${cob}%`;
             });
@@ -3894,7 +3894,7 @@ document.getElementById('toggleMapMode').addEventListener('click', () => {
   } else if (mode === 'leaders') {
     btn.innerText = '👥 Lideranças';
   } else if (mode === 'expectedVotes') {
-    btn.innerText = '📊 Expectativa de votos';
+    btn.innerText = '📊 Meta de votos';
   }
 
   repaintMap();
