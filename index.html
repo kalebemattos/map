@@ -1438,8 +1438,7 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
       <div class="control-group">
         <button class="mode-btn active" data-mode="validVotes">Votos</button>
         <button class="mode-btn" data-mode="expectedVotes">Meta</button>
-        <button class="mode-btn" data-mode="leaders">Lideranças</button>
-        <button class="mode-btn" data-mode="leaderVotes">Exp. Lideranças</button>
+        <button class="mode-btn" data-mode="leaderVotes">Lideranças</button>
       </div>
     </div>
 
@@ -1991,15 +1990,11 @@ function getCityColor(cityData) {
 }
 
   if (mode === 'leaders') {
-    return colorByLeaders(cityData.leadersCount);
+    return colorByLeaderVotes(cityData.leaderVotes);
   }
 
   if (mode === 'expectedVotes') {
     return colorByExpectedVotes(cityData.expectedVotes);
-  }
-
-  if (mode === 'leaderVotes') {
-    return colorByLeaderVotes(cityData.leaderVotes);
   }
 
   return '#ccc';
@@ -2013,12 +2008,12 @@ function colorByLeaders(count) {
 }
 
 function colorByLeaderVotes(votes) {
-  if (votes >= 5000) return '#3f007d';
-  if (votes >= 2000) return '#6a00b8';
-  if (votes >= 1000) return '#9e2dd6';
-  if (votes >= 300)  return '#bf7ee8';
-  if (votes > 0)     return '#ddb8f0';
-  return '#f3e8ff';
+  if (votes >= 5000) return '#004529';
+  if (votes >= 2000) return '#1b7837';
+  if (votes >= 1000) return '#31a354';
+  if (votes >= 300)  return '#74c476';
+  if (votes > 0)     return '#bae4b3';
+  return '#edf8e9';
 }
 
 function colorByExpectedVotes(votes) {
@@ -3125,12 +3120,12 @@ function updateLegendByMode() {
 
   if (mode === 'leaderVotes') {
     const steps = [
-      { color: '#3f007d', label: '5.000+',        sub: 'muito alto' },
-      { color: '#6a00b8', label: '2.000 – 4.999', sub: 'alto' },
-      { color: '#9e2dd6', label: '1.000 – 1.999', sub: 'moderado' },
-      { color: '#bf7ee8', label: '300 – 999',      sub: 'baixo' },
-      { color: '#ddb8f0', label: '1 – 299',        sub: 'muito baixo' },
-      { color: '#f3e8ff', label: 'Nenhuma',        sub: 'sem expectativa' },
+      { color: '#004529', label: '5.000+',        sub: 'muito alto' },
+      { color: '#1b7837', label: '2.000 – 4.999', sub: 'alto' },
+      { color: '#31a354', label: '1.000 – 1.999', sub: 'moderado' },
+      { color: '#74c476', label: '300 – 999',      sub: 'baixo' },
+      { color: '#bae4b3', label: '1 – 299',        sub: 'muito baixo' },
+      { color: '#edf8e9', label: 'Nenhuma',        sub: 'sem expectativa' },
     ];
     div.innerHTML = `
       <div class="legend-title">
@@ -3138,7 +3133,7 @@ function updateLegendByMode() {
         <span class="legend-title-text">Exp. Lideranças</span>
       </div>
       <div class="legend-gradient-wrap">
-        <div class="legend-gradient-bar" style="background:linear-gradient(to right,#f3e8ff,#ddb8f0,#bf7ee8,#9e2dd6,#6a00b8,#3f007d);"></div>
+        <div class="legend-gradient-bar" style="background:linear-gradient(to right,#edf8e9,#bae4b3,#74c476,#31a354,#1b7837,#004529);"></div>
         <div class="legend-gradient-labels">
           <span>0</span>
           <span>300</span>
