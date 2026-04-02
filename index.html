@@ -1439,6 +1439,7 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
         <button class="mode-btn active" data-mode="validVotes">Votos</button>
         <button class="mode-btn" data-mode="expectedVotes">Meta</button>
         <button class="mode-btn" data-mode="leaders">Lideranças</button>
+        <button class="mode-btn" data-mode="leaderVotes">Exp. Lideranças</button>
       </div>
     </div>
 
@@ -1856,7 +1857,7 @@ let filtroCampanha = "ambos";
 
 let regiaoEditando = null; // nome da região que está sendo editada
 let modoAdicionarCidade = false;
-const mapModes = ['validVotes', 'leaders', 'expectedVotes'];
+const mapModes = ['validVotes', 'leaders', 'expectedVotes', 'leaderVotes'];
 let currentMapModeIndex = 0;
 const cityNameEl = document.querySelector('.city-name');
 const votosEl = document.querySelector('.votos');
@@ -1985,6 +1986,10 @@ function getCityColor(cityData) {
     return colorByExpectedVotes(cityData.expectedVotes);
   }
 
+  if (mode === 'leaderVotes') {
+    return colorByLeaderVotes(cityData.leaderVotes);
+  }
+
   return '#ccc';
 }
 function colorByLeaders(count) {
@@ -1993,6 +1998,15 @@ function colorByLeaders(count) {
   if (count >= 5)  return '#5aae61';
   if (count >= 1)  return '#a6dba0';
   return '#e5f5e0';
+}
+
+function colorByLeaderVotes(votes) {
+  if (votes >= 5000) return '#3f007d';
+  if (votes >= 2000) return '#6a00b8';
+  if (votes >= 1000) return '#9e2dd6';
+  if (votes >= 300)  return '#bf7ee8';
+  if (votes > 0)     return '#ddb8f0';
+  return '#f3e8ff';
 }
 
 function colorByExpectedVotes(votes) {
@@ -2981,7 +2995,8 @@ function selecionarCidade(nome, layer) {
         fillColor: getCityColor({
           validVotes: votos,
           leadersCount: (dataCache[n]?.liderancas || []).length,
-          expectedVotes: getTotalExpectativa(n)
+          expectedVotes: getTotalExpectativa(n),
+          leaderVotes: getExpLiderancas(n)
         }),
         fillOpacity: 0.8
       });
@@ -3078,6 +3093,40 @@ function updateLegendByMode() {
       </div>
       <div class="legend-gradient-wrap">
         <div class="legend-gradient-bar" style="background:linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d);"></div>
+        <div class="legend-gradient-labels">
+          <span>0</span>
+          <span>300</span>
+          <span>2.000</span>
+          <span>5.000+</span>
+        </div>
+      </div>
+      <div class="legend-steps" style="margin-top:10px;">
+        ${steps.map(s => `
+          <div class="legend-row">
+            <div class="legend-swatch" style="background:${s.color};"></div>
+            <span class="legend-range">${s.label}<small>${s.sub}</small></span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  if (mode === 'leaderVotes') {
+    const steps = [
+      { color: '#3f007d', label: '5.000+',        sub: 'muito alto' },
+      { color: '#6a00b8', label: '2.000 – 4.999', sub: 'alto' },
+      { color: '#9e2dd6', label: '1.000 – 1.999', sub: 'moderado' },
+      { color: '#bf7ee8', label: '300 – 999',      sub: 'baixo' },
+      { color: '#ddb8f0', label: '1 – 299',        sub: 'muito baixo' },
+      { color: '#f3e8ff', label: 'Nenhuma',        sub: 'sem expectativa' },
+    ];
+    div.innerHTML = `
+      <div class="legend-title">
+        <div class="legend-title-icon">🗳️</div>
+        <span class="legend-title-text">Exp. Lideranças</span>
+      </div>
+      <div class="legend-gradient-wrap">
+        <div class="legend-gradient-bar" style="background:linear-gradient(to right,#f3e8ff,#ddb8f0,#bf7ee8,#9e2dd6,#6a00b8,#3f007d);"></div>
         <div class="legend-gradient-labels">
           <span>0</span>
           <span>300</span>
@@ -3867,7 +3916,8 @@ function repaintMap() {
     const cityData = {
       validVotes: votosValidos[nome] || 0,
       leadersCount: (dataCache[nome]?.liderancas || []).length,
-      expectedVotes: getTotalExpectativa(nome)
+      expectedVotes: getTotalExpectativa(nome),
+      leaderVotes: getExpLiderancas(nome)
     };
 
     layer.setStyle({
@@ -3895,6 +3945,8 @@ document.getElementById('toggleMapMode').addEventListener('click', () => {
     btn.innerText = '👥 Lideranças';
   } else if (mode === 'expectedVotes') {
     btn.innerText = '📊 Meta de votos';
+  } else if (mode === 'leaderVotes') {
+    btn.innerText = '🗳️ Exp. Lideranças';
   }
 
   repaintMap();
