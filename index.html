@@ -1986,15 +1986,19 @@ function getCityColor(cityData) {
   const mode = mapModes[currentMapModeIndex];
 
   if (mode === 'validVotes') {
-  return getColor(cityData.validVotes);
-}
+    return getColor(cityData.validVotes);
+  }
 
   if (mode === 'leaders') {
-    return colorByLeaderVotes(cityData.leaderVotes);
+    return colorByLeaders(cityData.leadersCount);
   }
 
   if (mode === 'expectedVotes') {
     return colorByExpectedVotes(cityData.expectedVotes);
+  }
+
+  if (mode === 'leaderVotes') {
+    return colorByLeaderVotes(cityData.leaderVotes);
   }
 
   return '#ccc';
