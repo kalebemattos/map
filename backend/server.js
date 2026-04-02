@@ -144,7 +144,10 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Permite origens explicitamente listadas.
+    // Requisições sem Origin (ferramentas server-side como curl) são bloqueadas
+    // em produção; em dev, adicione 'http://localhost:PORT' à lista acima.
+    if (origin && allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Não permitido por CORS'));
@@ -180,6 +183,14 @@ const createLiderancaLimiter = rateLimit({
   legacyHeaders: false
 });
 
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 30,                   // 30 renovações por IP por janela
+  message: { error: 'Muitas renovações de token. Tente novamente mais tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 
 /* ================= PATHS & GARANTIAS ================= */
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
@@ -196,7 +207,18 @@ const storage = multer.diskStorage({
     cb(null, name + ext);
   }
 });
-const upload = multer({ storage });
+const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const upload = multer({
+  storage,
+  limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB máximo
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_MIME.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo de arquivo não permitido. Use JPEG, PNG, WEBP ou GIF.'));
+    }
+  }
+});
 async function otimizarImagem(caminhoArquivo) {
   const caminhoFinal = caminhoArquivo + '.webp';
 
@@ -299,7 +321,7 @@ res.json({
   }
 });
 /* ================= REFRESH TOKEN ================= */
-app.post('/api/refresh', async (req, res) => {
+app.post('/api/refresh', refreshLimiter, async (req, res) => {
 
   const { refreshToken } = req.body;
 
@@ -874,15 +896,15 @@ app.get('/api/liderancas', auth, async (req, res) => {
 /* ================= BUSCAR OBSERVAÇÕES ================= */
 app.get('/api/observacoes', auth, async (req, res) => {
   try {
+    let query, params;
 
-    let query;
-    let params = [];
-
-    query = `
-SELECT cidade, json_agg(o.*) AS observacoes
-FROM observacoes o
-GROUP BY cidade
-`;
+    if (isPrivileged(req.user.nivel)) {
+      query  = `SELECT cidade, json_agg(o.*) AS observacoes FROM observacoes o GROUP BY cidade`;
+      params = [];
+    } else {
+      query  = `SELECT cidade, json_agg(o.*) AS observacoes FROM observacoes o WHERE LOWER(o.regiao) = LOWER($1) GROUP BY cidade`;
+      params = [req.user.regiao];
+    }
 
     const result = await pool.query(query, params);
     res.json(result.rows);
@@ -1113,13 +1135,15 @@ app.post('/api/pins',
 
 app.get('/api/pins', auth, async (req, res) => {
   try {
+    let query, params;
 
-    let query;
-    let params = [];
-
-    query = `
-SELECT * FROM pins
-`;
+    if (isPrivileged(req.user.nivel)) {
+      query  = `SELECT * FROM pins ORDER BY id DESC`;
+      params = [];
+    } else {
+      query  = `SELECT * FROM pins WHERE LOWER(regiao) = LOWER($1) ORDER BY id DESC`;
+      params = [req.user.regiao];
+    }
 
     const r = await pool.query(query, params);
     res.json(r.rows);
@@ -1541,8 +1565,8 @@ app.delete("/api/salas-video/:id",
       const result = await pool.query(
         isPrivileged(req.user.nivel)
           ? "UPDATE salas_video SET ativa = false WHERE id = $1 RETURNING *"
-          : "UPDATE salas_video SET ativa = false WHERE id = $1 AND (host_id = $2 OR regiao = $3) RETURNING *",
-        isPrivileged(req.user.nivel) ? [id] : [id, req.user.id, req.user.regiao]
+          : "UPDATE salas_video SET ativa = false WHERE id = $1 AND host_id = $2 RETURNING *",
+        isPrivileged(req.user.nivel) ? [id] : [id, req.user.id]
       );
       if (!result.rows.length) return res.status(403).json({ error: "Sem permissão" });
       res.json({ ok: true });
@@ -1578,15 +1602,16 @@ const onlineUsers = new Map();
 io.on("connection", (socket) => {
   const u = socket.usuario;
 
-  // Presença online
-  socket.on("registrar-online", async ({ id, nome, nivel, regiao }) => {
-    onlineUsers.set(socket.id, { id, nome, nivel, regiao });
+  // Presença online — identidade vem do JWT (u), não do cliente
+  socket.on("registrar-online", async () => {
+    const info = { id: u.id, nome: u.nome, nivel: u.nivel, regiao: u.regiao };
+    onlineUsers.set(socket.id, info);
     socket.emit("lista-online", [...onlineUsers.values()]);
-    socket.broadcast.emit("usuario-online", { id, nome, nivel, regiao });
+    socket.broadcast.emit("usuario-online", info);
 
     // Envia aniversariantes de hoje da região do usuário
     try {
-      const aniversariantes = await buscarAniversariantes(regiao, nivel, 7);
+      const aniversariantes = await buscarAniversariantes(u.regiao, u.nivel, 7);
       if (aniversariantes.length > 0) {
         socket.emit("aniversariantes", aniversariantes);
       }
@@ -1602,15 +1627,18 @@ io.on("connection", (socket) => {
     }
   });
 
-  // WebRTC Signaling
-  socket.on("entrar-sala", ({ salaId, nome }) => {
+  // WebRTC Signaling — valida que a sala existe e o usuário tem acesso à região
+  socket.on("entrar-sala", async ({ salaId }) => {
+    const sala = await dbGet('SELECT * FROM salas_video WHERE id = $1 AND ativa = true', [salaId]);
+    if (!sala) return; // sala inexistente ou inativa
+    if (!isPrivileged(u.nivel) && sala.regiao && sala.regiao !== u.regiao) return; // fora da região
     socket.join("sala:" + salaId);
     socket.salaAtual = salaId;
-    socket.nomeUsuario = nome || u.id;
+    socket.nomeUsuario = u.nome || u.id;
     socket.to("sala:" + salaId).emit("novo-peer", { peerId: socket.id, nome: socket.nomeUsuario });
-    const sala = io.sockets.adapter.rooms.get("sala:" + salaId);
+    const salaRoom = io.sockets.adapter.rooms.get("sala:" + salaId);
     const existingPeers = [];
-    if (sala) sala.forEach(sid => {
+    if (salaRoom) salaRoom.forEach(sid => {
       if (sid !== socket.id) {
         const s = io.sockets.sockets.get(sid);
         if (s) existingPeers.push({ peerId: sid, nome: s.nomeUsuario || sid });
