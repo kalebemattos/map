@@ -135,7 +135,8 @@ let regions = {
   metropolitana: [
     "Rio de Janeiro","Niterói","São Gonçalo","Itaboraí","Maricá","Tanguá","Rio Bonito",
     "Cachoeiras de Macacu","Guapimirim","Magé","Duque de Caxias","Nova Iguaçu","Belford Roxo",
-    "São João de Meriti","Nilópolis","Mesquita","Queimados","Japeri","Seropédica","Itaguaí","Paracambi"
+    "São João de Meriti","Nilópolis","Mesquita","Queimados","Japeri","Seropédica","Itaguaí",
+    "Paracambi"
   ],
   baixadasLitoraneas: [
     "Araruama","Arraial do Cabo","Cabo Frio","Iguaba Grande","São Pedro da Aldeia",

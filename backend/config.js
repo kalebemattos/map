@@ -51,7 +51,7 @@ module.exports = {
         'Rio de Janeiro', 'Niterói', 'São Gonçalo', 'Itaboraí', 'Maricá', 'Tanguá',
         'Rio Bonito', 'Cachoeiras de Macacu', 'Guapimirim', 'Magé', 'Duque de Caxias',
         'Nova Iguaçu', 'Belford Roxo', 'São João de Meriti', 'Nilópolis', 'Mesquita',
-        'Queimados', 'Japeri', 'Seropédica', 'Itaguaí',
+        'Queimados', 'Japeri', 'Seropédica', 'Itaguaí', 'Paracambi',
       ],
       lideres: [
         { nome: 'Léo Marmoraria', contato: '', foto: 'img/lideres/Léo Marmoraria.jpg' },
@@ -61,8 +61,8 @@ module.exports = {
       chave:  'baixadasLitoraneas',
       label:  'Baixadas Litorâneas',
       cidades: [
-        'Araruama', 'Arraial do Cabo', 'Cabo Frio', 'Iguaba Grande', 'São Pedro da Aldeia',
-        'Saquarema', 'Silva Jardim', 'Casimiro de Abreu', 'Rio das Ostras',
+        'Araruama', 'Arraial do Cabo', 'Armação dos Búzios', 'Cabo Frio', 'Iguaba Grande',
+        'São Pedro da Aldeia', 'Saquarema', 'Silva Jardim', 'Casimiro de Abreu', 'Rio das Ostras',
       ],
       lideres: [
         { nome: 'Zé Antonio', contato: '24 99991-4802', foto: 'img/lideres/Zé Antonio.jpg' },
@@ -97,6 +97,7 @@ module.exports = {
       cidades: [
         'Petrópolis', 'Teresópolis', 'Nova Friburgo', 'Bom Jardim', 'Sumidouro', 'Cantagalo',
         'Cordeiro', 'Santa Maria Madalena', 'Trajano de Moraes', 'São Sebastião do Alto', 'Macuco',
+        'Carmo', 'São José do Vale do Rio Preto',
       ],
       lideres: [
         { nome: 'Ziquinho', contato: '', foto: 'img/lideres/Ziquinho.jpg' },
@@ -108,7 +109,7 @@ module.exports = {
       cidades: [
         'Paraíba do Sul', 'Três Rios', 'Sapucaia', 'Comendador Levy Gasparian', 'Areal',
         'Paty do Alferes', 'Miguel Pereira', 'Vassouras', 'Engenheiro Paulo de Frontin',
-        'Mendes', 'Rio Claro', 'Piraí',
+        'Mendes', 'Piraí',
       ],
       lideres: [
         { nome: 'Dr. Renan', contato: '', foto: 'img/lideres/Dr. Renan.jpg' },
@@ -119,7 +120,7 @@ module.exports = {
       label:  'Médio Paraíba',
       cidades: [
         'Barra Mansa', 'Volta Redonda', 'Resende', 'Quatis', 'Porto Real', 'Pinheiral',
-        'Valença', 'Rio das Flores', 'Barra do Piraí',
+        'Valença', 'Rio das Flores', 'Barra do Piraí', 'Rio Claro',
       ],
       lideres: [
         { nome: 'Glauco',   contato: '', foto: 'img/lideres/Glauco.jpg' },
