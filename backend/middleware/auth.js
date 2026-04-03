@@ -37,7 +37,11 @@ function auth(req, res, next) {
     };
 
     // tenantId acessível diretamente em req (padrão multi-tenant)
-    req.tenantId = decoded.tenantId ?? null;
+    if (!decoded.tenantId) {
+  return res.status(403).json({ error: 'Tenant não identificado' });
+}
+
+req.tenantId = decoded.tenantId;
 
     next();
 

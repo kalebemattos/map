@@ -9,7 +9,7 @@ const path = require('path');
 const multer = require('multer');
 const bcrypt = require('bcrypt');
 const auth = require('./middleware/auth');
-const withTenant = require('./middleware/withtenant');
+const withTenant = require('./middleware/withTenant');
 const sharp = require('sharp');
 const helmet = require('helmet');
 const http = require('http');
@@ -253,18 +253,18 @@ app.get('/api/config', (req, res) => {
 
 /* ================= LOGIN ================= */
 app.post('/api/login', loginLimiter, async (req, res) => {
-  const { usuario, senha } = req.body;
+  const { usuario, senha, tenantId } = req.body;
 
-  if (!usuario || !senha) {
-    return res.status(400).json({ error: 'Dados incompletos' });
-  }
+  if (!usuario || !senha || !tenantId) {
+  return res.status(400).json({ error: 'Dados incompletos' });
+}
 
   try {
     // Procure por: SELECT id, usuario, senha_hash, nome FROM usuarios...
 // E troque por:
 const user = await dbGet(
-  'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE usuario = $1',
-  [usuario]
+  'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE usuario = $1 AND tenant_id = $2',
+  [usuario, tenantId]
 );
 
     if (!user) {
@@ -301,9 +301,9 @@ const refreshToken = jwt.sign(
 
 // salva no banco
 await pool.query(
-  `INSERT INTO refresh_tokens (usuario_id, token, expira_em)
-   VALUES ($1, $2, NOW() + INTERVAL '30 days')`,
-  [user.id, refreshToken]
+  `INSERT INTO refresh_tokens (usuario_id, token, expira_em, tenant_id)
+VALUES ($1, $2, NOW() + INTERVAL '30 days', $3)`,
+  [user.id, refreshToken, user.tenant_id]
 );
 
 
@@ -335,33 +335,38 @@ app.post('/api/refresh', refreshLimiter, async (req, res) => {
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
 
+    
+
+const user = await dbGet(
+  'SELECT id, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE id = $1',
+  [decoded.id]
+);
+
+    if (!user) {
+      return res.status(403).json({ error: 'Usuário não encontrado' });
+    }
+
     const row = await dbGet(
-      'SELECT * FROM refresh_tokens WHERE token = $1 AND usuario_id = $2',
-      [refreshToken, decoded.id]
+      `SELECT * FROM refresh_tokens 
+       WHERE token = $1 AND usuario_id = $2 AND tenant_id = $3`,
+      [refreshToken, decoded.id, user.tenant_id]
     );
 
     if (!row) {
       return res.status(403).json({ error: 'Refresh inválido' });
     }
 
-    const user = await dbGet(
-  'SELECT nivel, regiao_vinculada FROM usuarios WHERE id = $1',
-  [decoded.id]
-);
-if (!user) {
-  return res.status(403).json({ error: 'Usuário não encontrado' });
-}
-
-const novoAccessToken = jwt.sign(
-  {
-    id: decoded.id,
-    nivel: user.nivel,
-    regiao: user.regiao_vinculada
-  },
-  process.env.JWT_SECRET,
-  { expiresIn: '15m' }
-);
-
+    const novoAccessToken = jwt.sign(
+      {
+        id: decoded.id,
+        nivel: user.nivel,
+        role: user.nivel,
+        regiao: user.regiao_vinculada,
+        tenantId: user.tenant_id
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
 
     res.json({ accessToken: novoAccessToken });
 
@@ -369,9 +374,8 @@ const novoAccessToken = jwt.sign(
     return res.status(403).json({ error: 'Refresh inválido ou expirado' });
   }
 });
-
 /* ================= EXPECTATIVA DA CIDADE ================= */
-app.post('/api/expectativa-cidade', auth, async (req, res) => {
+app.post('/api/expectativa-cidade', auth, withTenant, async (req, res) => {
   const { cidade, celia, fernando } = req.body;
 
 if (!cidade) {
@@ -385,13 +389,13 @@ const fernandoValor = Number(fernando || 0);
 // NULL não funciona em ON CONFLICT no PostgreSQL
 await pool.query(
   `INSERT INTO expectativa_cidade
-   (cidade, expectativa_celia, expectativa_fernando, regiao, mapa)
-   VALUES ($1, $2, $3, $4, 'rj')
-   ON CONFLICT (cidade, regiao, mapa)
+   (cidade, expectativa_celia, expectativa_fernando, regiao, mapa, tenant_id)
+   VALUES ($1, $2, $3, $4, 'rj', $5)
+   ON CONFLICT (cidade, regiao, mapa, tenant_id)
    DO UPDATE SET
      expectativa_celia    = excluded.expectativa_celia,
      expectativa_fernando = excluded.expectativa_fernando`,
-  [cidade, celiaValor, fernandoValor, req.user.regiao]
+  [cidade, celiaValor, fernandoValor, req.user.regiao, req.tenantId]
 );
 
 res.json({ ok: true });
@@ -399,37 +403,52 @@ res.json({ ok: true });
 });
 
 
-app.get('/api/expectativa-cidade', auth,
- async (req, res) => {
+app.get('/api/expectativa-cidade', auth, withTenant, async (req, res) => {
+  try {
+    const { cidade } = req.query;
 
-  const { cidade } = req.query;
+    if (!cidade) {
+      return res.status(400).json({ error: 'Cidade não informada' });
+    }
 
-  if (!cidade) {
-    return res.status(400).json({ error: 'Cidade não informada' });
+    let query;
+    let params;
+
+    if (isPrivileged(req.user.nivel)) {
+      query = `
+        SELECT expectativa_celia, expectativa_fernando
+        FROM expectativa_cidade
+        WHERE cidade = $1 AND tenant_id = $2
+      `;
+      params = [cidade, req.tenantId];
+    } else {
+      query = `
+        SELECT expectativa_celia, expectativa_fernando
+        FROM expectativa_cidade
+        WHERE cidade = $1
+          AND LOWER(regiao) = LOWER($2)
+          AND tenant_id = $3
+      `;
+      params = [cidade, req.user.regiao, req.tenantId];
+    }
+
+    const row = await dbGet(query, params);
+
+    res.json({
+      celia: row?.expectativa_celia || 0,
+      fernando: row?.expectativa_fernando || 0
+    });
+
+  } catch (err) {
+    console.error('Erro expectativa-cidade:', err);
+    res.status(500).json({ error: 'Erro interno' });
   }
-
-  let query;
-  let params;
-
-  if (isPrivileged(req.user.nivel)) {
-    query = 'SELECT expectativa_celia, expectativa_fernando FROM expectativa_cidade WHERE cidade = $1';
-    params = [cidade];
-  } else {
-    query = 'SELECT expectativa_celia, expectativa_fernando FROM expectativa_cidade WHERE cidade = $1 AND LOWER(regiao) = LOWER($2)';
-    params = [cidade, req.user.regiao];
-  }
-
-  const row = await dbGet(query, params);
-
-  res.json({
-  celia: row?.expectativa_celia || 0,
-  fernando: row?.expectativa_fernando || 0
-});
 });
 
 /* ================= GASTOS POR LIDERANÇA ================= */
 app.post('/api/gastos',
   auth,
+  withTenant,
   allowAll(),
   async (req, res) => {
 
@@ -542,6 +561,7 @@ app.get('/api/gastos-total/:lideranca_id', auth, withTenant, async (req, res) =>
 app.post('/api/liderancas',
   createLiderancaLimiter,
   auth,
+  withTenant,
   allowAll(),
   upload.single('foto'),
   async (req, res) => {
@@ -620,8 +640,8 @@ if (expectativa_votos && !validarNumero(expectativa_votos, 0, 1000000)) {
     await pool.query(
   `
   INSERT INTO liderancas
-(cidade, nome, contato, foto, expectativa_votos, perfil, responsavel, status, release, regiao, vinculo_politico, data_nascimento, mapa)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+(cidade, nome, contato, foto, expectativa_votos, perfil, responsavel, status, release, regiao, vinculo_politico, data_nascimento, mapa, tenant_id)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
   `,
   [
   cidade,
@@ -636,7 +656,8 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
   regiaoBody || req.user.regiao,
   vinculo_politico || 'fernando',
   data_nascimento || null,
-  req.body.mapa || null
+  req.body.mapa || null,
+  req.tenantId
 ]
 );
 // 🔐 REGISTRA AUDITORIA AQUI
@@ -657,6 +678,7 @@ await registrarAuditoria(
 /* ================= EXCLUIR LIDERANÇA ================= */
 app.delete('/api/liderancas/:id',
   auth,
+  withTenant,
   allowAll(),
   async (req, res) => {
 
@@ -666,16 +688,16 @@ app.delete('/api/liderancas/:id',
     let result;
 
     if (isPrivileged(req.user.nivel)) {
-      result = await pool.query(
-        'DELETE FROM liderancas WHERE id = $1',
-        [id]
-      );
-    } else {
-      result = await pool.query(
-        'DELETE FROM liderancas WHERE id = $1 AND regiao = $2',
-        [id, req.user.regiao]
-      );
-    }
+  result = await pool.query(
+    'DELETE FROM liderancas WHERE id = $1 AND tenant_id = $2',
+    [id, req.tenantId]
+  );
+} else {
+  result = await pool.query(
+    'DELETE FROM liderancas WHERE id = $1 AND regiao = $2 AND tenant_id = $3',
+    [id, req.user.regiao, req.tenantId]
+  );
+}
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Não encontrado' });
@@ -698,6 +720,7 @@ await registrarAuditoria(
 /* ================= EDITAR LIDERANÇA ================= */
 app.put('/api/liderancas/:id',
   auth,
+  withTenant,
   allowAll(),
   upload.single('foto'),
   async (req, res) => {
@@ -745,9 +768,9 @@ if (expectativa_votos && !validarNumero(expectativa_votos, 0, 1000000)) {
     const votos = Number(expectativa_votos) || 0;
 
     const atual = await dbGet(
-      'SELECT * FROM liderancas WHERE id = $1',
-      [id]
-    );
+  'SELECT * FROM liderancas WHERE id = $1 AND tenant_id = $2',
+  [id, req.tenantId]
+);
 if (!atual) {
   return res.status(404).json({ error: 'Liderança não encontrada' });
 }
@@ -809,7 +832,12 @@ cidade=$9,
 vinculo_politico=$10,
 regiao=COALESCE($12, regiao),
 data_nascimento=$13
-WHERE id=$11 AND (LOWER(regiao)=LOWER($12) OR $14 = ANY(ARRAY['dono','admin']))
+WHERE id=$11 
+AND tenant_id = $15
+AND (
+  LOWER(regiao)=LOWER($12) 
+  OR $14 = ANY(ARRAY['dono','admin'])
+)
   `,
   [
   nome,
@@ -825,7 +853,8 @@ WHERE id=$11 AND (LOWER(regiao)=LOWER($12) OR $14 = ANY(ARRAY['dono','admin']))
   id,
   regiaoBody || req.user.regiao,
   data_nascimento || null,
-  req.user.nivel
+  req.user.nivel,
+  req.tenantId 
 ]
 );
 if (result.rowCount === 0) {
@@ -848,18 +877,30 @@ await registrarAuditoria(
 });
 
 /* ================= BUSCAR LIDERANÇAS ================= */
-app.get('/api/liderancas', auth, async (req, res) => {
+app.get('/api/liderancas', auth, withTenant, async (req, res) => {
   try {
 
     let query;
     let params = [];
 
     const mapaFiltro = req.query.mapa || null;
+
     if (mapaFiltro) {
-      query = `SELECT cidade, json_agg(l.*) AS liderancas FROM liderancas l WHERE mapa = $1 GROUP BY cidade`;
-      params = [mapaFiltro];
+      query = `
+        SELECT cidade, json_agg(l.*) AS liderancas 
+        FROM liderancas l 
+        WHERE mapa = $1 AND tenant_id = $2
+        GROUP BY cidade
+      `;
+      params = [mapaFiltro, req.tenantId];
     } else {
-      query = `SELECT cidade, json_agg(l.*) AS liderancas FROM liderancas l GROUP BY cidade`;
+      query = `
+        SELECT cidade, json_agg(l.*) AS liderancas 
+        FROM liderancas l 
+        WHERE tenant_id = $1
+        GROUP BY cidade
+      `;
+      params = [req.tenantId];
     }
 
     const result = await pool.query(query, params);
@@ -973,14 +1014,12 @@ app.get('/api/data', auth, withTenant, async (req, res) => {
 });
 
 
-app.get('/api/expectativa-cidade-todas', auth, async (req, res) => {
-  // Retorna APENAS expectativas do mapa principal (mapa IS NULL)
-  // Angra e RJ Capital têm seus próprios endpoints isolados
+app.get('/api/expectativa-cidade-todas', auth, withTenant, async (req, res) => {
   const rows = await dbAll(
     `SELECT cidade, expectativa_celia, expectativa_fernando
      FROM expectativa_cidade
-     WHERE mapa = 'rj'`,
-    []
+     WHERE mapa = 'rj' AND tenant_id = $1`,
+    [req.tenantId]
   );
   res.json(rows);
 });
@@ -998,13 +1037,15 @@ app.post('/api/expectativa-angra', auth, withTenant, async (req, res) => {
   const fernandoValor = Number(fernando || 0);
 
   await pool.query(
-    `INSERT INTO expectativa_cidade (cidade, expectativa_celia, expectativa_fernando, regiao, mapa, tenant_id)
-     VALUES ($1,$2,$3,$4,'angra',$5)
-     ON CONFLICT (cidade, regiao, mapa, tenant_id)
-     DO UPDATE SET expectativa_celia = excluded.expectativa_celia,
-                   expectativa_fernando = excluded.expectativa_fernando`,
-    [cidade, celiaValor, fernandoValor, req.user.regiao || 'angra', req.tenantId]
-  );
+  `INSERT INTO expectativa_cidade
+   (cidade, expectativa_celia, expectativa_fernando, regiao, mapa, tenant_id)
+   VALUES ($1, $2, $3, $4, 'angra', $5)
+   ON CONFLICT (cidade, regiao, mapa, tenant_id)
+   DO UPDATE SET
+     expectativa_celia    = excluded.expectativa_celia,
+     expectativa_fernando = excluded.expectativa_fernando`,
+  [cidade, celiaValor, fernandoValor, req.user.regiao, req.tenantId]
+);
 
   res.json({ ok: true });
 });
@@ -1043,13 +1084,15 @@ app.post('/api/expectativa-rjcapital', auth, withTenant, async (req, res) => {
   const fernandoValor = Number(fernando || 0);
 
   await pool.query(
-    `INSERT INTO expectativa_cidade (cidade, expectativa_celia, expectativa_fernando, regiao, mapa, tenant_id)
-     VALUES ($1,$2,$3,$4,'rjcapital',$5)
-     ON CONFLICT (cidade, regiao, mapa, tenant_id)
-     DO UPDATE SET expectativa_celia = excluded.expectativa_celia,
-                   expectativa_fernando = excluded.expectativa_fernando`,
-    [cidade, celiaValor, fernandoValor, req.user.regiao || 'rjcapital', req.tenantId]
-  );
+  `INSERT INTO expectativa_cidade
+   (cidade, expectativa_celia, expectativa_fernando, regiao, mapa, tenant_id)
+   VALUES ($1, $2, $3, $4, 'rjcapital', $5)
+   ON CONFLICT (cidade, regiao, mapa, tenant_id)
+   DO UPDATE SET
+     expectativa_celia    = excluded.expectativa_celia,
+     expectativa_fernando = excluded.expectativa_fernando`,
+  [cidade, celiaValor, fernandoValor, req.user.regiao, req.tenantId]
+);
 
   res.json({ ok: true });
 });
@@ -1078,6 +1121,7 @@ app.get('/api/expectativa-rjcapital-todas', auth, withTenant, async (req, res) =
 
 app.post('/api/pins',
   auth,
+  withTenant,
   allowAll(),
   async (req, res) => {
 
@@ -1099,26 +1143,39 @@ app.post('/api/pins',
 
   await pool.query(
     `
-    INSERT INTO pins (cidade, tipo, lat, lng, descricao, regiao)
-    VALUES ($1,$2,$3,$4,$5,$6)
+    INSERT INTO pins (cidade, tipo, lat, lng, descricao, regiao, tenant_id)
+VALUES ($1,$2,$3,$4,$5,$6,$7)
     `,
-    [cidade, tipo, Number(lat), Number(lng), descricao || null, req.user.regiao]
+    [
+  cidade,
+  tipo,
+  Number(lat),
+  Number(lng),
+  descricao || null,
+  req.user.regiao,
+  req.tenantId   
+]
   );
 
   res.json({ ok: true });
 });
 
 
-app.get('/api/pins', auth, async (req, res) => {
+app.get('/api/pins', auth, withTenant, async (req, res) => {
   try {
     let query, params;
 
     if (isPrivileged(req.user.nivel)) {
-      query  = `SELECT * FROM pins ORDER BY id DESC`;
-      params = [];
+      query  = `SELECT * FROM pins WHERE tenant_id = $1 ORDER BY id DESC`;
+      params = [req.tenantId];
     } else {
-      query  = `SELECT * FROM pins WHERE LOWER(regiao) = LOWER($1) ORDER BY id DESC`;
-      params = [req.user.regiao];
+      query  = `
+        SELECT * FROM pins 
+        WHERE LOWER(regiao) = LOWER($1)
+        AND tenant_id = $2
+        ORDER BY id DESC
+      `;
+      params = [req.user.regiao, req.tenantId];
     }
 
     const r = await pool.query(query, params);
@@ -1132,34 +1189,35 @@ app.get('/api/pins', auth, async (req, res) => {
 
 app.delete('/api/pins/:id',
   auth,
+  withTenant,
   allowAll(),
   async (req, res) => {
+
   const id = req.params.id;
+  let result;
 
-let result;
+  if (isPrivileged(req.user.nivel)) {
+    result = await pool.query(
+      'DELETE FROM pins WHERE id = $1 AND tenant_id = $2',
+      [id, req.tenantId]
+    );
+  } else {
+    result = await pool.query(
+      'DELETE FROM pins WHERE id = $1 AND regiao = $2 AND tenant_id = $3',
+      [id, req.user.regiao, req.tenantId]
+    );
+  }
 
-if (isPrivileged(req.user.nivel)) {
-  result = await pool.query(
-    'DELETE FROM pins WHERE id = $1',
-    [id]
-  );
-} else {
-  result = await pool.query(
-    'DELETE FROM pins WHERE id = $1 AND regiao = $2',
-    [id, req.user.regiao]
-  );
-}
+  if (result.rowCount === 0) {
+    return res.status(404).json({ error: 'Não encontrado' });
+  }
 
-if (result.rowCount === 0) {
-  return res.status(404).json({ error: 'Não encontrado' });
-}
-
-res.json({ ok: true });
+  res.json({ ok: true });
 
 });
-
 app.put('/api/pins/:id',
   auth,
+  withTenant,
   allowAll(),
   async (req, res) => {
 
@@ -1177,9 +1235,9 @@ app.put('/api/pins/:id',
         SET
           descricao = COALESCE($1, descricao),
           tipo = COALESCE($2, tipo)
-        WHERE id = $3
+        WHERE id = $3 AND tenant_id = $4
         `,
-        [descricao, tipo, id]
+        [descricao, tipo, id, req.tenantId]
       );
     } else {
       result = await pool.query(
@@ -1190,8 +1248,9 @@ app.put('/api/pins/:id',
           tipo = COALESCE($2, tipo)
         WHERE id = $3
         AND regiao = $4
+        AND tenant_id = $5
         `,
-        [descricao, tipo, id, req.user.regiao]
+        [descricao, tipo, id, req.user.regiao, req.tenantId]
       );
     }
 
@@ -1202,16 +1261,15 @@ app.put('/api/pins/:id',
     res.json({ ok: true });
 
   } catch (err) {
-    console.error('Erro ao atualizar pin:', err);
     res.status(500).json({ error: 'Erro ao atualizar pin' });
   }
-
 });
 
 // Rota para o Dono criar novos usuários
 app.post('/api/usuarios',
   createUserLimiter,
   auth,
+  withTenant,
   allow('dono'),
   async (req, res) => {
 
@@ -1335,14 +1393,15 @@ app.delete('/api/usuarios/:id', auth, withTenant, allow('dono'), async (req, res
   }
 });
 /* ================= VALIDAR TOKEN ================= */
-app.get('/api/validar-token', auth, async (req, res) => {
+app.get('/api/validar-token', auth, withTenant, async (req, res) => {
   try {
     res.json({
       ok: true,
       user: {
         id: req.user.id,
         nivel: req.user.nivel,
-        regiao: req.user.regiao
+        regiao: req.user.regiao,
+        tenantId: req.tenantId
       }
     });
   } catch (err) {
@@ -1561,17 +1620,31 @@ io.use((socket, next) => {
 });
 
 // Mapa de presença: socketId -> { id, nome, nivel, regiao }
-const onlineUsers = new Map();
+const onlineUsers = new Map(); // socketId -> user + tenant
 
 io.on("connection", (socket) => {
   const u = socket.usuario;
+  const tenantId = u.tenantId;
 
   // Presença online — identidade vem do JWT (u), não do cliente
   socket.on("registrar-online", async () => {
-    const info = { id: u.id, nome: u.nome, nivel: u.nivel, regiao: u.regiao };
+    const info = {
+  id: u.id,
+  nome: u.nome,
+  nivel: u.nivel,
+  regiao: u.regiao,
+  tenantId: tenantId
+};
     onlineUsers.set(socket.id, info);
-    socket.emit("lista-online", [...onlineUsers.values()]);
-    socket.broadcast.emit("usuario-online", info);
+    const usuariosDoMesmoTenant = [...onlineUsers.values()]
+  .filter(user => user.tenantId === tenantId);
+
+socket.emit("lista-online", usuariosDoMesmoTenant);
+    for (const [sid, user] of onlineUsers.entries()) {
+  if (user.tenantId === tenantId && sid !== socket.id) {
+    io.to(sid).emit("usuario-online", info);
+  }
+}
 
     // Envia aniversariantes de hoje da região do usuário
     try {
@@ -1587,13 +1660,16 @@ io.on("connection", (socket) => {
   // Convite para sala
   socket.on("convidar-para-sala", ({ paraId, salaId, salaName, de }) => {
     for (const [sid, info] of onlineUsers.entries()) {
-      if (info.id === paraId) { io.to(sid).emit("convite-reuniao", { salaId, salaName, de }); break; }
+      if (info.id === paraId && info.tenantId === tenantId) { io.to(sid).emit("convite-reuniao", { salaId, salaName, de }); break; }
     }
   });
 
   // WebRTC Signaling — valida que a sala existe e o usuário tem acesso à região
   socket.on("entrar-sala", async ({ salaId }) => {
-    const sala = await dbGet('SELECT * FROM salas_video WHERE id = $1 AND ativa = true', [salaId]);
+    const sala = await dbGet(
+  'SELECT * FROM salas_video WHERE id = $1 AND ativa = true AND tenant_id = $2',
+  [salaId, tenantId]
+);
     if (!sala) return; // sala inexistente ou inativa
     if (!isPrivileged(u.nivel) && sala.regiao && sala.regiao !== u.regiao) return; // fora da região
     socket.join("sala:" + salaId);
@@ -1646,7 +1722,11 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     const info = onlineUsers.get(socket.id);
     onlineUsers.delete(socket.id);
-    if (info) socket.broadcast.emit("usuario-offline", { id: info.id });
+    if (info) for (const [sid, user] of onlineUsers.entries()) {
+  if (user.tenantId === info.tenantId) {
+    io.to(sid).emit("usuario-offline", { id: info.id });
+  }
+}
     const salaId = socket.salaAtual;
     if (salaId) socket.to("sala:" + salaId).emit("peer-saiu", { peerId: socket.id });
   });
