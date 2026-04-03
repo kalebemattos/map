@@ -2138,6 +2138,7 @@ app.post('/api/admin/config/regioes', auth, withTenant, allow('dono'), async (re
   res.json({ ok: true });
 });
 
+
 app.delete('/api/admin/config/regioes/:chave', auth, withTenant, allow('dono'), async (req, res) => {
   await pool.query(
     'DELETE FROM tenant_regioes WHERE tenant_id = $1 AND chave = $2',
@@ -2146,6 +2147,7 @@ app.delete('/api/admin/config/regioes/:chave', auth, withTenant, allow('dono'), 
   invalidateTenantCache(req.tenantId);
   res.json({ ok: true });
 });
+
 
 /* ================= KEEP ALIVE (RENDER) ================= */
 app.get("/ping", (req, res) => {
