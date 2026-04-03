@@ -1694,20 +1694,11 @@ let configSistema = { candidatos: [], cores: {}, mapas: [], regioes: [] };
 
 async function carregarConfig() {
   try {
-    const token = localStorage.getItem('token');
-
-    const r = await apiFetch('/config', {
-      headers: {
-        Authorization: 'Bearer ' + token
-      }
-    });
-
+    const r = await fetch(API_URL + '/config');
     if (!r.ok) return;
-
     configSistema = await r.json();
     injetarCandidatos();
     injetarRegioes();
-
   } catch (e) {
     console.warn('[config] não carregada:', e);
   }
@@ -1717,18 +1708,15 @@ function injetarRegioes() {
   const regs = configSistema.regioes;
   if (!regs || !regs.length) return;
 
+  // ── Reconstrói os objetos globais usados pelo mapa ──────────────
   regions = { all: null };
   lideresRegiao = {};
-
   regs.forEach(r => {
-    // 🔥 NORMALIZA AS CIDADES
-    regions[r.chave] = (r.cidades || []).map(c =>
-      normalizarCidade(c)
-    );
-
+    regions[r.chave]       = r.cidades;
     lideresRegiao[r.chave] = r.lideres || [];
   });
 
+  // ── Reconstrói o <select id="regionSelect"> ─────────────────────
   const sel = document.getElementById('regionSelect');
   if (!sel) return;
 
@@ -1914,7 +1902,7 @@ const citySearchResults = document.getElementById('city-search-results');
 // =================================================================
 // ── Retorna apenas a expectativa de CIDADES para uma cidade (usada para cor do mapa)
 function getTotalExpectativa(city) {
-  const c = dataCache[normalizarCidade(city)];
+  const c = dataCache[city];
   if (!c) return 0;
   if (filtroCampanha === 'ambos') {
     return Object.values(c.expectativaCidade || {}).reduce((s, v) => s + Number(v || 0), 0);
@@ -1924,7 +1912,7 @@ function getTotalExpectativa(city) {
 
 // ── Retorna apenas a expectativa de LIDERANÇAS para uma cidade
 function getExpLiderancas(city) {
-  const c = dataCache[normalizarCidade(city)];
+  const c = dataCache[city];
   if (!c) return 0;
   return (c.liderancas || []).reduce((s, l) => {
     if (filtroCampanha !== 'ambos' && l.vinculo_politico !== filtroCampanha && l.vinculo_politico !== 'ambos') return s;
@@ -1935,8 +1923,8 @@ function getExpLiderancas(city) {
 // ── Soma expectativa de CIDADES para todos os municípios, filtrada por tipo de candidato
 function calcularExpCidadesPor(tipo) {
   let total = 0;
-  Object.keys(dataCache).forEach(cityKey => {
-  const c = dataCache[cityKey];
+  Object.keys(dataCache).forEach(city => {
+    const c = dataCache[city];
     if (!c) return;
     if (tipo === 'ambos') {
       Object.values(c.expectativaCidade || {}).forEach(v => { total += Number(v || 0); });
@@ -4215,14 +4203,6 @@ toggleSidebarBtn.addEventListener('click', () => {
 </div>
 
 <script>
-  function normalizarCidade(nome) {
-  return nome
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // remove acento
-    .replace(/[^a-zA-Z\s]/g, "")     // remove traço, etc
-    .toUpperCase()
-    .trim();
-}
 document.addEventListener('DOMContentLoaded', () => {
   const toggleBtn = document.getElementById('toggleSidebarBtn');
   const sidebar = document.querySelector('.sidebar');
