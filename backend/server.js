@@ -17,9 +17,65 @@ const { Server: SocketServer } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 const config = require('./config');
 
-// Níveis derivados do config — nunca edite manualmente aqui
+// ── Cache de config por tenant (TTL 5 min) ───────────────────────────────────
+const _tenantConfigCache = new Map();
+const CONFIG_TTL_MS = 5 * 60 * 1000;
+
+async function getConfigTenant(tenantId) {
+  const cached = _tenantConfigCache.get(tenantId);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+  try {
+    const [cfgRow, candidatos, mapas, regioes] = await Promise.all([
+      dbGet('SELECT nome_sistema, logo_url, cores FROM tenant_config WHERE tenant_id = $1', [tenantId]),
+      dbAll('SELECT chave, nome, cor_fundo, cor_texto, tem_votos_2022 FROM tenant_candidatos WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
+      dbAll('SELECT mapa_id AS id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes FROM tenant_mapas WHERE tenant_id = $1', [tenantId]),
+      dbAll('SELECT chave, label, cidades, lideres FROM tenant_regioes WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
+    ]);
+
+    const data = {
+      nome_sistema: cfgRow?.nome_sistema ?? 'Gestão Política',
+      logo_url:     cfgRow?.logo_url     ?? null,
+      cores:        cfgRow?.cores        ?? config.cores,
+      candidatos:   candidatos.length    ? candidatos : config.candidatos,
+      mapas:        mapas.length         ? mapas      : config.mapas,
+      regioes:      regioes.length       ? regioes    : config.regioes,
+    };
+
+    _tenantConfigCache.set(tenantId, { data, expiresAt: Date.now() + CONFIG_TTL_MS });
+    return data;
+
+  } catch (err) {
+    console.error(`[config] Erro ao carregar config do tenant ${tenantId}:`, err.message);
+    return {
+      nome_sistema: 'Gestão Política',
+      logo_url:     null,
+      cores:        config.cores,
+      candidatos:   config.candidatos,
+      mapas:        config.mapas,
+      regioes:      config.regioes,
+    };
+  }
+}
+
+function invalidateTenantCache(tenantId) {
+  _tenantConfigCache.delete(tenantId);
+}
+
+// Níveis de boot (derivados do config.js estático — usados antes do banco responder)
 const NIVEIS_MAPA   = config.mapas.map(m => m.nivel_usuario);
 const NIVEIS_TODOS  = ['dono', 'admin', 'visualizador', 'lider_regiao', ...NIVEIS_MAPA];
+
+// NIVEIS_TODOS dinâmico por tenant (inclui níveis de mapas cadastrados no banco)
+async function getNiveisTenant(tenantId) {
+  try {
+    const cfg = await getConfigTenant(tenantId);
+    const niveisMapa = cfg.mapas.map(m => m.nivel_usuario);
+    return ['dono', 'admin', 'visualizador', 'lider_regiao', ...niveisMapa];
+  } catch {
+    return NIVEIS_TODOS;
+  }
+}
 
 function allow(...niveis) {
   return (req, res, next) => {
@@ -237,18 +293,48 @@ async function otimizarImagem(caminhoArquivo) {
 }
 
 /* ================= CONFIG PÚBLICA ================= */
-// Endpoint sem autenticação — retorna apenas o que o frontend precisa para se montar
-app.get('/api/config', (req, res) => {
-  res.json({
-    candidatos: config.candidatos,
-    cores:      config.cores,
-    mapas:      config.mapas.map(({ id, nome, nivel_usuario, subregioes }) => ({
-      id, nome, nivel_usuario, subregioes,
-    })),
-    regioes:    config.regioes.map(({ chave, label, cidades, lideres }) => ({
-      chave, label, cidades, lideres,
-    })),
-  });
+// Sem autenticação — identifica o tenant pelo JWT (se presente) ou ?tenant=xxx
+app.get('/api/config', async (req, res) => {
+  try {
+    let tenantId = req.query.tenant ?? null;
+
+    const authHeader = req.headers.authorization ?? '';
+    if (!tenantId && authHeader.startsWith('Bearer ')) {
+      try {
+        const decoded = jwt.verify(authHeader.slice(7), process.env.JWT_SECRET);
+        tenantId = decoded.tenantId ?? null;
+      } catch { /* token inválido — usa query param ou fallback */ }
+    }
+
+    if (!tenantId) {
+      // Sem tenant identificado: retorna config estática (tela de login)
+      return res.json({
+        candidatos: config.candidatos,
+        cores:      config.cores,
+        mapas:      config.mapas.map(({ id, nome, nivel_usuario, subregioes }) => ({ id, nome, nivel_usuario, subregioes })),
+        regioes:    config.regioes.map(({ chave, label, cidades, lideres }) => ({ chave, label, cidades, lideres })),
+      });
+    }
+
+    const cfg = await getConfigTenant(tenantId);
+
+    res.json({
+      nome_sistema: cfg.nome_sistema,
+      logo_url:     cfg.logo_url,
+      cores:        cfg.cores,
+      candidatos:   cfg.candidatos,
+      mapas:        cfg.mapas.map(({ id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes }) => ({
+        id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes,
+      })),
+      regioes:      cfg.regioes.map(({ chave, label, cidades, lideres }) => ({
+        chave, label, cidades, lideres,
+      })),
+    });
+
+  } catch (err) {
+    console.error('[GET /api/config]', err);
+    res.status(500).json({ error: 'Erro ao carregar configuração' });
+  }
 });
 
 /* ================= LOGIN ================= */
@@ -1936,6 +2022,129 @@ app.get('/api/dashboard/agenda', auth, withTenant, allow('dono', 'admin'), async
     console.error('Erro dashboard/agenda:', err);
     res.status(500).json({ error: 'Erro interno' });
   }
+});
+
+/* ================= ADMIN — CONFIG DO TENANT ================= */
+
+// GET config completa do tenant
+app.get('/api/admin/config', auth, withTenant, allow('dono'), async (req, res) => {
+  try {
+    res.json(await getConfigTenant(req.tenantId));
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao carregar config' });
+  }
+});
+
+// PUT identidade visual e nome do sistema
+app.put('/api/admin/config/geral', auth, withTenant, allow('dono'), async (req, res) => {
+  const { nome_sistema, logo_url, cores } = req.body;
+  await pool.query(
+    `INSERT INTO tenant_config (tenant_id, nome_sistema, logo_url, cores)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (tenant_id) DO UPDATE SET
+       nome_sistema = COALESCE($2, tenant_config.nome_sistema),
+       logo_url     = COALESCE($3, tenant_config.logo_url),
+       cores        = COALESCE($4, tenant_config.cores)`,
+    [req.tenantId, nome_sistema ?? null, logo_url ?? null, cores ? JSON.stringify(cores) : null]
+  );
+  invalidateTenantCache(req.tenantId);
+  res.json({ ok: true });
+});
+
+// ── Candidatos ───────────────────────────────────────────────────────────────
+
+app.get('/api/admin/config/candidatos', auth, withTenant, allow('dono'), async (req, res) => {
+  res.json(await dbAll(
+    'SELECT * FROM tenant_candidatos WHERE tenant_id = $1 ORDER BY ordem ASC',
+    [req.tenantId]
+  ));
+});
+
+app.post('/api/admin/config/candidatos', auth, withTenant, allow('dono'), async (req, res) => {
+  const { chave, nome, cor_fundo, cor_texto, tem_votos_2022, ordem } = req.body;
+  if (!chave || !nome) return res.status(400).json({ error: 'chave e nome são obrigatórios' });
+  await pool.query(
+    `INSERT INTO tenant_candidatos (tenant_id, chave, nome, cor_fundo, cor_texto, tem_votos_2022, ordem)
+     VALUES ($1,$2,$3,$4,$5,$6,$7)
+     ON CONFLICT (tenant_id, chave) DO UPDATE SET
+       nome = $3, cor_fundo = $4, cor_texto = $5, tem_votos_2022 = $6, ordem = $7`,
+    [req.tenantId, chave, nome, cor_fundo ?? '#e0e7ff', cor_texto ?? '#3730a3', tem_votos_2022 ?? false, ordem ?? 0]
+  );
+  invalidateTenantCache(req.tenantId);
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/config/candidatos/:chave', auth, withTenant, allow('dono'), async (req, res) => {
+  await pool.query(
+    'DELETE FROM tenant_candidatos WHERE tenant_id = $1 AND chave = $2',
+    [req.tenantId, req.params.chave]
+  );
+  invalidateTenantCache(req.tenantId);
+  res.json({ ok: true });
+});
+
+// ── Mapas ────────────────────────────────────────────────────────────────────
+
+app.get('/api/admin/config/mapas', auth, withTenant, allow('dono'), async (req, res) => {
+  res.json(await dbAll(
+    'SELECT * FROM tenant_mapas WHERE tenant_id = $1',
+    [req.tenantId]
+  ));
+});
+
+app.post('/api/admin/config/mapas', auth, withTenant, allow('dono'), async (req, res) => {
+  const { mapa_id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes } = req.body;
+  if (!mapa_id || !nome || !nivel_usuario) return res.status(400).json({ error: 'mapa_id, nome e nivel_usuario são obrigatórios' });
+  await pool.query(
+    `INSERT INTO tenant_mapas (tenant_id, mapa_id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes)
+     VALUES ($1,$2,$3,$4,$5,$6,$7)
+     ON CONFLICT (tenant_id, mapa_id) DO UPDATE SET
+       nome = $3, nivel_usuario = $4, badge_fundo = $5, badge_texto = $6, subregioes = $7`,
+    [req.tenantId, mapa_id, nome, nivel_usuario, badge_fundo ?? '#f0fdf4', badge_texto ?? '#14532d', JSON.stringify(subregioes ?? [])]
+  );
+  invalidateTenantCache(req.tenantId);
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/config/mapas/:mapa_id', auth, withTenant, allow('dono'), async (req, res) => {
+  await pool.query(
+    'DELETE FROM tenant_mapas WHERE tenant_id = $1 AND mapa_id = $2',
+    [req.tenantId, req.params.mapa_id]
+  );
+  invalidateTenantCache(req.tenantId);
+  res.json({ ok: true });
+});
+
+// ── Regiões ──────────────────────────────────────────────────────────────────
+
+app.get('/api/admin/config/regioes', auth, withTenant, allow('dono'), async (req, res) => {
+  res.json(await dbAll(
+    'SELECT * FROM tenant_regioes WHERE tenant_id = $1 ORDER BY ordem ASC',
+    [req.tenantId]
+  ));
+});
+
+app.post('/api/admin/config/regioes', auth, withTenant, allow('dono'), async (req, res) => {
+  const { chave, label, cidades, lideres, ordem } = req.body;
+  if (!chave || !label) return res.status(400).json({ error: 'chave e label são obrigatórios' });
+  await pool.query(
+    `INSERT INTO tenant_regioes (tenant_id, chave, label, cidades, lideres, ordem)
+     VALUES ($1,$2,$3,$4,$5,$6)
+     ON CONFLICT (tenant_id, chave) DO UPDATE SET
+       label = $3, cidades = $4, lideres = $5, ordem = $6`,
+    [req.tenantId, chave, label, JSON.stringify(cidades ?? []), JSON.stringify(lideres ?? []), ordem ?? 0]
+  );
+  invalidateTenantCache(req.tenantId);
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/config/regioes/:chave', auth, withTenant, allow('dono'), async (req, res) => {
+  await pool.query(
+    'DELETE FROM tenant_regioes WHERE tenant_id = $1 AND chave = $2',
+    [req.tenantId, req.params.chave]
+  );
+  invalidateTenantCache(req.tenantId);
+  res.json({ ok: true });
 });
 
 /* ================= KEEP ALIVE (RENDER) ================= */
