@@ -253,9 +253,9 @@ app.get('/api/config', (req, res) => {
 
 /* ================= LOGIN ================= */
 app.post('/api/login', loginLimiter, async (req, res) => {
-  const { usuario, senha, tenantId } = req.body;
+  const { usuario, senha } = req.body;
 
-  if (!usuario || !senha || !tenantId) {
+if (!usuario || !senha) {
   return res.status(400).json({ error: 'Dados incompletos' });
 }
 
@@ -263,8 +263,8 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     // Procure por: SELECT id, usuario, senha_hash, nome FROM usuarios...
 // E troque por:
 const user = await dbGet(
-  'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE usuario = $1 AND tenant_id = $2',
-  [usuario, tenantId]
+  'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE usuario = $1',
+  [usuario]
 );
 
     if (!user) {
