@@ -9,6 +9,7 @@ const path = require('path');
 const multer = require('multer');
 const bcrypt = require('bcrypt');
 const auth = require('./middleware/auth');
+const withTenant = require('./middleware/withtenant');
 const sharp = require('sharp');
 const helmet = require('helmet');
 const http = require('http');
