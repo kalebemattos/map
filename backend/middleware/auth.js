@@ -28,7 +28,17 @@ function auth(req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded; // usuário disponível nas rotas
+    // Estrutura explícita — não expõe campos internos do JWT desnecessariamente
+    req.user = {
+      id:     decoded.id,
+      nivel:  decoded.nivel,
+      role:   decoded.role   ?? decoded.nivel,  // retrocompatível com tokens antigos
+      regiao: decoded.regiao ?? null,
+    };
+
+    // tenantId acessível diretamente em req (padrão multi-tenant)
+    req.tenantId = decoded.tenantId ?? null;
+
     next();
 
   } catch (err) {

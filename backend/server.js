@@ -449,10 +449,10 @@ if (valorNumerico <= 0) {
   return res.status(400).json({ error: 'Valor deve ser positivo' });
 }
 
-    // 🔎 1️⃣ Verifica se a liderança existe
+    // 🔎 1️⃣ Verifica se a liderança existe e pertence ao tenant
     const lideranca = await dbGet(
-      'SELECT regiao FROM liderancas WHERE id = $1',
-      [lideranca_id]
+      'SELECT regiao FROM liderancas WHERE id = $1 AND tenant_id = $2',
+      [lideranca_id, req.tenantId]
     );
 
     if (!lideranca) {
@@ -488,72 +488,47 @@ if (valorNumerico <= 0) {
 });
 
 
-app.get('/api/gastos/:lideranca_id', auth, async (req, res) => {
+app.get('/api/gastos/:lideranca_id', auth, withTenant, async (req, res) => {
   try {
-
-    let query;
-    let params;
-
-    if (isPrivileged(req.user.nivel)) {
-      query = `
-        SELECT g.*
-        FROM gastos_lideranca g
-        JOIN liderancas l ON g.lideranca_id = l.id
-        WHERE g.lideranca_id = $1
-        ORDER BY g.id DESC
-      `;
-      params = [req.params.lideranca_id];
-    } else {
-      query = `
-        SELECT g.*
-        FROM gastos_lideranca g
-        JOIN liderancas l ON g.lideranca_id = l.id
-        WHERE g.lideranca_id = $1
-        AND l.regiao = $2
-        ORDER BY g.id DESC
-      `;
-      params = [req.params.lideranca_id, req.user.regiao];
-    }
-
-    const rows = await pool.query(query, params);
-
+    const query = `
+      SELECT g.*
+      FROM gastos_lideranca g
+      JOIN liderancas l ON g.lideranca_id = l.id
+      WHERE g.lideranca_id = $1
+        AND l.tenant_id = $2
+        AND ($3 OR LOWER(l.regiao) = LOWER($4))
+      ORDER BY g.id DESC
+    `;
+    const rows = await pool.query(query, [
+      req.params.lideranca_id,
+      req.tenantId,
+      isPrivileged(req.user.nivel),
+      req.user.regiao
+    ]);
     res.json(rows.rows);
-
   } catch (err) {
     res.status(500).json({ error: 'Erro ao buscar gastos' });
   }
 });
 
 
-app.get('/api/gastos-total/:lideranca_id', auth, async (req, res) => {
+app.get('/api/gastos-total/:lideranca_id', auth, withTenant, async (req, res) => {
   try {
-
-    let query;
-    let params;
-
-    if (isPrivileged(req.user.nivel)) {
-      query = `
-        SELECT SUM(g.valor) as total
-        FROM gastos_lideranca g
-        JOIN liderancas l ON g.lideranca_id = l.id
-        WHERE g.lideranca_id = $1
-      `;
-      params = [req.params.lideranca_id];
-    } else {
-      query = `
-        SELECT SUM(g.valor) as total
-        FROM gastos_lideranca g
-        JOIN liderancas l ON g.lideranca_id = l.id
-        WHERE g.lideranca_id = $1
-        AND l.regiao = $2
-      `;
-      params = [req.params.lideranca_id, req.user.regiao];
-    }
-
-    const row = await dbGet(query, params);
-
+    const query = `
+      SELECT SUM(g.valor) as total
+      FROM gastos_lideranca g
+      JOIN liderancas l ON g.lideranca_id = l.id
+      WHERE g.lideranca_id = $1
+        AND l.tenant_id = $2
+        AND ($3 OR LOWER(l.regiao) = LOWER($4))
+    `;
+    const row = await dbGet(query, [
+      req.params.lideranca_id,
+      req.tenantId,
+      isPrivileged(req.user.nivel),
+      req.user.regiao
+    ]);
     res.json({ total: row?.total || 0 });
-
   } catch (err) {
     res.status(500).json({ error: 'Erro ao calcular total' });
   }
@@ -894,16 +869,16 @@ app.get('/api/liderancas', auth, async (req, res) => {
 
 
 /* ================= BUSCAR OBSERVAÇÕES ================= */
-app.get('/api/observacoes', auth, async (req, res) => {
+app.get('/api/observacoes', auth, withTenant, async (req, res) => {
   try {
     let query, params;
 
     if (isPrivileged(req.user.nivel)) {
-      query  = `SELECT cidade, json_agg(o.*) AS observacoes FROM observacoes o GROUP BY cidade`;
-      params = [];
+      query  = `SELECT cidade, json_agg(o.*) AS observacoes FROM observacoes o WHERE o.tenant_id = $1 GROUP BY cidade`;
+      params = [req.tenantId];
     } else {
-      query  = `SELECT cidade, json_agg(o.*) AS observacoes FROM observacoes o WHERE LOWER(o.regiao) = LOWER($1) GROUP BY cidade`;
-      params = [req.user.regiao];
+      query  = `SELECT cidade, json_agg(o.*) AS observacoes FROM observacoes o WHERE LOWER(o.regiao) = LOWER($1) AND o.tenant_id = $2 GROUP BY cidade`;
+      params = [req.user.regiao, req.tenantId];
     }
 
     const result = await pool.query(query, params);
@@ -917,6 +892,7 @@ app.get('/api/observacoes', auth, async (req, res) => {
 
 app.post('/api/observacoes',
   auth,
+  withTenant,
   allowAll(),
   async (req, res) => {
   try {
@@ -924,9 +900,9 @@ app.post('/api/observacoes',
     if (!cidade || !text) return res.status(400).json({ error: 'Dados incompletos' });
 
     await pool.query(
-  'INSERT INTO observacoes (cidade, text, regiao) VALUES ($1, $2, $3)',
-  [cidade, text, req.user.regiao]
-);
+      'INSERT INTO observacoes (cidade, text, regiao, tenant_id) VALUES ($1, $2, $3, $4)',
+      [cidade, text, req.user.regiao, req.tenantId]
+    );
     res.json({ ok: true });
   } catch (err) {
     console.error('Erro ao salvar observação:', err);
@@ -936,29 +912,25 @@ app.post('/api/observacoes',
 
 app.delete('/api/observacoes/:id',
   auth,
+  withTenant,
   allowAll(),
   async (req, res) => {
   try {
     const { id } = req.params;
-    let result;
 
-if (isPrivileged(req.user.nivel)) {
-  result = await pool.query(
-    'DELETE FROM observacoes WHERE id = $1',
-    [id]
-  );
-} else {
-  result = await pool.query(
-    'DELETE FROM observacoes WHERE id = $1 AND regiao = $2',
-    [id, req.user.regiao]
-  );
-}
+    const result = await pool.query(
+      `DELETE FROM observacoes
+       WHERE id = $1
+         AND tenant_id = $2
+         AND (regiao = $3 OR $4 = ANY(ARRAY['dono','admin']))`,
+      [id, req.tenantId, req.user.regiao, req.user.nivel]
+    );
 
-if (result.rowCount === 0) {
-  return res.status(404).json({ error: 'Não encontrado' });
-}
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Não encontrado' });
+    }
 
-res.json({ ok: true });
+    res.json({ ok: true });
 
   } catch (err) {
     console.error('Erro ao excluir observação:', err);
@@ -967,7 +939,7 @@ res.json({ ok: true });
 });
 
 /* ================= COMPATIBILIDADE / OUTROS ================= */
-app.get('/api/data', auth, async (req, res) => {
+app.get('/api/data', auth, withTenant, async (req, res) => {
   try {
 
     let liderancasQuery;
@@ -975,19 +947,20 @@ app.get('/api/data', auth, async (req, res) => {
     let params = [];
 
     if (isPrivileged(req.user.nivel)) {
-      liderancasQuery = 'SELECT * FROM liderancas';
-      observacoesQuery = 'SELECT * FROM observacoes';
+      liderancasQuery  = 'SELECT * FROM liderancas WHERE tenant_id = $1';
+      observacoesQuery = 'SELECT * FROM observacoes WHERE tenant_id = $1';
+      params = [req.tenantId];
     } else {
-      liderancasQuery = 'SELECT * FROM liderancas WHERE LOWER(regiao) = LOWER($1)';
-      observacoesQuery = 'SELECT * FROM observacoes WHERE LOWER(regiao) = LOWER($1)';
-      params = [req.user.regiao];
+      liderancasQuery  = 'SELECT * FROM liderancas WHERE LOWER(regiao) = LOWER($1) AND tenant_id = $2';
+      observacoesQuery = 'SELECT * FROM observacoes WHERE LOWER(regiao) = LOWER($1) AND tenant_id = $2';
+      params = [req.user.regiao, req.tenantId];
     }
 
-    const liderancas = await pool.query(liderancasQuery, params);
+    const liderancas  = await pool.query(liderancasQuery,  params);
     const observacoes = await pool.query(observacoesQuery, params);
 
     res.json({
-      liderancas: liderancas.rows,
+      liderancas:  liderancas.rows,
       observacoes: observacoes.rows
     });
 
@@ -1014,7 +987,7 @@ app.get('/api/expectativa-cidade-todas', auth, async (req, res) => {
 
 // ─── EXPECTATIVA ANGRA (isolada por mapa='angra') ───────────────────────────
 
-app.post('/api/expectativa-angra', auth, async (req, res) => {
+app.post('/api/expectativa-angra', auth, withTenant, async (req, res) => {
   const { cidade, celia, fernando } = req.body;
   if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
 
@@ -1022,35 +995,35 @@ app.post('/api/expectativa-angra', auth, async (req, res) => {
   const fernandoValor = Number(fernando || 0);
 
   await pool.query(
-    `INSERT INTO expectativa_cidade (cidade, expectativa_celia, expectativa_fernando, regiao, mapa)
-     VALUES ($1,$2,$3,$4,'angra')
-     ON CONFLICT (cidade, regiao, mapa)
+    `INSERT INTO expectativa_cidade (cidade, expectativa_celia, expectativa_fernando, regiao, mapa, tenant_id)
+     VALUES ($1,$2,$3,$4,'angra',$5)
+     ON CONFLICT (cidade, regiao, mapa, tenant_id)
      DO UPDATE SET expectativa_celia = excluded.expectativa_celia,
                    expectativa_fernando = excluded.expectativa_fernando`,
-    [cidade, celiaValor, fernandoValor, req.user.regiao || 'angra']
+    [cidade, celiaValor, fernandoValor, req.user.regiao || 'angra', req.tenantId]
   );
 
   res.json({ ok: true });
 });
 
-app.get('/api/expectativa-angra', auth, async (req, res) => {
+app.get('/api/expectativa-angra', auth, withTenant, async (req, res) => {
   const { cidade } = req.query;
   if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
 
   const row = await dbGet(
     `SELECT expectativa_celia, expectativa_fernando FROM expectativa_cidade
-     WHERE cidade = $1 AND mapa = 'angra'`,
-    [cidade]
+     WHERE cidade = $1 AND mapa = 'angra' AND tenant_id = $2`,
+    [cidade, req.tenantId]
   );
 
   res.json({ celia: row?.expectativa_celia || 0, fernando: row?.expectativa_fernando || 0 });
 });
 
-app.get('/api/expectativa-angra-todas', auth, async (req, res) => {
+app.get('/api/expectativa-angra-todas', auth, withTenant, async (req, res) => {
   const rows = await dbAll(
     `SELECT cidade, expectativa_celia, expectativa_fernando
-     FROM expectativa_cidade WHERE mapa = 'angra'`,
-    []
+     FROM expectativa_cidade WHERE mapa = 'angra' AND tenant_id = $1`,
+    [req.tenantId]
   );
   res.json(rows);
 });
@@ -1059,7 +1032,7 @@ app.get('/api/expectativa-angra-todas', auth, async (req, res) => {
 
 // ─── EXPECTATIVA RJ CAPITAL (isolada por mapa='rjcapital') ──────────────────
 
-app.post('/api/expectativa-rjcapital', auth, async (req, res) => {
+app.post('/api/expectativa-rjcapital', auth, withTenant, async (req, res) => {
   const { cidade, celia, fernando } = req.body;
   if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
 
@@ -1067,35 +1040,35 @@ app.post('/api/expectativa-rjcapital', auth, async (req, res) => {
   const fernandoValor = Number(fernando || 0);
 
   await pool.query(
-    `INSERT INTO expectativa_cidade (cidade, expectativa_celia, expectativa_fernando, regiao, mapa)
-     VALUES ($1,$2,$3,$4,'rjcapital')
-     ON CONFLICT (cidade, regiao, mapa)
+    `INSERT INTO expectativa_cidade (cidade, expectativa_celia, expectativa_fernando, regiao, mapa, tenant_id)
+     VALUES ($1,$2,$3,$4,'rjcapital',$5)
+     ON CONFLICT (cidade, regiao, mapa, tenant_id)
      DO UPDATE SET expectativa_celia = excluded.expectativa_celia,
                    expectativa_fernando = excluded.expectativa_fernando`,
-    [cidade, celiaValor, fernandoValor, req.user.regiao || 'rjcapital']
+    [cidade, celiaValor, fernandoValor, req.user.regiao || 'rjcapital', req.tenantId]
   );
 
   res.json({ ok: true });
 });
 
-app.get('/api/expectativa-rjcapital', auth, async (req, res) => {
+app.get('/api/expectativa-rjcapital', auth, withTenant, async (req, res) => {
   const { cidade } = req.query;
   if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
 
   const row = await dbGet(
     `SELECT expectativa_celia, expectativa_fernando FROM expectativa_cidade
-     WHERE cidade = $1 AND mapa = 'rjcapital'`,
-    [cidade]
+     WHERE cidade = $1 AND mapa = 'rjcapital' AND tenant_id = $2`,
+    [cidade, req.tenantId]
   );
 
   res.json({ celia: row?.expectativa_celia || 0, fernando: row?.expectativa_fernando || 0 });
 });
 
-app.get('/api/expectativa-rjcapital-todas', auth, async (req, res) => {
+app.get('/api/expectativa-rjcapital-todas', auth, withTenant, async (req, res) => {
   const rows = await dbAll(
     `SELECT cidade, expectativa_celia, expectativa_fernando
-     FROM expectativa_cidade WHERE mapa = 'rjcapital'`,
-    []
+     FROM expectativa_cidade WHERE mapa = 'rjcapital' AND tenant_id = $1`,
+    [req.tenantId]
   );
   res.json(rows);
 });
@@ -1259,8 +1232,8 @@ if (!niveisPermitidos.includes(nivel)) {
 }
 
     
-    // Verifica se o usuário já existe
-    const existe = await dbGet('SELECT id FROM usuarios WHERE usuario = $1', [usuario]);
+    // Verifica se o usuário já existe dentro do tenant
+    const existe = await dbGet('SELECT id FROM usuarios WHERE usuario = $1 AND tenant_id = $2', [usuario, req.tenantId]);
     if (existe) {
       return res.status(400).json({ error: 'Este login já está em uso.' });
     }
@@ -1271,8 +1244,8 @@ if (!niveisPermitidos.includes(nivel)) {
 
     // Salva no banco de dados
     await pool.query(
-      'INSERT INTO usuarios (usuario, senha_hash, nome, nivel, regiao_vinculada) VALUES ($1, $2, $3, $4, $5)',
-      [usuario, hash, nome, nivel, regiao_vinculada]
+      'INSERT INTO usuarios (usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      [usuario, hash, nome, nivel, regiao_vinculada, req.tenantId]
     );
 
     res.json({ ok: true, message: 'Usuário criado com sucesso!' });
@@ -1282,13 +1255,16 @@ if (!niveisPermitidos.includes(nivel)) {
   }
 });
 
-// Rota para listar usuários (Para aparecer na sua tabela de gestão)
 app.get('/api/usuarios',
   auth,
+  withTenant,
   allow('dono'),
   async (req, res) => {
   try {
-    const users = await dbAll('SELECT id, usuario, nome, nivel, regiao_vinculada FROM usuarios');
+    const users = await dbAll(
+      'SELECT id, usuario, nome, nivel, regiao_vinculada FROM usuarios WHERE tenant_id = $1',
+      [req.tenantId]
+    );
     res.json(users);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao listar usuários.' });
@@ -1296,7 +1272,7 @@ app.get('/api/usuarios',
 });
 
 // Rota para editar usuário
-app.put('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
+app.put('/api/usuarios/:id', auth, withTenant, allow('dono'), async (req, res) => {
   try {
     const { id } = req.params;
     const { nome, nivel, regiao_vinculada, senha } = req.body;
@@ -1323,8 +1299,9 @@ app.put('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
     if (!fields.length) return res.status(400).json({ error: 'Nenhum campo para atualizar.' });
 
     values.push(id);
+    values.push(req.tenantId);
     const result = await pool.query(
-      `UPDATE usuarios SET ${fields.join(', ')} WHERE id = $${idx}`,
+      `UPDATE usuarios SET ${fields.join(', ')} WHERE id = $${idx} AND tenant_id = $${idx + 1}`,
       values
     );
 
@@ -1337,19 +1314,19 @@ app.put('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
 });
 
 // Rota para excluir usuário
-app.delete('/api/usuarios/:id', auth, allow('dono'), async (req, res) => {
+app.delete('/api/usuarios/:id', auth, withTenant, allow('dono'), async (req, res) => {
 
   try {
     const result = await pool.query(
-  'DELETE FROM usuarios WHERE id = $1',
-  [req.params.id]
-);
+      'DELETE FROM usuarios WHERE id = $1 AND tenant_id = $2',
+      [req.params.id, req.tenantId]
+    );
 
-if (result.rowCount === 0) {
-  return res.status(404).json({ error: 'Usuário não encontrado' });
-}
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
 
-res.json({ ok: true });
+    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao excluir usuário.' });
   }
@@ -1370,44 +1347,25 @@ app.get('/api/validar-token', auth, async (req, res) => {
   }
 });
 /* ================= LÍDER DA REGIÃO ================= */
-app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
+app.get('/api/lider-regiao/:regiao', auth, withTenant, async (req, res) => {
   try {
-
     const { regiao } = req.params;
 
-    let row;
-
-    if (isPrivileged(req.user.nivel)) {
-      // Dono/admin pode consultar qualquer região
-      row = await dbGet(
-        `SELECT id, nome, usuario, regiao_vinculada
-         FROM usuarios
-         WHERE nivel = 'lider_regiao'
-         AND regiao_vinculada = $1
-         LIMIT 1`,
-        [regiao]
-      );
-    } else {
-      // Outros só podem consultar a própria região
-      if (req.user.regiao !== regiao) {
-        return res.status(403).json({ error: 'Acesso negado' });
-      }
-
-      row = await dbGet(
-        `SELECT id, nome, usuario, regiao_vinculada
-         FROM usuarios
-         WHERE nivel = 'lider_regiao'
-         AND regiao_vinculada = $1
-         LIMIT 1`,
-        [regiao]
-      );
+    if (!isPrivileged(req.user.nivel) && req.user.regiao !== regiao) {
+      return res.status(403).json({ error: 'Acesso negado' });
     }
 
-    if (!row) {
-      return res.json(null);
-    }
+    const row = await dbGet(
+      `SELECT id, nome, usuario, regiao_vinculada
+       FROM usuarios
+       WHERE nivel = 'lider_regiao'
+         AND regiao_vinculada = $1
+         AND tenant_id = $2
+       LIMIT 1`,
+      [regiao, req.tenantId]
+    );
 
-    res.json(row);
+    res.json(row ?? null);
 
   } catch (err) {
     console.error('Erro ao buscar líder da região:', err);
@@ -1416,8 +1374,7 @@ app.get('/api/lider-regiao/:regiao', auth, async (req, res) => {
 });
 /* ================= ANIVERSARIANTES ================= */
 
-// Helper: busca líderes com aniversário nos próximos N dias para uma região
-async function buscarAniversariantes(regiao, nivel, dias = 7) {
+async function buscarAniversariantes(regiao, nivel, tenantId, dias = 7) {
   const isDono = isPrivileged(nivel);
   const { rows } = await pool.query(
     `SELECT
@@ -1427,7 +1384,6 @@ async function buscarAniversariantes(regiao, nivel, dias = 7) {
        regiao,
        contato,
        foto,
-       -- calcula quantos dias faltam para o aniversário (considerando virada de ano)
        (
          SELECT i FROM generate_series(0, $1) AS i
          WHERE to_char(CURRENT_DATE + (i * INTERVAL '1 day'), 'MMDD') = to_char(data_nascimento::date, 'MMDD')
@@ -1435,6 +1391,7 @@ async function buscarAniversariantes(regiao, nivel, dias = 7) {
        ) AS dias_para_aniversario
      FROM liderancas
      WHERE data_nascimento IS NOT NULL
+       AND tenant_id = $4
        AND to_char(data_nascimento::date, 'MMDD') = ANY(
          ARRAY(
            SELECT to_char(CURRENT_DATE + (i * INTERVAL '1 day'), 'MMDD')
@@ -1443,16 +1400,16 @@ async function buscarAniversariantes(regiao, nivel, dias = 7) {
        )
        AND ($2 OR LOWER(regiao) = LOWER($3))
      ORDER BY dias_para_aniversario ASC, nome ASC`,
-    [dias, isDono, regiao || '']
+    [dias, isDono, regiao || '', tenantId]
   );
   return rows;
 }
 
 // GET /api/aniversariantes?dias=7
-app.get('/api/aniversariantes', auth, async (req, res) => {
+app.get('/api/aniversariantes', auth, withTenant, async (req, res) => {
   try {
     const dias = Math.min(parseInt(req.query.dias) || 7, 30);
-    const rows = await buscarAniversariantes(req.user.regiao, req.user.nivel, dias);
+    const rows = await buscarAniversariantes(req.user.regiao, req.user.nivel, req.tenantId, dias);
     res.json(rows);
   } catch (err) {
     console.error('Erro ao buscar aniversariantes:', err);
@@ -1461,7 +1418,7 @@ app.get('/api/aniversariantes', auth, async (req, res) => {
 });
 
 // Expectativa vs Mapeado por região
-app.get('/api/dashboard/expectativa-regioes', auth, allow('dono', 'admin'), async (req, res) => {
+app.get('/api/dashboard/expectativa-regioes', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
   try {
     const metas = await dbAll(`
       SELECT regiao,
@@ -1470,8 +1427,9 @@ app.get('/api/dashboard/expectativa-regioes', auth, allow('dono', 'admin'), asyn
         COALESCE(SUM(expectativa_celia + expectativa_fernando), 0) AS meta_total
       FROM expectativa_cidade
       WHERE regiao IS NOT NULL AND regiao <> ''
+        AND tenant_id = $1
       GROUP BY regiao
-    `);
+    `, [req.tenantId]);
     const mapeados = await dbAll(`
       SELECT regiao,
         COALESCE(SUM(expectativa_votos), 0) AS votos_mapeados,
@@ -1479,8 +1437,9 @@ app.get('/api/dashboard/expectativa-regioes', auth, allow('dono', 'admin'), asyn
         COUNT(*) FILTER (WHERE status = 'ativo') AS lideres_ativos
       FROM liderancas
       WHERE regiao IS NOT NULL AND regiao <> ''
+        AND tenant_id = $1
       GROUP BY regiao
-    `);
+    `, [req.tenantId]);
     const mapaMap = {};
     mapeados.forEach(m => { mapaMap[m.regiao] = m; });
     const resultado = metas.map(r => ({
@@ -1521,6 +1480,7 @@ app.get('/api/dashboard/expectativa-regioes', auth, allow('dono', 'admin'), asyn
 // Criar sala de vídeo
 app.post("/api/salas-video",
   auth,
+  withTenant,
   allowAll(),
   async (req, res) => {
     try {
@@ -1528,8 +1488,8 @@ app.post("/api/salas-video",
       if (!nome?.trim()) return res.status(400).json({ error: "Nome obrigatório" });
 
       const { rows } = await pool.query(
-        "INSERT INTO salas_video (nome, host_id, regiao) VALUES ($1, $2, $3) RETURNING *",
-        [nome.trim(), req.user.id, regiao || req.user.regiao]
+        "INSERT INTO salas_video (nome, host_id, regiao, tenant_id) VALUES ($1, $2, $3, $4) RETURNING *",
+        [nome.trim(), req.user.id, regiao || req.user.regiao, req.tenantId]
       );
       res.json(rows[0]);
     } catch (err) {
@@ -1540,14 +1500,14 @@ app.post("/api/salas-video",
 );
 
 // Listar salas da mesma região (dono vê todas)
-app.get("/api/salas-video", auth, async (req, res) => {
+app.get("/api/salas-video", auth, withTenant, async (req, res) => {
   try {
     const isDono = isPrivileged(req.user.nivel);
     const { rows } = await pool.query(
       isDono
-        ? "SELECT s.*, u.nome as host_nome FROM salas_video s JOIN usuarios u ON s.host_id = u.id WHERE s.ativa = true ORDER BY s.criada_em DESC"
-        : "SELECT s.*, u.nome as host_nome FROM salas_video s JOIN usuarios u ON s.host_id = u.id WHERE s.regiao = $1 AND s.ativa = true ORDER BY s.criada_em DESC",
-      isDono ? [] : [req.user.regiao]
+        ? "SELECT s.*, u.nome as host_nome FROM salas_video s JOIN usuarios u ON s.host_id = u.id WHERE s.ativa = true AND s.tenant_id = $1 ORDER BY s.criada_em DESC"
+        : "SELECT s.*, u.nome as host_nome FROM salas_video s JOIN usuarios u ON s.host_id = u.id WHERE s.regiao = $1 AND s.ativa = true AND s.tenant_id = $2 ORDER BY s.criada_em DESC",
+      isDono ? [req.tenantId] : [req.user.regiao, req.tenantId]
     );
     res.json(rows);
   } catch (err) {
@@ -1558,15 +1518,16 @@ app.get("/api/salas-video", auth, async (req, res) => {
 // Encerrar sala
 app.delete("/api/salas-video/:id",
   auth,
+  withTenant,
   allowAll(),
   async (req, res) => {
     try {
       const { id } = req.params;
       const result = await pool.query(
         isPrivileged(req.user.nivel)
-          ? "UPDATE salas_video SET ativa = false WHERE id = $1 RETURNING *"
-          : "UPDATE salas_video SET ativa = false WHERE id = $1 AND host_id = $2 RETURNING *",
-        isPrivileged(req.user.nivel) ? [id] : [id, req.user.id]
+          ? "UPDATE salas_video SET ativa = false WHERE id = $1 AND tenant_id = $2 RETURNING *"
+          : "UPDATE salas_video SET ativa = false WHERE id = $1 AND host_id = $2 AND tenant_id = $3 RETURNING *",
+        isPrivileged(req.user.nivel) ? [id, req.tenantId] : [id, req.user.id, req.tenantId]
       );
       if (!result.rows.length) return res.status(403).json({ error: "Sem permissão" });
       res.json({ ok: true });
@@ -1611,7 +1572,7 @@ io.on("connection", (socket) => {
 
     // Envia aniversariantes de hoje da região do usuário
     try {
-      const aniversariantes = await buscarAniversariantes(u.regiao, u.nivel, 7);
+      const aniversariantes = await buscarAniversariantes(u.regiao, u.nivel, u.tenantId, 7);
       if (aniversariantes.length > 0) {
         socket.emit("aniversariantes", aniversariantes);
       }
@@ -1691,24 +1652,22 @@ io.on("connection", (socket) => {
 /* ================= DASHBOARD COMMAND CENTER ================= */
 
 // KPIs gerais
-app.get('/api/dashboard/kpis', auth, allow('dono', 'admin'), async (req, res) => {
+app.get('/api/dashboard/kpis', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
   try {
-    const totalLiderancas = await dbGet('SELECT COUNT(*) as total FROM liderancas');
-    const ativasCount = await dbGet("SELECT COUNT(*) as total FROM liderancas WHERE status = 'ativo'");
-    const inativasCount = await dbGet("SELECT COUNT(*) as total FROM liderancas WHERE status != 'ativo'");
-    const votosTotal = await dbGet('SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas');
-    const votosCelia = await dbGet("SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE LOWER(vinculo_politico) LIKE '%celia%' OR LOWER(vinculo_politico) LIKE '%célia%'");
-    const votosFernando = await dbGet("SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE LOWER(vinculo_politico) LIKE '%fernando%'");
-    const regioesAtivas = await dbGet('SELECT COUNT(DISTINCT regiao) as total FROM liderancas');
-    const gastosTotal = await dbGet('SELECT COALESCE(SUM(valor),0) as total FROM gastos_lideranca');
-    const gastosUlt30 = await dbGet("SELECT COALESCE(SUM(valor),0) as total FROM gastos_lideranca WHERE data::date >= NOW() - INTERVAL '30 days'");
-    // Meta: soma das expectativas por cidade
-    const metaCelia = await dbGet('SELECT COALESCE(SUM(expectativa_celia),0) as total FROM expectativa_cidade');
-    const metaFernando = await dbGet('SELECT COALESCE(SUM(expectativa_fernando),0) as total FROM expectativa_cidade');
-    // Status breakdown
-    const statusBreakdown = await dbAll("SELECT COALESCE(status,'indefinido') as status, COUNT(*) as total FROM liderancas GROUP BY status");
-    // Votos por vinculo político (candidato)
-    const votosPorVinculo = await dbAll("SELECT COALESCE(vinculo_politico,'Indefinido') as candidato, COALESCE(SUM(expectativa_votos),0) as votos FROM liderancas GROUP BY vinculo_politico ORDER BY votos DESC");
+    const t = req.tenantId;
+    const totalLiderancas = await dbGet('SELECT COUNT(*) as total FROM liderancas WHERE tenant_id = $1', [t]);
+    const ativasCount     = await dbGet("SELECT COUNT(*) as total FROM liderancas WHERE status = 'ativo' AND tenant_id = $1", [t]);
+    const inativasCount   = await dbGet("SELECT COUNT(*) as total FROM liderancas WHERE status != 'ativo' AND tenant_id = $1", [t]);
+    const votosTotal      = await dbGet('SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE tenant_id = $1', [t]);
+    const votosCelia      = await dbGet("SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE tenant_id = $1 AND (LOWER(vinculo_politico) LIKE '%celia%' OR LOWER(vinculo_politico) LIKE '%célia%')", [t]);
+    const votosFernando   = await dbGet("SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE tenant_id = $1 AND LOWER(vinculo_politico) LIKE '%fernando%'", [t]);
+    const regioesAtivas   = await dbGet('SELECT COUNT(DISTINCT regiao) as total FROM liderancas WHERE tenant_id = $1', [t]);
+    const gastosTotal     = await dbGet('SELECT COALESCE(SUM(g.valor),0) as total FROM gastos_lideranca g JOIN liderancas l ON l.id = g.lideranca_id WHERE l.tenant_id = $1', [t]);
+    const gastosUlt30     = await dbGet("SELECT COALESCE(SUM(g.valor),0) as total FROM gastos_lideranca g JOIN liderancas l ON l.id = g.lideranca_id WHERE l.tenant_id = $1 AND g.data::date >= NOW() - INTERVAL '30 days'", [t]);
+    const metaCelia       = await dbGet('SELECT COALESCE(SUM(expectativa_celia),0) as total FROM expectativa_cidade WHERE tenant_id = $1', [t]);
+    const metaFernando    = await dbGet('SELECT COALESCE(SUM(expectativa_fernando),0) as total FROM expectativa_cidade WHERE tenant_id = $1', [t]);
+    const statusBreakdown = await dbAll("SELECT COALESCE(status,'indefinido') as status, COUNT(*) as total FROM liderancas WHERE tenant_id = $1 GROUP BY status", [t]);
+    const votosPorVinculo = await dbAll("SELECT COALESCE(vinculo_politico,'Indefinido') as candidato, COALESCE(SUM(expectativa_votos),0) as votos FROM liderancas WHERE tenant_id = $1 GROUP BY vinculo_politico ORDER BY votos DESC", [t]);
 
     res.json({
       totalLiderancas: parseInt(totalLiderancas.total),
@@ -1735,7 +1694,7 @@ app.get('/api/dashboard/kpis', auth, allow('dono', 'admin'), async (req, res) =>
 });
 
 // Ranking de lideranças por votos
-app.get('/api/dashboard/ranking', auth, allow('dono', 'admin'), async (req, res) => {
+app.get('/api/dashboard/ranking', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
   try {
     const rows = await dbAll(`
       SELECT
@@ -1745,10 +1704,11 @@ app.get('/api/dashboard/ranking', auth, allow('dono', 'admin'), async (req, res)
         COUNT(g.id) as num_gastos
       FROM liderancas l
       LEFT JOIN gastos_lideranca g ON g.lideranca_id = l.id
+      WHERE l.tenant_id = $1
       GROUP BY l.id, l.nome, l.cidade, l.regiao, l.status, l.expectativa_votos, l.vinculo_politico
       ORDER BY l.expectativa_votos DESC NULLS LAST
       LIMIT 20
-    `);
+    `, [req.tenantId]);
     res.json(rows);
   } catch (err) {
     console.error('Erro dashboard/ranking:', err);
@@ -1757,43 +1717,45 @@ app.get('/api/dashboard/ranking', auth, allow('dono', 'admin'), async (req, res)
 });
 
 // Alertas de risco
-app.get('/api/dashboard/alertas', auth, allow('dono', 'admin'), async (req, res) => {
+app.get('/api/dashboard/alertas', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
   try {
-    // Lideranças inativas com votos relevantes
+    const t = req.tenantId;
+
     const inativas = await dbAll(`
       SELECT id, nome, cidade, regiao, expectativa_votos
       FROM liderancas
       WHERE status != 'ativo' AND expectativa_votos > 50
+        AND tenant_id = $1
       ORDER BY expectativa_votos DESC
       LIMIT 10
-    `);
+    `, [t]);
 
-    // Regiões sem lideranças ativas
     const regioesSemLider = await dbAll(`
       SELECT regiao, COUNT(*) FILTER (WHERE status = 'ativo') as ativos
       FROM liderancas
+      WHERE tenant_id = $1
       GROUP BY regiao
       HAVING COUNT(*) FILTER (WHERE status = 'ativo') = 0
-    `);
+    `, [t]);
 
-    // Lideranças sem votos definidos
     const semVotos = await dbAll(`
       SELECT id, nome, cidade, regiao
       FROM liderancas
-      WHERE expectativa_votos IS NULL OR expectativa_votos = 0
+      WHERE (expectativa_votos IS NULL OR expectativa_votos = 0)
+        AND tenant_id = $1
       LIMIT 10
-    `);
+    `, [t]);
 
-    // Últimas ações de auditoria — sem coluna de timestamp para evitar erro de schema
     let auditRecentes = [];
     try {
       auditRecentes = await dbAll(`
         SELECT a.id, a.acao, a.entidade, u.nome as usuario
         FROM auditoria a
         LEFT JOIN usuarios u ON u.id = a.usuario_id
+        WHERE u.tenant_id = $1
         ORDER BY a.id DESC
         LIMIT 10
-      `);
+      `, [t]);
     } catch (_) {
       // não quebra o endpoint se a auditoria falhar
     }
@@ -1811,18 +1773,22 @@ app.get('/api/dashboard/alertas', auth, allow('dono', 'admin'), async (req, res)
 });
 
 // Crescimento: gastos e votos por mês
-app.get('/api/dashboard/crescimento', auth, allow('dono', 'admin'), async (req, res) => {
+app.get('/api/dashboard/crescimento', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
   try {
+    const t = req.tenantId;
+
     const gastosPorMes = await dbAll(`
       SELECT
-        TO_CHAR(data::date, 'YYYY-MM') as mes,
-        SUM(valor) as total_gastos,
-        COUNT(DISTINCT lideranca_id) as liderancas_ativas
-      FROM gastos_lideranca
-      WHERE data::date >= NOW() - INTERVAL '12 months'
+        TO_CHAR(g.data::date, 'YYYY-MM') as mes,
+        SUM(g.valor) as total_gastos,
+        COUNT(DISTINCT g.lideranca_id) as liderancas_ativas
+      FROM gastos_lideranca g
+      JOIN liderancas l ON l.id = g.lideranca_id
+      WHERE g.data::date >= NOW() - INTERVAL '12 months'
+        AND l.tenant_id = $1
       GROUP BY mes
       ORDER BY mes ASC
-    `);
+    `, [t]);
 
     const votosEvolucao = await dbAll(`
       SELECT
@@ -1830,9 +1796,10 @@ app.get('/api/dashboard/crescimento', auth, allow('dono', 'admin'), async (req, 
         COALESCE(SUM(expectativa_votos), 0) as votos,
         COUNT(*) FILTER (WHERE status = 'ativo') as liderancas_ativas
       FROM liderancas
+      WHERE tenant_id = $1
       GROUP BY regiao
       ORDER BY votos DESC
-    `);
+    `, [t]);
 
     res.json({ gastosPorMes, votosEvolucao });
   } catch (err) {
@@ -1842,41 +1809,44 @@ app.get('/api/dashboard/crescimento', auth, allow('dono', 'admin'), async (req, 
 });
 
 // Agenda inteligente — sugestões estratégicas
-app.get('/api/dashboard/agenda', auth, allow('dono', 'admin'), async (req, res) => {
+app.get('/api/dashboard/agenda', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
   try {
-    // Regiões mais fracas (menos votos)
+    const t = req.tenantId;
+
     const regioesFracas = await dbAll(`
       SELECT regiao, COALESCE(SUM(expectativa_votos),0) as votos, COUNT(*) as total_lideres
       FROM liderancas
+      WHERE tenant_id = $1
       GROUP BY regiao
       ORDER BY votos ASC
       LIMIT 5
-    `);
+    `, [t]);
 
-    // Lideranças sem interação recente (sem gastos nos últimos 30 dias)
     const semInteracao = await dbAll(`
       SELECT l.id, l.nome, l.cidade, l.regiao, l.expectativa_votos
       FROM liderancas l
       WHERE l.status = 'ativo'
+        AND l.tenant_id = $1
         AND l.id NOT IN (
-          SELECT DISTINCT lideranca_id FROM gastos_lideranca
-          WHERE data::date >= NOW() - INTERVAL '30 days'
+          SELECT DISTINCT g.lideranca_id FROM gastos_lideranca g
+          JOIN liderancas l2 ON l2.id = g.lideranca_id
+          WHERE g.data::date >= NOW() - INTERVAL '30 days'
+            AND l2.tenant_id = $1
         )
       ORDER BY l.expectativa_votos DESC NULLS LAST
       LIMIT 10
-    `);
+    `, [t]);
 
-    // Cidades com maior expectativa por candidato
     const topCidades = await dbAll(`
       SELECT cidade, regiao,
         COALESCE(SUM(expectativa_votos),0) as votos_potenciais,
         COUNT(*) as lideres
       FROM liderancas
-      WHERE status = 'ativo'
+      WHERE status = 'ativo' AND tenant_id = $1
       GROUP BY cidade, regiao
       ORDER BY votos_potenciais DESC
       LIMIT 8
-    `);
+    `, [t]);
 
     res.json({ regioesFracas, semInteracao, topCidades });
   } catch (err) {
