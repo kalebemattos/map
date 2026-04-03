@@ -263,7 +263,7 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     // Procure por: SELECT id, usuario, senha_hash, nome FROM usuarios...
 // E troque por:
 const user = await dbGet(
-  'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada FROM usuarios WHERE usuario = $1',
+  'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE usuario = $1',
   [usuario]
 );
 
@@ -285,7 +285,9 @@ const accessToken = jwt.sign(
   {
     id: user.id,
     nivel: user.nivel,
-    regiao: user.regiao_vinculada
+    role: user.nivel,
+    regiao: user.regiao_vinculada,
+    tenantId: user.tenant_id   // 🔥 ESSENCIAL
   },
   process.env.JWT_SECRET,
   { expiresIn: '15m' }
