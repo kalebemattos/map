@@ -29,7 +29,7 @@ async function getConfigTenant(tenantId) {
     const [cfgRow, candidatos, mapas, regioes] = await Promise.all([
       dbGet('SELECT nome_sistema, logo_url, cores FROM tenant_config WHERE tenant_id = $1', [tenantId]),
       dbAll('SELECT chave, nome, cor_fundo, cor_texto, tem_votos_2022, foto_url FROM tenant_candidatos WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
-      dbAll('SELECT mapa_id AS id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes FROM tenant_mapas WHERE tenant_id = $1', [tenantId]),
+      dbAll('SELECT mapa_id AS id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes, COALESCE(visivel, true) AS visivel FROM tenant_mapas WHERE tenant_id = $1', [tenantId]),
       dbAll('SELECT chave, label, cidades, lideres FROM tenant_regioes WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
     ]);
 
@@ -2108,7 +2108,7 @@ app.delete('/api/admin/config/candidatos/:chave', auth, withTenant, allow('dono'
 
 app.get('/api/admin/config/mapas', auth, withTenant, allow('dono'), async (req, res) => {
   res.json(await dbAll(
-    'SELECT * FROM tenant_mapas WHERE tenant_id = $1',
+    'SELECT *, COALESCE(visivel, true) AS visivel FROM tenant_mapas WHERE tenant_id = $1',
     [req.tenantId]
   ));
 });
@@ -2117,14 +2117,28 @@ app.post('/api/admin/config/mapas', auth, withTenant, allow('dono'), async (req,
   const { mapa_id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes } = req.body;
   if (!mapa_id || !nome || !nivel_usuario) return res.status(400).json({ error: 'mapa_id, nome e nivel_usuario são obrigatórios' });
   await pool.query(
-    `INSERT INTO tenant_mapas (tenant_id, mapa_id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes)
-     VALUES ($1,$2,$3,$4,$5,$6,$7)
+    `INSERT INTO tenant_mapas (tenant_id, mapa_id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes, visivel)
+     VALUES ($1,$2,$3,$4,$5,$6,$7, true)
      ON CONFLICT (tenant_id, mapa_id) DO UPDATE SET
        nome = $3, nivel_usuario = $4, badge_fundo = $5, badge_texto = $6, subregioes = $7`,
     [req.tenantId, mapa_id, nome, nivel_usuario, badge_fundo ?? '#f0fdf4', badge_texto ?? '#14532d', JSON.stringify(subregioes ?? [])]
   );
   invalidateTenantCache(req.tenantId);
   res.json({ ok: true });
+});
+
+// PATCH — liga/desliga visibilidade de um mapa no home
+app.patch('/api/admin/config/mapas/:mapa_id/visivel', auth, withTenant, allow('dono'), async (req, res) => {
+  const { visivel } = req.body;
+  if (typeof visivel !== 'boolean') return res.status(400).json({ error: 'visivel deve ser boolean' });
+  await pool.query(
+    `INSERT INTO tenant_mapas (tenant_id, mapa_id, nome, nivel_usuario, visivel)
+     VALUES ($1, $2, $2, $2, $3)
+     ON CONFLICT (tenant_id, mapa_id) DO UPDATE SET visivel = $3`,
+    [req.tenantId, req.params.mapa_id, visivel]
+  );
+  invalidateTenantCache(req.tenantId);
+  res.json({ ok: true, visivel });
 });
 
 app.delete('/api/admin/config/mapas/:mapa_id', auth, withTenant, allow('dono'), async (req, res) => {
@@ -2183,6 +2197,12 @@ server.listen(PORT, async () => {
     console.log('[migration] tenant_candidatos.foto_url OK');
   } catch (e) {
     console.warn('[migration] tenant_candidatos.foto_url:', e.message);
+  }
+  try {
+    await pool.query(`ALTER TABLE tenant_mapas ADD COLUMN IF NOT EXISTS visivel BOOLEAN DEFAULT TRUE`);
+    console.log('[migration] tenant_mapas.visivel OK');
+  } catch (e) {
+    console.warn('[migration] tenant_mapas.visivel:', e.message);
   }
   try {
     await pool.query(`ALTER TABLE expectativa_cidade ADD COLUMN IF NOT EXISTS expectativas JSONB DEFAULT '{}'`);

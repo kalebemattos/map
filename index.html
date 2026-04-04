@@ -2129,11 +2129,20 @@ function corDoPin(tipo) {
 }
 
 async function carregarPins() {
-   if (!map || !pinsLayer) return; // 🔥 proteção
+  if (!map || !pinsLayer) return;
   pinsLayer.clearLayers();
 
-  const res = await apiFetch('/pins');
-  const pins = await res.json();
+  let pins = [];
+  try {
+    const res = await apiFetch('/pins');
+    if (!res.ok) { console.warn('[pins] status', res.status); return; }
+    const data = await res.json();
+    if (!Array.isArray(data)) { console.warn('[pins] resposta inesperada', data); return; }
+    pins = data;
+  } catch(e) {
+    console.warn('[pins] erro ao carregar:', e);
+    return;
+  }
 
   pins.forEach(p => {
   let marker;

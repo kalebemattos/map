@@ -863,6 +863,7 @@ async function carregarConfig() {
     if (r.ok) {
       configSistema = await r.json();
       injetarCandidatosAdmin();
+      injetarRegioesAdmin();
     }
   } catch (e) { console.warn('[config] não carregada:', e); }
 }
@@ -880,6 +881,50 @@ function injetarCandidatosAdmin() {
 
   // Default: primeiro candidato ao criar nova liderança
   if (sel.value === 'ambos' && cands.length === 1) sel.value = cands[0].chave;
+}
+
+function injetarRegioesAdmin() {
+  const regioes = configSistema.regioes || [];
+  if (!regioes.length) return; // tenant 1 usa regions estático de data.js
+
+  // Helper: cidades pode chegar como array ou como string JSON (coluna TEXT no banco)
+  function parseCidades(val) {
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string') { try { return JSON.parse(val); } catch { return []; } }
+    return [];
+  }
+
+  // Reconstrói o objeto global `regions` a partir das regiões do tenant
+  if (typeof regions !== 'undefined') {
+    Object.keys(regions).forEach(k => delete regions[k]);
+    regioes.forEach(reg => {
+      regions[reg.chave || reg.id] = parseCidades(reg.cidades);
+    });
+  }
+
+  // Reconstrói o select de região
+  const selRegiao = document.getElementById('regiao');
+  if (!selRegiao) return;
+  selRegiao.innerHTML = '<option value="">Selecione a região</option>';
+  todasCidades = [];
+  regioes.forEach(reg => {
+    const chave = reg.chave || reg.id;
+    const label = reg.label || chave;
+    const cidades = parseCidades(reg.cidades);
+    const o = document.createElement('option');
+    o.value = chave;
+    o.textContent = label;
+    selRegiao.appendChild(o);
+    cidades.forEach(c => todasCidades.push(c));
+  });
+
+  // Se o usuário atual é lider_regiao, aplica a região dele agora que o select está populado
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (user && user.nivel === 'lider_regiao' && user.regiao) {
+    selRegiao.value = user.regiao;
+    selRegiao.disabled = true;
+    carregarCidadesPorRegiao();
+  }
 }
 
 // ===== BAIRROS POR CIDADE =====
@@ -1054,11 +1099,11 @@ function logout() {
   location.reload();
 }
 
-function iniciarPainel() {
+async function iniciarPainel() {
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user) return;
   loginCard.style.visibility = 'hidden'; loginCard.style.pointerEvents = 'none';
-  carregarConfig(); // carrega candidatos do tenant para o select vinculo_politico
+  await carregarConfig(); // carrega candidatos e regiões do tenant
   panel.classList.remove('hidden');
 
   const nomeDisplay = user.nome || user.usuario || 'Usuário';
@@ -1173,7 +1218,9 @@ function carregarCidadesPorRegiao() {
   cidade.innerHTML = '<option value="">Selecione a cidade</option>';
   buscaCidade.value = '';
   if (!regiao.value || typeof regions === 'undefined') return;
-  regions[regiao.value].forEach(c => {
+  const listaCidades = regions[regiao.value];
+  if (!listaCidades || !Array.isArray(listaCidades)) return;
+  listaCidades.forEach(c => {
     const o = document.createElement('option');
     o.value = c; o.textContent = c;
     cidade.appendChild(o);
@@ -1410,15 +1457,21 @@ async function salvar() {
   if (fotoInput.files.length) fd.append('foto', fotoInput.files[0]);
 
   try {
-    if (editandoId) {
-      await apiFetch('/api/liderancas/' + editandoId, { method: 'PUT', body: fd });
-    } else {
-      await apiFetch('/api/liderancas', { method: 'POST', body: fd });
+    const res = editandoId
+      ? await apiFetch('/api/liderancas/' + editandoId, { method: 'PUT', body: fd })
+      : await apiFetch('/api/liderancas', { method: 'POST', body: fd });
+
+    if (!res.ok) {
+      let msg = 'Erro ' + res.status;
+      try { const d = await res.json(); msg = d.error || msg; } catch {}
+      alert('Erro ao salvar: ' + msg);
+      return;
     }
+
     cancelarEdicao();
     carregarLiderancas();
   } catch(e) {
-    alert('Erro ao salvar. Tente novamente.');
+    alert('Erro ao salvar: ' + (e.message || 'verifique sua conexão e tente novamente'));
   } finally {
     btn.textContent = '💾 Salvar liderança';
     btn.disabled = false;

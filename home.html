@@ -848,7 +848,7 @@ setTimeout(function() {
     <div class="cards-grid">
 
       <!-- ── DESTAQUE: Mapa Estratégico ── -->
-      <a href="./" class="card card-blue card-hero">
+      <a href="./" class="card card-blue card-hero" id="card-mapa-rj">
         <div class="card-shine"></div>
         <div class="card-icon-wrap">🗺️</div>
         <div class="card-body">
@@ -859,7 +859,7 @@ setTimeout(function() {
       </a>
 
       <!-- ── LINHA 2: Mapas por cidade ── -->
-      <a href="./angra/" class="card card-green">
+      <a href="./angra/" class="card card-green" id="card-mapa-angra">
         <div class="card-shine"></div>
         <div class="card-icon-wrap">🏝️</div>
         <div class="card-body">
@@ -869,7 +869,7 @@ setTimeout(function() {
         </div>
       </a>
 
-      <a href="./rjcapital/" class="card card-teal">
+      <a href="./rjcapital/" class="card card-teal" id="card-mapa-rjcapital">
         <div class="card-shine"></div>
         <div class="card-icon-wrap">🏙️</div>
         <div class="card-body">
@@ -982,10 +982,39 @@ window.iniciarAplicacao = function() {
     const ccCard = document.getElementById('card-command-center')
     if (ccCard) ccCard.style.display = 'flex'
   }
+  // Aplica visibilidade dos mapas conforme config do tenant
+  aplicarVisibilidadeMapas()
   // Busca salas de vídeo ativas e exibe badge
   carregarSalasAtivas()
   // Busca aniversariantes da região
   carregarAniversariantes()
+}
+
+async function aplicarVisibilidadeMapas() {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    const r = await fetch(API_URL + '/api/config', {
+      headers: { Authorization: 'Bearer ' + token }
+    })
+    if (!r.ok) return
+    const cfg = await r.json()
+    // cfg.mapas é array de { id, nome, visivel, ... }
+    // mapas sem entrada na tabela ficam visíveis por padrão
+    const mapaMap = {}
+    ;(cfg.mapas || []).forEach(m => { mapaMap[m.id] = m })
+    // IDs dos cards de mapa no HTML: card-mapa-{mapa_id}
+    document.querySelectorAll('[id^="card-mapa-"]').forEach(card => {
+      const mapaId = card.id.replace('card-mapa-', '')
+      const cfg = mapaMap[mapaId]
+      // Se o mapa está na tabela e visivel = false, oculta
+      if (cfg && cfg.visivel === false) {
+        card.style.display = 'none'
+      }
+    })
+  } catch (e) {
+    // silencioso — em caso de erro, todos os cards ficam visíveis
+  }
 }
 
 async function carregarSalasAtivas() {

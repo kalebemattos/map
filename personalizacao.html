@@ -223,6 +223,43 @@
       font-size: 14px; font-family: inherit; outline: none; background: #f8fafc; color: #0f172a; transition: border-color .2s;
     }
     .login-box input:focus { border-color: #1565c0; background: white; }
+
+    /* ── TOGGLE SWITCH ── */
+    .toggle-row {
+      display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+      border-radius: 14px; border: 1.5px solid #e2e8f0; background: #f8fafc;
+      transition: border-color .2s, background .2s;
+    }
+    .toggle-row:hover { border-color: #c7d2fe; background: #f1f5ff; }
+    .toggle-row.desligado { background: #fafafa; opacity: .7; }
+    .toggle-icon {
+      width: 44px; height: 44px; border-radius: 12px; display: flex;
+      align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+    }
+    .toggle-info { flex: 1; min-width: 0; }
+    .toggle-nome { font-weight: 700; font-size: 14px; }
+    .toggle-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .toggle-status {
+      font-size: 11px; font-weight: 700; padding: 3px 10px;
+      border-radius: 20px; flex-shrink: 0;
+    }
+    .toggle-status.on  { background: #dcfce7; color: #15803d; }
+    .toggle-status.off { background: #fee2e2; color: #b91c1c; }
+    /* Switch visual */
+    .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch-slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: #cbd5e1; border-radius: 26px; transition: .2s;
+    }
+    .switch-slider::before {
+      content: ''; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px;
+      background: white; border-radius: 50%; transition: .2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    }
+    .switch input:checked + .switch-slider { background: #22c55e; }
+    .switch input:checked + .switch-slider::before { transform: translateX(20px); }
+    .switch input:disabled + .switch-slider { opacity: .5; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -266,6 +303,9 @@
     </button>
     <button class="tab-btn" data-tab="regioes" onclick="abrirTab('regioes')">
       📍 Regiões <span class="tab-badge" id="badge-regioes">0</span>
+    </button>
+    <button class="tab-btn" data-tab="home" onclick="abrirTab('home')">
+      🏠 Home
     </button>
     <button class="tab-btn" data-tab="identidade" onclick="abrirTab('identidade')">
       🏢 Identidade
@@ -525,6 +565,32 @@
   </div>
 
   <!-- ══════════════════════════════════════
+       TAB: HOME
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-home">
+    <div class="wrap">
+
+      <div class="info-box">
+        <strong>Visibilidade dos mapas no Home</strong> — controle quais cards de mapa aparecem
+        na tela inicial para os usuários deste tenant. Mapas desligados ficam ocultos,
+        mas continuam funcionando se acessados diretamente pela URL.
+      </div>
+
+      <!-- Grade de mapas com toggles -->
+      <div class="card">
+        <div class="card-title">
+          🏠 Cards de mapa exibidos no Home
+          <button class="btn-secondary ml" onclick="carregarVisibilidadeMapas()">↺ Atualizar</button>
+        </div>
+        <div id="home-mapas-grid" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="empty-state">Carregando...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
        TAB: IDENTIDADE
   ══════════════════════════════════════ -->
   <div class="tab-panel" id="tab-identidade">
@@ -646,6 +712,106 @@ function iniciarApp() {
   carregarMapas();
   carregarRegioes();
   carregarIdentidade();
+  carregarVisibilidadeMapas();
+}
+
+/* ══════════════════════════════════════
+   HOME — VISIBILIDADE DOS MAPAS
+══════════════════════════════════════ */
+
+// Mapas conhecidos do sistema (fallback caso o tenant ainda não tenha configurado mapas)
+const MAPAS_CONHECIDOS = [
+  { id: 'rj',        nome: 'Mapa Estratégico do Estado', icone: '🗺️', desc: 'Municípios do RJ',       cor: '#dbeafe' },
+  { id: 'angra',     nome: 'Mapa de Angra dos Reis',     icone: '🏝️', desc: 'Bairros de Angra',        cor: '#d1fae5' },
+  { id: 'rjcapital', nome: 'Mapa Rio de Janeiro',        icone: '🏙️', desc: 'Bairros da capital',      cor: '#ccfbf1' },
+];
+
+async function carregarVisibilidadeMapas() {
+  const grid = document.getElementById('home-mapas-grid');
+  if (!grid) return;
+  grid.innerHTML = '<div class="empty-state">Carregando...</div>';
+  try {
+    const res = await apiFetch('/admin/config/mapas');
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    const mapasDB = await res.json(); // mapas configurados no tenant
+
+    // Mescla: parte dos mapas conhecidos, enriquece com dados do DB quando disponível
+    const mapaMap = {};
+    mapasDB.forEach(m => { mapaMap[m.mapa_id] = m; });
+
+    // Usa mapas conhecidos como base; inclui também mapas extras do DB
+    const idsConhecidos = new Set(MAPAS_CONHECIDOS.map(m => m.id));
+    const extras = mapasDB.filter(m => !idsConhecidos.has(m.mapa_id));
+    const todos = [
+      ...MAPAS_CONHECIDOS.map(m => ({
+        id:      m.id,
+        nome:    mapaMap[m.id]?.nome    || m.nome,
+        icone:   m.icone,
+        desc:    m.desc,
+        cor:     mapaMap[m.id]?.badge_fundo || m.cor,
+        visivel: mapaMap[m.id] ? (mapaMap[m.id].visivel !== false) : true,
+        naDB:    !!mapaMap[m.id],
+      })),
+      ...extras.map(m => ({
+        id:      m.mapa_id,
+        nome:    m.nome,
+        icone:   '🗺️',
+        desc:    'nível: ' + m.nivel_usuario,
+        cor:     m.badge_fundo || '#e0e7ff',
+        visivel: m.visivel !== false,
+        naDB:    true,
+      })),
+    ];
+
+    grid.innerHTML = todos.map(m => `
+      <div class="toggle-row ${m.visivel ? '' : 'desligado'}" id="toggle-row-${m.id}">
+        <div class="toggle-icon" style="background:${m.cor};">${m.icone}</div>
+        <div class="toggle-info">
+          <div class="toggle-nome">${m.nome}</div>
+          <div class="toggle-meta">id: <code>${m.id}</code> · ${m.desc}
+            ${!m.naDB ? ' · <em style="color:#f59e0b;">não configurado no tenant</em>' : ''}
+          </div>
+        </div>
+        <span class="toggle-status ${m.visivel ? 'on' : 'off'}" id="toggle-status-${m.id}">
+          ${m.visivel ? '● Visível' : '○ Oculto'}
+        </span>
+        <label class="switch" title="${m.visivel ? 'Clique para ocultar' : 'Clique para mostrar'}">
+          <input type="checkbox" id="toggle-chk-${m.id}"
+            ${m.visivel ? 'checked' : ''}
+            onchange="toggleVisibilidadeMapa('${m.id}', this.checked)">
+          <span class="switch-slider"></span>
+        </label>
+      </div>`).join('');
+  } catch(e) {
+    grid.innerHTML = `<div class="empty-state" style="color:#b91c1c;">Erro: ${e.message}</div>`;
+  }
+}
+
+async function toggleVisibilidadeMapa(mapaId, visivel) {
+  const chk    = document.getElementById('toggle-chk-' + mapaId);
+  const status = document.getElementById('toggle-status-' + mapaId);
+  const row    = document.getElementById('toggle-row-' + mapaId);
+  if (chk) chk.disabled = true;
+  try {
+    const res = await apiFetch('/admin/config/mapas/' + encodeURIComponent(mapaId) + '/visivel', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ visivel })
+    });
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    // Atualiza visual imediatamente
+    if (status) {
+      status.textContent = visivel ? '● Visível' : '○ Oculto';
+      status.className   = 'toggle-status ' + (visivel ? 'on' : 'off');
+    }
+    if (row) row.classList.toggle('desligado', !visivel);
+  } catch(e) {
+    alert('Erro ao salvar: ' + e.message);
+    // Reverte o checkbox
+    if (chk) chk.checked = !visivel;
+  } finally {
+    if (chk) chk.disabled = false;
+  }
 }
 
 /* ══════════════════════════════════════
