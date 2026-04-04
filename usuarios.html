@@ -466,6 +466,7 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
   </div>
 </div>
 
+<script src="tenant.js"></script>
 <script>
 const API_URL = 'https://map-backend-j88s.onrender.com/api'
 
@@ -474,7 +475,10 @@ let configSistema = { candidatos: [], cores: {}, mapas: [] }
 
 async function carregarConfig() {
   try {
-    const r = await fetch(API_URL + '/config')
+    const tenantParam = (window.TENANT_ID && window.TENANT_ID !== 'default')
+      ? '?tenant=' + encodeURIComponent(window.TENANT_ID)
+      : ''
+    const r = await fetch(API_URL + '/config' + tenantParam)
     if (!r.ok) return
     configSistema = await r.json()
     injetarMapas()

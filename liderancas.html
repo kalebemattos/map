@@ -1128,6 +1128,7 @@
     </div>
   </div>
 
+  <script src="tenant.js"></script>
   <script>
     const API = 'https://map-backend-j88s.onrender.com';
     const API_URL = 'https://map-backend-j88s.onrender.com/api';
@@ -1156,7 +1157,10 @@
 
     async function carregarConfig() {
       try {
-        const r = await fetch(API + '/api/config');
+        const tenantParam = (window.TENANT_ID && window.TENANT_ID !== 'default')
+          ? '?tenant=' + encodeURIComponent(window.TENANT_ID)
+          : '';
+        const r = await fetch(API + '/api/config' + tenantParam);
         if (!r.ok) return;
         configSistema = await r.json();
         injetarCandidatosLiderancas();
