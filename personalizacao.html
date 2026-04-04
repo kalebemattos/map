@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personalização do Sistema</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Sora', sans-serif; background: #f1f5f9; color: #0f172a; min-height: 100vh; }
+
+    /* ── HEADER ── */
+    .page-header {
+      background: linear-gradient(135deg, #0d2d6b 0%, #1565c0 100%);
+      color: white; padding: 20px 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      box-shadow: 0 4px 20px rgba(13,45,107,.35); position: sticky; top: 0; z-index: 100;
+    }
+    .page-header h1 { font-size: 20px; font-weight: 800; }
+    .page-header p  { font-size: 12px; opacity: .75; margin-top: 2px; }
+    .btn-back {
+      padding: 8px 16px; border: 1.5px solid rgba(255,255,255,.4);
+      border-radius: 9px; background: transparent; color: white;
+      font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+    }
+    .btn-back:hover { background: rgba(255,255,255,.15); }
+
+    /* ── TABS ── */
+    .tabs-bar {
+      background: white; border-bottom: 2px solid #e2e8f0;
+      display: flex; padding: 0 28px; gap: 4px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .tab-btn {
+      padding: 14px 18px; font-size: 13px; font-weight: 700; font-family: inherit;
+      background: none; border: none; cursor: pointer; color: #64748b;
+      border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap;
+      transition: color .2s, border-color .2s; display: flex; align-items: center; gap: 7px;
+    }
+    .tab-btn:hover { color: #1565c0; }
+    .tab-btn.ativo { color: #1565c0; border-bottom-color: #1565c0; }
+    .tab-badge {
+      background: #e0e7ff; color: #3730a3; padding: 2px 7px; border-radius: 20px; font-size: 10px;
+    }
+
+    /* ── LAYOUT ── */
+    .tab-panel { display: none; }
+    .tab-panel.ativo { display: block; }
+    .wrap { max-width: 820px; margin: 28px auto; padding: 0 16px 80px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: white; border-radius: 18px; padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07); border: 1px solid #e2e8f0;
+    }
+    .card-title {
+      font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 18px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title .ml { margin-left: auto; }
+
+    /* ── LISTAS ── */
+    .item-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
+    .item-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+      border-radius: 12px; background: #f8fafc; border: 1.5px solid #e2e8f0;
+      transition: border-color .2s;
+    }
+    .item-row:hover { border-color: #c7d2fe; }
+    .avatar {
+      width: 46px; height: 46px; border-radius: 50%; object-fit: cover;
+      border: 2px solid #e2e8f0; flex-shrink: 0;
+    }
+    .avatar-ph {
+      width: 46px; height: 46px; border-radius: 50%; background: #e2e8f0;
+      display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+    }
+    .mapa-icon {
+      width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .item-info { flex: 1; min-width: 0; }
+    .item-nome { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .badge-mini {
+      padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .color-dot {
+      width: 28px; height: 28px; border-radius: 8px; border: 2px solid #e2e8f0;
+      flex-shrink: 0; display: inline-block;
+    }
+    .empty-state { text-align: center; color: #94a3b8; font-size: 13px; padding: 28px 0; }
+
+    /* ── FORMULÁRIOS ── */
+    .section-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+      color: #94a3b8; margin: 20px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;
+    }
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 130px; }
+    .form-group label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #64748b; }
+    .form-group input[type=text],
+    .form-group input[type=number],
+    .form-group input[type=url],
+    .form-group select,
+    .form-group textarea {
+      padding: 10px 12px; border-radius: 10px; border: 1.5px solid #e2e8f0;
+      font-size: 13px; font-family: inherit; outline: none; background: #f8fafc; color: #0f172a;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .form-group textarea { resize: vertical; min-height: 70px; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: #1565c0; box-shadow: 0 0 0 3px rgba(21,101,192,.1); background: white;
+    }
+    .form-group input[type=color] { height: 42px; padding: 3px 6px; cursor: pointer; border-radius: 10px; }
+    .form-group input[type=file]  { font-size: 12px; padding: 8px; }
+    .form-group .hint { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+    .warn-hint { color: #f59e0b !important; }
+
+    .color-preview-row {
+      display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 10px 14px;
+      border-radius: 10px; border: 1.5px solid #e2e8f0; background: #f8fafc;
+    }
+    .color-preview-badge {
+      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    }
+    .color-preview-label { font-size: 11px; color: #64748b; }
+
+    .foto-preview {
+      width: 64px; height: 64px; border-radius: 50%; object-fit: cover;
+      border: 2px solid #e2e8f0; display: none; flex-shrink: 0;
+    }
+    .checkbox-row {
+      display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600;
+      cursor: pointer; margin-top: 6px; user-select: none;
+    }
+    .checkbox-row input { width: 16px; height: 16px; accent-color: #1565c0; }
+
+    /* Tags (cidades/subregioes) */
+    .tags-wrap {
+      display: flex; flex-wrap: wrap; gap: 6px; padding: 8px;
+      border-radius: 10px; border: 1.5px solid #e2e8f0; background: #f8fafc;
+      min-height: 44px; cursor: text;
+    }
+    .tags-wrap:focus-within { border-color: #1565c0; background: white; }
+    .tag-item {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #e0e7ff; color: #3730a3; border-radius: 20px;
+      padding: 3px 10px; font-size: 12px; font-weight: 600;
+    }
+    .tag-item button {
+      background: none; border: none; cursor: pointer; color: #6366f1;
+      font-size: 13px; line-height: 1; padding: 0 2px;
+    }
+    .tag-item button:hover { color: #b91c1c; }
+    .tags-input {
+      border: none; background: transparent; outline: none; font-family: inherit;
+      font-size: 12px; color: #0f172a; flex: 1; min-width: 80px; padding: 2px 4px;
+    }
+
+    /* ── ALERTS ── */
+    .alert { padding: 10px 14px; border-radius: 9px; font-size: 12px; font-weight: 600; display: none; margin-bottom: 10px; }
+    .alert-error   { background: #fee2e2; color: #b91c1c; }
+    .alert-success { background: #dcfce7; color: #15803d; }
+
+    /* ── BUTTONS ── */
+    .btn-primary {
+      width: 100%; padding: 13px; border: none; border-radius: 11px;
+      background: linear-gradient(135deg, #0d2d6b, #1565c0); color: white;
+      font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+      box-shadow: 0 4px 14px rgba(21,101,192,.3); transition: opacity .2s, transform .2s;
+    }
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: .6; transform: none; cursor: not-allowed; }
+    .btn-secondary {
+      padding: 8px 16px; border: 1.5px solid #e2e8f0; border-radius: 9px;
+      background: white; color: #334155; font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: background .15s;
+    }
+    .btn-secondary:hover { background: #f1f5f9; }
+    .btn-icon {
+      padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: background .15s; flex-shrink: 0;
+    }
+    .btn-edit { border: 1.5px solid #cbd5e1; background: #fff; color: #1e293b; }
+    .btn-edit:hover { background: #f1f5f9; }
+    .btn-del  { border: 1.5px solid #fca5a5; background: #fff; color: #b91c1c; }
+    .btn-del:hover { background: #fee2e2; }
+
+    /* ── DRAG HANDLES (ordem candidatos) ── */
+    .drag-handle { cursor: grab; color: #cbd5e1; font-size: 16px; padding: 0 4px; user-select: none; }
+    .drag-handle:active { cursor: grabbing; }
+
+    /* ── SECTION INFO BOX ── */
+    .info-box {
+      background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px;
+      padding: 12px 16px; font-size: 12px; color: #1e40af; line-height: 1.7;
+    }
+    .info-box strong { font-weight: 700; }
+
+    /* ── LOGIN OVERLAY ── */
+    #login-overlay {
+      position: fixed; inset: 0; background: rgba(8,18,48,.85); backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center; z-index: 9000;
+    }
+    #login-overlay.hidden { display: none; }
+    .login-box {
+      width: 360px; max-width: calc(100vw - 32px); background: white; border-radius: 22px;
+      padding: 36px 32px; box-shadow: 0 30px 70px rgba(0,0,0,.4);
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .login-icon {
+      width: 56px; height: 56px; background: linear-gradient(135deg,#0d2d6b,#1565c0);
+      border-radius: 16px; display: flex; align-items: center; justify-content: center;
+      font-size: 26px; margin: 0 auto 4px;
+    }
+    .login-box h2 { text-align: center; font-size: 18px; font-weight: 800; color: #0f172a; }
+    .login-box p  { text-align: center; font-size: 12px; color: #64748b; margin-top: -8px; }
+    .login-box input {
+      width: 100%; padding: 11px 13px; border-radius: 10px; border: 1.5px solid #e2e8f0;
+      font-size: 14px; font-family: inherit; outline: none; background: #f8fafc; color: #0f172a; transition: border-color .2s;
+    }
+    .login-box input:focus { border-color: #1565c0; background: white; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     LOGIN
+══════════════════════════════════════ -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-icon">🎨</div>
+    <h2>Personalização</h2>
+    <p>Acesso restrito ao dono do sistema</p>
+    <input id="login-user" type="text" placeholder="Usuário" autocomplete="username">
+    <input id="login-pass" type="password" placeholder="Senha" autocomplete="current-password">
+    <div id="login-err" class="alert alert-error"></div>
+    <button class="btn-primary" id="login-btn" onclick="login()">Entrar</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP
+══════════════════════════════════════ -->
+<div id="app" style="display:none;">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>🎨 Personalização do Sistema</h1>
+      <p>Configure candidatos, mapas, regiões e identidade visual do seu tenant</p>
+    </div>
+    <a href="./home.html" class="btn-back">← Voltar</a>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-bar">
+    <button class="tab-btn ativo" data-tab="candidatos" onclick="abrirTab('candidatos')">
+      🏅 Candidatos <span class="tab-badge" id="badge-cands">0</span>
+    </button>
+    <button class="tab-btn" data-tab="mapas" onclick="abrirTab('mapas')">
+      🗺️ Mapas <span class="tab-badge" id="badge-mapas">0</span>
+    </button>
+    <button class="tab-btn" data-tab="regioes" onclick="abrirTab('regioes')">
+      📍 Regiões <span class="tab-badge" id="badge-regioes">0</span>
+    </button>
+    <button class="tab-btn" data-tab="identidade" onclick="abrirTab('identidade')">
+      🏢 Identidade
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB: CANDIDATOS
+  ══════════════════════════════════════ -->
+  <div class="tab-panel ativo" id="tab-candidatos">
+    <div class="wrap">
+
+      <div class="info-box">
+        <strong>⚠️ Atenção:</strong> A <strong>chave interna</strong> de cada candidato é usada para
+        vincular lideranças e salvar metas. Não altere a chave após já ter gravado dados com ela.
+        O <strong>tenant 1 (padrão)</strong> usa as chaves <code>celia</code> e <code>fernando</code>.
+      </div>
+
+      <!-- Lista -->
+      <div class="card">
+        <div class="card-title">
+          🏅 Candidatos cadastrados
+          <button class="btn-secondary ml" onclick="carregarCandidatos()">↺ Atualizar</button>
+        </div>
+        <div id="cand-list" class="item-list">
+          <div class="empty-state">Carregando...</div>
+        </div>
+      </div>
+
+      <!-- Formulário -->
+      <div class="card">
+        <div class="card-title" id="cand-form-title">➕ Adicionar candidato</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Chave interna <span class="warn-hint hint">⚠ não mude após gravar dados</span></label>
+            <input type="text" id="c-chave" placeholder="ex: betao_2026" oninput="atualizarPreviewCor()">
+          </div>
+          <div class="form-group">
+            <label>Nome de exibição</label>
+            <input type="text" id="c-nome" placeholder="ex: Betão da Silva" oninput="atualizarPreviewCor()">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:0 0 auto;min-width:0;">
+            <label>Cor fundo do badge</label>
+            <input type="color" id="c-cor-fundo" value="#e0e7ff" oninput="atualizarPreviewCor()">
+          </div>
+          <div class="form-group" style="flex:0 0 auto;min-width:0;">
+            <label>Cor texto do badge</label>
+            <input type="color" id="c-cor-texto" value="#3730a3" oninput="atualizarPreviewCor()">
+          </div>
+          <div class="form-group" style="flex:0 0 80px;min-width:0;">
+            <label>Ordem</label>
+            <input type="number" id="c-ordem" value="0" min="0">
+          </div>
+          <div class="form-group" style="justify-content:flex-end;display:flex;align-items:flex-end;min-width:140px;">
+            <label class="checkbox-row">
+              <input type="checkbox" id="c-votos2022">
+              Tinha votos em 2022
+            </label>
+          </div>
+        </div>
+
+        <!-- Preview de cor ao vivo -->
+        <div class="color-preview-row" id="color-preview-row">
+          <span class="color-preview-badge" id="color-preview-badge">Nome do candidato</span>
+          <span class="color-preview-label">← pré-visualização do badge</span>
+        </div>
+
+        <!-- Foto -->
+        <div class="section-label" style="margin-top:16px;">Foto do candidato</div>
+        <div class="form-row" style="align-items:flex-end;">
+          <div class="form-group">
+            <label>Upload de imagem (JPEG, PNG, WEBP)</label>
+            <input type="file" id="c-foto" accept="image/jpeg,image/png,image/webp">
+            <span class="hint">A imagem será otimizada e salva no servidor</span>
+          </div>
+          <img id="c-foto-preview" class="foto-preview" alt="preview">
+        </div>
+
+        <div id="c-alert-error"   class="alert alert-error"></div>
+        <div id="c-alert-success" class="alert alert-success"></div>
+
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button class="btn-primary" id="c-salvar-btn" onclick="salvarCandidato()" style="flex:1;">
+            💾 Salvar candidato
+          </button>
+          <button class="btn-secondary" id="c-cancelar-btn" onclick="cancelarEdicaoCandidato()" style="display:none;">
+            ✕ Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB: MAPAS
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-mapas">
+    <div class="wrap">
+
+      <div class="info-box">
+        <strong>Mapas</strong> definem quais áreas geográficas estão disponíveis no sistema.
+        O <strong>mapa_id</strong> deve corresponder ao identificador interno (<code>rj</code>, <code>angra</code>, <code>rjcapital</code>, etc.).
+        O <strong>nível de usuário</strong> é o nível atribuído aos líderes desse mapa.
+        As cores de badge aparecem nos cards e filtros do mapa.
+      </div>
+
+      <!-- Lista -->
+      <div class="card">
+        <div class="card-title">
+          🗺️ Mapas configurados
+          <button class="btn-secondary ml" onclick="carregarMapas()">↺ Atualizar</button>
+        </div>
+        <div id="mapas-list" class="item-list">
+          <div class="empty-state">Carregando...</div>
+        </div>
+      </div>
+
+      <!-- Formulário -->
+      <div class="card">
+        <div class="card-title" id="mapa-form-title">➕ Adicionar / editar mapa</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>ID do mapa <span class="warn-hint hint">⚠ não mude após configurar</span></label>
+            <input type="text" id="m-id" placeholder="ex: rj, angra, rjcapital">
+          </div>
+          <div class="form-group">
+            <label>Nome de exibição</label>
+            <input type="text" id="m-nome" placeholder="ex: Estado do RJ">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nível de usuário (nivel_usuario)</label>
+            <input type="text" id="m-nivel" placeholder="ex: lider_rj, lider_angra">
+            <span class="hint">Nível atribuído aos coordenadores desse mapa</span>
+          </div>
+        </div>
+
+        <div class="section-label">Cores do badge de mapa</div>
+        <div class="form-row">
+          <div class="form-group" style="flex:0 0 auto;">
+            <label>Cor fundo</label>
+            <input type="color" id="m-cor-fundo" value="#f0fdf4" oninput="atualizarPreviewMapa()">
+          </div>
+          <div class="form-group" style="flex:0 0 auto;">
+            <label>Cor texto</label>
+            <input type="color" id="m-cor-texto" value="#14532d" oninput="atualizarPreviewMapa()">
+          </div>
+          <div class="form-group" style="flex:1;min-width:200px;">
+            <div class="color-preview-row" id="mapa-color-preview" style="margin-top:22px;">
+              <span class="color-preview-badge" id="mapa-preview-badge">Estado do RJ</span>
+              <span class="color-preview-label">← pré-visualização</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label">Sub-regiões do mapa</div>
+        <div class="form-group" style="margin-bottom:10px;">
+          <label>Sub-regiões <span class="hint">(pressione Enter ou vírgula para adicionar)</span></label>
+          <div class="tags-wrap" id="m-subregioes-wrap" onclick="document.getElementById('m-subregioes-input').focus()">
+            <input type="text" class="tags-input" id="m-subregioes-input" placeholder="Digite e pressione Enter...">
+          </div>
+        </div>
+
+        <div id="m-alert-error"   class="alert alert-error"></div>
+        <div id="m-alert-success" class="alert alert-success"></div>
+
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button class="btn-primary" id="m-salvar-btn" onclick="salvarMapa()" style="flex:1;">
+            💾 Salvar mapa
+          </button>
+          <button class="btn-secondary" id="m-cancelar-btn" onclick="cancelarEdicaoMapa()" style="display:none;">
+            ✕ Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB: REGIÕES
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-regioes">
+    <div class="wrap">
+
+      <div class="info-box">
+        <strong>Regiões</strong> são agrupamentos de cidades/bairros usados nos filtros, rankings
+        e relatórios. A <strong>chave</strong> deve ser única e sem espaços. As cidades e líderes
+        associados permitem filtrar dados por região no Command Center e no mapa principal.
+      </div>
+
+      <!-- Lista -->
+      <div class="card">
+        <div class="card-title">
+          📍 Regiões cadastradas
+          <button class="btn-secondary ml" onclick="carregarRegioes()">↺ Atualizar</button>
+        </div>
+        <div id="regioes-list" class="item-list">
+          <div class="empty-state">Carregando...</div>
+        </div>
+      </div>
+
+      <!-- Formulário -->
+      <div class="card">
+        <div class="card-title" id="regiao-form-title">➕ Adicionar / editar região</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Chave <span class="warn-hint hint">⚠ sem espaços, não mude após gravar dados</span></label>
+            <input type="text" id="r-chave" placeholder="ex: norte, sul_fluminense">
+          </div>
+          <div class="form-group">
+            <label>Label de exibição</label>
+            <input type="text" id="r-label" placeholder="ex: Região Norte">
+          </div>
+          <div class="form-group" style="flex:0 0 80px;min-width:0;">
+            <label>Ordem</label>
+            <input type="number" id="r-ordem" value="0" min="0">
+          </div>
+        </div>
+
+        <div class="section-label">Cidades desta região</div>
+        <div class="form-group" style="margin-bottom:10px;">
+          <label>Cidades <span class="hint">(pressione Enter ou vírgula para adicionar)</span></label>
+          <div class="tags-wrap" id="r-cidades-wrap" onclick="document.getElementById('r-cidades-input').focus()">
+            <input type="text" class="tags-input" id="r-cidades-input" placeholder="Ex: São João da Barra...">
+          </div>
+        </div>
+
+        <div class="section-label">Líderes desta região</div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>IDs de líderes <span class="hint">(pressione Enter ou vírgula para adicionar)</span></label>
+          <div class="tags-wrap" id="r-lideres-wrap" onclick="document.getElementById('r-lideres-input').focus()">
+            <input type="text" class="tags-input" id="r-lideres-input" placeholder="Ex: 42, 87...">
+          </div>
+        </div>
+
+        <div id="r-alert-error"   class="alert alert-error"></div>
+        <div id="r-alert-success" class="alert alert-success"></div>
+
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button class="btn-primary" id="r-salvar-btn" onclick="salvarRegiao()" style="flex:1;">
+            💾 Salvar região
+          </button>
+          <button class="btn-secondary" id="r-cancelar-btn" onclick="cancelarEdicaoRegiao()" style="display:none;">
+            ✕ Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB: IDENTIDADE
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-identidade">
+    <div class="wrap">
+
+      <div class="info-box">
+        <strong>Identidade visual</strong> define o nome e a logo que aparecem nos cabeçalhos do sistema.
+        As <strong>cores principais</strong> são usadas como referência visual do tenant (futuro uso em temas).
+      </div>
+
+      <div class="card">
+        <div class="card-title">🏢 Dados do sistema</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nome do sistema</label>
+            <input type="text" id="i-nome" placeholder="ex: Gestão Política RJ">
+            <span class="hint">Aparece no header e nas telas de login</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>URL da logo</label>
+            <input type="url" id="i-logo" placeholder="https://...">
+            <span class="hint">Imagem pública — recomendado 200×60 px PNG ou SVG</span>
+          </div>
+          <div class="form-group" style="flex:0 0 auto;align-items:center;justify-content:flex-end;display:flex;">
+            <img id="i-logo-preview" style="max-height:52px;max-width:160px;border-radius:8px;border:1.5px solid #e2e8f0;display:none;object-fit:contain;" alt="preview logo">
+          </div>
+        </div>
+
+        <div class="section-label">Cores principais do tenant</div>
+        <div class="form-row">
+          <div class="form-group" style="flex:0 0 auto;">
+            <label>Cor primária</label>
+            <input type="color" id="i-cor-primaria" value="#1565c0">
+          </div>
+          <div class="form-group" style="flex:0 0 auto;">
+            <label>Cor secundária</label>
+            <input type="color" id="i-cor-secundaria" value="#0d2d6b">
+          </div>
+          <div class="form-group" style="flex:0 0 auto;">
+            <label>Cor de destaque</label>
+            <input type="color" id="i-cor-destaque" value="#f59e0b">
+          </div>
+        </div>
+
+        <div id="i-alert-error"   class="alert alert-error"></div>
+        <div id="i-alert-success" class="alert alert-success"></div>
+
+        <button class="btn-primary" id="i-salvar-btn" onclick="salvarIdentidade()">
+          💾 Salvar identidade visual
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script src="tenant.js"></script>
+<script>
+'use strict';
+const API = 'https://map-backend-j88s.onrender.com';
+const getToken = () => localStorage.getItem('token');
+
+/* ══ HELPER: fetch com auth ══ */
+async function apiFetch(path, opts = {}) {
+  const token = getToken();
+  const res = await fetch(API + '/api' + path, {
+    ...opts,
+    headers: { ...(token ? { Authorization: 'Bearer ' + token } : {}), ...(opts.headers || {}) }
+  });
+  if (res.status === 401 || res.status === 403) { logout(); throw new Error('Sem acesso'); }
+  return res;
+}
+function logout() { localStorage.clear(); location.reload(); }
+
+/* ══ TABS ══ */
+function abrirTab(nome) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('ativo', b.dataset.tab === nome));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('ativo', p.id === 'tab-' + nome));
+}
+
+/* ══════════════════════════════════════
+   LOGIN
+══════════════════════════════════════ */
+async function login() {
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-err');
+  err.style.display = 'none';
+  btn.textContent = 'Entrando...'; btn.disabled = true;
+  try {
+    const res = await fetch(API + '/api/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        usuario: document.getElementById('login-user').value.trim(),
+        senha:   document.getElementById('login-pass').value.trim()
+      })
+    });
+    if (!res.ok) throw new Error('credenciais');
+    const d = await res.json();
+    if (d.user?.nivel !== 'dono') throw new Error('acesso_negado');
+    localStorage.setItem('token', d.accessToken);
+    localStorage.setItem('user',  JSON.stringify(d.user));
+    iniciarApp();
+  } catch(e) {
+    err.textContent = e.message === 'acesso_negado'
+      ? 'Acesso restrito ao dono do sistema'
+      : 'Usuário ou senha inválidos';
+    err.style.display = 'block';
+  } finally { btn.textContent = 'Entrar'; btn.disabled = false; }
+}
+
+function iniciarApp() {
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('app').style.display = 'block';
+  carregarCandidatos();
+  carregarMapas();
+  carregarRegioes();
+  carregarIdentidade();
+}
+
+/* ══════════════════════════════════════
+   CANDIDATOS
+══════════════════════════════════════ */
+async function carregarCandidatos() {
+  const lista = document.getElementById('cand-list');
+  lista.innerHTML = '<div class="empty-state">Carregando...</div>';
+  try {
+    const res = await apiFetch('/admin/config/candidatos');
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    const cands = await res.json();
+    document.getElementById('badge-cands').textContent = cands.length;
+    if (!cands.length) {
+      lista.innerHTML = '<div class="empty-state">Nenhum candidato cadastrado.<br>Use o formulário abaixo para adicionar.</div>';
+      return;
+    }
+    lista.innerHTML = cands.map(c => `
+      <div class="item-row" id="cand-row-${c.chave}">
+        ${c.foto_url
+          ? `<img src="${c.foto_url}" class="avatar" onerror="this.style.display='none'">`
+          : `<div class="avatar-ph">👤</div>`}
+        <div class="item-info">
+          <div class="item-nome">${c.nome}</div>
+          <div class="item-meta">
+            chave: <code>${c.chave}</code> &nbsp;·&nbsp; ordem ${c.ordem ?? 0}
+            ${c.tem_votos_2022 ? '&nbsp;·&nbsp; ✅ votos 2022' : ''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <div class="color-dot" style="background:${c.cor_fundo};border-color:${c.cor_texto}20;" title="Cor fundo"></div>
+          <div class="color-dot" style="background:${c.cor_texto};" title="Cor texto"></div>
+          <span class="badge-mini" style="background:${c.cor_fundo};color:${c.cor_texto};">${c.nome.split(' ')[0]}</span>
+        </div>
+        <button class="btn-icon btn-edit" onclick='editarCandidato(${JSON.stringify(c)})'>✏️ Editar</button>
+        <button class="btn-icon btn-del"  onclick="excluirCandidato('${c.chave}','${c.nome.replace(/'/g,'')}')">🗑️</button>
+      </div>`).join('');
+  } catch(e) {
+    lista.innerHTML = `<div class="empty-state" style="color:#b91c1c;">Erro: ${e.message}</div>`;
+  }
+}
+
+function editarCandidato(c) {
+  document.getElementById('c-chave').value        = c.chave;
+  document.getElementById('c-nome').value         = c.nome;
+  document.getElementById('c-cor-fundo').value    = c.cor_fundo || '#e0e7ff';
+  document.getElementById('c-cor-texto').value    = c.cor_texto || '#3730a3';
+  document.getElementById('c-ordem').value        = c.ordem ?? 0;
+  document.getElementById('c-votos2022').checked  = !!c.tem_votos_2022;
+  const prev = document.getElementById('c-foto-preview');
+  if (c.foto_url) { prev.src = c.foto_url; prev.style.display = 'block'; }
+  else prev.style.display = 'none';
+  document.getElementById('c-chave').setAttribute('data-original', c.chave);
+  document.getElementById('c-salvar-btn').textContent = '💾 Atualizar candidato';
+  document.getElementById('c-cancelar-btn').style.display = '';
+  document.getElementById('cand-form-title').textContent = '✏️ Editando: ' + c.nome;
+  atualizarPreviewCor();
+  abrirTab('candidatos');
+  document.getElementById('c-chave').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelarEdicaoCandidato() {
+  ['c-chave','c-nome'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('c-ordem').value = '0';
+  document.getElementById('c-votos2022').checked = false;
+  document.getElementById('c-foto').value = '';
+  document.getElementById('c-foto-preview').style.display = 'none';
+  document.getElementById('c-cor-fundo').value = '#e0e7ff';
+  document.getElementById('c-cor-texto').value = '#3730a3';
+  document.getElementById('c-chave').removeAttribute('data-original');
+  document.getElementById('c-salvar-btn').textContent = '💾 Salvar candidato';
+  document.getElementById('c-cancelar-btn').style.display = 'none';
+  document.getElementById('cand-form-title').textContent = '➕ Adicionar candidato';
+  atualizarPreviewCor();
+}
+
+async function excluirCandidato(chave, nome) {
+  if (!confirm(`Excluir "${nome}" (${chave})?\n\nIsso não remove dados históricos, mas desvincula lideranças deste candidato.`)) return;
+  try {
+    const res = await apiFetch('/admin/config/candidatos/' + encodeURIComponent(chave), { method: 'DELETE' });
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    carregarCandidatos();
+  } catch(e) { alert('Erro ao excluir: ' + e.message); }
+}
+
+async function salvarCandidato() {
+  const errEl = document.getElementById('c-alert-error');
+  const okEl  = document.getElementById('c-alert-success');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+
+  const chave = document.getElementById('c-chave').value.trim();
+  const nome  = document.getElementById('c-nome').value.trim();
+  if (!chave) { errEl.textContent = 'Chave interna obrigatória'; errEl.style.display = 'block'; return; }
+  if (!nome)  { errEl.textContent = 'Nome de exibição obrigatório'; errEl.style.display = 'block'; return; }
+  if (/\s/.test(chave)) { errEl.textContent = 'Chave não pode ter espaços'; errEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('c-salvar-btn');
+  btn.textContent = 'Salvando...'; btn.disabled = true;
+  try {
+    const fd = new FormData();
+    fd.append('chave',          chave);
+    fd.append('nome',           nome);
+    fd.append('cor_fundo',      document.getElementById('c-cor-fundo').value);
+    fd.append('cor_texto',      document.getElementById('c-cor-texto').value);
+    fd.append('ordem',          document.getElementById('c-ordem').value);
+    fd.append('tem_votos_2022', document.getElementById('c-votos2022').checked);
+    const foto = document.getElementById('c-foto').files[0];
+    if (foto) fd.append('foto', foto);
+
+    const res = await fetch(API + '/api/admin/config/candidatos', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + getToken() }, body: fd
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erro ' + res.status); }
+
+    okEl.textContent = `Candidato "${nome}" salvo com sucesso!`;
+    okEl.style.display = 'block';
+    setTimeout(() => okEl.style.display = 'none', 3500);
+    cancelarEdicaoCandidato();
+    carregarCandidatos();
+  } catch(e) {
+    errEl.textContent = 'Erro: ' + e.message; errEl.style.display = 'block';
+  } finally { btn.textContent = '💾 Salvar candidato'; btn.disabled = false; }
+}
+
+function atualizarPreviewCor() {
+  const fundo  = document.getElementById('c-cor-fundo').value;
+  const texto  = document.getElementById('c-cor-texto').value;
+  const nome   = document.getElementById('c-nome').value.trim() || 'Nome do candidato';
+  const badge  = document.getElementById('color-preview-badge');
+  const row    = document.getElementById('color-preview-row');
+  badge.textContent    = nome;
+  badge.style.background = fundo;
+  badge.style.color      = texto;
+  row.style.background   = fundo + '22';
+  row.style.borderColor  = fundo;
+}
+
+/* ══════════════════════════════════════
+   MAPAS
+══════════════════════════════════════ */
+let _mapaSubregioes = []; // array de strings
+
+async function carregarMapas() {
+  const lista = document.getElementById('mapas-list');
+  lista.innerHTML = '<div class="empty-state">Carregando...</div>';
+  try {
+    const res = await apiFetch('/admin/config/mapas');
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    const mapas = await res.json();
+    document.getElementById('badge-mapas').textContent = mapas.length;
+    if (!mapas.length) {
+      lista.innerHTML = '<div class="empty-state">Nenhum mapa configurado.<br>Use o formulário abaixo para adicionar.</div>';
+      return;
+    }
+    lista.innerHTML = mapas.map(m => {
+      const subs = Array.isArray(m.subregioes) ? m.subregioes : (JSON.parse(m.subregioes || '[]'));
+      return `
+      <div class="item-row">
+        <div class="mapa-icon" style="background:${m.badge_fundo || '#f0fdf4'};">🗺️</div>
+        <div class="item-info">
+          <div class="item-nome">${m.nome}</div>
+          <div class="item-meta">
+            id: <code>${m.mapa_id}</code> &nbsp;·&nbsp; nível: <code>${m.nivel_usuario}</code>
+            ${subs.length ? '&nbsp;·&nbsp; ' + subs.length + ' sub-regiões' : ''}
+          </div>
+        </div>
+        <span class="badge-mini" style="background:${m.badge_fundo || '#f0fdf4'};color:${m.badge_texto || '#14532d'};">${m.nome}</span>
+        <button class="btn-icon btn-edit" onclick='editarMapa(${JSON.stringify(m)})'>✏️ Editar</button>
+        <button class="btn-icon btn-del"  onclick="excluirMapa('${m.mapa_id}','${m.nome.replace(/'/g,'')}')">🗑️</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    lista.innerHTML = `<div class="empty-state" style="color:#b91c1c;">Erro: ${e.message}</div>`;
+  }
+}
+
+function editarMapa(m) {
+  document.getElementById('m-id').value       = m.mapa_id;
+  document.getElementById('m-nome').value     = m.nome;
+  document.getElementById('m-nivel').value    = m.nivel_usuario;
+  document.getElementById('m-cor-fundo').value = m.badge_fundo || '#f0fdf4';
+  document.getElementById('m-cor-texto').value = m.badge_texto || '#14532d';
+  _mapaSubregioes = Array.isArray(m.subregioes) ? [...m.subregioes] : (JSON.parse(m.subregioes || '[]'));
+  renderizarTagsMapa();
+  atualizarPreviewMapa();
+  document.getElementById('m-salvar-btn').textContent = '💾 Atualizar mapa';
+  document.getElementById('m-cancelar-btn').style.display = '';
+  document.getElementById('mapa-form-title').textContent = '✏️ Editando: ' + m.nome;
+  abrirTab('mapas');
+  document.getElementById('m-id').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelarEdicaoMapa() {
+  ['m-id','m-nome','m-nivel'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-cor-fundo').value = '#f0fdf4';
+  document.getElementById('m-cor-texto').value = '#14532d';
+  _mapaSubregioes = [];
+  renderizarTagsMapa();
+  atualizarPreviewMapa();
+  document.getElementById('m-salvar-btn').textContent = '💾 Salvar mapa';
+  document.getElementById('m-cancelar-btn').style.display = 'none';
+  document.getElementById('mapa-form-title').textContent = '➕ Adicionar / editar mapa';
+}
+
+async function excluirMapa(mapa_id, nome) {
+  if (!confirm(`Excluir mapa "${nome}" (${mapa_id})?`)) return;
+  try {
+    const res = await apiFetch('/admin/config/mapas/' + encodeURIComponent(mapa_id), { method: 'DELETE' });
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    carregarMapas();
+  } catch(e) { alert('Erro ao excluir: ' + e.message); }
+}
+
+async function salvarMapa() {
+  const errEl = document.getElementById('m-alert-error');
+  const okEl  = document.getElementById('m-alert-success');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+
+  const mapa_id       = document.getElementById('m-id').value.trim();
+  const nome          = document.getElementById('m-nome').value.trim();
+  const nivel_usuario = document.getElementById('m-nivel').value.trim();
+  if (!mapa_id || !nome || !nivel_usuario) {
+    errEl.textContent = 'ID do mapa, nome e nível de usuário são obrigatórios';
+    errEl.style.display = 'block'; return;
+  }
+
+  const btn = document.getElementById('m-salvar-btn');
+  btn.textContent = 'Salvando...'; btn.disabled = true;
+  try {
+    const res = await apiFetch('/admin/config/mapas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mapa_id,
+        nome,
+        nivel_usuario,
+        badge_fundo: document.getElementById('m-cor-fundo').value,
+        badge_texto: document.getElementById('m-cor-texto').value,
+        subregioes: _mapaSubregioes
+      })
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erro ' + res.status); }
+    okEl.textContent = `Mapa "${nome}" salvo!`;
+    okEl.style.display = 'block';
+    setTimeout(() => okEl.style.display = 'none', 3000);
+    cancelarEdicaoMapa();
+    carregarMapas();
+  } catch(e) {
+    errEl.textContent = 'Erro: ' + e.message; errEl.style.display = 'block';
+  } finally { btn.textContent = '💾 Salvar mapa'; btn.disabled = false; }
+}
+
+function atualizarPreviewMapa() {
+  const fundo = document.getElementById('m-cor-fundo').value;
+  const texto = document.getElementById('m-cor-texto').value;
+  const nome  = document.getElementById('m-nome').value.trim() || 'Nome do mapa';
+  const badge = document.getElementById('mapa-preview-badge');
+  badge.textContent      = nome;
+  badge.style.background = fundo;
+  badge.style.color      = texto;
+}
+
+/* ── Tags sub-regiões mapa ── */
+function renderizarTagsMapa() {
+  const wrap  = document.getElementById('m-subregioes-wrap');
+  const input = document.getElementById('m-subregioes-input');
+  wrap.innerHTML = '';
+  _mapaSubregioes.forEach((s, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'tag-item';
+    tag.innerHTML = `${s}<button onclick="removerSubregiao(${i})" title="Remover">×</button>`;
+    wrap.appendChild(tag);
+  });
+  wrap.appendChild(input);
+  input.value = '';
+}
+
+function removerSubregiao(idx) {
+  _mapaSubregioes.splice(idx, 1);
+  renderizarTagsMapa();
+}
+
+function adicionarSubregiao(val) {
+  const v = val.trim().replace(/,$/, '');
+  if (v && !_mapaSubregioes.includes(v)) {
+    _mapaSubregioes.push(v);
+    renderizarTagsMapa();
+  }
+}
+
+/* ══════════════════════════════════════
+   REGIÕES
+══════════════════════════════════════ */
+let _regiaoCidades = [];
+let _regiaoLideres = [];
+
+async function carregarRegioes() {
+  const lista = document.getElementById('regioes-list');
+  lista.innerHTML = '<div class="empty-state">Carregando...</div>';
+  try {
+    const res = await apiFetch('/admin/config/regioes');
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    const regioes = await res.json();
+    document.getElementById('badge-regioes').textContent = regioes.length;
+    if (!regioes.length) {
+      lista.innerHTML = '<div class="empty-state">Nenhuma região cadastrada.<br>Use o formulário abaixo para adicionar.</div>';
+      return;
+    }
+    lista.innerHTML = regioes.map(r => {
+      const cids = Array.isArray(r.cidades) ? r.cidades : (JSON.parse(r.cidades || '[]'));
+      const lids = Array.isArray(r.lideres) ? r.lideres : (JSON.parse(r.lideres || '[]'));
+      return `
+      <div class="item-row">
+        <div class="avatar-ph" style="border-radius:10px;background:#e0e7ff;color:#6366f1;font-size:16px;">📍</div>
+        <div class="item-info">
+          <div class="item-nome">${r.label}</div>
+          <div class="item-meta">
+            chave: <code>${r.chave}</code> &nbsp;·&nbsp; ordem ${r.ordem ?? 0}
+            &nbsp;·&nbsp; ${cids.length} cidade${cids.length !== 1 ? 's' : ''}
+            ${lids.length ? '&nbsp;·&nbsp; ' + lids.length + ' líder(es)' : ''}
+          </div>
+          ${cids.length ? `<div style="margin-top:4px;font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${cids.slice(0,6).join(', ')}${cids.length > 6 ? ' ...' : ''}
+          </div>` : ''}
+        </div>
+        <button class="btn-icon btn-edit" onclick='editarRegiao(${JSON.stringify(r)})'>✏️ Editar</button>
+        <button class="btn-icon btn-del"  onclick="excluirRegiao('${r.chave}','${r.label.replace(/'/g,'')}')">🗑️</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    lista.innerHTML = `<div class="empty-state" style="color:#b91c1c;">Erro: ${e.message}</div>`;
+  }
+}
+
+function editarRegiao(r) {
+  document.getElementById('r-chave').value = r.chave;
+  document.getElementById('r-label').value = r.label;
+  document.getElementById('r-ordem').value = r.ordem ?? 0;
+  _regiaoCidades = Array.isArray(r.cidades) ? [...r.cidades] : (JSON.parse(r.cidades || '[]'));
+  _regiaoLideres = Array.isArray(r.lideres) ? [...r.lideres] : (JSON.parse(r.lideres || '[]'));
+  renderizarTagsCidades();
+  renderizarTagsLideres();
+  document.getElementById('r-salvar-btn').textContent = '💾 Atualizar região';
+  document.getElementById('r-cancelar-btn').style.display = '';
+  document.getElementById('regiao-form-title').textContent = '✏️ Editando: ' + r.label;
+  abrirTab('regioes');
+  document.getElementById('r-chave').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelarEdicaoRegiao() {
+  ['r-chave','r-label'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('r-ordem').value = '0';
+  _regiaoCidades = []; _regiaoLideres = [];
+  renderizarTagsCidades(); renderizarTagsLideres();
+  document.getElementById('r-salvar-btn').textContent = '💾 Salvar região';
+  document.getElementById('r-cancelar-btn').style.display = 'none';
+  document.getElementById('regiao-form-title').textContent = '➕ Adicionar / editar região';
+}
+
+async function excluirRegiao(chave, label) {
+  if (!confirm(`Excluir região "${label}" (${chave})?`)) return;
+  try {
+    const res = await apiFetch('/admin/config/regioes/' + encodeURIComponent(chave), { method: 'DELETE' });
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    carregarRegioes();
+  } catch(e) { alert('Erro ao excluir: ' + e.message); }
+}
+
+async function salvarRegiao() {
+  const errEl = document.getElementById('r-alert-error');
+  const okEl  = document.getElementById('r-alert-success');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+
+  const chave = document.getElementById('r-chave').value.trim();
+  const label = document.getElementById('r-label').value.trim();
+  if (!chave || !label) {
+    errEl.textContent = 'Chave e label são obrigatórios';
+    errEl.style.display = 'block'; return;
+  }
+  if (/\s/.test(chave)) {
+    errEl.textContent = 'Chave não pode ter espaços'; errEl.style.display = 'block'; return;
+  }
+
+  const btn = document.getElementById('r-salvar-btn');
+  btn.textContent = 'Salvando...'; btn.disabled = true;
+  try {
+    const res = await apiFetch('/admin/config/regioes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chave,
+        label,
+        cidades: _regiaoCidades,
+        lideres: _regiaoLideres,
+        ordem:   Number(document.getElementById('r-ordem').value) || 0
+      })
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erro ' + res.status); }
+    okEl.textContent = `Região "${label}" salva!`;
+    okEl.style.display = 'block';
+    setTimeout(() => okEl.style.display = 'none', 3000);
+    cancelarEdicaoRegiao();
+    carregarRegioes();
+  } catch(e) {
+    errEl.textContent = 'Erro: ' + e.message; errEl.style.display = 'block';
+  } finally { btn.textContent = '💾 Salvar região'; btn.disabled = false; }
+}
+
+/* ── Tags cidades ── */
+function renderizarTagsCidades() {
+  renderTags('r-cidades-wrap', 'r-cidades-input', _regiaoCidades,
+    i => { _regiaoCidades.splice(i,1); renderizarTagsCidades(); });
+}
+function renderizarTagsLideres() {
+  renderTags('r-lideres-wrap', 'r-lideres-input', _regiaoLideres,
+    i => { _regiaoLideres.splice(i,1); renderizarTagsLideres(); });
+}
+
+function renderTags(wrapId, inputId, arr, onRemove) {
+  const wrap  = document.getElementById(wrapId);
+  const input = document.getElementById(inputId);
+  wrap.innerHTML = '';
+  arr.forEach((s, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'tag-item';
+    const btn = document.createElement('button');
+    btn.textContent = '×'; btn.title = 'Remover';
+    btn.onclick = () => onRemove(i);
+    tag.textContent = s;
+    tag.appendChild(btn);
+    wrap.appendChild(tag);
+  });
+  wrap.appendChild(input);
+  input.value = '';
+}
+
+/* ══════════════════════════════════════
+   IDENTIDADE
+══════════════════════════════════════ */
+async function carregarIdentidade() {
+  try {
+    const res = await apiFetch('/admin/config');
+    if (!res.ok) return;
+    const d = await res.json();
+    document.getElementById('i-nome').value = d.nome_sistema || '';
+    document.getElementById('i-logo').value = d.logo_url     || '';
+    if (d.logo_url) {
+      const img = document.getElementById('i-logo-preview');
+      img.src = d.logo_url; img.style.display = 'block';
+    }
+    if (d.cores) {
+      const c = typeof d.cores === 'string' ? JSON.parse(d.cores) : d.cores;
+      if (c.primaria)   document.getElementById('i-cor-primaria').value   = c.primaria;
+      if (c.secundaria) document.getElementById('i-cor-secundaria').value = c.secundaria;
+      if (c.destaque)   document.getElementById('i-cor-destaque').value   = c.destaque;
+    }
+  } catch(e) { console.warn('[identidade]', e); }
+}
+
+async function salvarIdentidade() {
+  const errEl = document.getElementById('i-alert-error');
+  const okEl  = document.getElementById('i-alert-success');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+  const btn = document.getElementById('i-salvar-btn');
+  btn.textContent = 'Salvando...'; btn.disabled = true;
+  try {
+    const nome_sistema = document.getElementById('i-nome').value.trim() || null;
+    const logo_url     = document.getElementById('i-logo').value.trim() || null;
+    const cores = {
+      primaria:   document.getElementById('i-cor-primaria').value,
+      secundaria: document.getElementById('i-cor-secundaria').value,
+      destaque:   document.getElementById('i-cor-destaque').value,
+    };
+    const res = await apiFetch('/admin/config/geral', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome_sistema, logo_url, cores })
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erro'); }
+    okEl.textContent = 'Identidade visual salva com sucesso!';
+    okEl.style.display = 'block';
+    setTimeout(() => okEl.style.display = 'none', 3000);
+    // Atualiza preview da logo
+    if (logo_url) {
+      const img = document.getElementById('i-logo-preview');
+      img.src = logo_url; img.style.display = 'block';
+    }
+  } catch(e) {
+    errEl.textContent = 'Erro: ' + e.message; errEl.style.display = 'block';
+  } finally { btn.textContent = '💾 Salvar identidade visual'; btn.disabled = false; }
+}
+
+/* ══════════════════════════════════════
+   INIT — event listeners
+══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+
+  /* Foto candidato — preview */
+  document.getElementById('c-foto').addEventListener('change', () => {
+    const file = document.getElementById('c-foto').files[0];
+    const prev = document.getElementById('c-foto-preview');
+    if (file) { prev.src = URL.createObjectURL(file); prev.style.display = 'block'; }
+    else prev.style.display = 'none';
+  });
+
+  /* Logo identidade — preview */
+  document.getElementById('i-logo').addEventListener('input', () => {
+    const url = document.getElementById('i-logo').value.trim();
+    const img = document.getElementById('i-logo-preview');
+    if (url) { img.src = url; img.style.display = 'block'; }
+    else img.style.display = 'none';
+  });
+
+  /* Tags sub-regiões mapa */
+  const mSubInput = document.getElementById('m-subregioes-input');
+  mSubInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); adicionarSubregiao(mSubInput.value); }
+    if (e.key === 'Backspace' && !mSubInput.value && _mapaSubregioes.length) {
+      _mapaSubregioes.pop(); renderizarTagsMapa();
+    }
+  });
+  mSubInput.addEventListener('blur', () => { if (mSubInput.value.trim()) adicionarSubregiao(mSubInput.value); });
+
+  /* Tags cidades região */
+  const rCidInput = document.getElementById('r-cidades-input');
+  rCidInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const v = rCidInput.value.trim().replace(/,$/, '');
+      if (v && !_regiaoCidades.includes(v)) { _regiaoCidades.push(v); renderizarTagsCidades(); }
+    }
+    if (e.key === 'Backspace' && !rCidInput.value && _regiaoCidades.length) {
+      _regiaoCidades.pop(); renderizarTagsCidades();
+    }
+  });
+  rCidInput.addEventListener('blur', () => {
+    const v = rCidInput.value.trim().replace(/,$/, '');
+    if (v && !_regiaoCidades.includes(v)) { _regiaoCidades.push(v); renderizarTagsCidades(); }
+  });
+
+  /* Tags líderes região */
+  const rLidInput = document.getElementById('r-lideres-input');
+  rLidInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const v = rLidInput.value.trim().replace(/,$/, '');
+      if (v && !_regiaoLideres.includes(v)) { _regiaoLideres.push(v); renderizarTagsLideres(); }
+    }
+    if (e.key === 'Backspace' && !rLidInput.value && _regiaoLideres.length) {
+      _regiaoLideres.pop(); renderizarTagsLideres();
+    }
+  });
+  rLidInput.addEventListener('blur', () => {
+    const v = rLidInput.value.trim().replace(/,$/, '');
+    if (v && !_regiaoLideres.includes(v)) { _regiaoLideres.push(v); renderizarTagsLideres(); }
+  });
+
+  /* Preview de cor inicial */
+  atualizarPreviewCor();
+  atualizarPreviewMapa();
+
+  /* Login via Enter */
+  document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key === 'Enter') login(); });
+  document.getElementById('m-nome').addEventListener('input', atualizarPreviewMapa);
+
+  /* Auto-login se já tem token válido */
+  const token = getToken();
+  const user  = JSON.parse(localStorage.getItem('user') || '{}');
+  if (token && user?.nivel === 'dono') iniciarApp();
+});
+</script>
+</body>
+</html>
