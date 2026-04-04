@@ -827,63 +827,20 @@ textarea {
     </div>
   </div>
 
-  <!-- CANDIDATOS CARD — visível apenas para 'dono' -->
+  <!-- CANDIDATOS LINK CARD — visível apenas para 'dono' -->
   <div class="card anim" id="card-candidatos" style="display:none;animation-delay:0.18s;">
     <div class="card-header">
       <div class="card-title">
         <div class="card-icon">🎯</div>
         Candidatos do tenant
       </div>
-      <button class="btn btn-sm" onclick="carregarCandidatos()" style="font-size:11px;">↺ Atualizar</button>
     </div>
-
-    <div id="lista-candidatos" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;"></div>
-
-    <div class="section-divider">Adicionar / Editar candidato</div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Chave interna <span style="color:#94a3b8;font-size:10px;">(não mude após gravar dados)</span></label>
-        <input type="text" id="cand-chave" placeholder="ex: joao_2026">
-      </div>
-      <div class="form-group">
-        <label>Nome de exibição</label>
-        <input type="text" id="cand-nome" placeholder="ex: João da Silva">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Cor do badge (fundo)</label>
-        <input type="color" id="cand-cor-fundo" value="#e0e7ff" style="height:38px;padding:2px 6px;">
-      </div>
-      <div class="form-group">
-        <label>Cor do badge (texto)</label>
-        <input type="color" id="cand-cor-texto" value="#3730a3" style="height:38px;padding:2px 6px;">
-      </div>
-      <div class="form-group" style="flex:0.6;">
-        <label>Ordem</label>
-        <input type="number" id="cand-ordem" value="0" min="0" style="width:100%;">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Foto do candidato</label>
-        <input type="file" id="cand-foto" accept="image/jpeg,image/png,image/webp">
-      </div>
-      <div class="form-group" style="flex:0.5;display:flex;align-items:center;justify-content:center;">
-        <img id="cand-foto-preview" src="" alt="preview" style="display:none;width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;">
-      </div>
-      <div class="form-group" style="justify-content:flex-end;display:flex;align-items:flex-end;">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600;">
-          <input type="checkbox" id="cand-votos2022" style="width:15px;height:15px;">
-          Tinha votos em 2022
-        </label>
-      </div>
-    </div>
-    <div id="cand-error" style="display:none;background:#fee2e2;color:#b91c1c;font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;margin-bottom:8px;"></div>
-    <button class="btn btn-full" id="cand-salvar-btn" onclick="salvarCandidato()" style="background:linear-gradient(135deg,#0d2d6b,#1565c0);color:#fff;">
-      💾 Salvar candidato
-    </button>
+    <p style="font-size:13px;color:var(--slate-500);margin-bottom:16px;">
+      Gerencie os candidatos deste tenant: adicione, edite nomes, cores e fotos.
+    </p>
+    <a href="../config-candidatos.html" class="btn btn-full" style="display:block;text-align:center;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:#fff;text-decoration:none;padding:13px;">
+      🎯 Gerenciar candidatos
+    </a>
   </div>
 
 </div>
@@ -1087,7 +1044,7 @@ function iniciarPainel() {
 
   if (user.nivel === 'dono') {
     const cardCand = document.getElementById('card-candidatos');
-    if (cardCand) { cardCand.style.display = 'block'; carregarCandidatos(); }
+    if (cardCand) cardCand.style.display = 'block';
   }
 
   if (user.nivel === 'lider_regiao') {
@@ -1100,116 +1057,10 @@ function iniciarPainel() {
   }
 }
 
-/* ===== CANDIDATOS POR TENANT ===== */
-
-async function carregarCandidatos() {
-  const lista = document.getElementById('lista-candidatos');
-  lista.innerHTML = '<p style="color:#94a3b8;font-size:13px;">Carregando...</p>';
-  try {
-    const res = await apiFetch('/api/admin/config/candidatos');
-    if (!res.ok) throw new Error('Erro ' + res.status);
-    const cands = await res.json();
-    if (!cands.length) {
-      lista.innerHTML = '<p style="color:#94a3b8;font-size:13px;text-align:center;">Nenhum candidato cadastrado para este tenant.<br>Use o formulário abaixo para adicionar.</p>';
-      return;
-    }
-    lista.innerHTML = cands.map(c => `
-      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:#f8fafc;border:1.5px solid #e2e8f0;">
-        ${c.foto_url
-          ? `<img src="${c.foto_url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;flex-shrink:0;">`
-          : `<div style="width:44px;height:44px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>`}
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:14px;color:#0f172a;">${c.nome}</div>
-          <div style="font-size:11px;color:#64748b;">chave: <code>${c.chave}</code> · ordem: ${c.ordem ?? 0}</div>
-        </div>
-        <span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${c.cor_fundo};color:${c.cor_texto};">${c.nome}</span>
-        <button onclick="editarCandidato(${JSON.stringify(c).replace(/"/g,'&quot;')})"
-          style="padding:6px 12px;border:1.5px solid #cbd5e1;border-radius:8px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#1e293b;">✏️</button>
-        <button onclick="excluirCandidato('${c.chave}')"
-          style="padding:6px 12px;border:1.5px solid #fca5a5;border-radius:8px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#b91c1c;">🗑️</button>
-      </div>`).join('');
-  } catch(e) {
-    lista.innerHTML = `<p style="color:#b91c1c;font-size:13px;">Erro: ${e.message}</p>`;
-  }
-}
-
-function editarCandidato(c) {
-  document.getElementById('cand-chave').value  = c.chave;
-  document.getElementById('cand-nome').value   = c.nome;
-  document.getElementById('cand-cor-fundo').value = c.cor_fundo || '#e0e7ff';
-  document.getElementById('cand-cor-texto').value = c.cor_texto || '#3730a3';
-  document.getElementById('cand-ordem').value  = c.ordem ?? 0;
-  document.getElementById('cand-votos2022').checked = !!c.tem_votos_2022;
-  const preview = document.getElementById('cand-foto-preview');
-  if (c.foto_url) { preview.src = c.foto_url; preview.style.display = 'block'; }
-  else preview.style.display = 'none';
-  document.getElementById('cand-salvar-btn').textContent = '💾 Atualizar candidato';
-  document.getElementById('cand-chave').focus();
-}
-
-async function excluirCandidato(chave) {
-  if (!confirm(`Excluir candidato "${chave}"? Esta ação não pode ser desfeita.`)) return;
-  try {
-    const res = await apiFetch('/api/admin/config/candidatos/' + encodeURIComponent(chave), { method: 'DELETE' });
-    if (!res.ok) throw new Error('Erro ' + res.status);
-    carregarCandidatos();
-  } catch(e) { alert('Erro ao excluir: ' + e.message); }
-}
-
-async function salvarCandidato() {
-  const errEl = document.getElementById('cand-error');
-  errEl.style.display = 'none';
-  const chave = document.getElementById('cand-chave').value.trim();
-  const nome  = document.getElementById('cand-nome').value.trim();
-  if (!chave || !nome) { errEl.textContent = 'Chave e nome são obrigatórios'; errEl.style.display = 'block'; return; }
-
-  const btn = document.getElementById('cand-salvar-btn');
-  btn.textContent = 'Salvando...'; btn.disabled = true;
-
-  try {
-    const fd = new FormData();
-    fd.append('chave',        chave);
-    fd.append('nome',         nome);
-    fd.append('cor_fundo',    document.getElementById('cand-cor-fundo').value);
-    fd.append('cor_texto',    document.getElementById('cand-cor-texto').value);
-    fd.append('ordem',        document.getElementById('cand-ordem').value);
-    fd.append('tem_votos_2022', document.getElementById('cand-votos2022').checked);
-    const fotoFile = document.getElementById('cand-foto').files[0];
-    if (fotoFile) fd.append('foto', fotoFile);
-
-    const token = localStorage.getItem('token');
-    const res = await fetch(API + '/api/admin/config/candidatos', {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + token },
-      body: fd
-    });
-    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erro'); }
-
-    // limpa form
-    ['cand-chave','cand-nome'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('cand-ordem').value = '0';
-    document.getElementById('cand-votos2022').checked = false;
-    document.getElementById('cand-foto').value = '';
-    document.getElementById('cand-foto-preview').style.display = 'none';
-    btn.textContent = '💾 Salvar candidato';
-    carregarCandidatos();
-  } catch(e) {
-    errEl.textContent = 'Erro: ' + e.message; errEl.style.display = 'block';
-    btn.textContent = '💾 Salvar candidato';
-  } finally { btn.disabled = false; }
-}
 
 /* ===== INIT ===== */
 document.addEventListener('DOMContentLoaded', () => {
   initRegioes();
-  const candFotoInput = document.getElementById('cand-foto');
-  if (candFotoInput) candFotoInput.addEventListener('change', () => {
-    const file = candFotoInput.files[0];
-    const preview = document.getElementById('cand-foto-preview');
-    if (file) { preview.src = URL.createObjectURL(file); preview.style.display = 'block'; }
-    else preview.style.display = 'none';
-  });
-
   buscaCidade.addEventListener('input', filtrarCidades);
   regiao.addEventListener('change', carregarCidadesPorRegiao);
   cidade.addEventListener('change', () => {

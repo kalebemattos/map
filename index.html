@@ -2334,10 +2334,12 @@ try {
         };
       }
 
+      // Lê do campo JSONB `expectativas`; cai nas colunas legadas como fallback
+      const expJson = e.expectativas || {};
       dataCache[e.cidade].expectativaCidade = Object.fromEntries(
         (configSistema.candidatos || []).map(c => [
           c.chave,
-          Number(e['expectativa_' + c.chave] || 0)
+          Number(expJson[c.chave] ?? e['expectativa_' + c.chave] ?? 0)
         ])
       );
     });
@@ -3390,17 +3392,17 @@ async function salvarExpectativaCidade() {
     return;
   }
 
-  // monta payload dinamicamente { cidade, celia: x, fernando: y, ... }
-  const payload = { cidade: cidadeSelecionada };
+  // monta expectativas dinamicamente { chave: valor, ... }
+  const expectativas = {};
   (configSistema.candidatos || []).forEach(c => {
     const input = document.getElementById('expectativa-cidade-' + c.chave);
-    payload[c.chave] = Number(input?.value || 0);
+    expectativas[c.chave] = Number(input?.value || 0);
   });
 
   try {
     const response = await apiFetch('/expectativa-cidade', {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ cidade: cidadeSelecionada, expectativas })
     });
 
     if (!response.ok) {

@@ -465,72 +465,59 @@ const user = await dbGet(
   }
 });
 /* ================= EXPECTATIVA DA CIDADE ================= */
-app.post('/api/expectativa-cidade', auth, withTenant, async (req, res) => {
-  const { cidade, celia, fernando } = req.body;
 
-if (!cidade) {
-  return res.status(400).json({ error: 'Cidade não informada' });
+// Helper: salva expectativas JSONB de forma dinâmica (qualquer mapa)
+async function salvarExpectativaHelper(cidade, expectativas, regiao, mapa, tenantId) {
+  // expectativas = { chave1: valor1, chave2: valor2, ... }
+  const exp = {};
+  for (const [k, v] of Object.entries(expectativas || {})) {
+    exp[k] = Number(v) || 0;
+  }
+  // Mantém compat: se vieram as chaves legadas celia/fernando, atualiza colunas antigas também
+  const legCelia    = exp.celia    ?? null;
+  const legFernando = exp.fernando ?? null;
+
+  await pool.query(
+    `INSERT INTO expectativa_cidade
+     (cidade, expectativa_celia, expectativa_fernando, expectativas, regiao, mapa, tenant_id)
+     VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7)
+     ON CONFLICT (cidade, regiao, mapa, tenant_id)
+     DO UPDATE SET
+       expectativa_celia    = COALESCE($2, expectativa_cidade.expectativa_celia),
+       expectativa_fernando = COALESCE($3, expectativa_cidade.expectativa_fernando),
+       expectativas         = $4::jsonb`,
+    [cidade, legCelia, legFernando, JSON.stringify(exp), regiao, mapa, tenantId]
+  );
 }
 
-const celiaValor = Number(celia || 0);
-const fernandoValor = Number(fernando || 0);
-
-// mapa = 'rj' identifica expectativas do mapa principal
-// NULL não funciona em ON CONFLICT no PostgreSQL
-await pool.query(
-  `INSERT INTO expectativa_cidade
-   (cidade, expectativa_celia, expectativa_fernando, regiao, mapa, tenant_id)
-   VALUES ($1, $2, $3, $4, 'rj', $5)
-   ON CONFLICT (cidade, regiao, mapa, tenant_id)
-   DO UPDATE SET
-     expectativa_celia    = excluded.expectativa_celia,
-     expectativa_fernando = excluded.expectativa_fernando`,
-  [cidade, celiaValor, fernandoValor, req.user.regiao, req.tenantId]
-);
-
-res.json({ ok: true });
-
+app.post('/api/expectativa-cidade', auth, withTenant, async (req, res) => {
+  const { cidade, expectativas } = req.body;
+  if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
+  try {
+    await salvarExpectativaHelper(cidade, expectativas, req.user.regiao, 'rj', req.tenantId);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Erro expectativa-cidade POST:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
 });
-
 
 app.get('/api/expectativa-cidade', auth, withTenant, async (req, res) => {
   try {
     const { cidade } = req.query;
+    if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
 
-    if (!cidade) {
-      return res.status(400).json({ error: 'Cidade não informada' });
-    }
-
-    let query;
-    let params;
-
-    if (isPrivileged(req.user.nivel)) {
-      query = `
-        SELECT expectativa_celia, expectativa_fernando
-        FROM expectativa_cidade
-        WHERE cidade = $1 AND tenant_id = $2
-      `;
-      params = [cidade, req.tenantId];
-    } else {
-      query = `
-        SELECT expectativa_celia, expectativa_fernando
-        FROM expectativa_cidade
-        WHERE cidade = $1
-          AND LOWER(regiao) = LOWER($2)
-          AND tenant_id = $3
-      `;
-      params = [cidade, req.user.regiao, req.tenantId];
-    }
+    const query = isPrivileged(req.user.nivel)
+      ? `SELECT expectativas FROM expectativa_cidade WHERE cidade = $1 AND tenant_id = $2`
+      : `SELECT expectativas FROM expectativa_cidade WHERE cidade = $1 AND LOWER(regiao) = LOWER($2) AND tenant_id = $3`;
+    const params = isPrivileged(req.user.nivel)
+      ? [cidade, req.tenantId]
+      : [cidade, req.user.regiao, req.tenantId];
 
     const row = await dbGet(query, params);
-
-    res.json({
-      celia: row?.expectativa_celia || 0,
-      fernando: row?.expectativa_fernando || 0
-    });
-
+    res.json({ expectativas: row?.expectativas || {} });
   } catch (err) {
-    console.error('Erro expectativa-cidade:', err);
+    console.error('Erro expectativa-cidade GET:', err);
     res.status(500).json({ error: 'Erro interno' });
   }
 });
@@ -1106,9 +1093,7 @@ app.get('/api/data', auth, withTenant, async (req, res) => {
 
 app.get('/api/expectativa-cidade-todas', auth, withTenant, async (req, res) => {
   const rows = await dbAll(
-    `SELECT cidade, expectativa_celia, expectativa_fernando
-     FROM expectativa_cidade
-     WHERE mapa = 'rj' AND tenant_id = $1`,
+    `SELECT cidade, expectativas FROM expectativa_cidade WHERE mapa = 'rj' AND tenant_id = $1`,
     [req.tenantId]
   );
   res.json(rows);
@@ -1120,90 +1105,56 @@ app.get('/api/expectativa-cidade-todas', auth, withTenant, async (req, res) => {
 // ─── EXPECTATIVA ANGRA (isolada por mapa='angra') ───────────────────────────
 
 app.post('/api/expectativa-angra', auth, withTenant, async (req, res) => {
-  const { cidade, celia, fernando } = req.body;
+  const { cidade, expectativas } = req.body;
   if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
-
-  const celiaValor    = Number(celia    || 0);
-  const fernandoValor = Number(fernando || 0);
-
-  await pool.query(
-  `INSERT INTO expectativa_cidade
-   (cidade, expectativa_celia, expectativa_fernando, regiao, mapa, tenant_id)
-   VALUES ($1, $2, $3, $4, 'angra', $5)
-   ON CONFLICT (cidade, regiao, mapa, tenant_id)
-   DO UPDATE SET
-     expectativa_celia    = excluded.expectativa_celia,
-     expectativa_fernando = excluded.expectativa_fernando`,
-  [cidade, celiaValor, fernandoValor, req.user.regiao, req.tenantId]
-);
-
-  res.json({ ok: true });
+  try {
+    await salvarExpectativaHelper(cidade, expectativas, req.user.regiao, 'angra', req.tenantId);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
 });
 
 app.get('/api/expectativa-angra', auth, withTenant, async (req, res) => {
   const { cidade } = req.query;
   if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
-
   const row = await dbGet(
-    `SELECT expectativa_celia, expectativa_fernando FROM expectativa_cidade
-     WHERE cidade = $1 AND mapa = 'angra' AND tenant_id = $2`,
+    `SELECT expectativas FROM expectativa_cidade WHERE cidade = $1 AND mapa = 'angra' AND tenant_id = $2`,
     [cidade, req.tenantId]
   );
-
-  res.json({ celia: row?.expectativa_celia || 0, fernando: row?.expectativa_fernando || 0 });
+  res.json({ expectativas: row?.expectativas || {} });
 });
 
 app.get('/api/expectativa-angra-todas', auth, withTenant, async (req, res) => {
   const rows = await dbAll(
-    `SELECT cidade, expectativa_celia, expectativa_fernando
-     FROM expectativa_cidade WHERE mapa = 'angra' AND tenant_id = $1`,
+    `SELECT cidade, expectativas FROM expectativa_cidade WHERE mapa = 'angra' AND tenant_id = $1`,
     [req.tenantId]
   );
   res.json(rows);
 });
 
-
-
 // ─── EXPECTATIVA RJ CAPITAL (isolada por mapa='rjcapital') ──────────────────
 
 app.post('/api/expectativa-rjcapital', auth, withTenant, async (req, res) => {
-  const { cidade, celia, fernando } = req.body;
+  const { cidade, expectativas } = req.body;
   if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
-
-  const celiaValor    = Number(celia    || 0);
-  const fernandoValor = Number(fernando || 0);
-
-  await pool.query(
-  `INSERT INTO expectativa_cidade
-   (cidade, expectativa_celia, expectativa_fernando, regiao, mapa, tenant_id)
-   VALUES ($1, $2, $3, $4, 'rjcapital', $5)
-   ON CONFLICT (cidade, regiao, mapa, tenant_id)
-   DO UPDATE SET
-     expectativa_celia    = excluded.expectativa_celia,
-     expectativa_fernando = excluded.expectativa_fernando`,
-  [cidade, celiaValor, fernandoValor, req.user.regiao, req.tenantId]
-);
-
-  res.json({ ok: true });
+  try {
+    await salvarExpectativaHelper(cidade, expectativas, req.user.regiao, 'rjcapital', req.tenantId);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
 });
 
 app.get('/api/expectativa-rjcapital', auth, withTenant, async (req, res) => {
   const { cidade } = req.query;
   if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
-
   const row = await dbGet(
-    `SELECT expectativa_celia, expectativa_fernando FROM expectativa_cidade
-     WHERE cidade = $1 AND mapa = 'rjcapital' AND tenant_id = $2`,
+    `SELECT expectativas FROM expectativa_cidade WHERE cidade = $1 AND mapa = 'rjcapital' AND tenant_id = $2`,
     [cidade, req.tenantId]
   );
-
-  res.json({ celia: row?.expectativa_celia || 0, fernando: row?.expectativa_fernando || 0 });
+  res.json({ expectativas: row?.expectativas || {} });
 });
 
 app.get('/api/expectativa-rjcapital-todas', auth, withTenant, async (req, res) => {
   const rows = await dbAll(
-    `SELECT cidade, expectativa_celia, expectativa_fernando
-     FROM expectativa_cidade WHERE mapa = 'rjcapital' AND tenant_id = $1`,
+    `SELECT cidade, expectativas FROM expectativa_cidade WHERE mapa = 'rjcapital' AND tenant_id = $1`,
     [req.tenantId]
   );
   res.json(rows);
@@ -1572,51 +1523,63 @@ app.get('/api/aniversariantes', auth, withTenant, async (req, res) => {
 // Expectativa vs Mapeado por região
 app.get('/api/dashboard/expectativa-regioes', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
   try {
-    const metas = await dbAll(`
-      SELECT regiao,
-        COALESCE(SUM(expectativa_celia), 0)    AS meta_celia,
-        COALESCE(SUM(expectativa_fernando), 0) AS meta_fernando,
-        COALESCE(SUM(expectativa_celia + expectativa_fernando), 0) AS meta_total
-      FROM expectativa_cidade
-      WHERE regiao IS NOT NULL AND regiao <> ''
-        AND tenant_id = $1
-      GROUP BY regiao
-    `, [req.tenantId]);
+    const t = req.tenantId;
+    const candidatos = await dbAll(
+      'SELECT chave FROM tenant_candidatos WHERE tenant_id = $1 ORDER BY ordem ASC', [t]
+    );
+
+    // Agrega metas por região a partir do JSONB (em JS, sem SQL dinâmico)
+    const expRows = await dbAll(
+      `SELECT regiao, expectativas FROM expectativa_cidade
+       WHERE regiao IS NOT NULL AND regiao <> '' AND tenant_id = $1`, [t]
+    );
+    const metasByRegiao = {};
+    for (const row of expRows) {
+      if (!metasByRegiao[row.regiao]) {
+        metasByRegiao[row.regiao] = { regiao: row.regiao, meta_total: 0, metas: {} };
+        candidatos.forEach(c => { metasByRegiao[row.regiao].metas[c.chave] = 0; });
+      }
+      const exp = row.expectativas || {};
+      for (const c of candidatos) {
+        const v = Number(exp[c.chave] || 0);
+        metasByRegiao[row.regiao].metas[c.chave] += v;
+        metasByRegiao[row.regiao].meta_total += v;
+      }
+    }
+
     const mapeados = await dbAll(`
       SELECT regiao,
         COALESCE(SUM(expectativa_votos), 0) AS votos_mapeados,
         COUNT(*) AS total_lideres,
         COUNT(*) FILTER (WHERE status = 'ativo') AS lideres_ativos
       FROM liderancas
-      WHERE regiao IS NOT NULL AND regiao <> ''
-        AND tenant_id = $1
+      WHERE regiao IS NOT NULL AND regiao <> '' AND tenant_id = $1
       GROUP BY regiao
-    `, [req.tenantId]);
+    `, [t]);
     const mapaMap = {};
     mapeados.forEach(m => { mapaMap[m.regiao] = m; });
-    const resultado = metas.map(r => ({
-      regiao: r.regiao,
-      meta_total: parseInt(r.meta_total),
-      meta_celia: parseInt(r.meta_celia),
-      meta_fernando: parseInt(r.meta_fernando),
-      votos_mapeados: parseInt(mapaMap[r.regiao]?.votos_mapeados || 0),
-      total_lideres: parseInt(mapaMap[r.regiao]?.total_lideres || 0),
-      lideres_ativos: parseInt(mapaMap[r.regiao]?.lideres_ativos || 0),
-      pct_atingido: parseInt(r.meta_total) > 0
-        ? Math.round((parseInt(mapaMap[r.regiao]?.votos_mapeados || 0) / parseInt(r.meta_total)) * 100)
-        : 0
-    })).sort((a, b) => b.meta_total - a.meta_total);
-    mapeados.forEach(m => {
-      if (!metas.find(r => r.regiao === m.regiao)) {
-        resultado.push({
-          regiao: m.regiao, meta_total: 0, meta_celia: 0, meta_fernando: 0,
-          votos_mapeados: parseInt(m.votos_mapeados),
-          total_lideres: parseInt(m.total_lideres),
-          lideres_ativos: parseInt(m.lideres_ativos),
-          pct_atingido: 0
-        });
-      }
-    });
+
+    const allRegioes = new Set([
+      ...Object.keys(metasByRegiao),
+      ...mapeados.map(m => m.regiao)
+    ]);
+
+    const resultado = [...allRegioes].map(regiao => {
+      const meta = metasByRegiao[regiao] || { meta_total: 0, metas: {} };
+      const map  = mapaMap[regiao] || {};
+      return {
+        regiao,
+        meta_total:    meta.meta_total,
+        metas:         meta.metas,          // { chave: valor, ... }
+        votos_mapeados: parseInt(map.votos_mapeados || 0),
+        total_lideres:  parseInt(map.total_lideres  || 0),
+        lideres_ativos: parseInt(map.lideres_ativos || 0),
+        pct_atingido: meta.meta_total > 0
+          ? Math.round((parseInt(map.votos_mapeados || 0) / meta.meta_total) * 100)
+          : 0
+      };
+    }).sort((a, b) => b.meta_total - a.meta_total);
+
     res.json(resultado);
   } catch (err) {
     console.error('Erro dashboard/expectativa-regioes:', err);
@@ -1828,37 +1791,68 @@ socket.emit("lista-online", usuariosDoMesmoTenant);
 app.get('/api/dashboard/kpis', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
   try {
     const t = req.tenantId;
-    const totalLiderancas = await dbGet('SELECT COUNT(*) as total FROM liderancas WHERE tenant_id = $1', [t]);
-    const ativasCount     = await dbGet("SELECT COUNT(*) as total FROM liderancas WHERE status = 'ativo' AND tenant_id = $1", [t]);
-    const inativasCount   = await dbGet("SELECT COUNT(*) as total FROM liderancas WHERE status != 'ativo' AND tenant_id = $1", [t]);
-    const votosTotal      = await dbGet('SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE tenant_id = $1', [t]);
-    const votosCelia      = await dbGet("SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE tenant_id = $1 AND (LOWER(vinculo_politico) LIKE '%celia%' OR LOWER(vinculo_politico) LIKE '%célia%')", [t]);
-    const votosFernando   = await dbGet("SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE tenant_id = $1 AND LOWER(vinculo_politico) LIKE '%fernando%'", [t]);
-    const regioesAtivas   = await dbGet('SELECT COUNT(DISTINCT regiao) as total FROM liderancas WHERE tenant_id = $1', [t]);
-    const gastosTotal     = await dbGet('SELECT COALESCE(SUM(g.valor),0) as total FROM gastos_lideranca g JOIN liderancas l ON l.id = g.lideranca_id WHERE l.tenant_id = $1', [t]);
-    const gastosUlt30     = await dbGet("SELECT COALESCE(SUM(g.valor),0) as total FROM gastos_lideranca g JOIN liderancas l ON l.id = g.lideranca_id WHERE l.tenant_id = $1 AND g.data::date >= NOW() - INTERVAL '30 days'", [t]);
-    const metaCelia       = await dbGet('SELECT COALESCE(SUM(expectativa_celia),0) as total FROM expectativa_cidade WHERE tenant_id = $1', [t]);
-    const metaFernando    = await dbGet('SELECT COALESCE(SUM(expectativa_fernando),0) as total FROM expectativa_cidade WHERE tenant_id = $1', [t]);
-    const statusBreakdown = await dbAll("SELECT COALESCE(status,'indefinido') as status, COUNT(*) as total FROM liderancas WHERE tenant_id = $1 GROUP BY status", [t]);
-    const votosPorVinculo = await dbAll("SELECT COALESCE(vinculo_politico,'Indefinido') as candidato, COALESCE(SUM(expectativa_votos),0) as votos FROM liderancas WHERE tenant_id = $1 GROUP BY vinculo_politico ORDER BY votos DESC", [t]);
+
+    // Candidatos do tenant (para stats dinâmicas)
+    const candidatos = await dbAll(
+      'SELECT chave, nome FROM tenant_candidatos WHERE tenant_id = $1 ORDER BY ordem ASC',
+      [t]
+    );
+
+    const [totalLiderancas, ativasCount, inativasCount, votosTotal,
+           regioesAtivas, gastosTotal, gastosUlt30, statusBreakdown, votosPorVinculo,
+           todasExpCidades] = await Promise.all([
+      dbGet('SELECT COUNT(*) as total FROM liderancas WHERE tenant_id = $1', [t]),
+      dbGet("SELECT COUNT(*) as total FROM liderancas WHERE status = 'ativo' AND tenant_id = $1", [t]),
+      dbGet("SELECT COUNT(*) as total FROM liderancas WHERE status != 'ativo' AND tenant_id = $1", [t]),
+      dbGet('SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas WHERE tenant_id = $1', [t]),
+      dbGet('SELECT COUNT(DISTINCT regiao) as total FROM liderancas WHERE tenant_id = $1', [t]),
+      dbGet('SELECT COALESCE(SUM(g.valor),0) as total FROM gastos_lideranca g JOIN liderancas l ON l.id = g.lideranca_id WHERE l.tenant_id = $1', [t]),
+      dbGet("SELECT COALESCE(SUM(g.valor),0) as total FROM gastos_lideranca g JOIN liderancas l ON l.id = g.lideranca_id WHERE l.tenant_id = $1 AND g.data::date >= NOW() - INTERVAL '30 days'", [t]),
+      dbAll("SELECT COALESCE(status,'indefinido') as status, COUNT(*) as total FROM liderancas WHERE tenant_id = $1 GROUP BY status", [t]),
+      dbAll("SELECT COALESCE(vinculo_politico,'Indefinido') as candidato, COALESCE(SUM(expectativa_votos),0) as votos FROM liderancas WHERE tenant_id = $1 GROUP BY vinculo_politico ORDER BY votos DESC", [t]),
+      dbAll('SELECT expectativas FROM expectativa_cidade WHERE tenant_id = $1', [t]),
+    ]);
+
+    // Expectativa das lideranças por candidato (match exato pelo chave de vinculo_politico)
+    const liderancasPorCandidato = {};
+    for (const c of candidatos) {
+      const row = await dbGet(
+        `SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas
+         WHERE tenant_id = $1 AND LOWER(vinculo_politico) = LOWER($2)`,
+        [t, c.chave]
+      );
+      liderancasPorCandidato[c.chave] = parseInt(row.total);
+    }
+
+    // Expectativa das cidades por candidato (soma do JSONB)
+    const cidadesPorCandidato = {};
+    for (const c of candidatos) cidadesPorCandidato[c.chave] = 0;
+    for (const row of todasExpCidades) {
+      const exp = row.expectativas || {};
+      for (const c of candidatos) {
+        cidadesPorCandidato[c.chave] += Number(exp[c.chave] || 0);
+      }
+    }
+
+    const porCandidato = candidatos.map(c => ({
+      chave:      c.chave,
+      nome:       c.nome,
+      liderancas: liderancasPorCandidato[c.chave] || 0,
+      cidades:    Math.round(cidadesPorCandidato[c.chave] || 0),
+    }));
 
     res.json({
       totalLiderancas: parseInt(totalLiderancas.total),
-      ativas: parseInt(ativasCount.total),
-      inativas: parseInt(inativasCount.total),
-      regioesAtivas: parseInt(regioesAtivas.total),
-      gastosTotal: parseFloat(gastosTotal.total),
-      gastosUlt30: parseFloat(gastosUlt30.total),
+      ativas:          parseInt(ativasCount.total),
+      inativas:        parseInt(inativasCount.total),
+      regioesAtivas:   parseInt(regioesAtivas.total),
+      gastosTotal:     parseFloat(gastosTotal.total),
+      gastosUlt30:     parseFloat(gastosUlt30.total),
       statusBreakdown,
       votosPorVinculo,
-      // ── Expectativa das Lideranças (soma de liderancas.expectativa_votos) ──
-      liderancasTotal:    parseInt(votosTotal.total),
-      liderancasCelia:    parseInt(votosCelia.total),
-      liderancasFernando: parseInt(votosFernando.total),
-      // ── Expectativa das Cidades/Bairros (soma de expectativa_cidade) ──
-      cidadesTotal:    parseInt(metaCelia.total) + parseInt(metaFernando.total),
-      cidadesCelia:    parseInt(metaCelia.total),
-      cidadesFernando: parseInt(metaFernando.total),
+      liderancasTotal: parseInt(votosTotal.total),
+      cidadesTotal:    porCandidato.reduce((s, c) => s + c.cidades, 0),
+      porCandidato,
     });
   } catch (err) {
     console.error('Erro dashboard/kpis:', err);
@@ -2189,5 +2183,21 @@ server.listen(PORT, async () => {
     console.log('[migration] tenant_candidatos.foto_url OK');
   } catch (e) {
     console.warn('[migration] tenant_candidatos.foto_url:', e.message);
+  }
+  try {
+    await pool.query(`ALTER TABLE expectativa_cidade ADD COLUMN IF NOT EXISTS expectativas JSONB DEFAULT '{}'`);
+    // Popula JSONB a partir das colunas legadas para linhas ainda não migradas
+    await pool.query(`
+      UPDATE expectativa_cidade
+      SET expectativas = json_build_object(
+        'celia',    COALESCE(expectativa_celia, 0),
+        'fernando', COALESCE(expectativa_fernando, 0)
+      )::jsonb
+      WHERE expectativas = '{}'::jsonb
+        AND (expectativa_celia IS NOT NULL OR expectativa_fernando IS NOT NULL)
+    `);
+    console.log('[migration] expectativa_cidade.expectativas JSONB OK');
+  } catch (e) {
+    console.warn('[migration] expectativa_cidade.expectativas:', e.message);
   }
 });

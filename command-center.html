@@ -828,31 +828,52 @@ async function checkSession() {
 }
 
 /* ══════════════════════════════════════════
-   RENDER: KPIs
+   RENDER: KPIs (dinâmico por tenant)
 ══════════════════════════════════════════ */
+
+// Paleta de cores para os cards de candidatos (cicla se houver mais de 6)
+const KPI_CAND_CLASSES = ['purple','cyan','indigo','orange','pink','emerald'];
+
 function renderKpis(d) {
-  const lidPctCelia    = d.liderancasTotal > 0 ? Math.round((d.liderancasCelia    / d.liderancasTotal) * 100) : 0;
-  const lidPctFernando = d.liderancasTotal > 0 ? Math.round((d.liderancasFernando / d.liderancasTotal) * 100) : 0;
+  const cands = d.porCandidato || [];
+
+  // Sub-texto para totais agregados: "Nome1: X · Nome2: Y"
+  const lidSub = cands.map(c => `${c.nome}: ${fmt(c.liderancas)}`).join(' · ') || '—';
+  const cidSub = cands.map(c => `${c.nome}: ${fmt(c.cidades)}`).join(' · ')    || '—';
+  const lidPct0 = d.liderancasTotal > 0 && cands[0]
+    ? Math.round((cands[0].liderancas / d.liderancasTotal) * 100) : 0;
+
+  // Cards fixos
+  const fixos = [
+    { cls:'blue',   icon:'👥', label:'Total Lideranças',     val:d.totalLiderancas, sub:`${d.ativas} ativas · ${d.inativas||0} inativas`, bar:d.totalLiderancas>0?Math.round((d.ativas/d.totalLiderancas)*100):0, barLbl:'% ativas' },
+    { cls:'green',  icon:'🗳️', label:'Exp. Lideranças',      val:d.liderancasTotal, sub:lidSub, bar:lidPct0, barLbl:cands[0]?`${lidPct0}% ${cands[0].nome}`:'—' },
+    { cls:'teal',   icon:'🏙️', label:'Meta Cidades/Bairros', val:d.cidadesTotal,    sub:cidSub, bar:null },
+  ];
+
+  // Cards por candidato (dinâmicos)
+  const porCand = cands.map((c, i) => ({
+    cls:   KPI_CAND_CLASSES[i % KPI_CAND_CLASSES.length],
+    icon:  '🏅',
+    label: c.nome,
+    val:   c.liderancas,
+    sub:   `Lideranças · Cidades: ${fmt(c.cidades)}`,
+    bar:   null,
+  }));
 
   const cards = [
-    { cls:'blue',   icon:'👥', label:'Total Lideranças',        val:d.totalLiderancas,      sub:`${d.ativas} ativas · ${d.inativas||0} inativas`, bar:d.totalLiderancas>0?Math.round((d.ativas/d.totalLiderancas)*100):0, barLbl:'% ativas' },
-    { cls:'green',  icon:'🗳️', label:'Exp. Lideranças',         val:d.liderancasTotal,      sub:`💙 ${fmt(d.liderancasCelia)} · 🤝 ${fmt(d.liderancasFernando)}`, bar:lidPctCelia, barLbl:`${lidPctCelia}% Célia` },
-    { cls:'teal',   icon:'🏙️', label:'Exp. Cidades/Bairros',    val:d.cidadesTotal,         sub:`💙 ${fmt(d.cidadesCelia)} · 🤝 ${fmt(d.cidadesFernando)}`, bar:d.cidadesTotal>0?Math.round((d.cidadesCelia/d.cidadesTotal)*100):0, barLbl:`${d.cidadesTotal>0?Math.round((d.cidadesCelia/d.cidadesTotal)*100):0}% Célia` },
-    { cls:'purple', icon:'💙', label:'Célia Jordão',             val:d.liderancasCelia,      sub:`Lideranças · Cidades: ${fmt(d.cidadesCelia)}`, bar:null },
-    { cls:'cyan',   icon:'🤝', label:'Fernando Jordão',          val:d.liderancasFernando,   sub:`Lideranças · Cidades: ${fmt(d.cidadesFernando)}`, bar:null },
-    { cls:'yellow', icon:'🗺️', label:'Regiões Cobertas',         val:d.regioesAtivas,        sub:'de 8 regiões RJ', bar:Math.round((d.regioesAtivas/8)*100), barLbl:'% do estado' },
+    ...fixos,
+    ...porCand,
+    { cls:'yellow', icon:'🗺️', label:'Regiões Cobertas', val:d.regioesAtivas, sub:'de 8 regiões RJ', bar:Math.round((d.regioesAtivas/8)*100), barLbl:'% do estado' },
   ];
 
   document.getElementById('kpi-grid').innerHTML = cards.map((c,i) => `
     <div class="kpi ${c.cls} anim" style="animation-delay:${i*0.06}s">
       <div class="kpi-glow"></div>
-      <div class="kpi-top">
-        <div class="kpi-icon">${c.icon}</div>
-      </div>
+      <div class="kpi-top"><div class="kpi-icon">${c.icon}</div></div>
       <div class="kpi-label">${c.label}</div>
       <div class="kpi-value" id="kv${i}">0</div>
       <div class="kpi-sub">${c.sub}</div>
-      ${c.bar!==null ? `
+      ${c.bar !== null ? `
         <div class="kpi-bar-wrap">
           <div class="kpi-bar-bg"><div class="kpi-bar-fill" id="kb${i}"></div></div>
           <div class="kpi-bar-lbl">${c.barLbl}</div>
@@ -871,24 +892,33 @@ function renderKpis(d) {
 }
 
 /* ══════════════════════════════════════════
-   RENDER: EXPECTATIVAS (LIDERANÇAS + CIDADES)
+   RENDER: EXPECTATIVAS (dinâmico por tenant)
 ══════════════════════════════════════════ */
 function renderExpectativas(d) {
-  const COR_CELIA    = '#8b5cf6';
-  const COR_FERNANDO = '#06b6d4';
-  const COR_EMPTY    = 'rgba(30,48,80,0.45)';
+  const COR_EMPTY = 'rgba(30,48,80,0.45)';
+  const cands = d.porCandidato || [];
 
-  function donutExpectativa(canvasId, legendId, badgeId, numId, valCelia, valFernando, label) {
-    const total = valCelia + valFernando;
+  // Resolve cores: usa cor_texto do configSistema.candidatos se disponível
+  const configCands = (window._configSistema || {}).candidatos || [];
+  function corCandidato(chave, idx) {
+    const cfg = configCands.find(c => c.chave === chave);
+    return cfg?.cor_texto || PAL[idx % PAL.length];
+  }
+
+  function donutExpectativa(canvasId, legendId, badgeId, numId, campo) {
+    const vals   = cands.map(c => c[campo] || 0);
+    const total  = vals.reduce((s, v) => s + v, 0);
+    const labels = cands.map(c => c.nome);
+    const cores  = cands.map((c, i) => corCandidato(c.chave, i));
+
     const el = document.getElementById(badgeId);
     if (el) el.textContent = fmt(total);
     const numEl = document.getElementById(numId);
     if (numEl) animCount(numEl, total, 1200);
 
-    const data   = total > 0 ? [valCelia, valFernando] : [1, 1];
-    const colors = total > 0 ? [COR_CELIA+'cc', COR_FERNANDO+'cc'] : [COR_EMPTY, COR_EMPTY];
-    const borders= total > 0 ? [COR_CELIA, COR_FERNANDO] : [COR_EMPTY, COR_EMPTY];
-    const labels = ['Célia Jordão', 'Fernando Jordão'];
+    const data    = total > 0 ? vals : cands.map(() => 1);
+    const colors  = total > 0 ? cores.map(c => c + 'cc') : cands.map(() => COR_EMPTY);
+    const borders = total > 0 ? cores : cands.map(() => COR_EMPTY);
 
     kill(canvasId);
     charts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
@@ -905,17 +935,16 @@ function renderExpectativas(d) {
     });
 
     const leg = document.getElementById(legendId);
-    if (leg) leg.innerHTML = [
-      `<div class="dl-item"><div class="dl-dot" style="background:${COR_CELIA}"></div>Célia: <strong style="color:var(--text);margin-left:3px">${fmt(valCelia)}</strong></div>`,
-      `<div class="dl-item"><div class="dl-dot" style="background:${COR_FERNANDO}"></div>Fernando: <strong style="color:var(--text);margin-left:3px">${fmt(valFernando)}</strong></div>`,
-    ].join('');
+    if (leg) leg.innerHTML = cands.map((c, i) =>
+      `<div class="dl-item">
+        <div class="dl-dot" style="background:${cores[i]}"></div>
+        ${c.nome}: <strong style="color:var(--text);margin-left:3px">${fmt(vals[i])}</strong>
+      </div>`
+    ).join('');
   }
 
-  donutExpectativa('chart-lid-cand', 'lid-cand-legend', 'badge-lid-total', 'lid-total-num',
-    d.liderancasCelia, d.liderancasFernando, 'Lideranças');
-
-  donutExpectativa('chart-cid-cand', 'cid-cand-legend', 'badge-cid-total', 'cid-total-num',
-    d.cidadesCelia, d.cidadesFernando, 'Meta');
+  donutExpectativa('chart-lid-cand', 'lid-cand-legend', 'badge-lid-total', 'lid-total-num', 'liderancas');
+  donutExpectativa('chart-cid-cand', 'cid-cand-legend', 'badge-cid-total', 'cid-total-num', 'cidades');
 }
 
 /* ══════════════════════════════════════════
@@ -1409,7 +1438,16 @@ function renderResumoRegioes(expRegioes) {
 /* ══════════════════════════════════════════
    MAIN LOADER
 ══════════════════════════════════════════ */
+async function carregarConfig() {
+  try {
+    const token = getToken();
+    const r = await fetch(API + '/config', { headers: token ? { Authorization: 'Bearer ' + token } : {} });
+    if (r.ok) window._configSistema = await r.json();
+  } catch {}
+}
+
 async function carregarTudo() {
+  await carregarConfig();
   try {
     const [kpis, ranking, alertas, expRegioes, agenda, aniversariantes] = await Promise.all([
       apiFetch('/dashboard/kpis'),
