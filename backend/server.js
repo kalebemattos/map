@@ -738,17 +738,12 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
 ]
 );
 // 🔐 REGISTRA AUDITORIA AQUI
-await registrarAuditoria(
-  req.user.id,
-  'CRIAR',
-  'lideranca',
-  null
-);
+try { await registrarAuditoria(req.user.id, 'CRIAR', 'lideranca', null); } catch (_) {}
     res.json({ success: true });
 
   } catch (err) {
     console.error('Erro ao salvar liderança:', err);
-    res.status(500).json({ error: 'Erro ao salvar liderança' });
+    res.status(500).json({ error: 'Erro ao salvar liderança: ' + err.message });
   }
 });
 
@@ -780,17 +775,12 @@ app.delete('/api/liderancas/:id',
       return res.status(404).json({ error: 'Não encontrado' });
     }
 // 🔐 REGISTRA AUDITORIA AQUI
-await registrarAuditoria(
-  req.user.id,
-  'EXCLUIR',
-  'lideranca',
-  id
-);
+try { await registrarAuditoria(req.user.id, 'EXCLUIR', 'lideranca', id); } catch (_) {}
     res.json({ ok: true });
 
   } catch (err) {
     console.error('Erro ao excluir liderança:', err);
-    res.status(500).json({ error: 'Erro ao excluir liderança' });
+    res.status(500).json({ error: 'Erro ao excluir liderança: ' + err.message });
   }
 });
 
@@ -939,17 +929,12 @@ if (result.rowCount === 0) {
 }
 
 // 🔐 REGISTRA AUDITORIA AQUI
-await registrarAuditoria(
-  req.user.id,
-  'EDITAR',
-  'lideranca',
-  id
-);
+try { await registrarAuditoria(req.user.id, 'EDITAR', 'lideranca', id); } catch (_) {}
     res.json({ success: true });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Erro ao editar liderança' });
+    res.status(500).json({ error: 'Erro ao editar liderança: ' + err.message });
   }
 });
 
@@ -2192,6 +2177,38 @@ app.get("/ping", (req, res) => {
 server.listen(PORT, async () => {
   console.log("Backend rodando em http://localhost:" + PORT);
   // Migrations automáticas — seguras de rodar múltiplas vezes (IF NOT EXISTS)
+
+  // Tabela de auditoria (pode não existir em instâncias antigas)
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS auditoria (
+        id SERIAL PRIMARY KEY,
+        usuario_id INTEGER,
+        acao TEXT,
+        entidade TEXT,
+        entidade_id INTEGER,
+        criado_em TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log('[migration] auditoria OK');
+  } catch (e) {
+    console.warn('[migration] auditoria:', e.message);
+  }
+
+  // Colunas que podem faltar na tabela liderancas
+  try {
+    await pool.query(`ALTER TABLE liderancas ADD COLUMN IF NOT EXISTS mapa TEXT`);
+    console.log('[migration] liderancas.mapa OK');
+  } catch (e) {
+    console.warn('[migration] liderancas.mapa:', e.message);
+  }
+  try {
+    await pool.query(`ALTER TABLE liderancas ADD COLUMN IF NOT EXISTS data_nascimento DATE`);
+    console.log('[migration] liderancas.data_nascimento OK');
+  } catch (e) {
+    console.warn('[migration] liderancas.data_nascimento:', e.message);
+  }
+
   try {
     await pool.query(`ALTER TABLE tenant_candidatos ADD COLUMN IF NOT EXISTS foto_url TEXT`);
     console.log('[migration] tenant_candidatos.foto_url OK');
