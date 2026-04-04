@@ -143,8 +143,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Remove ?sslmode=* da URL para evitar que o pg-connection-string
+// sobrescreva o ssl.rejectUnauthorized com 'verify-full'
+const _dbUrl = new URL(process.env.DATABASE_URL);
+_dbUrl.searchParams.delete('sslmode');
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: _dbUrl.toString(),
   ssl: { rejectUnauthorized: false }
 });
 
