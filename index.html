@@ -1742,19 +1742,28 @@ function injetarCandidatos() {
   // ── 1. Seletor campanha ─────────────────────────────────────────
   const seletor = document.getElementById('seletor-campanha');
   if (seletor) {
+    // Mostra "Ambos" apenas quando há 2 ou mais candidatos
+    const ambosHtml = cands.length > 1
+      ? `<div class="campanha-opcao ativa" data-campanha="ambos">
+          ${cands.map((c, i) =>
+            `<img src="${candidatoFotoSrc(c)}" alt="${c.nome}"${i > 0 ? ' style="margin-left:-8px;"' : ''} onerror="this.style.display=\'none\'">`
+          ).join('')}
+          <span>Ambos</span>
+        </div>`
+      : '';
+
+    const primeiroCandAtivo = cands.length === 1 ? ' ativa' : '';
     seletor.innerHTML =
-      `<div class="campanha-opcao ativa" data-campanha="ambos">
-        ${cands.map((c, i) =>
-          `<img src="${candidatoFotoSrc(c)}" alt="${c.nome}"${i > 0 ? ' style="margin-left:-8px;"' : ''} onerror="this.style.display=\'none\'">`
-        ).join('')}
-        <span>Ambos</span>
-      </div>` +
+      ambosHtml +
       cands.map(c =>
-        `<div class="campanha-opcao" data-campanha="${c.chave}">
+        `<div class="campanha-opcao${primeiroCandAtivo && c === cands[0] ? ' ativa' : ''}" data-campanha="${c.chave}">
           <img src="${candidatoFotoSrc(c)}" alt="${c.nome}" onerror="this.style.display=\'none\'">
           <span>${c.nome}</span>
         </div>`
       ).join('');
+
+    // Quando há apenas 1 candidato, o filtro começa fixado nele
+    if (cands.length === 1) filtroCampanha = cands[0].chave;
 
     seletor.querySelectorAll('.campanha-opcao').forEach(el => {
       el.addEventListener('click', () => {
