@@ -1730,6 +1730,11 @@ function injetarRegioes() {
     ).join('');
 }
 
+function candidatoFotoSrc(c) {
+  // Usa foto_url do banco se disponível; cai no arquivo local como fallback
+  return c.foto_url || `img/${c.chave}.jpg`;
+}
+
 function injetarCandidatos() {
   const cands = configSistema.candidatos;
   if (!cands || !cands.length) return;
@@ -1740,13 +1745,13 @@ function injetarCandidatos() {
     seletor.innerHTML =
       `<div class="campanha-opcao ativa" data-campanha="ambos">
         ${cands.map((c, i) =>
-          `<img src="img/${c.chave}.jpg" alt="${c.nome}"${i > 0 ? ' style="margin-left:-8px;"' : ''} onerror="this.style.display=\'none\'">`
+          `<img src="${candidatoFotoSrc(c)}" alt="${c.nome}"${i > 0 ? ' style="margin-left:-8px;"' : ''} onerror="this.style.display=\'none\'">`
         ).join('')}
         <span>Ambos</span>
       </div>` +
       cands.map(c =>
         `<div class="campanha-opcao" data-campanha="${c.chave}">
-          <img src="img/${c.chave}.jpg" alt="${c.nome}" onerror="this.style.display=\'none\'">
+          <img src="${candidatoFotoSrc(c)}" alt="${c.nome}" onerror="this.style.display=\'none\'">
           <span>${c.nome}</span>
         </div>`
       ).join('');
@@ -1829,7 +1834,7 @@ function injetarCandidatos() {
       .map(c =>
         `<div id="votos-card-${c.chave}" class="city-card" style="display:none;background:${c.cor_fundo};border-color:${c.cor_texto}33;">
           <div style="display:flex;align-items:center;gap:12px;">
-            <img src="img/${c.chave}.jpg" onerror="this.style.display='none'"
+            <img src="${candidatoFotoSrc(c)}" onerror="this.style.display='none'"
               style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid ${c.cor_texto}44;flex-shrink:0;">
             <div>
               <h3 style="margin:0;margin-bottom:4px;color:${c.cor_texto};">Votação ${c.nome} (2022)</h3>

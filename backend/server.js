@@ -28,7 +28,7 @@ async function getConfigTenant(tenantId) {
   try {
     const [cfgRow, candidatos, mapas, regioes] = await Promise.all([
       dbGet('SELECT nome_sistema, logo_url, cores FROM tenant_config WHERE tenant_id = $1', [tenantId]),
-      dbAll('SELECT chave, nome, cor_fundo, cor_texto, tem_votos_2022 FROM tenant_candidatos WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
+      dbAll('SELECT chave, nome, cor_fundo, cor_texto, tem_votos_2022, foto_url FROM tenant_candidatos WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
       dbAll('SELECT mapa_id AS id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes FROM tenant_mapas WHERE tenant_id = $1', [tenantId]),
       dbAll('SELECT chave, label, cidades, lideres FROM tenant_regioes WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
     ]);
@@ -2064,18 +2064,41 @@ app.get('/api/admin/config/candidatos', auth, withTenant, allow('dono'), async (
   ));
 });
 
-app.post('/api/admin/config/candidatos', auth, withTenant, allow('dono'), async (req, res) => {
-  const { chave, nome, cor_fundo, cor_texto, tem_votos_2022, ordem } = req.body;
-  if (!chave || !nome) return res.status(400).json({ error: 'chave e nome são obrigatórios' });
-  await pool.query(
-    `INSERT INTO tenant_candidatos (tenant_id, chave, nome, cor_fundo, cor_texto, tem_votos_2022, ordem)
-     VALUES ($1,$2,$3,$4,$5,$6,$7)
-     ON CONFLICT (tenant_id, chave) DO UPDATE SET
-       nome = $3, cor_fundo = $4, cor_texto = $5, tem_votos_2022 = $6, ordem = $7`,
-    [req.tenantId, chave, nome, cor_fundo ?? '#e0e7ff', cor_texto ?? '#3730a3', tem_votos_2022 ?? false, ordem ?? 0]
-  );
-  invalidateTenantCache(req.tenantId);
-  res.json({ ok: true });
+app.post('/api/admin/config/candidatos', auth, withTenant, allow('dono'), upload.single('foto'), async (req, res) => {
+  try {
+    const { chave, nome, cor_fundo, cor_texto, tem_votos_2022, ordem } = req.body;
+    if (!chave || !nome) return res.status(400).json({ error: 'chave e nome são obrigatórios' });
+
+    // Upload de foto para Supabase (bucket 'candidatos')
+    let foto_url = req.body.foto_url ?? null;
+    if (req.file) {
+      const caminhoOtimizado = await otimizarImagem(req.file.path);
+      const fileBuffer = fs.readFileSync(caminhoOtimizado);
+      const fileName = `${req.tenantId}/${chave}_${Date.now()}.webp`;
+      const { error: uploadErr } = await supabase.storage
+        .from('candidatos')
+        .upload(fileName, fileBuffer, { contentType: 'image/webp', upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data } = supabase.storage.from('candidatos').getPublicUrl(fileName);
+      foto_url = data.publicUrl;
+      try { fs.unlinkSync(caminhoOtimizado); } catch {}
+    }
+
+    await pool.query(
+      `INSERT INTO tenant_candidatos (tenant_id, chave, nome, cor_fundo, cor_texto, tem_votos_2022, ordem, foto_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       ON CONFLICT (tenant_id, chave) DO UPDATE SET
+         nome = $3, cor_fundo = $4, cor_texto = $5, tem_votos_2022 = $6, ordem = $7,
+         foto_url = COALESCE($8, tenant_candidatos.foto_url)`,
+      [req.tenantId, chave, nome, cor_fundo ?? '#e0e7ff', cor_texto ?? '#3730a3',
+       tem_votos_2022 === 'true' || tem_votos_2022 === true, ordem ?? 0, foto_url]
+    );
+    invalidateTenantCache(req.tenantId);
+    res.json({ ok: true, foto_url });
+  } catch (err) {
+    console.error('[POST /api/admin/config/candidatos]', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.delete('/api/admin/config/candidatos/:chave', auth, withTenant, allow('dono'), async (req, res) => {
@@ -2158,6 +2181,13 @@ app.get("/ping", (req, res) => {
   res.status(200).send("pong");
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log("Backend rodando em http://localhost:" + PORT);
+  // Migrations automáticas — seguras de rodar múltiplas vezes (IF NOT EXISTS)
+  try {
+    await pool.query(`ALTER TABLE tenant_candidatos ADD COLUMN IF NOT EXISTS foto_url TEXT`);
+    console.log('[migration] tenant_candidatos.foto_url OK');
+  } catch (e) {
+    console.warn('[migration] tenant_candidatos.foto_url:', e.message);
+  }
 });
