@@ -1157,10 +1157,13 @@
 
     async function carregarConfig() {
       try {
+        const token = localStorage.getItem('token');
         const tenantParam = (window.TENANT_ID && window.TENANT_ID !== 'default')
           ? '?tenant=' + encodeURIComponent(window.TENANT_ID)
           : '';
-        const r = await fetch(API + '/api/config' + tenantParam);
+        const r = await fetch(API + '/api/config' + tenantParam, {
+          headers: token ? { Authorization: 'Bearer ' + token } : {}
+        });
         if (!r.ok) return;
         configSistema = await r.json();
         injetarCandidatosLiderancas();

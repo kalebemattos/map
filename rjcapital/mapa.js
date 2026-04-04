@@ -126,7 +126,10 @@ let configSistema = { candidatos: [], cores: {}, mapas: [] }
 
 async function carregarConfig() {
   try {
-    const r = await fetch(window.API_URL + '/config')
+    const token = localStorage.getItem('token')
+    const r = await fetch(window.API_URL + '/config', {
+      headers: token ? { Authorization: 'Bearer ' + token } : {}
+    })
     if (!r.ok) return
     configSistema = await r.json()
     injetarCandidatosRJ()

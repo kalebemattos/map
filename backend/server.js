@@ -731,7 +731,7 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
   status || 'ativa',
   release || null,
   regiaoBody || req.user.regiao,
-  vinculo_politico || 'fernando',
+  vinculo_politico || null,
   data_nascimento || null,
   req.body.mapa || null,
   req.tenantId
@@ -926,7 +926,7 @@ AND (
   release || null,
   foto,
   cidade,
-  vinculo_politico || 'fernando',
+  vinculo_politico || null,
   id,
   regiaoBody || req.user.regiao,
   data_nascimento || null,

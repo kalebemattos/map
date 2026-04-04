@@ -1602,20 +1602,8 @@ body.sidebar-closed #toggleSidebarBtn {
       </div>
     </div>
 
-    <!-- CÉLIA JORDÃO -->
-    <div id="celia-jordao-card" class="city-card" style="display:none;background:#fff9db;border:1px solid #fcc419;">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:50px;height:50px;border-radius:50%;background:#fff;border:2px solid #fcc419;display:flex;align-items:center;justify-content:center;">
-          👩‍💼
-        </div>
-        <div>
-          <h3 style="margin:0;color:#856404;font-size:14px;">VOTAÇÃO CÉLIA JORDÃO</h3>
-          <div id="celia-votos-display" style="font-weight:800;color:#e67e22;font-size:18px;">
-            0 votos
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- VOTOS HISTÓRICOS — preenchido dinamicamente por injetarCandidatosAngra() -->
+    <div id="candidatos-votos-cards"></div>
 
     <!-- INFO CIDADE -->
     <div id="city-info" class="city-card">
@@ -2292,9 +2280,11 @@ if (layerRJ && regiaoAtiva === 'all') {
   layerRJ.eachLayer(l => layerRJ.resetStyle(l));
 }
 
-  if (document.getElementById('celia-jordao-card')) {
-    document.getElementById('celia-jordao-card').style.display = 'none';
-  }
+  // Oculta todos os cards de votos históricos
+  (window._configSistemaAngra?.candidatos || []).filter(c => c.tem_votos_2022).forEach(c => {
+    const card = document.getElementById('votos-card-' + c.chave);
+    if (card) card.style.display = 'none';
+  });
 }
 
 function updateSidebar(cityName, votos) {
@@ -2308,14 +2298,15 @@ function updateSidebar(cityName, votos) {
       cityInfoEl.style.display = 'none';
   }
 const normalized = normalizeCityName(cityName);
-  const vCelia = votosCeliaJordao[normalized] || 0;
-  const cardCelia = document.getElementById('celia-jordao-card');
-  const displayCelia = document.getElementById('celia-votos-display');
-
-  if (cardCelia && displayCelia) {
-    cardCelia.style.display = 'block';
-    displayCelia.textContent = fmt(vCelia) + ' votos';
-  }
+  // Exibe cards de votos históricos dinamicamente por candidato
+  (window._configSistemaAngra?.candidatos || []).filter(c => c.tem_votos_2022).forEach(c => {
+    const card    = document.getElementById('votos-card-' + c.chave);
+    const display = document.getElementById('votos-display-' + c.chave);
+    if (!card || !display) return;
+    const votos = ((window.votosHistoricos || {})[c.chave] || {})[normalized] || 0;
+    card.style.display = 'block';
+    display.textContent = fmt(votos) + ' votos';
+  });
   renderLiderancas(cityName);
   renderObservacoes(cityName);
   const user = JSON.parse(localStorage.getItem('user'));
@@ -3438,11 +3429,47 @@ regiaoSelect.addEventListener('change', () => {
     });
 }
 
+// ─── Config dinâmica por tenant ──────────────────────────────────────────────
+window._configSistemaAngra = { candidatos: [] };
+
+async function carregarConfigAngra() {
+  try {
+    const token = localStorage.getItem('token');
+    const r = await fetch(window.API_URL + '/config', {
+      headers: token ? { Authorization: 'Bearer ' + token } : {}
+    });
+    if (!r.ok) return;
+    window._configSistemaAngra = await r.json();
+    injetarCandidatosAngra();
+  } catch (e) { console.warn('[config angra] não carregada:', e); }
+}
+
+function injetarCandidatosAngra() {
+  const cands = window._configSistemaAngra?.candidatos || [];
+  const el = document.getElementById('candidatos-votos-cards');
+  if (!el) return;
+  el.innerHTML = cands
+    .filter(c => c.tem_votos_2022)
+    .map(c =>
+      `<div id="votos-card-${c.chave}" class="city-card" style="display:none;background:${c.cor_fundo};border:1.5px solid ${c.cor_texto}33;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <img src="${c.foto_url || '../img/' + c.chave + '.jpg'}" onerror="this.style.display='none'"
+            style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid ${c.cor_texto}44;flex-shrink:0;">
+          <div>
+            <h3 style="margin:0;margin-bottom:4px;color:${c.cor_texto};font-size:14px;">Votação ${c.nome} (2022)</h3>
+            <div id="votos-display-${c.chave}" style="font-weight:800;color:${c.cor_texto};font-size:18px;">0 votos</div>
+          </div>
+        </div>
+      </div>`
+    ).join('');
+}
+
 // 🔐 BOOT GLOBAL DA APLICAÇÃO (USADO PELO auth.js)
 window.iniciarAplicacao = async function () {
 
   console.log('[BOOT] iniciarAplicacao chamada');
 
+  await carregarConfigAngra();
   await carregarTudo();
   atualizarTotalGeralOverlay();
   initializeMapAndApp();
