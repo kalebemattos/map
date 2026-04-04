@@ -2195,6 +2195,14 @@ server.listen(PORT, async () => {
     console.warn('[migration] auditoria:', e.message);
   }
 
+  // Remove o check constraint hardcoded de vinculo_politico que bloqueia tenants com candidatos diferentes
+  try {
+    await pool.query(`ALTER TABLE liderancas DROP CONSTRAINT IF EXISTS liderancas_vinculo_politico_check`);
+    console.log('[migration] liderancas_vinculo_politico_check removido OK');
+  } catch (e) {
+    console.warn('[migration] liderancas_vinculo_politico_check:', e.message);
+  }
+
   // Colunas que podem faltar na tabela liderancas
   try {
     await pool.query(`ALTER TABLE liderancas ADD COLUMN IF NOT EXISTS mapa TEXT`);
