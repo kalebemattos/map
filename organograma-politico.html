@@ -162,29 +162,126 @@ body {
 .connector { width:2px; height:28px; margin:0 auto; background:linear-gradient(to bottom,rgba(96,165,250,.4),transparent); }
 
 /* AREAS */
-.areas-section { padding:0 24px 28px; }
-.areas-title { font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.3); text-align:center; margin-bottom:14px; }
-.areas-strip { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
-.area-chip {
-  background:rgba(8,22,58,.6); backdrop-filter:blur(16px);
-  border:1px solid rgba(255,255,255,.13); border-radius:var(--r-pill);
-  padding:7px 18px; font-size:13px; font-weight:500;
-  display:flex; align-items:center; gap:8px; transition:border-color .2s;
+.areas-section { padding:0 24px 28px; max-width:1100px; margin:0 auto; width:100%; }
+.areas-title { font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.3); text-align:center; margin-bottom:18px; }
+.areas-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+  gap:14px;
 }
-.area-chip:hover { border-color:rgba(96,165,250,.3); }
-.area-chip-name { outline:none; min-width:50px; }
-.area-chip-name[contenteditable="true"]:focus { background:rgba(255,255,255,.06); border-radius:4px; padding:0 4px; }
+
+/* Card da área */
+.area-card {
+  background:rgba(8,22,58,.58); backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.12); border-radius:18px;
+  padding:18px 16px 14px;
+  display:flex; flex-direction:column; align-items:center; gap:0;
+  position:relative; transition:border-color .2s, background .2s, transform .2s;
+  text-align:center;
+}
+.area-card::before {
+  content:''; position:absolute; inset:0; border-radius:inherit;
+  background:linear-gradient(135deg,rgba(255,255,255,.07) 0%,transparent 55%);
+  pointer-events:none;
+}
+.area-card::after {
+  content:''; position:absolute; top:0; left:16px; right:16px; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(96,165,250,.3),transparent);
+}
+.area-card:hover { border-color:rgba(96,165,250,.28); background:rgba(12,32,78,.65); transform:translateY(-2px); }
+
+/* Avatar / foto */
+.area-avatar-wrap { position:relative; margin-bottom:12px; }
+.area-avatar {
+  width:64px; height:64px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-head); font-size:22px; font-weight:800; color:#fff;
+  border:2px solid rgba(255,255,255,.18);
+  overflow:hidden; flex-shrink:0;
+  box-shadow:0 4px 14px rgba(0,0,0,.4);
+}
+.area-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+
+/* Badge de área */
+.area-badge {
+  font-size:9px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;
+  padding:3px 10px; border-radius:var(--r-pill);
+  background:rgba(var(--c-blue),.18); color:#60a5fa; border:1px solid rgba(var(--c-blue),.28);
+  margin-bottom:8px; position:relative; z-index:1;
+}
+
+/* Campos de texto */
+.area-nome {
+  font-family:var(--font-head); font-size:14px; font-weight:700;
+  color:rgba(255,255,255,.97); outline:none; margin-bottom:3px;
+  position:relative; z-index:1; width:100%;
+}
+.area-nome[contenteditable="true"]:focus { background:rgba(255,255,255,.06); border-radius:4px; padding:0 5px; }
+
+.area-responsavel {
+  font-size:12px; font-weight:600; color:rgba(96,165,250,.9);
+  outline:none; margin-bottom:4px; position:relative; z-index:1; width:100%;
+}
+.area-responsavel[contenteditable="true"]:focus { background:rgba(255,255,255,.05); border-radius:3px; padding:0 4px; }
+
+.area-funcao {
+  font-size:11px; color:rgba(255,255,255,.45); outline:none;
+  line-height:1.4; margin-bottom:8px; position:relative; z-index:1; width:100%;
+  font-style:italic;
+}
+.area-funcao[contenteditable="true"]:focus { background:rgba(255,255,255,.04); border-radius:3px; padding:0 4px; font-style:normal; }
+
+/* Contato */
+.area-contato-row {
+  display:flex; align-items:center; gap:5px;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
+  border-radius:8px; padding:5px 10px; width:100%;
+  position:relative; z-index:1;
+}
+.area-contato-icon { font-size:11px; flex-shrink:0; }
+.area-contato {
+  font-size:11px; color:rgba(255,255,255,.55); outline:none; flex:1;
+  background:none; border:none; font-family:var(--font-body);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.area-contato:focus { color:rgba(255,255,255,.85); }
+
+/* Input de URL da foto (só em edição) */
+.area-foto-url {
+  position:absolute; bottom:-28px; left:50%; transform:translateX(-50%);
+  width:160px; background:rgba(7,14,30,.9); border:1px solid rgba(255,255,255,.15);
+  border-radius:8px; padding:4px 8px; font-size:10px; color:rgba(255,255,255,.6);
+  font-family:var(--font-body); outline:none; text-align:center; opacity:0;
+  transition:opacity .2s; pointer-events:none;
+}
+.area-card:hover .area-foto-url,
+.area-foto-url:focus { opacity:1; pointer-events:auto; }
+
+/* Botão remover */
 .area-remove {
-  width:18px; height:18px; border-radius:50%; background:rgba(248,113,113,.15); color:#f87171;
-  border:none; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center;
-  opacity:0; transition:opacity .15s;
+  position:absolute; top:10px; right:10px;
+  width:22px; height:22px; border-radius:50%;
+  background:rgba(248,113,113,.15); color:#f87171;
+  border:none; cursor:pointer; font-size:12px;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity .15s; z-index:2;
 }
-.area-chip:hover .area-remove { opacity:1; }
-.area-add-btn {
-  background:transparent; border:1px dashed rgba(255,255,255,.18); border-radius:var(--r-pill);
-  padding:7px 18px; color:rgba(255,255,255,.35); font-size:13px; cursor:pointer; transition:all .2s;
+.area-card:hover .area-remove { opacity:1; }
+
+/* Card "adicionar área" */
+.area-add-card {
+  background:transparent; border:1px dashed rgba(255,255,255,.16); border-radius:18px;
+  padding:18px 16px; cursor:pointer; transition:all .2s;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px; min-height:170px; color:rgba(255,255,255,.3); font-size:13px;
 }
-.area-add-btn:hover { border-color:rgba(96,165,250,.5); color:rgba(96,165,250,.9); }
+.area-add-card:hover { border-color:rgba(96,165,250,.5); color:rgba(96,165,250,.8); background:rgba(21,101,192,.06); }
+.area-add-card-icon { font-size:26px; opacity:.5; }
+
+@media(max-width:860px){
+  .areas-section { padding-left:14px; padding-right:14px; }
+  .areas-grid { grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; }
+}
 
 /* BLOCOS */
 .blocos-wrap { display:flex; flex-direction:column; gap:20px; padding:0 24px; max-width:1100px; margin:0 auto; width:100%; }
@@ -336,6 +433,8 @@ body.view-only [contenteditable] { pointer-events:none; }
 body.view-only input { pointer-events:none; }
 body.view-only .edit-only { display:none !important; }
 body.view-only .slot-remove, body.view-only .lista-zona-remove, body.view-only .area-remove { display:none !important; }
+body.view-only .area-contato { pointer-events:none; }
+body.view-only .area-foto-url { display:none !important; }
 
 ::-webkit-scrollbar { width:5px; }
 ::-webkit-scrollbar-track { background:transparent; }
@@ -433,7 +532,7 @@ body.view-only .slot-remove, body.view-only .lista-zona-remove, body.view-only .
 
   <div class="areas-section">
     <div class="areas-title">Áreas de Apoio</div>
-    <div class="areas-strip" id="areas-strip"></div>
+    <div class="areas-grid" id="areas-grid"></div>
   </div>
 
   <div class="connector"></div>
@@ -502,7 +601,7 @@ let sistema = {
   tenant_id: null,
   titulo: 'CAMPANHA 2026',
   coordenacao: 'Nome do Coordenador',
-  areas: ['Financeiro','Comunicação','Jurídico','Saúde','Educação','Mobilização'],
+  areas: [],
   blocos: []
 };
 let podeEditar = false;
@@ -528,7 +627,17 @@ function init() {
     try {
       const saved = JSON.parse(raw);
       sistema = { ...sistema, ...saved, tenant_id: window.TENANT_ID || 'default' };
-    } catch { /* usa sistema padrão */ }
+      // Compatibilidade retroativa: áreas eram strings simples → converte para objetos
+      if (Array.isArray(sistema.areas) && sistema.areas.length > 0 && typeof sistema.areas[0] === 'string') {
+        sistema.areas = sistema.areas.map(nome => ({
+          id: uid(), nome, responsavel: 'Responsável', funcao: 'Função na campanha', contato: '', foto: ''
+        }));
+      }
+      // Se não tem áreas depois do carregamento, cria as padrão
+      if (!sistema.areas || sistema.areas.length === 0) {
+        criarBlocosIniciais();
+      }
+    } catch { criarBlocosIniciais(); }
   } else {
     criarBlocosIniciais();
   }
@@ -555,6 +664,14 @@ function init() {
 }
 
 function criarBlocosIniciais() {
+  sistema.areas = [
+    { id: uid(), nome: 'Financeiro',   responsavel: 'Nome do Responsável', funcao: 'Gestão financeira e prestação de contas',       contato: '', foto: '' },
+    { id: uid(), nome: 'Comunicação',  responsavel: 'Nome do Responsável', funcao: 'Redes sociais, imprensa e material gráfico',     contato: '', foto: '' },
+    { id: uid(), nome: 'Jurídico',     responsavel: 'Nome do Responsável', funcao: 'Assessoria jurídica eleitoral e compliance',      contato: '', foto: '' },
+    { id: uid(), nome: 'Saúde',        responsavel: 'Nome do Responsável', funcao: 'Mobilização e eventos na área da saúde',          contato: '', foto: '' },
+    { id: uid(), nome: 'Educação',     responsavel: 'Nome do Responsável', funcao: 'Articulação com escolas e educadores',            contato: '', foto: '' },
+    { id: uid(), nome: 'Mobilização',  responsavel: 'Nome do Responsável', funcao: 'Coordenação de voluntários e ações de campo',     contato: '', foto: '' },
+  ];
   sistema.blocos = [
     { id: uid(), tipo: 'slot', titulo: 'Coordenação Municipal', slots: [
       { id: uid(), nome: 'Zona Norte',  resp: 'Ricardo Almeida', votos: 1200, meta: 2000 },
@@ -591,27 +708,129 @@ function barColor(p) {
 }
 function pctColor(p) { if (p >= 80) return '#34d399'; if (p >= 50) return '#fbbf24'; return '#f87171'; }
 
+/* ── Paleta de cores dos avatares ── */
+const AREA_COLORS = ['#1a56db','#7c3aed','#059669','#dc2626','#d97706','#0891b2','#be185d','#0f766e','#4f46e5','#b45309'];
+function areaColor(idx) { return AREA_COLORS[idx % AREA_COLORS.length]; }
+
+function areaAvatarHTML(area, idx) {
+  if (area.foto && area.foto.trim()) {
+    return `<img src="${escOrg(area.foto)}" alt="${escOrg(area.responsavel)}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;">${escOrg((area.responsavel||'?')[0].toUpperCase())}</span>`;
+  }
+  const ini = (area.responsavel || area.nome || '?')[0].toUpperCase();
+  return `<span>${ini}</span>`;
+}
+
 /* ── Áreas ── */
 function renderAreas() {
-  const strip = document.getElementById('areas-strip');
-  strip.innerHTML = '';
+  const grid = document.getElementById('areas-grid');
+  grid.innerHTML = '';
+
   sistema.areas.forEach((area, i) => {
-    const chip = document.createElement('div');
-    chip.className = 'area-chip';
-    chip.innerHTML = `<span class="area-chip-name" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${area}</span>` +
-      (podeEditar ? `<button class="area-remove edit-only" onclick="removerArea(${i})">✕</button>` : '');
-    chip.querySelector('.area-chip-name')?.addEventListener('input', e => { sistema.areas[i] = e.target.textContent.trim(); });
-    strip.appendChild(chip);
+    const cor = areaColor(i);
+    const card = document.createElement('div');
+    card.className = 'area-card';
+    card.id = 'area-card-' + (area.id || i);
+
+    card.innerHTML = `
+      ${podeEditar ? `<button class="area-remove edit-only" onclick="removerArea(${i})" title="Remover área">✕</button>` : ''}
+
+      <div class="area-avatar-wrap">
+        <div class="area-avatar" style="background:${cor};">
+          ${areaAvatarHTML(area, i)}
+        </div>
+        ${podeEditar ? `<input type="text" class="area-foto-url edit-only" placeholder="URL da foto..." value="${escOrg(area.foto||'')}" data-area-idx="${i}">` : ''}
+      </div>
+
+      <div class="area-badge">${escOrg(area.nome)}</div>
+
+      <div class="area-nome"
+           ${podeEditar ? 'contenteditable="true"' : ''}
+           spellcheck="false"
+           data-field="nome" data-area-idx="${i}">${escOrg(area.nome)}</div>
+
+      <div class="area-responsavel"
+           ${podeEditar ? 'contenteditable="true"' : ''}
+           spellcheck="false"
+           data-field="responsavel" data-area-idx="${i}">${escOrg(area.responsavel||'Responsável')}</div>
+
+      <div class="area-funcao"
+           ${podeEditar ? 'contenteditable="true"' : ''}
+           spellcheck="false"
+           data-field="funcao" data-area-idx="${i}">${escOrg(area.funcao||'Função na campanha')}</div>
+
+      <div class="area-contato-row">
+        <span class="area-contato-icon">📞</span>
+        <input type="text" class="area-contato"
+               placeholder="Contato / WhatsApp"
+               value="${escOrg(area.contato||'')}"
+               ${!podeEditar ? 'readonly' : ''}
+               data-area-idx="${i}">
+      </div>
+    `;
+
+    // Listeners para campos contenteditable
+    card.querySelectorAll('[contenteditable="true"][data-field]').forEach(el => {
+      el.addEventListener('input', e => {
+        const idx  = parseInt(e.target.dataset.areaIdx);
+        const field = e.target.dataset.field;
+        sistema.areas[idx][field] = e.target.textContent.trim();
+        // Atualiza o badge se o nome mudou
+        if (field === 'nome') {
+          const badgeEl = card.querySelector('.area-badge');
+          if (badgeEl) badgeEl.textContent = e.target.textContent.trim();
+        }
+        // Atualiza a inicial do avatar se o responsavel mudou
+        if (field === 'responsavel' && (!sistema.areas[idx].foto)) {
+          const av = card.querySelector('.area-avatar span');
+          if (av) av.textContent = (e.target.textContent.trim() || '?')[0].toUpperCase();
+        }
+      });
+    });
+
+    // Listener para input de contato
+    const contatoInput = card.querySelector('.area-contato');
+    if (contatoInput) {
+      contatoInput.addEventListener('input', e => {
+        sistema.areas[parseInt(e.target.dataset.areaIdx)].contato = e.target.value;
+      });
+    }
+
+    // Listener para URL da foto
+    const fotoInput = card.querySelector('.area-foto-url');
+    if (fotoInput) {
+      fotoInput.addEventListener('input', e => {
+        const idx = parseInt(e.target.dataset.areaIdx);
+        sistema.areas[idx].foto = e.target.value.trim();
+        // Re-renderiza só o avatar
+        const av = card.querySelector('.area-avatar');
+        if (av) av.innerHTML = areaAvatarHTML(sistema.areas[idx], idx);
+      });
+    }
+
+    grid.appendChild(card);
   });
+
+  // Botão "adicionar área" (só em modo edição)
   if (podeEditar) {
-    const btn = document.createElement('button');
-    btn.className = 'area-add-btn edit-only';
-    btn.textContent = '+ Área';
-    btn.onclick = () => { sistema.areas.push('Nova Área'); renderAreas(); };
-    strip.appendChild(btn);
+    const addCard = document.createElement('div');
+    addCard.className = 'area-add-card edit-only';
+    addCard.innerHTML = `<div class="area-add-card-icon">＋</div><div>Adicionar Área</div>`;
+    addCard.onclick = () => {
+      sistema.areas.push({ id: uid(), nome: 'Nova Área', responsavel: 'Responsável', funcao: 'Função na campanha', contato: '', foto: '' });
+      renderAreas();
+    };
+    grid.appendChild(addCard);
   }
 }
-function removerArea(i) { sistema.areas.splice(i, 1); renderAreas(); }
+
+function removerArea(i) {
+  sistema.areas.splice(i, 1);
+  renderAreas();
+}
+
+function escOrg(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 /* ── Blocos ── */
 function renderTodosBlocos() {
