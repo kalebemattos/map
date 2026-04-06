@@ -329,6 +329,7 @@ input[type=number] { -moz-appearance:textfield; }
 /* ANIMS */
 @keyframes fadeUp   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 @keyframes fadeDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes modalIn  { from{opacity:0;transform:translateY(16px) scale(0.96)} to{opacity:1;transform:none} }
 
 /* VIEW-ONLY */
 body.view-only [contenteditable] { pointer-events:none; }
@@ -353,6 +354,47 @@ body.view-only .slot-remove, body.view-only .lista-zona-remove, body.view-only .
 </head>
 <body>
 
+<!-- ===== LOGIN MODAL ===== -->
+<div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9000;">
+  <div style="width:360px;background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;animation:modalIn .25s cubic-bezier(0.34,1.56,0.64,1);">
+    <div style="text-align:center;">
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">🏛️</div>
+      <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Organograma Político</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:#64748b;">Insira suas credenciais para continuar</p>
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Usuário</label>
+      <input id="login-user" type="text" placeholder="Digite seu usuário" autocomplete="username"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;transition:all .2s;"
+        onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Senha</label>
+      <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;transition:all .2s;"
+        onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
+    </div>
+    <div id="login-error" style="display:none;background:#fee2e2;color:#b91c1c;font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;text-align:center;"></div>
+    <button id="login-btn"
+      style="padding:13px;border:none;border-radius:11px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 6px 18px rgba(21,101,192,.4);transition:all .2s;"
+      onmouseover="this.style.opacity='.9';this.style.transform='translateY(-1px)'"
+      onmouseout="this.style.opacity='1';this.style.transform='none'">
+      Entrar
+    </button>
+  </div>
+</div>
+
+<!-- ===== BLOCKER ===== -->
+<div id="blocker" style="position:fixed;inset:0;background:#071426;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:8000;">
+  <div style="font-size:36px;">🏛️</div>
+  <p style="margin:0;font-size:14px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando organograma...</p>
+</div>
+
+<!-- ===== CONTEÚDO PRINCIPAL ===== -->
+<div id="content-wrapper" style="display:none;">
+
 <div class="bg-overlay"></div>
 <div class="orb orb-1" id="orb-1"></div>
 <div class="orb orb-2" id="orb-2"></div>
@@ -363,24 +405,26 @@ body.view-only .slot-remove, body.view-only .lista-zona-remove, body.view-only .
 <div id="app">
   <nav class="top-nav">
     <div class="nav-brand">
-      <div class="nav-logo">🗺️</div>
+      <div class="nav-logo">🏛️</div>
       <div class="nav-name">Paralax</div>
-      <div class="nav-badge">Gestão Política</div>
+      <div class="nav-badge">Organograma</div>
     </div>
     <div class="nav-center">
-      <div class="campaign-title" id="campaign-title" contenteditable="true" spellcheck="false">CAMPANHA 2026</div>
+      <div class="campaign-title" id="campaign-title" contenteditable="false" spellcheck="false">CAMPANHA 2026</div>
     </div>
     <div class="nav-actions">
-      <span class="badge-role badge-dono" id="role-badge">Dono</span>
-      <button class="btn btn-ghost btn-sm" onclick="carregarSistema()">↓ Carregar</button>
-      <button class="btn btn-primary btn-sm" onclick="salvarSistema()">↑ Salvar</button>
+      <span id="user-chip" style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);padding:4px 12px;border-radius:20px;display:none;"></span>
+      <span class="badge-role badge-viewer" id="role-badge">Carregando</span>
+      <button class="btn btn-ghost btn-sm edit-only" onclick="carregarSistema()">↓ Carregar</button>
+      <button class="btn btn-primary btn-sm edit-only" onclick="salvarSistema()">↑ Salvar</button>
+      <button class="btn btn-ghost btn-sm" onclick="logout()" title="Sair" style="color:rgba(255,255,255,.5);">Sair</button>
     </div>
   </nav>
 
   <div class="hero">
     <div class="hero-eyebrow">Coordenação Geral</div>
     <div class="coord-block">
-      <div class="coord-name" id="coord-nome" contenteditable="true" spellcheck="false">Nome do Coordenador</div>
+      <div class="coord-name" id="coord-nome" contenteditable="false" spellcheck="false">Nome do Coordenador</div>
       <div class="coord-sub">Coordenador(a) de Campanha</div>
     </div>
   </div>
@@ -420,312 +464,420 @@ body.view-only .slot-remove, body.view-only .lista-zona-remove, body.view-only .
   </div>
 </div>
 
+</div><!-- /content-wrapper -->
+
 <script>
-window.USUARIO_NIVEL = window.USUARIO_NIVEL ?? 'dono';
-window.TENANT_ID     = window.TENANT_ID     ?? 'tenant_demo';
+// ===== BOOT — definido ANTES do auth.js =====
+window.iniciarAplicacao = function () {
+  // Lê usuário do localStorage (salvo pelo auth.js no login)
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  // Chip de usuário
+  const chip = document.getElementById('user-chip');
+  if (chip && user.usuario) {
+    chip.textContent = user.usuario;
+    chip.style.display = 'inline-block';
+  }
+
+  // Define nível real a partir do JWT
+  window.USUARIO_NIVEL = user.nivel || 'visualizador';
+
+  // Define tenant real a partir do tenant.js
+  // window.TENANT_ID já está definido por tenant.js (carregado antes)
+
+  // Inicia a aplicação do organograma
+  init();
+};
+</script>
+
+<script src="tenant.js"></script>
+<script src="auth.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   ORGANOGRAMA — lógica principal
+   ═══════════════════════════════════════════════════════ */
 
 let sistema = {
-  tenant_id: window.TENANT_ID, titulo:'CAMPANHA 2026', coordenacao:'Nome do Coordenador',
-  areas:['Financeiro','Comunicação','Jurídico','Saúde','Educação','Mobilização'],
-  blocos:[]
+  tenant_id: null,
+  titulo: 'CAMPANHA 2026',
+  coordenacao: 'Nome do Coordenador',
+  areas: ['Financeiro','Comunicação','Jurídico','Saúde','Educação','Mobilização'],
+  blocos: []
 };
 let podeEditar = false;
 
 function init() {
-  const nivel = window.USUARIO_NIVEL;
-  podeEditar = nivel==='dono'||nivel==='admin';
-  const badge=document.getElementById('role-badge');
-  if(nivel==='dono')       {badge.textContent='Dono'; badge.className='badge-role badge-dono';}
-  else if(nivel==='admin') {badge.textContent='Admin';badge.className='badge-role badge-admin';}
-  else {badge.textContent=nivel??'Visualizador';badge.className='badge-role badge-viewer';}
-  if(!podeEditar) document.body.classList.add('view-only');
-  if(sistema.blocos.length===0) criarBlocosIniciais();
-  renderAreas(); renderTodosBlocos(); atualizarTotais();
-  document.getElementById('campaign-title').textContent=sistema.titulo;
-  document.getElementById('coord-nome').textContent=sistema.coordenacao;
-  if(podeEditar){
-    document.getElementById('campaign-title').addEventListener('input',e=>{sistema.titulo=e.target.textContent.trim();});
-    document.getElementById('coord-nome').addEventListener('input',e=>{sistema.coordenacao=e.target.textContent.trim();});
+  const nivel = window.USUARIO_NIVEL || 'visualizador';
+  sistema.tenant_id = window.TENANT_ID || 'default';
+
+  podeEditar = nivel === 'dono' || nivel === 'admin';
+
+  // Badge de papel
+  const badge = document.getElementById('role-badge');
+  if (nivel === 'dono')        { badge.textContent = 'Dono';  badge.className = 'badge-role badge-dono'; }
+  else if (nivel === 'admin')  { badge.textContent = 'Admin'; badge.className = 'badge-role badge-admin'; }
+  else { badge.textContent = nivel || 'Visualizador'; badge.className = 'badge-role badge-viewer'; }
+
+  // Aplica modo visualização se não pode editar
+  if (!podeEditar) document.body.classList.add('view-only');
+
+  // Tenta carregar do localStorage; se vazio, cria blocos demo
+  const raw = localStorage.getItem('paralax_org_' + sistema.tenant_id);
+  if (raw) {
+    try {
+      const saved = JSON.parse(raw);
+      sistema = { ...sistema, ...saved, tenant_id: window.TENANT_ID || 'default' };
+    } catch { /* usa sistema padrão */ }
   } else {
-    document.getElementById('campaign-title').removeAttribute('contenteditable');
-    document.getElementById('coord-nome').removeAttribute('contenteditable');
+    criarBlocosIniciais();
   }
-  setTimeout(()=>document.querySelectorAll('.orb').forEach((o,i)=>setTimeout(()=>o.classList.add('visible'),i*300)),300);
+
+  // Habilita edição inline no título e coordenação apenas para quem pode editar
+  const titleEl = document.getElementById('campaign-title');
+  const coordEl = document.getElementById('coord-nome');
+
+  titleEl.textContent = sistema.titulo;
+  coordEl.textContent = sistema.coordenacao;
+
+  if (podeEditar) {
+    titleEl.setAttribute('contenteditable', 'true');
+    coordEl.setAttribute('contenteditable', 'true');
+    titleEl.addEventListener('input', e => { sistema.titulo = e.target.textContent.trim(); });
+    coordEl.addEventListener('input', e => { sistema.coordenacao = e.target.textContent.trim(); });
+  }
+
+  renderAreas();
+  renderTodosBlocos();
+  atualizarTotais();
+
+  setTimeout(() => document.querySelectorAll('.orb').forEach((o, i) => setTimeout(() => o.classList.add('visible'), i * 300)), 300);
 }
 
 function criarBlocosIniciais() {
-  sistema.blocos=[
-    {id:uid(),tipo:'slot',titulo:'Coordenação Municipal',slots:[
-      {id:uid(),nome:'Zona Norte',resp:'Ricardo Almeida',votos:1200,meta:2000},
-      {id:uid(),nome:'Zona Sul',  resp:'Fernanda Costa', votos:980, meta:1500},
-      {id:uid(),nome:'Zona Leste',resp:'Paulo Mendes',   votos:740, meta:1200},
-      {id:uid(),nome:'Zona Oeste',resp:'Ana Souza',      votos:620, meta:1000},
-      {id:uid(),nome:'Centro',    resp:'Carlos Lima',    votos:890, meta:1100},
+  sistema.blocos = [
+    { id: uid(), tipo: 'slot', titulo: 'Coordenação Municipal', slots: [
+      { id: uid(), nome: 'Zona Norte',  resp: 'Ricardo Almeida', votos: 1200, meta: 2000 },
+      { id: uid(), nome: 'Zona Sul',    resp: 'Fernanda Costa',  votos: 980,  meta: 1500 },
+      { id: uid(), nome: 'Zona Leste',  resp: 'Paulo Mendes',    votos: 740,  meta: 1200 },
+      { id: uid(), nome: 'Zona Oeste',  resp: 'Ana Souza',       votos: 620,  meta: 1000 },
+      { id: uid(), nome: 'Centro',      resp: 'Carlos Lima',     votos: 890,  meta: 1100 },
     ]},
-    {id:uid(),tipo:'slot',titulo:'Líderes Distritais',slots:[
-      {id:uid(),nome:'Distrito 1',resp:'Marcos Vieira', votos:310,meta:500},
-      {id:uid(),nome:'Distrito 2',resp:'Juliana Prado', votos:280,meta:450},
-      {id:uid(),nome:'Distrito 3',resp:'Diego Ramos',   votos:195,meta:400},
-      {id:uid(),nome:'Distrito 4',resp:'Letícia Cunha', votos:420,meta:600},
-      {id:uid(),nome:'Distrito 5',resp:'Thiago Borges', votos:350,meta:550},
-      {id:uid(),nome:'Distrito 6',resp:'Camila Nunes',  votos:270,meta:480},
+    { id: uid(), tipo: 'slot', titulo: 'Líderes Distritais', slots: [
+      { id: uid(), nome: 'Distrito 1', resp: 'Marcos Vieira',  votos: 310, meta: 500 },
+      { id: uid(), nome: 'Distrito 2', resp: 'Juliana Prado',  votos: 280, meta: 450 },
+      { id: uid(), nome: 'Distrito 3', resp: 'Diego Ramos',    votos: 195, meta: 400 },
+      { id: uid(), nome: 'Distrito 4', resp: 'Letícia Cunha',  votos: 420, meta: 600 },
+      { id: uid(), nome: 'Distrito 5', resp: 'Thiago Borges',  votos: 350, meta: 550 },
+      { id: uid(), nome: 'Distrito 6', resp: 'Camila Nunes',   votos: 270, meta: 480 },
     ]},
-    {id:uid(),tipo:'lista',titulo:'Zonas & Bairros',zonas:[
-      {id:uid(),nome:'Zona 1 — Norte',bairros:['Bairro Alto','Vila Formosa','Jardim Esperança'],votos:850,meta:1200},
-      {id:uid(),nome:'Zona 2 — Sul',  bairros:['Centro Histórico','Boa Vista','São Jorge'],    votos:640,meta:900},
-      {id:uid(),nome:'Zona 3 — Leste',bairros:['Parque Industrial','Nova Cidade','Palmares'],  votos:510,meta:800},
-      {id:uid(),nome:'Zona 4 — Oeste',bairros:['Jardim São Paulo','Vila Real'],                votos:390,meta:700},
-      {id:uid(),nome:'Zona 5 — Centro',bairros:['Praia Grande','Mangabeira','Pinheiros'],      votos:720,meta:1000},
+    { id: uid(), tipo: 'lista', titulo: 'Zonas & Bairros', zonas: [
+      { id: uid(), nome: 'Zona 1 — Norte',  bairros: ['Bairro Alto','Vila Formosa','Jardim Esperança'], votos: 850, meta: 1200 },
+      { id: uid(), nome: 'Zona 2 — Sul',    bairros: ['Centro Histórico','Boa Vista','São Jorge'],    votos: 640, meta: 900  },
+      { id: uid(), nome: 'Zona 3 — Leste',  bairros: ['Parque Industrial','Nova Cidade','Palmares'],  votos: 510, meta: 800  },
+      { id: uid(), nome: 'Zona 4 — Oeste',  bairros: ['Jardim São Paulo','Vila Real'],                votos: 390, meta: 700  },
+      { id: uid(), nome: 'Zona 5 — Centro', bairros: ['Praia Grande','Mangabeira','Pinheiros'],       votos: 720, meta: 1000 },
     ]},
   ];
 }
 
-function uid() { return '_'+Math.random().toString(36).substr(2,9); }
-function pct(v,m) { if(!m)return 0; return Math.min(100,Math.round((v/m)*100)); }
+/* ── Utilidades ── */
+function uid() { return '_' + Math.random().toString(36).substr(2, 9); }
+function pct(v, m) { if (!m) return 0; return Math.min(100, Math.round((v / m) * 100)); }
 function barColor(p) {
-  if(p>=80)return'linear-gradient(90deg,#34d399,#5eead4)';
-  if(p>=50)return'linear-gradient(90deg,#fbbf24,#34d399)';
-  return'linear-gradient(90deg,#f87171,#fbbf24)';
+  if (p >= 80) return 'linear-gradient(90deg,#34d399,#5eead4)';
+  if (p >= 50) return 'linear-gradient(90deg,#fbbf24,#34d399)';
+  return 'linear-gradient(90deg,#f87171,#fbbf24)';
 }
-function pctColor(p) { if(p>=80)return'#34d399'; if(p>=50)return'#fbbf24'; return'#f87171'; }
+function pctColor(p) { if (p >= 80) return '#34d399'; if (p >= 50) return '#fbbf24'; return '#f87171'; }
 
+/* ── Áreas ── */
 function renderAreas() {
-  const strip=document.getElementById('areas-strip');
-  strip.innerHTML='';
-  sistema.areas.forEach((area,i)=>{
-    const chip=document.createElement('div'); chip.className='area-chip';
-    chip.innerHTML=`<span class="area-chip-name" ${podeEditar?'contenteditable="true"':''} spellcheck="false">${area}</span>${podeEditar?`<button class="area-remove edit-only" onclick="removerArea(${i})">✕</button>`:''}`;
-    chip.querySelector('.area-chip-name')?.addEventListener('input',e=>{sistema.areas[i]=e.target.textContent.trim();});
+  const strip = document.getElementById('areas-strip');
+  strip.innerHTML = '';
+  sistema.areas.forEach((area, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'area-chip';
+    chip.innerHTML = `<span class="area-chip-name" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${area}</span>` +
+      (podeEditar ? `<button class="area-remove edit-only" onclick="removerArea(${i})">✕</button>` : '');
+    chip.querySelector('.area-chip-name')?.addEventListener('input', e => { sistema.areas[i] = e.target.textContent.trim(); });
     strip.appendChild(chip);
   });
-  if(podeEditar){
-    const btn=document.createElement('button'); btn.className='area-add-btn edit-only'; btn.textContent='+ Área';
-    btn.onclick=()=>{sistema.areas.push('Nova Área');renderAreas();};
+  if (podeEditar) {
+    const btn = document.createElement('button');
+    btn.className = 'area-add-btn edit-only';
+    btn.textContent = '+ Área';
+    btn.onclick = () => { sistema.areas.push('Nova Área'); renderAreas(); };
     strip.appendChild(btn);
   }
 }
-function removerArea(i){sistema.areas.splice(i,1);renderAreas();}
+function removerArea(i) { sistema.areas.splice(i, 1); renderAreas(); }
 
-function renderTodosBlocos(){
-  const wrap=document.getElementById('blocos-wrap'); wrap.innerHTML='';
-  sistema.blocos.forEach(b=>wrap.appendChild(renderBloco(b)));
+/* ── Blocos ── */
+function renderTodosBlocos() {
+  const wrap = document.getElementById('blocos-wrap');
+  wrap.innerHTML = '';
+  sistema.blocos.forEach(b => wrap.appendChild(renderBloco(b)));
 }
 
-function renderBloco(bloco){
-  const div=document.createElement('div'); div.className='bloco'; div.id='bloco-'+bloco.id;
-  const tipo=bloco.tipo;
-  const pillCls=tipo==='slot'?'pill-slot':'pill-lista';
-  const pillTxt=tipo==='slot'?'Lideranças':'Territórios';
-  div.innerHTML=`
+function renderBloco(bloco) {
+  const div = document.createElement('div');
+  div.className = 'bloco';
+  div.id = 'bloco-' + bloco.id;
+  const tipo = bloco.tipo;
+  const pillCls = tipo === 'slot' ? 'pill-slot' : 'pill-lista';
+  const pillTxt = tipo === 'slot' ? 'Lideranças' : 'Territórios';
+  div.innerHTML = `
     <div class="bloco-header">
       <div class="bloco-title-wrap">
         <span class="bloco-pill ${pillCls}">${pillTxt}</span>
-        <span class="bloco-title" ${podeEditar?'contenteditable="true"':''} spellcheck="false">${bloco.titulo}</span>
+        <span class="bloco-title" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${bloco.titulo}</span>
       </div>
-      ${podeEditar?`<div class="bloco-actions edit-only">
+      ${podeEditar ? `<div class="bloco-actions edit-only">
         <button class="btn btn-ghost btn-sm" onclick="duplicarBloco('${bloco.id}')">⧉ Duplicar</button>
         <button class="btn btn-danger btn-sm" onclick="removerBloco('${bloco.id}')">✕</button>
-      </div>`:''}
+      </div>` : ''}
     </div>
     <div id="body-${bloco.id}"></div>
-    ${podeEditar&&tipo==='slot'?`<div style="margin-top:12px;position:relative;z-index:1"><button class="btn btn-ghost btn-sm edit-only" onclick="adicionarSlot('${bloco.id}')">＋ Slot</button></div>`:''}
-    ${podeEditar&&tipo==='lista'?`<div style="margin-top:12px;position:relative;z-index:1"><button class="btn btn-ghost btn-sm edit-only" onclick="adicionarZona('${bloco.id}')">＋ Zona</button></div>`:''}
+    ${podeEditar && tipo === 'slot'  ? `<div style="margin-top:12px;position:relative;z-index:1"><button class="btn btn-ghost btn-sm edit-only" onclick="adicionarSlot('${bloco.id}')">＋ Slot</button></div>` : ''}
+    ${podeEditar && tipo === 'lista' ? `<div style="margin-top:12px;position:relative;z-index:1"><button class="btn btn-ghost btn-sm edit-only" onclick="adicionarZona('${bloco.id}')">＋ Zona</button></div>` : ''}
   `;
-  div.querySelector('.bloco-title')?.addEventListener('input',e=>{bloco.titulo=e.target.textContent.trim();});
-  const body=div.querySelector(`#body-${bloco.id}`);
-  if(tipo==='slot') renderSlotsGrid(body,bloco);
-  if(tipo==='lista') renderListaGrid(body,bloco);
+  div.querySelector('.bloco-title')?.addEventListener('input', e => { bloco.titulo = e.target.textContent.trim(); });
+  const body = div.querySelector(`#body-${bloco.id}`);
+  if (tipo === 'slot')  renderSlotsGrid(body, bloco);
+  if (tipo === 'lista') renderListaGrid(body, bloco);
   return div;
 }
 
-function renderSlotsGrid(container,bloco){
-  container.innerHTML='';
-  const grid=document.createElement('div'); grid.className='slots-grid';
-  (bloco.slots||[]).forEach(slot=>{
-    const p=pct(slot.votos,slot.meta);
-    const card=document.createElement('div'); card.className='slot-card'; card.id='slot-'+slot.id;
-    card.innerHTML=`
-      ${podeEditar?`<button class="slot-remove edit-only" onclick="removerSlot('${bloco.id}','${slot.id}')">✕</button>`:''}
-      <span class="slot-name" ${podeEditar?'contenteditable="true"':''} spellcheck="false">${slot.nome}</span>
-      <span class="slot-resp" ${podeEditar?'contenteditable="true"':''} spellcheck="false">${slot.resp}</span>
+/* ── Slots ── */
+function renderSlotsGrid(container, bloco) {
+  container.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'slots-grid';
+  (bloco.slots || []).forEach(slot => {
+    const p = pct(slot.votos, slot.meta);
+    const card = document.createElement('div');
+    card.className = 'slot-card';
+    card.id = 'slot-' + slot.id;
+    card.innerHTML = `
+      ${podeEditar ? `<button class="slot-remove edit-only" onclick="removerSlot('${bloco.id}','${slot.id}')">✕</button>` : ''}
+      <span class="slot-name" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${slot.nome}</span>
+      <span class="slot-resp" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${slot.resp}</span>
       <div class="slot-numbers">
         <div class="slot-input-wrap"><span class="slot-input-label">Votos</span>
-          <input class="slot-input" type="number" value="${slot.votos}" ${!podeEditar?'readonly':''} data-field="votos" data-bloco="${bloco.id}" data-slot="${slot.id}">
+          <input class="slot-input" type="number" value="${slot.votos}" ${!podeEditar ? 'readonly' : ''} data-field="votos" data-bloco="${bloco.id}" data-slot="${slot.id}">
         </div>
         <div class="slot-input-wrap"><span class="slot-input-label">Meta</span>
-          <input class="slot-input" type="number" value="${slot.meta}" ${!podeEditar?'readonly':''} data-field="meta" data-bloco="${bloco.id}" data-slot="${slot.id}">
+          <input class="slot-input" type="number" value="${slot.meta}" ${!podeEditar ? 'readonly' : ''} data-field="meta" data-bloco="${bloco.id}" data-slot="${slot.id}">
         </div>
       </div>
       <div class="slot-bar-wrap">
         <div class="slot-bar-bg"><div class="slot-bar-fill" style="width:${p}%;background:${barColor(p)}"></div></div>
         <div class="slot-bar-pct" style="color:${pctColor(p)}">${p}%</div>
       </div>`;
-    card.querySelectorAll('.slot-input').forEach(inp=>inp.addEventListener('input',e=>{
-      slot[e.target.dataset.field]=parseInt(e.target.value)||0;
-      atualizarBarraSlot(bloco.id,slot.id); atualizarTotais();
-    }));
-    card.querySelector('.slot-name')?.addEventListener('input',e=>{slot.nome=e.target.textContent.trim();});
-    card.querySelector('.slot-resp')?.addEventListener('input',e=>{slot.resp=e.target.textContent.trim();});
-    grid.appendChild(card);
-  });
-  container.appendChild(grid);
-}
-
-function atualizarBarraSlot(bId,sId){
-  const b=sistema.blocos.find(b=>b.id===bId); const s=(b?.slots||[]).find(s=>s.id===sId);
-  const card=document.getElementById('slot-'+sId); if(!s||!card)return;
-  const p=pct(s.votos,s.meta);
-  card.querySelector('.slot-bar-fill').style.width=p+'%';
-  card.querySelector('.slot-bar-fill').style.background=barColor(p);
-  card.querySelector('.slot-bar-pct').textContent=p+'%';
-  card.querySelector('.slot-bar-pct').style.color=pctColor(p);
-}
-
-function adicionarSlot(bId){
-  const b=sistema.blocos.find(b=>b.id===bId); if(!b)return;
-  b.slots.push({id:uid(),nome:'Novo Slot',resp:'Responsável',votos:0,meta:300});
-  renderSlotsGrid(document.getElementById('body-'+bId),b); atualizarTotais();
-}
-function removerSlot(bId,sId){
-  const b=sistema.blocos.find(b=>b.id===bId); if(!b)return;
-  b.slots=b.slots.filter(s=>s.id!==sId);
-  renderSlotsGrid(document.getElementById('body-'+bId),b); atualizarTotais();
-}
-
-function renderListaGrid(container,bloco){
-  container.innerHTML='';
-  const grid=document.createElement('div'); grid.className='lista-grid';
-  (bloco.zonas||[]).forEach(zona=>{
-    const p=pct(zona.votos,zona.meta);
-    const card=document.createElement('div'); card.className='lista-card';
-    card.innerHTML=`
-      <div class="lista-card-header">
-        <span class="lista-zona-name" ${podeEditar?'contenteditable="true"':''} spellcheck="false">${zona.nome}</span>
-        ${podeEditar?`<button class="btn btn-danger btn-sm lista-zona-remove edit-only" onclick="removerZona('${bloco.id}','${zona.id}')">✕</button>`:''}
-      </div>
-      <div class="lista-items" id="items-${zona.id}"></div>
-      ${podeEditar?`<button class="lista-add-bairro edit-only" onclick="adicionarBairro('${bloco.id}','${zona.id}')">+ bairro</button>`:''}
-      <div class="lista-numbers">
-        <div class="lista-input-wrap"><span class="lista-input-label">Votos</span>
-          <input class="lista-input" type="number" value="${zona.votos}" ${!podeEditar?'readonly':''} data-bloco="${bloco.id}" data-zona="${zona.id}" data-field="votos">
-        </div>
-        <div class="lista-input-wrap"><span class="lista-input-label">Meta</span>
-          <input class="lista-input" type="number" value="${zona.meta}" ${!podeEditar?'readonly':''} data-bloco="${bloco.id}" data-zona="${zona.id}" data-field="meta">
-        </div>
-      </div>
-      <div class="slot-bar-wrap">
-        <div class="slot-bar-bg"><div class="slot-bar-fill" style="width:${p}%;background:${barColor(p)}"></div></div>
-        <div class="slot-bar-pct" style="color:${pctColor(p)}">${p}%</div>
-      </div>`;
-    renderBairros(card.querySelector(`#items-${zona.id}`),bloco,zona);
-    card.querySelectorAll('.lista-input').forEach(inp=>inp.addEventListener('input',e=>{
-      zona[e.target.dataset.field]=parseInt(e.target.value)||0;
-      const p2=pct(zona.votos,zona.meta);
-      card.querySelector('.slot-bar-fill').style.width=p2+'%';
-      card.querySelector('.slot-bar-fill').style.background=barColor(p2);
-      card.querySelector('.slot-bar-pct').textContent=p2+'%';
-      card.querySelector('.slot-bar-pct').style.color=pctColor(p2);
+    card.querySelectorAll('.slot-input').forEach(inp => inp.addEventListener('input', e => {
+      slot[e.target.dataset.field] = parseInt(e.target.value) || 0;
+      atualizarBarraSlot(bloco.id, slot.id);
       atualizarTotais();
     }));
-    card.querySelector('.lista-zona-name')?.addEventListener('input',e=>{zona.nome=e.target.textContent.trim();});
+    card.querySelector('.slot-name')?.addEventListener('input', e => { slot.nome = e.target.textContent.trim(); });
+    card.querySelector('.slot-resp')?.addEventListener('input', e => { slot.resp = e.target.textContent.trim(); });
     grid.appendChild(card);
   });
   container.appendChild(grid);
 }
 
-function renderBairros(container,bloco,zona){
-  container.innerHTML='';
-  (zona.bairros||[]).forEach((b,bi)=>{
-    const item=document.createElement('div'); item.className='lista-item';
-    item.innerHTML=`<span class="lista-item-text" ${podeEditar?'contenteditable="true"':''} spellcheck="false">${b}</span>${podeEditar?`<button class="lista-item-del edit-only" onclick="removerBairro('${bloco.id}','${zona.id}',${bi})">✕</button>`:''}`;
-    item.querySelector('.lista-item-text')?.addEventListener('input',e=>{zona.bairros[bi]=e.target.textContent.trim();});
+function atualizarBarraSlot(bId, sId) {
+  const b = sistema.blocos.find(b => b.id === bId);
+  const s = (b?.slots || []).find(s => s.id === sId);
+  const card = document.getElementById('slot-' + sId);
+  if (!s || !card) return;
+  const p = pct(s.votos, s.meta);
+  card.querySelector('.slot-bar-fill').style.width = p + '%';
+  card.querySelector('.slot-bar-fill').style.background = barColor(p);
+  card.querySelector('.slot-bar-pct').textContent = p + '%';
+  card.querySelector('.slot-bar-pct').style.color = pctColor(p);
+}
+
+function adicionarSlot(bId) {
+  const b = sistema.blocos.find(b => b.id === bId); if (!b) return;
+  b.slots.push({ id: uid(), nome: 'Novo Slot', resp: 'Responsável', votos: 0, meta: 300 });
+  renderSlotsGrid(document.getElementById('body-' + bId), b);
+  atualizarTotais();
+}
+function removerSlot(bId, sId) {
+  const b = sistema.blocos.find(b => b.id === bId); if (!b) return;
+  b.slots = b.slots.filter(s => s.id !== sId);
+  renderSlotsGrid(document.getElementById('body-' + bId), b);
+  atualizarTotais();
+}
+
+/* ── Lista / Zonas ── */
+function renderListaGrid(container, bloco) {
+  container.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'lista-grid';
+  (bloco.zonas || []).forEach(zona => {
+    const p = pct(zona.votos, zona.meta);
+    const card = document.createElement('div');
+    card.className = 'lista-card';
+    card.innerHTML = `
+      <div class="lista-card-header">
+        <span class="lista-zona-name" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${zona.nome}</span>
+        ${podeEditar ? `<button class="btn btn-danger btn-sm lista-zona-remove edit-only" onclick="removerZona('${bloco.id}','${zona.id}')">✕</button>` : ''}
+      </div>
+      <div class="lista-items" id="items-${zona.id}"></div>
+      ${podeEditar ? `<button class="lista-add-bairro edit-only" onclick="adicionarBairro('${bloco.id}','${zona.id}')">+ bairro</button>` : ''}
+      <div class="lista-numbers">
+        <div class="lista-input-wrap"><span class="lista-input-label">Votos</span>
+          <input class="lista-input" type="number" value="${zona.votos}" ${!podeEditar ? 'readonly' : ''} data-bloco="${bloco.id}" data-zona="${zona.id}" data-field="votos">
+        </div>
+        <div class="lista-input-wrap"><span class="lista-input-label">Meta</span>
+          <input class="lista-input" type="number" value="${zona.meta}" ${!podeEditar ? 'readonly' : ''} data-bloco="${bloco.id}" data-zona="${zona.id}" data-field="meta">
+        </div>
+      </div>
+      <div class="slot-bar-wrap">
+        <div class="slot-bar-bg"><div class="slot-bar-fill" style="width:${p}%;background:${barColor(p)}"></div></div>
+        <div class="slot-bar-pct" style="color:${pctColor(p)}">${p}%</div>
+      </div>`;
+    renderBairros(card.querySelector(`#items-${zona.id}`), bloco, zona);
+    card.querySelectorAll('.lista-input').forEach(inp => inp.addEventListener('input', e => {
+      zona[e.target.dataset.field] = parseInt(e.target.value) || 0;
+      const p2 = pct(zona.votos, zona.meta);
+      card.querySelector('.slot-bar-fill').style.width = p2 + '%';
+      card.querySelector('.slot-bar-fill').style.background = barColor(p2);
+      card.querySelector('.slot-bar-pct').textContent = p2 + '%';
+      card.querySelector('.slot-bar-pct').style.color = pctColor(p2);
+      atualizarTotais();
+    }));
+    card.querySelector('.lista-zona-name')?.addEventListener('input', e => { zona.nome = e.target.textContent.trim(); });
+    grid.appendChild(card);
+  });
+  container.appendChild(grid);
+}
+
+function renderBairros(container, bloco, zona) {
+  container.innerHTML = '';
+  (zona.bairros || []).forEach((b, bi) => {
+    const item = document.createElement('div');
+    item.className = 'lista-item';
+    item.innerHTML = `<span class="lista-item-text" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${b}</span>` +
+      (podeEditar ? `<button class="lista-item-del edit-only" onclick="removerBairro('${bloco.id}','${zona.id}',${bi})">✕</button>` : '');
+    item.querySelector('.lista-item-text')?.addEventListener('input', e => { zona.bairros[bi] = e.target.textContent.trim(); });
     container.appendChild(item);
   });
 }
 
-function adicionarZona(bId){
-  const b=sistema.blocos.find(b=>b.id===bId); if(!b)return;
-  b.zonas.push({id:uid(),nome:'Nova Zona',bairros:['Novo Bairro'],votos:0,meta:300});
-  renderListaGrid(document.getElementById('body-'+bId),b); atualizarTotais();
+function adicionarZona(bId) {
+  const b = sistema.blocos.find(b => b.id === bId); if (!b) return;
+  b.zonas.push({ id: uid(), nome: 'Nova Zona', bairros: ['Novo Bairro'], votos: 0, meta: 300 });
+  renderListaGrid(document.getElementById('body-' + bId), b);
+  atualizarTotais();
 }
-function removerZona(bId,zId){
-  const b=sistema.blocos.find(b=>b.id===bId); if(!b)return;
-  b.zonas=b.zonas.filter(z=>z.id!==zId);
-  renderListaGrid(document.getElementById('body-'+bId),b); atualizarTotais();
+function removerZona(bId, zId) {
+  const b = sistema.blocos.find(b => b.id === bId); if (!b) return;
+  b.zonas = b.zonas.filter(z => z.id !== zId);
+  renderListaGrid(document.getElementById('body-' + bId), b);
+  atualizarTotais();
 }
-function adicionarBairro(bId,zId){
-  const b=sistema.blocos.find(b=>b.id===bId); const z=(b?.zonas||[]).find(z=>z.id===zId); if(!z)return;
+function adicionarBairro(bId, zId) {
+  const b = sistema.blocos.find(b => b.id === bId);
+  const z = (b?.zonas || []).find(z => z.id === zId);
+  if (!z) return;
   z.bairros.push('Novo Bairro');
-  renderBairros(document.getElementById('items-'+zId),b,z);
+  renderBairros(document.getElementById('items-' + zId), b, z);
 }
-function removerBairro(bId,zId,bi){
-  const b=sistema.blocos.find(b=>b.id===bId); const z=(b?.zonas||[]).find(z=>z.id===zId); if(!z)return;
-  z.bairros.splice(bi,1);
-  renderBairros(document.getElementById('items-'+zId),b,z);
+function removerBairro(bId, zId, bi) {
+  const b = sistema.blocos.find(b => b.id === bId);
+  const z = (b?.zonas || []).find(z => z.id === zId);
+  if (!z) return;
+  z.bairros.splice(bi, 1);
+  renderBairros(document.getElementById('items-' + zId), b, z);
 }
 
-function adicionarBloco(tipo){
-  const novo={id:uid(),tipo,titulo:tipo==='slot'?'Novo Bloco de Lideranças':'Novo Bloco de Zonas',
-    slots:tipo==='slot'?[{id:uid(),nome:'Slot 1',resp:'Responsável',votos:0,meta:300}]:undefined,
-    zonas:tipo==='lista'?[{id:uid(),nome:'Zona 1',bairros:['Bairro A'],votos:0,meta:200}]:undefined};
+/* ── Blocos (add/remove/duplicate) ── */
+function adicionarBloco(tipo) {
+  const novo = {
+    id: uid(), tipo,
+    titulo: tipo === 'slot' ? 'Novo Bloco de Lideranças' : 'Novo Bloco de Zonas',
+    slots: tipo === 'slot'  ? [{ id: uid(), nome: 'Slot 1', resp: 'Responsável', votos: 0, meta: 300 }] : undefined,
+    zonas: tipo === 'lista' ? [{ id: uid(), nome: 'Zona 1', bairros: ['Bairro A'], votos: 0, meta: 200 }] : undefined
+  };
   sistema.blocos.push(novo);
-  const el=renderBloco(novo); document.getElementById('blocos-wrap').appendChild(el);
-  el.scrollIntoView({behavior:'smooth',block:'center'});
+  const el = renderBloco(novo);
+  document.getElementById('blocos-wrap').appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
-function removerBloco(id){
-  sistema.blocos=sistema.blocos.filter(b=>b.id!==id);
-  document.getElementById('bloco-'+id)?.remove(); atualizarTotais();
+function removerBloco(id) {
+  sistema.blocos = sistema.blocos.filter(b => b.id !== id);
+  document.getElementById('bloco-' + id)?.remove();
+  atualizarTotais();
 }
-function duplicarBloco(id){
-  const b=sistema.blocos.find(b=>b.id===id); if(!b)return;
-  const clone=JSON.parse(JSON.stringify(b)); clone.id=uid(); clone.titulo=b.titulo+' (cópia)';
-  if(clone.slots) clone.slots=clone.slots.map(s=>({...s,id:uid()}));
-  if(clone.zonas) clone.zonas=clone.zonas.map(z=>({...z,id:uid()}));
+function duplicarBloco(id) {
+  const b = sistema.blocos.find(b => b.id === id); if (!b) return;
+  const clone = JSON.parse(JSON.stringify(b));
+  clone.id = uid();
+  clone.titulo = b.titulo + ' (cópia)';
+  if (clone.slots) clone.slots = clone.slots.map(s => ({ ...s, id: uid() }));
+  if (clone.zonas) clone.zonas = clone.zonas.map(z => ({ ...z, id: uid() }));
   sistema.blocos.push(clone);
-  const el=renderBloco(clone); document.getElementById('blocos-wrap').appendChild(el);
-  el.scrollIntoView({behavior:'smooth',block:'center'});
+  const el = renderBloco(clone);
+  document.getElementById('blocos-wrap').appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-function atualizarTotais(){
-  let tv=0,tm=0;
-  sistema.blocos.forEach(b=>{
-    if(b.tipo==='slot')(b.slots||[]).forEach(s=>{tv+=s.votos||0;tm+=s.meta||0;});
-    if(b.tipo==='lista')(b.zonas||[]).forEach(z=>{tv+=z.votos||0;tm+=z.meta||0;});
+/* ── Totais ── */
+function atualizarTotais() {
+  let tv = 0, tm = 0;
+  sistema.blocos.forEach(b => {
+    if (b.tipo === 'slot')  (b.slots || []).forEach(s => { tv += s.votos || 0; tm += s.meta || 0; });
+    if (b.tipo === 'lista') (b.zonas || []).forEach(z => { tv += z.votos || 0; tm += z.meta || 0; });
   });
-  const p=pct(tv,tm);
-  document.getElementById('total-votos').textContent=tv.toLocaleString('pt-BR');
-  document.getElementById('total-meta').textContent=tm.toLocaleString('pt-BR');
-  const pEl=document.getElementById('total-pct');
-  pEl.textContent=p+'%'; pEl.style.color=pctColor(p);
+  const p = pct(tv, tm);
+  document.getElementById('total-votos').textContent = tv.toLocaleString('pt-BR');
+  document.getElementById('total-meta').textContent  = tm.toLocaleString('pt-BR');
+  const pEl = document.getElementById('total-pct');
+  pEl.textContent = p + '%';
+  pEl.style.color = pctColor(p);
 }
 
-function salvarSistema(){
-  sistema.titulo=document.getElementById('campaign-title').textContent.trim();
-  sistema.coordenacao=document.getElementById('coord-nome').textContent.trim();
-  // → POST /api/organograma + Authorization: Bearer <token>
-  try{localStorage.setItem('paralax_org_'+sistema.tenant_id,JSON.stringify(sistema));}catch{}
+/* ── Salvar / Carregar ── */
+function salvarSistema() {
+  sistema.titulo       = document.getElementById('campaign-title').textContent.trim();
+  sistema.coordenacao  = document.getElementById('coord-nome').textContent.trim();
+  try {
+    localStorage.setItem('paralax_org_' + sistema.tenant_id, JSON.stringify(sistema));
+  } catch {}
   toast('✅ Organograma salvo!');
 }
-function carregarSistema(){
-  // → GET /api/organograma?tenant_id=...
-  try{
-    const raw=localStorage.getItem('paralax_org_'+sistema.tenant_id);
-    if(raw){
-      sistema=JSON.parse(raw); sistema.tenant_id=window.TENANT_ID;
-      document.getElementById('campaign-title').textContent=sistema.titulo;
-      document.getElementById('coord-nome').textContent=sistema.coordenacao;
-      renderAreas(); renderTodosBlocos(); atualizarTotais();
+
+function carregarSistema() {
+  try {
+    const raw = localStorage.getItem('paralax_org_' + sistema.tenant_id);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      sistema = { ...sistema, ...saved, tenant_id: sistema.tenant_id };
+      document.getElementById('campaign-title').textContent = sistema.titulo;
+      document.getElementById('coord-nome').textContent     = sistema.coordenacao;
+      renderAreas();
+      renderTodosBlocos();
+      atualizarTotais();
       toast('📂 Carregado com sucesso!');
-    }else{toast('⚠️ Nenhum dado salvo.');}
-  }catch{toast('❌ Erro ao carregar.');}
+    } else {
+      toast('⚠️ Nenhum dado salvo.');
+    }
+  } catch {
+    toast('❌ Erro ao carregar.');
+  }
 }
 
-function toast(msg){
-  const t=document.getElementById('toast'); document.getElementById('toast-msg').textContent=msg;
-  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800);
+/* ── Toast ── */
+function toast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
 }
-
-init();
 </script>
 </body>
 </html>
