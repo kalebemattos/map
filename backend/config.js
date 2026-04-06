@@ -174,6 +174,19 @@ module.exports = {
         'ZONA LESTE',
       ],
     },
+    {
+      id:            'pirai',              // corresponde à pasta /pirai no frontend
+      nome:          'Piraí',
+      nivel_usuario: 'lider_distrito_pirai',
+      badge_fundo:   '#d1fae5',
+      badge_texto:   '#065f46',
+      subregioes: [
+        'Piraí',
+        'Arrozal',
+        'Monumento',
+        'Santanésia',
+      ],
+    },
   ],
 
 };

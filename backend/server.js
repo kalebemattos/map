@@ -1145,6 +1145,35 @@ app.get('/api/expectativa-rjcapital-todas', auth, withTenant, async (req, res) =
   res.json(rows);
 });
 
+// ─── EXPECTATIVA PIRAÍ (isolada por mapa='pirai') ────────────────────────────
+
+app.post('/api/expectativa-pirai', auth, withTenant, async (req, res) => {
+  const { cidade, expectativas } = req.body;
+  if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
+  try {
+    await salvarExpectativaHelper(cidade, expectativas, req.user.regiao, 'pirai', req.tenantId);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Erro interno' }); }
+});
+
+app.get('/api/expectativa-pirai', auth, withTenant, async (req, res) => {
+  const { cidade } = req.query;
+  if (!cidade) return res.status(400).json({ error: 'Cidade não informada' });
+  const row = await dbGet(
+    `SELECT expectativas FROM expectativa_cidade WHERE cidade = $1 AND mapa = 'pirai' AND tenant_id = $2`,
+    [cidade, req.tenantId]
+  );
+  res.json({ expectativas: row?.expectativas || {} });
+});
+
+app.get('/api/expectativa-pirai-todas', auth, withTenant, async (req, res) => {
+  const rows = await dbAll(
+    `SELECT cidade, expectativas FROM expectativa_cidade WHERE mapa = 'pirai' AND tenant_id = $1`,
+    [req.tenantId]
+  );
+  res.json(rows);
+});
+
 app.post('/api/pins',
   auth,
   withTenant,

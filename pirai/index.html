@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa de Piraí - Painel</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== LOGIN MODAL ===== -->
+<div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9000;">
+  <div style="width:360px;background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;animation:modalIn .25s cubic-bezier(0.34,1.56,0.64,1);">
+    <div style="text-align:center;">
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">&#x1F5FA;&#xFE0F;</div>
+      <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Mapa de Piraí</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:#64748b;">Insira suas credenciais para continuar</p>
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Usuário</label>
+      <input id="login-user" type="text" placeholder="Digite seu usuário" autocomplete="username"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;transition:all .2s;"
+        onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Senha</label>
+      <input id="login-pass" type="password" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" autocomplete="current-password"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;transition:all .2s;"
+        onfocus="this.style.borderColor='#1565c0';this.style.boxShadow='0 0 0 3px rgba(21,101,192,.12)';this.style.background='white'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.background='#f8fafc'">
+    </div>
+    <div id="login-error" style="display:none;background:#fee2e2;color:#b91c1c;font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;text-align:center;"></div>
+    <button id="login-btn"
+      style="padding:13px;border:none;border-radius:11px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 6px 18px rgba(21,101,192,.4);transition:all .2s;"
+      onmouseover="this.style.opacity='.9';this.style.transform='translateY(-1px)'"
+      onmouseout="this.style.opacity='1';this.style.transform='none'">
+      Entrar
+    </button>
+  </div>
+</div>
+
+<!-- ===== BLOCKER ===== -->
+<div id="blocker" style="position:fixed;inset:0;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:8000;">
+  <div style="font-size:36px;">&#x1F5FA;&#xFE0F;</div>
+  <p style="margin:0;font-size:14px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando o sistema...</p>
+</div>
+
+<div id="content-wrapper" style="display:none;">
+
+<!-- CONTROLES FLUTUANTES DO MAPA -->
+<div id="map-left-controls">
+
+  <!-- Expectativa geral -->
+  <div id="overlay-total">
+    <div class="overlay-label">Expectativa Total</div>
+    <div id="total-expectativa">0</div>
+    <div id="overlay-campanha-badge">Ambos</div>
+  </div>
+
+  <!-- Painel de controles (visualização + pins) -->
+  <div id="map-controles">
+    <div class="ctrl-card">
+      <div class="ctrl-titulo">🗳️ Visualização</div>
+      <div class="ctrl-modos-col">
+        <button class="modo-btn ativa" data-modo="expectativa">Expectativa</button>
+        <button class="modo-btn" data-modo="votosValidos">Votos 2022</button>
+        <button class="modo-btn" data-modo="liderancas">Lideranças</button>
+      </div>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-titulo">📍 Pins</div>
+      <div class="ctrl-pins-row">
+        <button id="togglePinsOverlay" class="ctrl-pin-btn ctrl-pin-ativo">ON</button>
+        <button id="addPinOverlay" class="ctrl-pin-btn">＋ Pin</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOGGLE -->
+<button id="toggleSidebar" title="Abrir/fechar painel">☰</button>
+
+<!-- APP -->
+<div id="app">
+  <div id="map"></div>
+</div>
+
+<!-- LEGENDA -->
+<div id="legenda">
+  <div class="legenda-title">
+    <span class="legenda-icon">📊</span>
+    <span id="legenda-titulo">Expectativa</span>
+  </div>
+  <div id="legenda-grad-bar" class="legenda-gradient-bar" style="background:linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d);"></div>
+  <div id="legenda-grad-labels" class="legenda-gradient-labels">
+    <span>0</span><span>300</span><span>1k</span><span>5k+</span>
+  </div>
+  <div id="legenda-steps" class="legenda-steps">
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#67000d;"></div><span>5.000+ <small>muito alto</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#a50f15;"></div><span>2.000–4.999 <small>alto</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#cb181d;"></div><span>1.000–1.999 <small>moderado</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#fb6a4a;"></div><span>300–999 <small>baixo</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#fcae91;"></div><span>1–299 <small>muito baixo</small></span></div>
+    <div class="legenda-row"><div class="legenda-swatch" style="background:#fee5d9;"></div><span>0 <small>sem expectativa</small></span></div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+
+  <!-- HEADER -->
+  <div class="sidebar-header">
+    <div class="sidebar-header-brand">
+      <div class="sidebar-logo">🗺️</div>
+      <div>
+        <h1>Mapa Eleitoral</h1>
+        <p>Piraí · Painel de lideranças</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.15);">
+      <span id="user-chip" style="display:none;flex:1;font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.12);padding:4px 10px;border-radius:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+      <button onclick="logout()" title="Sair" style="flex-shrink:0;padding:5px 10px;border:none;border-radius:8px;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">Sair</button>
+    </div>
+  </div>
+
+  <!-- BODY SCROLLÁVEL -->
+  <div class="sidebar-body">
+
+    <!-- SELETOR DE CAMPANHA -->
+    <div class="sidebar-block">
+      <label class="block-label">Campanha</label>
+      <div id="seletor-campanha"><!-- preenchido dinamicamente por injetarCandidatosPirai() --></div>
+    </div>
+
+    <!-- SELETOR DE DISTRITO -->
+    <div class="sidebar-block">
+      <label class="block-label">Distrito</label>
+      <div class="select-wrap">
+        <select id="select-distrito">
+          <option value="">Todos os distritos</option>
+          <option value="Piraí">Piraí</option>
+          <option value="Arrozal">Arrozal</option>
+          <option value="Monumento">Monumento</option>
+          <option value="Santanésia">Santanésia</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- LÍDER DO DISTRITO -->
+    <div id="lider-distrito-card" class="sidebar-block" style="display:none;">
+      <label class="block-label">Líder responsável</label>
+      <div id="lista-lideres-distrito"></div>
+    </div>
+
+    <!-- BUSCAR DISTRITO -->
+    <div class="sidebar-block">
+      <label class="block-label">Buscar distrito</label>
+      <div class="search-wrap">
+        <span class="search-icon">🏙️</span>
+        <input type="text" id="buscar-bairro" placeholder="Nome do distrito..." autocomplete="off">
+      </div>
+      <div id="buscar-bairro-results" class="search-results"></div>
+    </div>
+
+    <!-- BUSCAR LIDERANÇA -->
+    <div class="sidebar-block">
+      <label class="block-label">Buscar liderança</label>
+      <div class="search-wrap">
+        <span class="search-icon">👤</span>
+        <input type="text" id="buscar-lideranca" placeholder="Nome da liderança..." autocomplete="off">
+      </div>
+      <div id="buscar-lideranca-results" class="search-results"></div>
+    </div>
+
+    <!-- INFO DO BAIRRO -->
+    <div class="sidebar-block" id="block-bairro-info">
+      <h3 id="bairro-nome">Selecione um distrito</h3>
+      <div id="bairro-info" class="bairro-meta">Clique em um distrito no mapa</div>
+    </div>
+
+    <!-- EXPECTATIVA DO BAIRRO (separada por campanha) -->
+    <div class="sidebar-block">
+      <label class="block-label">Expectativa do distrito</label>
+      <div id="exp-inputs-container"><!-- inputs por candidato — preenchidos por injetarCandidatosPirai() --></div>
+      <button id="salvar-exp">Salvar expectativa</button>
+    </div>
+
+    <!-- LIDERANÇAS COM RANKING -->
+    <div class="sidebar-block" id="block-liderancas">
+      <div class="collapsible-header">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <h3 style="margin:0;">Lideranças</h3>
+          <span id="liderancas-count" class="count-badge">0</span>
+        </div>
+        <button class="collapse-btn" data-target="liderancas-content" data-state="expanded">−</button>
+      </div>
+
+      <div id="liderancas-content">
+        <!-- RESUMO TOTAIS -->
+        <div id="liderancas-totais" style="display:none;"></div>
+
+        <!-- LISTA RANKING -->
+        <div id="lista-liderancas"></div>
+
+        <!-- FORM ADICIONAR -->
+        <div class="add-lider-form" id="add-lider-form">
+          <div class="form-divider">Adicionar liderança</div>
+          <input id="lideranca-nome" type="text" placeholder="Nome" class="form-input">
+          <input id="lideranca-contato" type="text" placeholder="Contato / WhatsApp" class="form-input">
+          <div class="form-row">
+            <select id="lideranca-vinculo" class="form-input">
+              <option value="ambos">Ambos</option>
+              <!-- opções por candidato — preenchidas por injetarCandidatosPirai() -->
+            </select>
+            <input id="lideranca-votos" type="number" min="0" value="0" placeholder="Votos" class="form-input">
+          </div>
+          <button id="add-lideranca" class="btn-add">+ Adicionar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sidebar-body -->
+</div><!-- /sidebar -->
+
+<!-- MODAL LIDERANÇA -->
+<div id="modal-lideranca" class="modal-overlay" onclick="if(event.target===this)fecharModalLideranca()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="fecharModalLideranca()">✕</button>
+    <div id="modal-lideranca-conteudo"></div>
+  </div>
+</div>
+
+<script>
+// ===== BOOT — deve ser definido ANTES do auth.js =====
+window.iniciarAplicacao = async function () {
+  // Mostra chip do usuário logado
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const chip = document.getElementById('user-chip')
+  if (chip && user.usuario) {
+    chip.textContent = user.usuario
+    chip.style.display = 'inline-block'
+  }
+
+  // Trava o sidebar fechado para lider_regiao
+  if (user.nivel === 'lider_regiao') {
+    const sb  = document.getElementById('sidebar')
+    const tog = document.getElementById('toggleSidebar')
+    if (sb)  sb.classList.add('sidebar-hidden')
+    if (tog) {
+      tog.classList.add('sidebar-closed-btn')
+      tog.style.display = 'none'   // esconde o botão — não pode reabrir
+    }
+    // Ajusta o mapa após esconder o sidebar
+    setTimeout(() => { if (window.map) window.map.invalidateSize() }, 50)
+  }
+
+  // Trava o seletor de distrito para lider_distrito_pirai
+  if (user.nivel === 'lider_distrito_pirai' && user.regiao) {
+    const sel = document.getElementById('select-distrito')
+    if (sel) {
+      sel.value = user.regiao           // pré-seleciona o distrito do usuário
+      sel.disabled = true               // impede mudança
+    }
+    // Expõe a variável global para mapa.js usar ao filtrar
+    window._distritoFixo = user.regiao
+  }
+
+  // Inicia o mapa (carrega GeoJSON + dados do backend)
+  if (typeof window.iniciarMapa === 'function') {
+    window.iniciarMapa()
+  }
+}
+</script>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="auth.js"></script>
+<script src="distritos.js"></script>
+<script src="mapa.js"></script>
+
+<script>
+
+// ===== TOGGLE SIDEBAR =====
+const sidebar = document.getElementById("sidebar")
+const toggle = document.getElementById("toggleSidebar")
+let sidebarOpen = true
+
+toggle.onclick = () => {
+  sidebarOpen = !sidebarOpen
+  sidebar.classList.toggle("sidebar-hidden", !sidebarOpen)
+  toggle.classList.toggle("sidebar-closed-btn", !sidebarOpen)
+  if (window.map) setTimeout(() => map.invalidateSize(), 320)
+}
+
+// ===== COLLAPSE SECTIONS =====
+document.querySelectorAll(".collapse-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const targetId = btn.dataset.target
+    const target = document.getElementById(targetId)
+    const isExpanded = btn.dataset.state === "expanded"
+    if (!target) return
+    if (isExpanded) {
+      target.style.display = "none"
+      btn.dataset.state = "collapsed"
+      btn.textContent = "+"
+    } else {
+      target.style.display = ""
+      btn.dataset.state = "expanded"
+      btn.textContent = "−"
+    }
+  })
+})
+
+// ===== MODAL =====
+function fecharModalLideranca() {
+  document.getElementById("modal-lideranca").style.display = "none"
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") fecharModalLideranca()
+})
+</script>
+
+<!-- MODAL EDITAR LIDERANÇA -->
+<div id="modal-editar" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9500;">
+  <div style="width:360px;max-width:calc(100vw - 32px);background:white;border-radius:22px;padding:28px 24px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 style="margin:0;font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:#0f172a;">Editar liderança</h3>
+      <button onclick="fecharModalEditar()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#64748b;">✕</button>
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Nome</label>
+      <input id="edit-nome" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Contato</label>
+      <input id="edit-contato" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Expectativa de votos</label>
+      <input id="edit-votos" type="number" min="0" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Campanha</label>
+      <select id="edit-vinculo" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;background:white;">
+        <option value="ambos">Ambos</option>
+        <!-- opções por candidato — preenchidas por injetarCandidatosPirai() -->
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button onclick="fecharModalEditar()" style="flex:1;padding:11px;border:1.5px solid #e2e8f0;border-radius:10px;background:white;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:#64748b;">Cancelar</button>
+      <button id="edit-salvar-btn" style="flex:1;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Salvar</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL ESCOLHER TIPO DE PIN -->
+<div id="modal-pin" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9500;">
+  <div style="width:360px;max-width:calc(100vw - 32px);background:white;border-radius:22px;padding:28px 24px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 style="margin:0;font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:#0f172a;">📍 Tipo do Pin</h3>
+      <button onclick="fecharModalPin()" style="border:none;background:#f1f5f9;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;color:#64748b;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+    <div id="pin-type-selector" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
+  </div>
+</div>
+
+</div><!-- /content-wrapper -->
+
+<!-- ===== SISTEMA DE PINS ===== -->
+<script>
+// ---------- estado ----------
+let pinsLayer    = null;
+let pinsVisiveis = true;
+var modoAdicionarPin = false;   // var → window.modoAdicionarPin acessível em mapa.js
+var novoPinLatLng = null;
+
+const PIN_TYPES = {
+  comite:              { label: '🏠 Comitê',            color: '#8e44ad' },
+  base_forte:          { label: '🔵 Base Forte',         color: '#0057ff' },
+  lideranca_regional:  { label: '🟢 Liderança',          color: '#00a650' },
+  expansao:            { label: '🟡 Expansão',           color: '#ffd500' },
+  agenda:              { label: '🔷 Agenda',             color: '#6ec6ff' },
+  risco:               { label: '🔴 Risco',              color: '#e53935' }
+};
+
+function corDoPin(tipo) {
+  return PIN_TYPES[tipo]?.color || '#555';
+}
+
+// ---------- inicializar layer (chamado pelo mapa quando ele estiver pronto) ----------
+function iniciarPinsLayer() {
+  if (!window.map) return;
+  if (pinsLayer) return; // já existe
+  pinsLayer = L.layerGroup().addTo(window.map);
+  carregarPins();
+}
+
+// ---------- carregar ----------
+async function carregarPins() {
+  if (!window.map || !pinsLayer) return;
+  pinsLayer.clearLayers();
+
+  let pins = [];
+  try {
+    const res = await apiFetch('/pins');
+    pins = await res.json();
+  } catch(err) {
+    console.warn('Pins: erro ao carregar', err);
+    return;
+  }
+
+  pins.forEach(p => {
+    let marker;
+
+    if (p.tipo === 'comite') {
+      marker = L.marker([p.lat, p.lng], {
+        icon: L.divIcon({
+          className: '',
+          html: '<div style="font-size:24px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));">🏠</div>',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        })
+      });
+    } else {
+      marker = L.circleMarker([p.lat, p.lng], {
+        radius: 9,
+        color: corDoPin(p.tipo),
+        fillColor: corDoPin(p.tipo),
+        fillOpacity: 0.88,
+        weight: 2
+      });
+    }
+
+    marker.bindPopup(`
+      <div style="width:230px;font-family:'DM Sans',Arial,sans-serif;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:${corDoPin(p.tipo)};flex-shrink:0;"></div>
+          <strong style="font-size:14px;color:#0f172a;">${PIN_TYPES[p.tipo]?.label || 'Pin'}</strong>
+        </div>
+        ${p.cidade ? `<div style="font-size:11px;color:#64748b;margin-bottom:8px;">📍 ${p.cidade}</div>` : ''}
+        <textarea
+          class="pin-note-input"
+          data-pin-id="${p.id}"
+          placeholder="Observações..."
+          style="width:100%;min-height:64px;padding:7px 9px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:12px;font-family:inherit;resize:vertical;outline:none;box-sizing:border-box;"
+        >${p.descricao || ''}</textarea>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button data-save-pin="${p.id}" style="flex:1;padding:6px;border:none;border-radius:7px;background:#1565c0;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Salvar</button>
+          <button data-delete-pin="${p.id}" style="flex:1;padding:6px;border:none;border-radius:7px;background:#dc2626;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Remover</button>
+        </div>
+      </div>
+    `);
+
+    pinsLayer.addLayer(marker);
+  });
+
+  if (pinsVisiveis) pinsLayer.addTo(window.map);
+}
+
+// ---------- listeners popup (salvar / remover) ----------
+document.addEventListener('click', async (e) => {
+  const saveBtn = e.target.closest('[data-save-pin]');
+  if (saveBtn) {
+    const pinId = saveBtn.dataset.savePin;
+    const textarea = document.querySelector(`.pin-note-input[data-pin-id="${pinId}"]`);
+    try {
+      await apiFetch(`/pins/${pinId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descricao: textarea?.value || '' })
+      });
+      await carregarPins();
+      saveBtn.textContent = '✓ Salvo';
+      setTimeout(() => saveBtn.textContent = 'Salvar', 1500);
+    } catch(err) { alert('Erro ao salvar'); }
+    return;
+  }
+
+  const deleteBtn = e.target.closest('[data-delete-pin]');
+  if (deleteBtn) {
+    if (!confirm('Remover este pin?')) return;
+    try {
+      await apiFetch(`/pins/${deleteBtn.dataset.deletePin}`, { method: 'DELETE' });
+      await carregarPins();
+    } catch(err) { alert('Erro ao remover'); }
+    return;
+  }
+});
+
+// ---------- sincronizar visualmente todos os botões de pins ----------
+window.syncBotoesPins =
+function syncBotoesPins() {
+  // Toggle visibilidade (overlay)
+  const ot = document.getElementById('togglePinsOverlay');
+  if (ot) {
+    ot.textContent = pinsVisiveis ? 'ON' : 'OFF';
+    ot.classList.toggle('ctrl-pin-ativo',   pinsVisiveis);
+    ot.classList.toggle('ctrl-pin-alerta', !pinsVisiveis);
+  }
+  // Botão adicionar pin (overlay)
+  const oa = document.getElementById('addPinOverlay');
+  if (oa) {
+    oa.textContent = modoAdicionarPin ? '✕' : '＋ Pin';
+    oa.classList.toggle('ctrl-pin-alerta', modoAdicionarPin);
+  }
+}
+
+// ---------- toggle visibilidade (agora controlado diretamente pelo overlay) ----------
+document.getElementById('togglePinsOverlay').addEventListener('click', () => {
+  pinsVisiveis = !pinsVisiveis;
+  if (pinsVisiveis) { if (pinsLayer) pinsLayer.addTo(window.map); }
+  else              { if (pinsLayer && window.map) window.map.removeLayer(pinsLayer); }
+  syncBotoesPins();
+});
+
+// ---------- modo adicionar (agora controlado diretamente pelo overlay) ----------
+document.getElementById('addPinOverlay').addEventListener('click', () => {
+  modoAdicionarPin = !modoAdicionarPin;
+  syncBotoesPins();
+});
+
+// ---------- modal tipo ----------
+window.abrirModalPin =
+function abrirModalPin() {
+  const container = document.getElementById('pin-type-selector');
+  container.innerHTML = '';
+
+  Object.entries(PIN_TYPES).forEach(([key, cfg]) => {
+    const btn = document.createElement('button');
+    btn.textContent = cfg.label;
+    Object.assign(btn.style, {
+      padding: '10px 14px', borderRadius: '999px',
+      border: `2px solid ${cfg.color}`, background: '#fff',
+      fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit',
+      fontSize: '13px', transition: 'all .18s'
+    });
+    btn.onmouseenter = () => { btn.style.background = cfg.color; btn.style.color = '#fff'; };
+    btn.onmouseleave = () => { btn.style.background = '#fff'; btn.style.color = '#000'; };
+    btn.onclick = async () => {
+      try {
+        await apiFetch('/pins', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo: key,
+            lat: novoPinLatLng.lat,
+            lng: novoPinLatLng.lng,
+            cidade: (window.novoPinCidade || '')
+          })
+        });
+        await carregarPins();
+        fecharModalPin();
+      } catch(err) {
+        console.error(err);
+        alert('Erro ao salvar pin');
+      }
+    };
+    container.appendChild(btn);
+  });
+
+  document.getElementById('modal-pin').style.display = 'flex';
+}
+
+function fecharModalPin() {
+  document.getElementById('modal-pin').style.display = 'none';
+  novoPinLatLng = null;
+}
+
+// ---------- aguarda o mapa ficar pronto ----------
+(function esperarMapa() {
+  if (window.map && window.map.getContainer) {
+    iniciarPinsLayer();
+  } else {
+    setTimeout(esperarMapa, 300);
+  }
+})();
+</script>
+
+</body>
+</html>
