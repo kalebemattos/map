@@ -2,35 +2,35 @@
  * Contém os dados de votos, deputados e regiões para o mapa.
  */
 
-/* ===== Dados de votos válidos (mantido) ===== */
+/* ===== Dados de eleitores por município ===== */
 const votosValidos = {
-  "Angra dos Reis": 134761, "Aperibé": 10084, "Araruama": 107917, "Areal": 10167,
-  "Armação dos Búzios": 35464, "Arraial do Cabo": 34499, "Barra do Piraí": 69082,
-  "Barra Mansa": 133042, "Belford Roxo": 344130, "Bom Jardim": 22315,
-  "Bom Jesus do Itabapoana": 28122, "Cabo Frio": 174007, "Cachoeiras de Macacu": 46313,
-  "Cambuci": 12203, "Campos dos Goytacazes": 366028, "Cantagalo": 15041, "Carapebus": 13432,
-  "Cardoso Moreira": 12395, "Carmo": 14078, "Comendador Levy Gasparian": 7965,
-  "Casimiro de Abreu": 35492, "Conceição de Macabu": 16514, "Cordeiro": 16583,
-  "Duas Barras": 10276, "Duque de Caxias": 622134, "Engenheiro Paulo de Frontin": 11053,
-  "Guapimirim": 44424, "Iguaba Grande": 29408, "Itaboraí": 175198, "Itaguaí": 99429,
-  "Italva": 11511, "Itaocara": 18879, "Itaperuna": 75239, "Itatiaia": 26315,
-  "Japeri": 75576, "Laje do Muriaé": 6998, "Macaé": 181733, "Macuco": 7017, "Magé": 189633,
-  "Mangaratiba": 45809, "Maricá": 180233, "Mendes": 14651, "Mesquita": 135377,
-  "Miguel Pereira": 24447, "Miracema": 20811, "Natividade": 12302, "Nilópolis": 128431,
-  "Niterói": 404349, "Nova Friburgo": 153188, "Nova Iguaçu": 609445, "Paracambi": 33397,
-  "Paraty": 34910, "Paraíba do Sul": 33925, "Paty do Alferes": 24044, "Petrópolis": 237426,
-  "Pinheiral": 18463, "Piraí": 23505, "Porciúncula": 13177, "Porto Real": 17684,
-  "Quatis": 10327, "Queimados": 102930, "Quissamã": 18985, "Resende": 97009,
-  "Rio Bonito": 45005, "Rio Claro": 14512, "Rio das Flores": 8749,
-  "Rio das Ostras": 103383, "Rio de Janeiro": 4897324, "Santa Maria Madalena": 8781,
-  "Santo Antônio de Pádua": 33536, "Sapucaia": 15669, "Saquarema": 89461,
-  "Seropédica": 60495, "Silva Jardim": 18365, "Sumidouro": 13982, "São Fidélis": 29928,
-  "São Francisco de Itabapoana": 39530, "São Gonçalo": 650974, "São José de Ubá": 7572,
-  "São José do Vale do Rio Preto": 16084, "São João da Barra": 42289,
-  "São João de Meriti": 336787, "São Pedro da Aldeia": 73320,
-  "São Sebastião do Alto": 7803, "Tanguá": 26290, "Teresópolis": 131390,
-  "Trajano de Moraes": 9209, "Três Rios": 61950, "Valença": 56512, "Varre-Sai": 8689,
-  "Vassouras": 28964, "Volta Redonda": 220852
+  "Angra dos Reis": 135158, "Aperibé": 10094, "Araruama": 108374, "Areal": 10178,
+  "Armação dos Búzios": 35602, "Arraial do Cabo": 34789, "Barra do Piraí": 69171,
+  "Barra Mansa": 133178, "Belford Roxo": 345113, "Bom Jardim": 22537,
+  "Bom Jesus do Itabapoana": 28295, "Cabo Frio": 174834, "Cachoeiras de Macacu": 46392,
+  "Cambuci": 12215, "Campos dos Goytacazes": 366937, "Cantagalo": 15110, "Carapebus": 13478,
+  "Cardoso Moreira": 12443, "Carmo": 14147, "Comendador Levy Gasparian": 8003,
+  "Casimiro de Abreu": 35584, "Conceição de Macabu": 16570, "Cordeiro": 16665,
+  "Duas Barras": 10292, "Duque de Caxias": 630585, "Engenheiro Paulo de Frontin": 11094,
+  "Guapimirim": 44553, "Iguaba Grande": 29703, "Itaboraí": 175754, "Itaguaí": 99617,
+  "Italva": 11558, "Itaocara": 18947, "Itaperuna": 75349, "Itatiaia": 26504,
+  "Japeri": 75994, "Laje do Muriaé": 6994, "Macaé": 182577, "Macuco": 7040, "Magé": 191229,
+  "Mangaratiba": 45956, "Maricá": 181725, "Mendes": 14763, "Mesquita": 135554,
+  "Miguel Pereira": 24501, "Miracema": 20913, "Natividade": 12346, "Nilópolis": 128580,
+  "Niterói": 405775, "Nova Friburgo": 153599, "Nova Iguaçu": 610716, "Paracambi": 33442,
+  "Paraty": 35062, "Paraíba do Sul": 33990, "Paty do Alferes": 24075, "Petrópolis": 237816,
+  "Pinheiral": 18491, "Piraí": 23523, "Porciúncula": 13243, "Porto Real": 17785,
+  "Quatis": 10378, "Queimados": 102905, "Quissamã": 19054, "Resende": 97304,
+  "Rio Bonito": 45072, "Rio Claro": 14585, "Rio das Flores": 8739,
+  "Rio das Ostras": 104012, "Rio de Janeiro": 4907206, "Santa Maria Madalena": 8802,
+  "Santo Antônio de Pádua": 33584, "Sapucaia": 15736, "Saquarema": 90183,
+  "Seropédica": 60556, "Silva Jardim": 18491, "Sumidouro": 14040, "São Fidélis": 30000,
+  "São Francisco de Itabapoana": 39516, "São Gonçalo": 652001, "São José de Ubá": 7578,
+  "São José do Vale do Rio Preto": 16185, "São João da Barra": 42566,
+  "São João de Meriti": 340695, "São Pedro da Aldeia": 73588,
+  "São Sebastião do Alto": 7785, "Tanguá": 26309, "Teresópolis": 131738,
+  "Trajano de Moraes": 9218, "Três Rios": 62047, "Valença": 56537, "Varre-Sai": 8701,
+  "Vassouras": 29109, "Volta Redonda": 221168
 };
 
 /* ===== Dados dos 5 deputados por cidade (mantido) ===== */

@@ -9,7 +9,7 @@ const deputadosFederaisByCity = {
       "votes": 6487
     },
     {
-      "name": "HELINHO SINDICATO",
+      "name": "HELINHO DO SINDICATO",
       "votes": 5901
     },
     {
@@ -35,7 +35,7 @@ const deputadosFederaisByCity = {
       "votes": 312
     },
     {
-      "name": "FELICIO LATERÇA",
+      "name": "FELÍCIO LATERÇA",
       "votes": 217
     },
     {
@@ -46,7 +46,7 @@ const deputadosFederaisByCity = {
   "ARARUAMA": [
     {
       "name": "CARLOS RUSSO",
-      "votes": 1252
+      "votes": 9833
     },
     {
       "name": "ANDRE MONICA",
@@ -57,7 +57,7 @@ const deputadosFederaisByCity = {
       "votes": 3195
     },
     {
-      "name": "CHRISTINO AUREO",
+      "name": "CHRISTINO ÁUREO",
       "votes": 2434
     },
     {
@@ -67,11 +67,11 @@ const deputadosFederaisByCity = {
   ],
   "AREAL": [
     {
-      "name": "MARCIO PONCIO",
+      "name": "MÁRCIO PONCIO",
       "votes": 957
     },
     {
-      "name": "MARCOS VINICIUS NESKAU",
+      "name": "MARCUS VINICIUS NESKAU",
       "votes": 792
     },
     {
@@ -89,7 +89,7 @@ const deputadosFederaisByCity = {
   ],
   "ARMAÇÃO DOS BÚZIOS": [
     {
-      "name": "GLAIDSON ACACIO",
+      "name": "GLAIDSON ACÁCIO",
       "votes": 2181
     },
     {
@@ -97,7 +97,7 @@ const deputadosFederaisByCity = {
       "votes": 1130
     },
     {
-      "name": "DR HENRIQUE PAES",
+      "name": "DR. HENRIQUE PAES",
       "votes": 789
     },
     {
@@ -111,68 +111,46 @@ const deputadosFederaisByCity = {
   ],
   "ARRAIAL DO CABO": [
     {
-      "name": "FELICIO LATERÇA",
+      "name": "FELÍCIO LATERÇA",
       "votes": 1657
     },
     {
-      "name": "AQUILES BARBA",
-      "votes": 1476
+      "name": "AQUILES BARRETO",
+      "votes": 1361
+    },
+    {
+      "name": "GLAIDSON ACÁCIO",
+      "votes": 1181
     },
     {
       "name": "ALTINEU CORTES",
       "votes": 1104
     },
     {
-      "name": "DANIELA DO WAGUINHO",
-      "votes": 487
-    },
-    {
-      "name": "SORAYA SANTOS",
-      "votes": 456
+      "name": "CHIQUINHO BRAZÃO",
+      "votes": 736
     }
   ],
   "BARRA DO PIRAÍ": [
     {
-      "name": "DELEGADO ANTONIO FURTADO",
-      "votes": 857
+      "name": "JORGE ESTEVES",
+      "votes": 7235
     },
     {
-      "name": "LUIZ ANTÔNIO",
-      "votes": 1073
+      "name": "PEDRINHO ADL",
+      "votes": 5691
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 179
+      "name": "CRISTIANO ALMEIDA",
+      "votes": 4307
     },
     {
-      "name": "LUIZ LIMA",
-      "votes": 107
+      "name": "KATIA MIKI",
+      "votes": 4210
     },
     {
-      "name": "DANIELA DO WAGUINHO",
-      "votes": 184
-    }
-  ],
-  "BARRA MANSA": [
-    {
-      "name": "DELEGADO ANTONIO FURTADO",
-      "votes": 6626
-    },
-    {
-      "name": "MARCELO CABELEIREIRO",
-      "votes": 6767
-    },
-    {
-      "name": "LUIZ ANTÔNIO CORRÊA",
-      "votes": 1821
-    },
-    {
-      "name": "GENERAL PAZUELLO",
-      "votes": 1459
-    },
-    {
-      "name": "ADRESON MANSUR",
-      "votes": 3824
+      "name": "CEZINHA DO MERCADO",
+      "votes": 2985
     }
   ],
   "BELFORD ROXO": [
@@ -181,284 +159,328 @@ const deputadosFederaisByCity = {
       "votes": 114345
     },
     {
-      "name": "CANELA",
-      "votes": 114345
+      "name": "SULA DO CARMO",
+      "votes": 8453
     },
     {
-      "name": "LUCIANO VIEIRA",
-      "votes": 942
+      "name": "ROSANGELA GOMES",
+      "votes": 5755
     },
     {
-      "name": "MARCIO CANELLA",
-      "votes": 8345
+      "name": "DR FLÁVIO",
+      "votes": 4320
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 2944
+      "name": "SORAYA SANTOS",
+      "votes": 3687
+    }
+  ],
+  "BOM JARDIM": [
+    {
+      "name": "ALTINEU CORTES",
+      "votes": 2286
+    },
+    {
+      "name": "GABRIEL GARCIA",
+      "votes": 847
+    },
+    {
+      "name": "LUIZ ANTÔNIO",
+      "votes": 772
+    },
+    {
+      "name": "GLAUBER",
+      "votes": 657
+    },
+    {
+      "name": "LOURIVAL GOMES",
+      "votes": 640
+    }
+  ],
+  "BOM JESUS DO ITABAPOANA": [
+    {
+      "name": "MURILLO GOUVEA",
+      "votes": 2604
+    },
+    {
+      "name": "SÓSTENES CAVALCANTE",
+      "votes": 1408
+    },
+    {
+      "name": "JORGE ESTEVES",
+      "votes": 1174
+    },
+    {
+      "name": "CHRIS TONIETTO",
+      "votes": 1121
+    },
+    {
+      "name": "CHICO D ANGELO",
+      "votes": 731
     }
   ],
   "CABO FRIO": [
     {
-      "name": "DR HENRIQUE PAES",
-      "votes": 883
+      "name": "SORAYA SANTOS",
+      "votes": 7603
     },
     {
-      "name": "MARQUINHOS MENDES",
-      "votes": 10959
+      "name": "GLAIDSON ACÁCIO",
+      "votes": 6883
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 1686
+      "name": "JEFFERSON VIDAL",
+      "votes": 6586
     },
     {
-      "name": "FELICIO LATERÇA",
-      "votes": 691
+      "name": "AQUILES BARRETO",
+      "votes": 6525
     },
     {
-      "name": "CHICO MACHADO",
-      "votes": 3591
+      "name": "CAROL MIDORI",
+      "votes": 4203
     }
   ],
   "CACHOEIRAS DE MACACU": [
     {
-      "name": "MARCOS ABRAHAO",
-      "votes": 235
+      "name": "MARCIO CICA",
+      "votes": 3680
+    },
+    {
+      "name": "CRISTOVÃO",
+      "votes": 2523
+    },
+    {
+      "name": "SORAYA SANTOS",
+      "votes": 1808
     },
     {
       "name": "ALTINEU CORTES",
       "votes": 1420
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 85
-    },
-    {
-      "name": "ALEXANDRE PANTRERA",
-      "votes": 1222
-    },
-    {
-      "name": "SORAYA SANTOS",
-      "votes": 1808
+      "name": "JUNINHO DO PNEU",
+      "votes": 1136
     }
   ],
   "CAMBUCI": [
     {
-      "name": "MURILLO GOUVEA",
-      "votes": 348
+      "name": "AUREO RIBEIRO",
+      "votes": 939
     },
     {
       "name": "HUGO LEAL",
       "votes": 912
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 939
+      "name": "FELÍCIO LATERÇA",
+      "votes": 666
     },
     {
-      "name": "LUIZ LIMA",
-      "votes": 90
+      "name": "LUCIANO VIEIRA",
+      "votes": 515
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 25
-    }
-  ],
-  "CAMPOS DOS GOYTACAZES": [
-    {
-      "name": "CAIO VIANA",
-      "votes": 27706
-    },
-    {
-      "name": "WLADIMIR GAROTINHO",
-      "votes": 34221
-    },
-    {
-      "name": "FELIPPE POUPEL",
-      "votes": 21255
-    },
-    {
-      "name": "MARCÃO GOMES",
-      "votes": 13543
-    },
-    {
-      "name": "HUGO LEAL",
-      "votes": 7561
+      "name": "MURILLO GOUVEA",
+      "votes": 348
     }
   ],
   "CANTAGALO": [
     {
-      "name": "GLAUBER BRAGA",
-      "votes": 530
+      "name": "ALTINEU CORTES",
+      "votes": 925
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 497
-    },
-    {
-      "name": "VINICIUS FARAH",
-      "votes": 51
-    },
-    {
-      "name": "HUGO LEAL",
-      "votes": 201
+      "name": "CORONEL ROBADEY",
+      "votes": 725
     },
     {
       "name": "LUIZ LIMA",
       "votes": 600
+    },
+    {
+      "name": "ROGÉRIO CABRAL",
+      "votes": 588
+    },
+    {
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 551
     }
   ],
   "CARAPEBUS": [
-    {
-      "name": "CHICO MACHADO",
-      "votes": 2216
-    },
     {
       "name": "MAX",
       "votes": 1512
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 3
+      "name": "DR FLÁVIO ANTUNES",
+      "votes": 885
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 177
+      "name": "SORAYA SANTOS",
+      "votes": 801
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 154
+      "name": "CHARLLES BATISTA",
+      "votes": 378
+    },
+    {
+      "name": "RIVERTON MUSSI",
+      "votes": 338
     }
   ],
   "CARDOSO MOREIRA": [
     {
-      "name": "MURILLO GOUVEA",
-      "votes": 181
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 1754
+    },
+    {
+      "name": "MAX",
+      "votes": 1664
+    },
+    {
+      "name": "DANI CUNHA",
+      "votes": 855
     },
     {
       "name": "AUREO RIBEIRO",
       "votes": 709
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 11
-    },
-    {
-      "name": "CHRISTINO AUREO",
-      "votes": 52
-    },
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 13
+      "name": "CAIO VIANNA",
+      "votes": 559
     }
   ],
   "CARMO": [
     {
-      "name": "HUGO LEAL",
-      "votes": 157
+      "name": "DOUTOR DANILO",
+      "votes": 2217
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 40
+      "name": "ROSANE FELIX",
+      "votes": 733
     },
     {
-      "name": "GLAUBER BRAGA",
-      "votes": 218
+      "name": "LINDBERGH FARIAS",
+      "votes": 707
     },
     {
-      "name": "VINICIUS FARAH",
-      "votes": 8
+      "name": "DOUTOR LUIZINHO",
+      "votes": 599
     },
     {
-      "name": "SORAYA SANTOS",
-      "votes": 75
+      "name": "LUIZ LIMA",
+      "votes": 399
     }
   ],
   "CASIMIRO DE ABREU": [
     {
-      "name": "CHICO MACHADO",
-      "votes": 3816
+      "name": "SORAYA SANTOS",
+      "votes": 1637
     },
     {
-      "name": "MARCOS ABRAHAO",
-      "votes": 449
+      "name": "SÓSTENES CAVALCANTE",
+      "votes": 914
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 632
+      "name": "OTONI DE PAULA",
+      "votes": 837
     },
     {
-      "name": "DANIELA DO WAGUINHO",
-      "votes": 254
+      "name": "CARLOS JORDY",
+      "votes": 829
     },
+    {
+      "name": "JEFFERSON VIDAL",
+      "votes": 764
+    }
+  ],
+  "COMENDADOR LEVY GASPARIAN": [
     {
       "name": "MAX",
-      "votes": 638
+      "votes": 1622
+    },
+    {
+      "name": "MÁRCIO PONCIO",
+      "votes": 953
+    },
+    {
+      "name": "VINICIUS FARAH",
+      "votes": 593
+    },
+    {
+      "name": "HUGO LEAL",
+      "votes": 447
+    },
+    {
+      "name": "MARCELO QUEIROZ",
+      "votes": 281
     }
   ],
   "CONCEIÇÃO DE MACABU": [
     {
-      "name": "CHICO MACHADO",
-      "votes": 2145
+      "name": "DR FLÁVIO ANTUNES",
+      "votes": 2628
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 10
-    },
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 465
+      "name": "AUREO RIBEIRO",
+      "votes": 606
     },
     {
       "name": "MAX",
       "votes": 589
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 606
+      "name": "SORAYA SANTOS",
+      "votes": 500
+    },
+    {
+      "name": "ALTINEU CORTES",
+      "votes": 465
     }
   ],
   "CORDEIRO": [
     {
-      "name": "HUGO LEAL",
-      "votes": 271
+      "name": "ALTINEU CORTES",
+      "votes": 1248
     },
     {
-      "name": "GLAUBER BRAGA",
+      "name": "GLAUBER",
       "votes": 656
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 239
+      "name": "JULIO LOPES",
+      "votes": 576
     },
     {
-      "name": "VINICIUS FARAH",
-      "votes": 230
+      "name": "JUNINHO DO PNEU",
+      "votes": 560
     },
     {
-      "name": "LUIZ LIMA",
-      "votes": 442
+      "name": "CORONEL ROBADEY",
+      "votes": 472
     }
   ],
   "DUAS BARRAS": [
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 11
+      "name": "DOUTOR DANILO",
+      "votes": 1532
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 17
+      "name": "LOURIVAL GOMES",
+      "votes": 931
     },
     {
-      "name": "VINICIUS FARAH",
-      "votes": 82
+      "name": "GUTEMBERG REIS",
+      "votes": 532
     },
     {
-      "name": "GLAUBER BRAGA",
-      "votes": 267
+      "name": "ALTINEU CORTES",
+      "votes": 524
     },
     {
-      "name": "OTONI DE PAULA",
-      "votes": 98
+      "name": "JULIO LOPES",
+      "votes": 420
     }
   ],
   "DUQUE DE CAXIAS": [
@@ -475,78 +497,78 @@ const deputadosFederaisByCity = {
       "votes": 37319
     },
     {
-      "name": "WASHINGTON QUAQUA",
-      "votes": 21455
+      "name": "ROSANGELA GOMES",
+      "votes": 11721
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 2779
+      "name": "DICA",
+      "votes": 11387
     }
   ],
   "ENGENHEIRO PAULO DE FRONTIN": [
     {
-      "name": "VINICIUS FARAH",
-      "votes": 55
+      "name": "LEO RODRIGUES",
+      "votes": 1432
     },
     {
-      "name": "LUIZ ANTONIO",
-      "votes": 152
+      "name": "DR FLÁVIO",
+      "votes": 956
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 109
+      "name": "CHIQUINHO BRAZÃO",
+      "votes": 579
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 152
+      "name": "DR. HENRIQUE PAES",
+      "votes": 333
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 134
+      "name": "RICARDO ABRÃO",
+      "votes": 259
     }
   ],
   "GUAPIMIRIM": [
     {
-      "name": "DR LUIZINHO",
-      "votes": 745
+      "name": "JUNINHO DO PNEU",
+      "votes": 2546
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 59
+      "name": "PAULA TRINGUELÊ",
+      "votes": 2301
     },
     {
-      "name": "MARINA DO BRASIL",
-      "votes": 2844
+      "name": "JOAO MAURICIO",
+      "votes": 1332
     },
     {
-      "name": "MAX",
-      "votes": 405
+      "name": "ZÉ AUGUSTO NALIN",
+      "votes": 938
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 847
+      "name": "DANI CUNHA",
+      "votes": 905
     }
   ],
   "IGUABA GRANDE": [
     {
-      "name": "CARLOS RUSSO",
-      "votes": 225
+      "name": "GUTEMBERG REIS",
+      "votes": 2556
     },
     {
-      "name": "DANIELA DO WAGUINHO",
-      "votes": 537
-    },
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 307
-    },
-    {
-      "name": "ANDRE MONICA",
-      "votes": 139
+      "name": "JULIO LOPES",
+      "votes": 782
     },
     {
       "name": "OTONI DE PAULA",
       "votes": 704
+    },
+    {
+      "name": "CARLOS RUSSO",
+      "votes": 581
+    },
+    {
+      "name": "AQUILES BARRETO",
+      "votes": 557
     }
   ],
   "ITABORAÍ": [
@@ -559,16 +581,16 @@ const deputadosFederaisByCity = {
       "votes": 8596
     },
     {
-      "name": "HELIO LOPES",
-      "votes": 1179
+      "name": "WASHINGTON QUAQUÁ",
+      "votes": 8455
     },
     {
       "name": "OTONI DE PAULA",
       "votes": 5022
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 569
+      "name": "DR SADINOEL",
+      "votes": 3669
     }
   ],
   "ITAGUAÍ": [
@@ -577,64 +599,64 @@ const deputadosFederaisByCity = {
       "votes": 6250
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 580
-    },
-    {
-      "name": "OTONI DE PAULA",
-      "votes": 1338
-    },
-    {
-      "name": "SORAYA SANTOS",
-      "votes": 822
-    },
-    {
       "name": "ALTINEU CORTES",
       "votes": 3243
+    },
+    {
+      "name": "DR ANTÔNIO ANTUNES",
+      "votes": 3233
+    },
+    {
+      "name": "MARCELO QUEIROZ",
+      "votes": 2562
+    },
+    {
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 1863
     }
   ],
   "ITALVA": [
+    {
+      "name": "DANI CUNHA",
+      "votes": 1153
+    },
+    {
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 1050
+    },
     {
       "name": "MURILLO GOUVEA",
       "votes": 984
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 18
+      "name": "CHRISTINO ÁUREO",
+      "votes": 668
     },
     {
       "name": "AUREO RIBEIRO",
       "votes": 322
-    },
-    {
-      "name": "CHRISTINO AUREO",
-      "votes": 668
-    },
-    {
-      "name": "LUIZ LIMA",
-      "votes": 71
     }
   ],
   "ITAOCARA": [
     {
-      "name": "HUGO LEAL",
-      "votes": 260
+      "name": "MURILLO GOUVEA",
+      "votes": 1053
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 454
+      "name": "RONILDO SESSENTA",
+      "votes": 805
     },
     {
-      "name": "LUIZ LIMA",
-      "votes": 99
+      "name": "CHRISTINO ÁUREO",
+      "votes": 751
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 434
+      "name": "FELÍCIO LATERÇA",
+      "votes": 664
     },
     {
-      "name": "OTONI DE PAULA",
-      "votes": 192
+      "name": "MARCELO QUEIROZ",
+      "votes": 650
     }
   ],
   "ITAPERUNA": [
@@ -643,284 +665,284 @@ const deputadosFederaisByCity = {
       "votes": 21787
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 315
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 1610
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 280
+      "name": "GENERAL PAZUELLO",
+      "votes": 1527
     },
     {
-      "name": "LUIZ LIMA",
-      "votes": 281
+      "name": "FERNANDO PAULADA",
+      "votes": 1312
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 689
+      "name": "OTONI DE PAULA",
+      "votes": 1165
     }
   ],
   "ITATIAIA": [
     {
-      "name": "DELEGADO ANTONIO FURTADO",
-      "votes": 320
+      "name": "RENAN MARASSI",
+      "votes": 1485
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 130
+      "name": "SORAYA SANTOS",
+      "votes": 1066
     },
     {
-      "name": "OTONI DE PAULA",
-      "votes": 354
+      "name": "FELÍCIO LATERÇA",
+      "votes": 813
     },
     {
-      "name": "LUIZ LIMA",
-      "votes": 277
+      "name": "RICARDO ABRÃO",
+      "votes": 764
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 434
+      "name": "MAX",
+      "votes": 712
     }
   ],
   "JAPERI": [
     {
-      "name": "DR LUIZINHO",
-      "votes": 807
+      "name": "DR FLÁVIO",
+      "votes": 3916
     },
     {
-      "name": "DANIELA DO WAGUINHO",
-      "votes": 1253
+      "name": "DANI CUNHA",
+      "votes": 2728
     },
     {
-      "name": "MAX",
-      "votes": 1572
+      "name": "DR. HENRIQUE PAES",
+      "votes": 2695
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 366
+      "name": "JUNINHO DO PNEU",
+      "votes": 1987
     },
     {
-      "name": "LUCIANO VIEIRA",
-      "votes": 224
+      "name": "CARLOS ONTIVEROS",
+      "votes": 1617
     }
   ],
   "LAJE DO MURIAÉ": [
+    {
+      "name": "DANIEL SORANZ",
+      "votes": 930
+    },
     {
       "name": "MURILLO GOUVEA",
       "votes": 809
     },
     {
+      "name": "MAX",
+      "votes": 263
+    },
+    {
+      "name": "ZÉ DA TUIA",
+      "votes": 212
+    },
+    {
       "name": "AUREO RIBEIRO",
       "votes": 201
-    },
-    {
-      "name": "HUGO LEAL",
-      "votes": 81
-    },
-    {
-      "name": "LUIZ LIMA",
-      "votes": 32
-    },
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 31
     }
   ],
   "MACAÉ": [
     {
-      "name": "CHICO MACHADO",
-      "votes": 15322
+      "name": "DR FLÁVIO ANTUNES",
+      "votes": 16574
+    },
+    {
+      "name": "ROBSON OLIVEIRA",
+      "votes": 11348
+    },
+    {
+      "name": "RIVERTON MUSSI",
+      "votes": 8083
     },
     {
       "name": "MAX",
       "votes": 6211
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 120
-    },
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 1860
-    },
-    {
-      "name": "FELICIO LATERÇA",
-      "votes": 1574
+      "name": "DR AUGUSTO CESAR",
+      "votes": 3340
     }
   ],
   "MACUCO": [
     {
-      "name": "HUGO LEAL",
-      "votes": 3
-    },
-    {
-      "name": "AUREO RIBEIRO",
-      "votes": 194
-    },
-    {
-      "name": "VINICIUS FARAH",
-      "votes": 195
-    },
-    {
-      "name": "GLAUBER BRAGA",
-      "votes": 191
+      "name": "ALTINEU CORTES",
+      "votes": 988
     },
     {
       "name": "LUIZ LIMA",
       "votes": 395
+    },
+    {
+      "name": "LUIZ ANTÔNIO",
+      "votes": 330
+    },
+    {
+      "name": "FELÍCIO LATERÇA",
+      "votes": 217
+    },
+    {
+      "name": "CHRIS TONIETTO",
+      "votes": 206
     }
   ],
   "MAGÉ": [
     {
-      "name": "RICARDO DA KAROL",
-      "votes": 24555
-    },
-    {
-      "name": "DR LUIZINHO",
+      "name": "DOUTOR LUIZINHO",
       "votes": 19200
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 152
+      "name": "BONECO",
+      "votes": 8116
     },
     {
-      "name": "MAX",
-      "votes": 77
+      "name": "ZÉ AUGUSTO NALIN",
+      "votes": 6669
     },
     {
-      "name": "SORAYA SANTOS",
-      "votes": 2341
+      "name": "ROGERIO DO VALLE",
+      "votes": 5176
+    },
+    {
+      "name": "GUTEMBERG REIS",
+      "votes": 4872
     }
   ],
   "MANGARATIBA": [
     {
-      "name": "LUIZ ANTONIO",
+      "name": "DOUTOR LUIZINHO",
       "votes": 2065
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 2065
+      "name": "VENISSIUS",
+      "votes": 952
+    },
+    {
+      "name": "MAX",
+      "votes": 799
     },
     {
       "name": "ALTINEU CORTES",
       "votes": 785
     },
     {
-      "name": "OTONI DE PAULA",
-      "votes": 540
-    },
-    {
-      "name": "MAX",
-      "votes": 799
+      "name": "JUNINHO DO PNEU",
+      "votes": 763
     }
   ],
   "MARICÁ": [
     {
-      "name": "WASHINGTON QUAQUA",
-      "votes": 32455
+      "name": "WASHINGTON QUAQUÁ",
+      "votes": 29766
+    },
+    {
+      "name": "RICARDINHO NETUNO",
+      "votes": 6768
+    },
+    {
+      "name": "GENERAL PAZUELLO",
+      "votes": 2425
+    },
+    {
+      "name": "GLAUBER POUBEL",
+      "votes": 2379
     },
     {
       "name": "ALTINEU CORTES",
       "votes": 2093
-    },
-    {
-      "name": "TALIRIA PETRONE",
-      "votes": 1696
-    },
-    {
-      "name": "FABIANO HORTA",
-      "votes": 6311
-    },
-    {
-      "name": "OTONI DE PAULA",
-      "votes": 1775
     }
   ],
   "MENDES": [
-    {
-      "name": "VINICIUS FARAH",
-      "votes": 356
-    },
-    {
-      "name": "LUIZ ANTONIO",
-      "votes": 201
-    },
     {
       "name": "AUREO RIBEIRO",
       "votes": 2433
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 50
+      "name": "DR FLÁVIO",
+      "votes": 896
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 201
+      "name": "DR. HENRIQUE PAES",
+      "votes": 398
+    },
+    {
+      "name": "ROSANGELA GOMES",
+      "votes": 358
+    },
+    {
+      "name": "VINICIUS FARAH",
+      "votes": 356
     }
   ],
   "MESQUITA": [
     {
-      "name": "DR LUIZINHO",
+      "name": "ROBERTO EMIDIO",
+      "votes": 5733
+    },
+    {
+      "name": "DOUTOR LUIZINHO",
       "votes": 4899
     },
     {
-      "name": "DANIELA DO WAGUINHO",
-      "votes": 3102
+      "name": "VINNY É NÓS",
+      "votes": 3998
     },
     {
-      "name": "MAX",
-      "votes": 322
+      "name": "LEONARDO ANDRADE",
+      "votes": 3964
     },
     {
-      "name": "LUCIANO VIEIRA",
-      "votes": 305
-    },
-    {
-      "name": "OTONI DE PAULA",
-      "votes": 1724
+      "name": "ZÉ CHALEIRA",
+      "votes": 3758
     }
   ],
   "MIGUEL PEREIRA": [
     {
-      "name": "VINICIUS FARAH",
-      "votes": 130
-    },
-    {
-      "name": "AUREO RIBEIRO",
-      "votes": 98
-    },
-    {
-      "name": "DR LUIZINHO",
+      "name": "DOUTOR LUIZINHO",
       "votes": 1100
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 352
+      "name": "JUNINHO DO PNEU",
+      "votes": 556
     },
     {
-      "name": "OTONI DE PAULA",
-      "votes": 352
+      "name": "MARCELO QUEIROZ",
+      "votes": 524
+    },
+    {
+      "name": "PEDRO PAULO",
+      "votes": 503
+    },
+    {
+      "name": "MAX",
+      "votes": 494
     }
   ],
   "MIRACEMA": [
     {
-      "name": "HUGO LEAL",
-      "votes": 647
-    },
-    {
-      "name": "MURILLO GOUVEA",
-      "votes": 902
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 1187
     },
     {
       "name": "AUREO RIBEIRO",
       "votes": 1000
     },
     {
-      "name": "LUIZ LIMA",
-      "votes": 126
+      "name": "MURILLO GOUVEA",
+      "votes": 902
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 515
+      "name": "RICARDO ABRÃO",
+      "votes": 652
+    },
+    {
+      "name": "HUGO LEAL",
+      "votes": 647
     }
   ],
   "NATIVIDADE": [
@@ -929,130 +951,152 @@ const deputadosFederaisByCity = {
       "votes": 1716
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 127
+      "name": "JUNINHO DO PNEU",
+      "votes": 811
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 28
+      "name": "CHIQUINHO BRAZÃO",
+      "votes": 376
     },
     {
-      "name": "LUIZ LIMA",
-      "votes": 28
+      "name": "WALDECK CARNEIRO",
+      "votes": 374
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 43
+      "name": "CHRIS TONIETTO",
+      "votes": 286
     }
   ],
   "NILÓPOLIS": [
     {
-      "name": "RICARDO ABRAHÃO",
-      "votes": 38
+      "name": "RICARDO ABRÃO",
+      "votes": 20511
     },
     {
-      "name": "DR LUIZINHO",
+      "name": "DOUTOR LUIZINHO",
       "votes": 7850
     },
     {
-      "name": "DANIELA DO WAGUINHO",
-      "votes": 555
+      "name": "CHARLLES BATISTA",
+      "votes": 1914
     },
     {
-      "name": "MAX",
-      "votes": 388
+      "name": "GENERAL PAZUELLO",
+      "votes": 1674
     },
     {
-      "name": "OTONI DE PAULA",
-      "votes": 1617
+      "name": "TARCÍSIO MOTTA",
+      "votes": 1647
     }
   ],
   "NITERÓI": [
+    {
+      "name": "CARLOS JORDY",
+      "votes": 22508
+    },
     {
       "name": "TALIRIA PETRONE",
       "votes": 22054
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 6370
+      "name": "RENATO CARIELLO",
+      "votes": 12339
     },
     {
-      "name": "CARLOS JORDY",
-      "votes": 15144
+      "name": "WALDECK CARNEIRO",
+      "votes": 10205
     },
     {
-      "name": "CHICO ALENCAR",
-      "votes": 6952
-    },
-    {
-      "name": "OTONI DE PAULA",
-      "votes": 2662
+      "name": "GENERAL PAZUELLO",
+      "votes": 9349
     }
   ],
   "NOVA FRIBURGO": [
-    {
-      "name": "GLAUBER BRAGA",
-      "votes": 9939
-    },
-    {
-      "name": "HUGO LEAL",
-      "votes": 511
-    },
-    {
-      "name": "AUREO RIBEIRO",
-      "votes": 159
-    },
     {
       "name": "LUIZ LIMA",
       "votes": 10993
     },
     {
-      "name": "VINICIUS FARAH",
-      "votes": 239
+      "name": "GLAUBER",
+      "votes": 9939
+    },
+    {
+      "name": "ROGÉRIO CABRAL",
+      "votes": 9634
+    },
+    {
+      "name": "MAIARA FELÍCIO",
+      "votes": 9061
+    },
+    {
+      "name": "SORAYA SANTOS",
+      "votes": 2778
     }
   ],
   "NOVA IGUAÇU": [
     {
-      "name": "DR LUIZINHO",
+      "name": "DOUTOR LUIZINHO",
       "votes": 61265
+    },
+    {
+      "name": "JUNINHO DO PNEU",
+      "votes": 37151
+    },
+    {
+      "name": "LINDBERGH FARIAS",
+      "votes": 25339
+    },
+    {
+      "name": "CLÉBIO LOPES JACARÉ",
+      "votes": 15322
     },
     {
       "name": "DANIELA DO WAGUINHO",
       "votes": 13574
-    },
-    {
-      "name": "MAX",
-      "votes": 4741
-    },
-    {
-      "name": "LUCIANO VIEIRA",
-      "votes": 1339
-    },
-    {
-      "name": "OTONI DE PAULA",
-      "votes": 11612
     }
   ],
   "PARACAMBI": [
     {
-      "name": "DR LUIZINHO",
-      "votes": 399
+      "name": "DR FLÁVIO",
+      "votes": 9050
     },
     {
-      "name": "DANIELA DO WAGUINHO",
-      "votes": 162
+      "name": "JULIO GONÇALVES",
+      "votes": 1223
     },
     {
-      "name": "MAX",
-      "votes": 66
+      "name": "AUREO RIBEIRO",
+      "votes": 1082
     },
     {
-      "name": "LUCIANO VIEIRA",
-      "votes": 274
+      "name": "LINDBERGH FARIAS",
+      "votes": 659
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 5
+      "name": "DR. HENRIQUE PAES",
+      "votes": 503
+    }
+  ],
+  "PARATY": [
+    {
+      "name": "ZEZÉ PORTO",
+      "votes": 4525
+    },
+    {
+      "name": "DOUTOR LUIZINHO",
+      "votes": 1114
+    },
+    {
+      "name": "DRA. MARTHA CARDOSO",
+      "votes": 960
+    },
+    {
+      "name": "VENISSIUS",
+      "votes": 906
+    },
+    {
+      "name": "VINICIUS FARAH",
+      "votes": 838
     }
   ],
   "PARAÍBA DO SUL": [
@@ -1061,196 +1105,174 @@ const deputadosFederaisByCity = {
       "votes": 4328
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 110
+      "name": "MÁRCIO PONCIO",
+      "votes": 3379
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 148
+      "name": "MARCELO QUEIROZ",
+      "votes": 1156
     },
     {
-      "name": "LUIZ ANTONIO",
-      "votes": 433
+      "name": "RICARDO ABRÃO",
+      "votes": 1004
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 433
-    }
-  ],
-  "PARATY": [
-    {
-      "name": "VENISSIUS",
-      "votes": 906
-    },
-    {
-      "name": "SORAYA SANTOS",
-      "votes": 365
-    },
-    {
-      "name": "OTONI DE PAULA",
-      "votes": 587
-    },
-    {
-      "name": "DR LUIZINHO",
-      "votes": 1114
-    },
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 243
+      "name": "JUNIOR CRUZ",
+      "votes": 824
     }
   ],
   "PATY DO ALFERES": [
-    {
-      "name": "VINICIUS FARAH",
-      "votes": 92
-    },
     {
       "name": "AUREO RIBEIRO",
       "votes": 1186
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 342
+      "name": "RACHID",
+      "votes": 1040
     },
     {
-      "name": "DR LUIZINHO",
+      "name": "MARCELO QUEIROZ",
+      "votes": 1002
+    },
+    {
+      "name": "DOUTOR LUIZINHO",
       "votes": 967
     },
     {
-      "name": "LUIZ ANTONIO",
-      "votes": 967
+      "name": "LUCIANO VIEIRA",
+      "votes": 819
     }
   ],
   "PETRÓPOLIS": [
+    {
+      "name": "EDUARDO DO BLOG",
+      "votes": 16777
+    },
+    {
+      "name": "PROFESSOR LEANDRO AZEVEDO",
+      "votes": 15676
+    },
     {
       "name": "HUGO LEAL",
       "votes": 9404
     },
     {
-      "name": "VINICIUS FARAH",
-      "votes": 3489
+      "name": "MARCUS VINICIUS NESKAU",
+      "votes": 5318
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 946
-    },
-    {
-      "name": "LUIZ LIMA",
-      "votes": 939
-    },
-    {
-      "name": "GLAUBER BRAGA",
-      "votes": 1251
+      "name": "GENERAL PAZUELLO",
+      "votes": 4427
     }
   ],
   "PINHEIRAL": [
     {
-      "name": "DELEGADO ANTONIO FURTADO",
+      "name": "DELEGADO ANTÔNIO FURTADO",
       "votes": 2388
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 8
+      "name": "ARIMATHÉA",
+      "votes": 966
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 293
+      "name": "LUIZ ANTÔNIO",
+      "votes": 963
     },
     {
-      "name": "LUIZ ANTONIO",
-      "votes": 293
+      "name": "DELEY",
+      "votes": 573
     },
     {
-      "name": "OTONI DE PAULA",
-      "votes": 148
+      "name": "LINDBERGH FARIAS",
+      "votes": 440
     }
   ],
   "PIRAÍ": [
     {
-      "name": "LUIZ ANTONIO",
+      "name": "DOUTOR LUIZINHO",
       "votes": 1407
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 179
+      "name": "LUIZ ANTÔNIO",
+      "votes": 1385
     },
     {
-      "name": "DELEGADO ANTONIO FURTADO",
+      "name": "CHRISTINO ÁUREO",
+      "votes": 1049
+    },
+    {
+      "name": "DR FLÁVIO",
+      "votes": 966
+    },
+    {
+      "name": "DELEGADO ANTÔNIO FURTADO",
       "votes": 680
-    },
-    {
-      "name": "DR LUIZINHO",
-      "votes": 1407
-    },
-    {
-      "name": "VINICIUS FARAH",
-      "votes": 20
     }
   ],
   "PORCIÚNCULA": [
-    {
-      "name": "MURILLO GOUVEA",
-      "votes": 813
-    },
-    {
-      "name": "HUGO LEAL",
-      "votes": 162
-    },
     {
       "name": "AUREO RIBEIRO",
       "votes": 1479
     },
     {
-      "name": "LUIZ LIMA",
-      "votes": 21
+      "name": "MURILLO GOUVEA",
+      "votes": 813
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 45
+      "name": "DANI MAIA",
+      "votes": 812
+    },
+    {
+      "name": "ZÉ MARIA",
+      "votes": 579
+    },
+    {
+      "name": "HELIO FERNANDO BARBOSA LOPES",
+      "votes": 512
     }
   ],
   "PORTO REAL": [
     {
-      "name": "DELEGADO ANTONIO FURTADO",
-      "votes": 445
+      "name": "RENAN MARASSI",
+      "votes": 1103
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 251
+      "name": "GUTEMBERG REIS",
+      "votes": 779
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 37
+      "name": "JORGE ESTEVES",
+      "votes": 589
     },
     {
-      "name": "OTONI DE PAULA",
-      "votes": 318
+      "name": "CHRISTINO ÁUREO",
+      "votes": 506
     },
     {
-      "name": "LUIZ ANTONIO",
-      "votes": 37
+      "name": "JUNINHO DO PNEU",
+      "votes": 449
     }
   ],
   "QUATIS": [
     {
-      "name": "DELEGADO ANTONIO FURTADO",
+      "name": "DELEGADO ANTÔNIO FURTADO",
       "votes": 817
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 197
+      "name": "BALTAZAR",
+      "votes": 635
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 33
+      "name": "FELÍCIO LATERÇA",
+      "votes": 360
     },
     {
-      "name": "LUIZ ANTONIO",
-      "votes": 33
+      "name": "JORGE ESTEVES",
+      "votes": 331
     },
     {
-      "name": "OTONI DE PAULA",
-      "votes": 126
+      "name": "LUIZ ANTÔNIO",
+      "votes": 297
     }
   ],
   "QUEIMADOS": [
@@ -1259,130 +1281,152 @@ const deputadosFederaisByCity = {
       "votes": 16656
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 3279
-    },
-    {
       "name": "DANIELA DO WAGUINHO",
       "votes": 5012
     },
     {
-      "name": "LUCIANO VIEIRA",
-      "votes": 524
+      "name": "DOUTOR LUIZINHO",
+      "votes": 3279
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 63
+      "name": "AUREO RIBEIRO",
+      "votes": 3226
+    },
+    {
+      "name": "ZAQUEU TEIXEIRA",
+      "votes": 2962
     }
   ],
   "QUISSAMÃ": [
     {
-      "name": "CHICO MACHADO",
-      "votes": 3211
+      "name": "DANI MAIA",
+      "votes": 1780
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 15
+      "name": "SORAYA SANTOS",
+      "votes": 946
     },
     {
-      "name": "MAX",
-      "votes": 72
+      "name": "GUTEMBERG REIS",
+      "votes": 906
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 26
+      "name": "DANI CUNHA",
+      "votes": 825
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 98
+      "name": "CHRISTINO ÁUREO",
+      "votes": 822
     }
   ],
   "RESENDE": [
     {
-      "name": "DELEGADO ANTONIO FURTADO",
-      "votes": 934
+      "name": "RENAN MARASSI",
+      "votes": 19999
     },
     {
-      "name": "TANDE VIEIRA",
-      "votes": 8322
+      "name": "MAX",
+      "votes": 2923
     },
     {
       "name": "GENERAL PAZUELLO",
       "votes": 2389
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 762
+      "name": "LUIZ ANTÔNIO",
+      "votes": 1889
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 632
+      "name": "LINDBERGH FARIAS",
+      "votes": 1508
     }
   ],
   "RIO BONITO": [
     {
-      "name": "MARCOS ABRAHAO",
+      "name": "MARCOS ABRAHÃO FILHO",
       "votes": 3007
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 755
+      "name": "CARLOS RUSSO",
+      "votes": 2315
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 102
+      "name": "LOURIVAL GOMES",
+      "votes": 2108
     },
     {
       "name": "SORAYA SANTOS",
       "votes": 1733
     },
     {
+      "name": "OTONI DE PAULA",
+      "votes": 1252
+    }
+  ],
+  "RIO CLARO": [
+    {
+      "name": "MAX",
+      "votes": 654
+    },
+    {
+      "name": "DELEGADO ANTÔNIO FURTADO",
+      "votes": 572
+    },
+    {
       "name": "AUREO RIBEIRO",
-      "votes": 520
+      "votes": 513
+    },
+    {
+      "name": "VENISSIUS",
+      "votes": 480
+    },
+    {
+      "name": "JORGE ESTEVES",
+      "votes": 451
     }
   ],
   "RIO DAS FLORES": [
-    {
-      "name": "VINICIUS FARAH",
-      "votes": 139
-    },
-    {
-      "name": "AUREO RIBEIRO",
-      "votes": 53
-    },
-    {
-      "name": "LUIZ ANTONIO",
-      "votes": 198
-    },
     {
       "name": "HUGO LEAL",
       "votes": 1245
     },
     {
-      "name": "DR LUIZINHO",
+      "name": "LEONARDO",
+      "votes": 668
+    },
+    {
+      "name": "ROSANGELA GOMES",
+      "votes": 338
+    },
+    {
+      "name": "LUIZ ANTÔNIO",
+      "votes": 288
+    },
+    {
+      "name": "DOUTOR LUIZINHO",
       "votes": 198
     }
   ],
   "RIO DAS OSTRAS": [
     {
-      "name": "CHICO MACHADO",
-      "votes": 8455
-    },
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 745
-    },
-    {
-      "name": "DR HENRIQUE PAES",
-      "votes": 74
-    },
-    {
-      "name": "MAX",
-      "votes": 495
+      "name": "SORAYA SANTOS",
+      "votes": 2006
     },
     {
       "name": "OTONI DE PAULA",
       "votes": 1999
+    },
+    {
+      "name": "FELÍCIO LATERÇA",
+      "votes": 1995
+    },
+    {
+      "name": "GENERAL PAZUELLO",
+      "votes": 1954
+    },
+    {
+      "name": "HELIO FERNANDO BARBOSA LOPES",
+      "votes": 1660
     }
   ],
   "RIO DE JANEIRO": [
@@ -1391,262 +1435,64 @@ const deputadosFederaisByCity = {
       "votes": 117155
     },
     {
+      "name": "TARCÍSIO MOTTA",
+      "votes": 113710
+    },
+    {
       "name": "TALIRIA PETRONE",
       "votes": 107420
     },
     {
+      "name": "DANIEL SORANZ",
+      "votes": 82932
+    },
+    {
       "name": "CHICO ALENCAR",
       "votes": 80492
-    },
-    {
-      "name": "OTONI DE PAULA",
-      "votes": 57761
-    },
-    {
-      "name": "HELIO LOPES",
-      "votes": 60546
     }
   ],
   "SANTA MARIA MADALENA": [
     {
+      "name": "LUIZ ANTÔNIO",
+      "votes": 893
+    },
+    {
+      "name": "DANI CUNHA",
+      "votes": 497
+    },
+    {
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 457
+    },
+    {
+      "name": "MURILLO GOUVEA",
+      "votes": 364
+    },
+    {
       "name": "AUREO RIBEIRO",
       "votes": 298
-    },
-    {
-      "name": "HUGO LEAL",
-      "votes": 50
-    },
-    {
-      "name": "VINICIUS FARAH",
-      "votes": 8
-    },
-    {
-      "name": "GLAUBER BRAGA",
-      "votes": 113
-    },
-    {
-      "name": "DR LUIZINHO",
-      "votes": 12
     }
   ],
   "SANTO ANTÔNIO DE PÁDUA": [
     {
-      "name": "HUGO LEAL",
-      "votes": 317
+      "name": "ALTINEU CORTES",
+      "votes": 1808
     },
     {
-      "name": "MURILLO GOUVEA",
-      "votes": 725
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 1513
+    },
+    {
+      "name": "CARLOS RUSSO",
+      "votes": 1454
     },
     {
       "name": "AUREO RIBEIRO",
       "votes": 1235
     },
     {
-      "name": "LUIZ LIMA",
-      "votes": 230
-    },
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 1808
-    }
-  ],
-  "SÃO FIDÉLIS": [
-    {
-      "name": "HUGO LEAL",
-      "votes": 132
-    },
-    {
-      "name": "AUREO RIBEIRO",
-      "votes": 1236
-    },
-    {
-      "name": "MURILLO GOUVEA",
-      "votes": 202
-    },
-    {
-      "name": "LUIZ LIMA",
-      "votes": 120
-    },
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 814
-    }
-  ],
-  "SÃO FRANCISCO DE ITABAPOANA": [
-    {
-      "name": "MURILLO GOUVEA",
-      "votes": 2106
-    },
-    {
-      "name": "CAIO VIANA",
-      "votes": 1933
-    },
-    {
-      "name": "AUREO RIBEIRO",
-      "votes": 3710
-    },
-    {
-      "name": "HUGO LEAL",
-      "votes": 46
-    },
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 838
-    }
-  ],
-  "SÃO GONÇALO": [
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 75793
-    },
-    {
-      "name": "DANIELA DO WAGUINHO",
-      "votes": 2836
-    },
-    {
-      "name": "OTONI DE PAULA",
-      "votes": 7322
-    },
-    {
-      "name": "TALIRIA PETRONE",
-      "votes": 12237
-    },
-    {
-      "name": "DR LUIZINHO",
-      "votes": 6586
-    }
-  ],
-  "SÃO JOÃO DA BARRA": [
-    {
-      "name": "CAIO VIANA",
-      "votes": 1448
-    },
-    {
-      "name": "CHICO MACHADO",
-      "votes": 3211
-    },
-    {
-      "name": "AUREO RIBEIRO",
-      "votes": 56
-    },
-    {
-      "name": "HUGO LEAL",
-      "votes": 165
-    },
-    {
-      "name": "DR LUIZINHO",
-      "votes": 59
-    }
-  ],
-  "SÃO JOÃO DE MERITI": [
-    {
-      "name": "VALDECY DA SAUDE",
-      "votes": 32455
-    },
-    {
-      "name": "DR LUIZINHO",
-      "votes": 6576
-    },
-    {
-      "name": "DANIELA DO WAGUINHO",
-      "votes": 3897
-    },
-    {
-      "name": "MAX",
-      "votes": 444
-    },
-    {
-      "name": "OTONI DE PAULA",
-      "votes": 4039
-    }
-  ],
-  "SÃO JOSÉ DE UBÁ": [
-    {
-      "name": "MURILLO GOUVEA",
-      "votes": 431
-    },
-    {
-      "name": "HUGO LEAL",
-      "votes": 6
-    },
-    {
-      "name": "AUREO RIBEIRO",
-      "votes": 1072
-    },
-    {
-      "name": "LUIZ LIMA",
-      "votes": 9
-    },
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 42
-    }
-  ],
-  "SÃO JOSÉ DO VALE DO RIO PRETO": [
-    {
-      "name": "HUGO LEAL",
-      "votes": 204
-    },
-    {
-      "name": "VINICIUS FARAH",
-      "votes": 1414
-    },
-    {
-      "name": "AUREO RIBEIRO",
-      "votes": 160
-    },
-    {
-      "name": "LUIZ LIMA",
-      "votes": 1197
-    },
-    {
-      "name": "DR LUIZINHO",
-      "votes": 14
-    }
-  ],
-  "SÃO PEDRO DA ALDEIA": [
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 254
-    },
-    {
-      "name": "CARLOS RUSSO",
-      "votes": 547
-    },
-    {
-      "name": "DR HENRIQUE PAES",
-      "votes": 43
-    },
-    {
-      "name": "DANIELA DO WAGUINHO",
-      "votes": 182
-    },
-    {
-      "name": "OTONI DE PAULA",
-      "votes": 1955
-    }
-  ],
-  "SÃO SEBASTIÃO DO ALTO": [
-    {
-      "name": "AUREO RIBEIRO",
-      "votes": 2123
-    },
-    {
-      "name": "ALTINEU CORTES",
-      "votes": 1022
-    },
-    {
-      "name": "DANIELA DO WAGUINHO",
-      "votes": 269
-    },
-    {
-      "name": "LUCIANO ANTONIO",
-      "votes": 175
-    },
-    {
-      "name": "LUCIANO VIEIRA",
-      "votes": 164
+      "name": "MARCUS VINICIUS NESKAU",
+      "votes": 999
     }
   ],
   "SAPUCAIA": [
@@ -1659,8 +1505,8 @@ const deputadosFederaisByCity = {
       "votes": 764
     },
     {
-      "name": "LUIZ ANTONIO",
-      "votes": 23
+      "name": "LUIZ ANTÔNIO",
+      "votes": 610
     },
     {
       "name": "AUREO RIBEIRO",
@@ -1681,15 +1527,15 @@ const deputadosFederaisByCity = {
       "votes": 4269
     },
     {
-      "name": "DR LUZINHO",
+      "name": "DOUTOR LUIZINHO",
       "votes": 3839
     },
     {
       "name": "CARLOS RUSSO",
-      "votes": 481
+      "votes": 2216
     },
     {
-      "name": "WASHINGTON QUAQUA",
+      "name": "WASHINGTON QUAQUÁ",
       "votes": 1640
     }
   ],
@@ -1699,7 +1545,7 @@ const deputadosFederaisByCity = {
       "votes": 6150
     },
     {
-      "name": "DR LUIZINHO",
+      "name": "DOUTOR LUIZINHO",
       "votes": 3975
     },
     {
@@ -1707,7 +1553,7 @@ const deputadosFederaisByCity = {
       "votes": 2347
     },
     {
-      "name": "DR FLAVIO",
+      "name": "DR FLÁVIO",
       "votes": 2159
     },
     {
@@ -1717,11 +1563,11 @@ const deputadosFederaisByCity = {
   ],
   "SILVA JARDIM": [
     {
-      "name": "ZILMARA BRANDA",
+      "name": "ZILMARA BRANDÃO DA SILVA",
       "votes": 1256
     },
     {
-      "name": "MARCUS ABRAHÃO FILHO",
+      "name": "MARCOS ABRAHÃO FILHO",
       "votes": 692
     },
     {
@@ -1730,7 +1576,7 @@ const deputadosFederaisByCity = {
     },
     {
       "name": "CARLOS RUSSO",
-      "votes": 145
+      "votes": 559
     },
     {
       "name": "DUDU SOARES",
@@ -1739,7 +1585,7 @@ const deputadosFederaisByCity = {
   ],
   "SUMIDOURO": [
     {
-      "name": "CHRISTINO AUREO",
+      "name": "CHRISTINO ÁUREO",
       "votes": 1436
     },
     {
@@ -1751,56 +1597,254 @@ const deputadosFederaisByCity = {
       "votes": 867
     },
     {
-      "name": "ROGERIO CABRAL",
+      "name": "ROGÉRIO CABRAL",
       "votes": 657
     },
     {
-      "name": "CHIQUINHO BRAZAO",
+      "name": "CHIQUINHO BRAZÃO",
       "votes": 630
+    }
+  ],
+  "SÃO FIDÉLIS": [
+    {
+      "name": "DR FLÁVIO",
+      "votes": 1503
+    },
+    {
+      "name": "AUREO RIBEIRO",
+      "votes": 1236
+    },
+    {
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 1062
+    },
+    {
+      "name": "JULIO LOPES",
+      "votes": 949
+    },
+    {
+      "name": "LUIZ ANTÔNIO",
+      "votes": 896
+    }
+  ],
+  "SÃO FRANCISCO DE ITABAPOANA": [
+    {
+      "name": "AUREO RIBEIRO",
+      "votes": 3710
+    },
+    {
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 2557
+    },
+    {
+      "name": "MURILLO GOUVEA",
+      "votes": 2106
+    },
+    {
+      "name": "CAIO VIANNA",
+      "votes": 1933
+    },
+    {
+      "name": "MAX",
+      "votes": 1293
+    }
+  ],
+  "SÃO GONÇALO": [
+    {
+      "name": "ALTINEU CORTES",
+      "votes": 75793
+    },
+    {
+      "name": "DIMAS GADELHA",
+      "votes": 30719
+    },
+    {
+      "name": "RICARDO PERICAR",
+      "votes": 24738
+    },
+    {
+      "name": "WASHINGTON QUAQUÁ",
+      "votes": 21369
+    },
+    {
+      "name": "GLAUBER POUBEL",
+      "votes": 14299
+    }
+  ],
+  "SÃO JOSÉ DE UBÁ": [
+    {
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 1720
+    },
+    {
+      "name": "AUREO RIBEIRO",
+      "votes": 1072
+    },
+    {
+      "name": "MURILLO GOUVEA",
+      "votes": 431
+    },
+    {
+      "name": "OSNIR GLADIADOR",
+      "votes": 426
+    },
+    {
+      "name": "MAX",
+      "votes": 124
+    }
+  ],
+  "SÃO JOSÉ DO VALE DO RIO PRETO": [
+    {
+      "name": "VINICIUS FARAH",
+      "votes": 1414
+    },
+    {
+      "name": "LUIZ LIMA",
+      "votes": 1197
+    },
+    {
+      "name": "SÓSTENES CAVALCANTE",
+      "votes": 1030
+    },
+    {
+      "name": "MARCUS VINICIUS NESKAU",
+      "votes": 725
+    },
+    {
+      "name": "MÁRCIO PONCIO",
+      "votes": 680
+    }
+  ],
+  "SÃO JOÃO DA BARRA": [
+    {
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 2540
+    },
+    {
+      "name": "DANI CUNHA",
+      "votes": 2171
+    },
+    {
+      "name": "ALTINEU CORTES",
+      "votes": 1609
+    },
+    {
+      "name": "CAIO VIANNA",
+      "votes": 1448
+    },
+    {
+      "name": "WASHINGTON QUAQUÁ",
+      "votes": 1065
+    }
+  ],
+  "SÃO JOÃO DE MERITI": [
+    {
+      "name": "BEBETO",
+      "votes": 32145
+    },
+    {
+      "name": "DRA LETÍCIA COSTA",
+      "votes": 16380
+    },
+    {
+      "name": "LUCIANO VIEIRA",
+      "votes": 10508
+    },
+    {
+      "name": "JULIO LOPES",
+      "votes": 10075
+    },
+    {
+      "name": "CHARLLES BATISTA",
+      "votes": 10062
+    }
+  ],
+  "SÃO PEDRO DA ALDEIA": [
+    {
+      "name": "CLAUDIO CHUMBINHO",
+      "votes": 3701
+    },
+    {
+      "name": "GLAIDSON ACÁCIO",
+      "votes": 2501
+    },
+    {
+      "name": "ANDRÉ DE GILSON",
+      "votes": 2377
+    },
+    {
+      "name": "MAX",
+      "votes": 2151
+    },
+    {
+      "name": "OTONI DE PAULA",
+      "votes": 1955
+    }
+  ],
+  "SÃO SEBASTIÃO DO ALTO": [
+    {
+      "name": "AUREO RIBEIRO",
+      "votes": 2123
+    },
+    {
+      "name": "ALTINEU CORTES",
+      "votes": 1022
+    },
+    {
+      "name": "DANIELA DO WAGUINHO",
+      "votes": 269
+    },
+    {
+      "name": "LUIZ ANTÔNIO",
+      "votes": 175
+    },
+    {
+      "name": "LUCIANO VIEIRA",
+      "votes": 164
     }
   ],
   "TANGUÁ": [
     {
-      "name": "ALTINEU CORTES",
-      "votes": 479
+      "name": "DANI CUNHA",
+      "votes": 3135
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 35
+      "name": "LOURIVAL GOMES",
+      "votes": 1209
     },
     {
-      "name": "MARCOS ABRAHAO",
+      "name": "MARCOS ABRAHÃO FILHO",
       "votes": 814
     },
     {
-      "name": "OTONI DE PAULA",
-      "votes": 657
+      "name": "SORAYA SANTOS",
+      "votes": 807
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 476
+      "name": "CARLOS RUSSO",
+      "votes": 672
     }
   ],
   "TERESÓPOLIS": [
+    {
+      "name": "NILTON SALOMÃO",
+      "votes": 11138
+    },
+    {
+      "name": "MAURÍCIO LOPES",
+      "votes": 4703
+    },
     {
       "name": "HUGO LEAL",
       "votes": 3744
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 359
+      "name": "GUSTAVO SIMAS",
+      "votes": 3098
     },
     {
-      "name": "VINICIUS FARAH",
-      "votes": 87
-    },
-    {
-      "name": "LUIZ LIMA",
-      "votes": 1061
-    },
-    {
-      "name": "GLAUBER BRAGA",
-      "votes": 845
+      "name": "SORAYA SANTOS",
+      "votes": 2763
     }
   ],
   "TRAJANO DE MORAES": [
@@ -1809,20 +1853,20 @@ const deputadosFederaisByCity = {
       "votes": 1853
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 9
-    },
-    {
-      "name": "VINICIUS FARAH",
-      "votes": 49
-    },
-    {
-      "name": "DR LUIZINHO",
-      "votes": 103
-    },
-    {
       "name": "ALTINEU CORTES",
       "votes": 496
+    },
+    {
+      "name": "DANI CUNHA",
+      "votes": 405
+    },
+    {
+      "name": "MURILO MORAES",
+      "votes": 313
+    },
+    {
+      "name": "RIVERTON MUSSI",
+      "votes": 262
     }
   ],
   "TRÊS RIOS": [
@@ -1831,108 +1875,108 @@ const deputadosFederaisByCity = {
       "votes": 13823
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 247
+      "name": "MÁRCIO PONCIO",
+      "votes": 3885
+    },
+    {
+      "name": "FABIANO OLIVEIRA",
+      "votes": 2325
+    },
+    {
+      "name": "TALIRIA PETRONE",
+      "votes": 921
     },
     {
       "name": "HUGO LEAL",
       "votes": 841
-    },
-    {
-      "name": "DR LUIZINHO",
-      "votes": 778
-    },
-    {
-      "name": "LUIZ ANTONIO",
-      "votes": 778
     }
   ],
   "VALENÇA": [
     {
-      "name": "LUIZ ANTONIO",
-      "votes": 173
+      "name": "LUIZ ANTÔNIO",
+      "votes": 10203
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 425
+      "name": "LEONARDO",
+      "votes": 1243
     },
     {
-      "name": "VINICIUS FARAH",
-      "votes": 356
+      "name": "MAX",
+      "votes": 895
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 420
+      "name": "JUVENAL VITOR",
+      "votes": 807
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 173
+      "name": "CLÉBIO LOPES JACARÉ",
+      "votes": 787
     }
   ],
   "VARRE-SAI": [
     {
-      "name": "MURILLO GOUVEA",
-      "votes": 608
+      "name": "CHRIS TONIETTO",
+      "votes": 661
     },
     {
-      "name": "HUGO LEAL",
-      "votes": 450
+      "name": "MURILLO GOUVEA",
+      "votes": 608
     },
     {
       "name": "AUREO RIBEIRO",
       "votes": 536
     },
     {
-      "name": "LUIZ LIMA",
-      "votes": 72
+      "name": "CHRISTINO ÁUREO",
+      "votes": 504
     },
     {
-      "name": "ALTINEU CORTES",
-      "votes": 11
+      "name": "HUGO LEAL",
+      "votes": 450
     }
   ],
   "VASSOURAS": [
     {
-      "name": "VINICIUS FARAH",
-      "votes": 322
-    },
-    {
-      "name": "LUIZ ANTONIO",
-      "votes": 1211
-    },
-    {
-      "name": "AUREO RIBEIRO",
-      "votes": 138
+      "name": "JULIO LOPES",
+      "votes": 1979
     },
     {
       "name": "HUGO LEAL",
       "votes": 1952
     },
     {
-      "name": "DR LUIZINHO",
+      "name": "DOUTOR LUIZINHO",
       "votes": 1211
+    },
+    {
+      "name": "MARCUS VINICIUS NESKAU",
+      "votes": 725
+    },
+    {
+      "name": "MÁRCIO PONCIO",
+      "votes": 637
     }
   ],
   "VOLTA REDONDA": [
     {
-      "name": "DELEGADO ANTONIO FURTADO",
+      "name": "DELEGADO ANTÔNIO FURTADO",
       "votes": 17223
     },
     {
-      "name": "NETO",
-      "votes": 867
+      "name": "DELEY",
+      "votes": 16264
     },
     {
-      "name": "GENERAL PAZUELLO",
-      "votes": 2412
+      "name": "BALTAZAR",
+      "votes": 11741
     },
     {
-      "name": "DR LUIZINHO",
-      "votes": 2432
+      "name": "GERALDINHO DO GELO",
+      "votes": 4920
     },
     {
-      "name": "AUREO RIBEIRO",
-      "votes": 351
+      "name": "RAONE FERREIRA",
+      "votes": 4626
     }
   ]
 };
