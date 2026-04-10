@@ -143,7 +143,18 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
 .sk-agenda{height:110px;border-radius:14px;}
 .sk-online{height:60px;border-radius:12px;}
 
-/* ===== FAB ===== */
+/* ===== DASH ACTION BAR ===== */
+#dash-action-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 24px;
+  background:rgba(11,20,38,.8);backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  flex-shrink:0;
+}
+.dash-action-title{font-size:12px;font-weight:600;color:var(--text-muted);}
+.dash-action-btns{display:flex;gap:8px;align-items:center;}
+
+/* ===== FAB (mobile only) ===== */
 .fab{position:fixed;bottom:22px;right:20px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--blue-deep),var(--blue-main));color:#fff;font-size:26px;font-weight:300;border:none;cursor:pointer;z-index:300;box-shadow:0 6px 22px rgba(26,86,219,.5);display:none;align-items:center;justify-content:center;transition:all .2s;line-height:1;}
 .fab:active{transform:scale(.88);}
 .fab:hover{box-shadow:0 8px 30px rgba(26,86,219,.65);}
@@ -167,8 +178,13 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
 .lider-info{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--white);border:1.5px solid rgba(22,163,74,.25);border-radius:var(--radius-sm);margin-top:-3px;margin-bottom:13px;}
 .lider-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#16a34a,#059669);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;}
 
-/* ===== VIDEO CONTAINER ===== */
-#video-container{display:none;flex:1;flex-direction:column;overflow:hidden;}
+/* ===== VIDEO CONTAINER — fullscreen overlay ===== */
+#video-container{display:none;flex-direction:column;overflow:hidden;}
+#video-container.active{
+  display:flex;
+  position:fixed;inset:0;z-index:500;
+  background:#060d20;
+}
 
 /* Topbar (in-call) */
 .topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(11,20,38,.9);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;z-index:10;}
@@ -299,6 +315,8 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
   #dash-header{padding:10px 14px;gap:8px;}
   .dh-logo-sub,.dh-vline,.dh-user-nivel{display:none;}
   .dh-new-btn-text{display:none;}
+  #dash-action-bar{padding:8px 14px;}
+  .dash-action-title{display:none;}
   #dashboard{padding:16px 14px 88px;}
   #rooms-grid,#agenda-grid{grid-template-columns:1fr;}
   #online-grid{grid-template-columns:1fr 1fr;}
@@ -363,9 +381,17 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
       <span class="online-pill-dot"></span>
       <span id="online-pill-count">0 online</span>
     </button>
-    <button class="btn btn-primary" id="dh-new-btn" onclick="abrirModalCriar()" style="display:none">
-      ➕ <span class="dh-new-btn-text">Nova reunião</span>
-    </button>
+  </div><!-- /dash-header -->
+
+  <!-- ======= ACTION BAR ======= -->
+  <div id="dash-action-bar">
+    <span class="dash-action-title">Videoconferências Paralax</span>
+    <div class="dash-action-btns">
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalAgendar()">📅 Agendar</button>
+      <button class="btn btn-primary btn-sm" id="dh-new-btn" onclick="abrirModalCriar()" style="display:none">
+        ➕ <span class="dh-new-btn-text">Nova reunião</span>
+      </button>
+    </div>
   </div>
 
   <!-- ======= DASHBOARD ======= -->
@@ -639,8 +665,8 @@ async function init() {
     document.getElementById('user-nome').textContent = usuario.nome || '';
     document.getElementById('user-nivel').textContent = ({ dono: 'Dono', admin: 'Admin', lider_regiao: 'Líder de Região', visualizador: 'Visualizador' }[usuario.nivel]) || usuario.nivel || '';
     if (['dono', 'admin', 'lider_regiao'].includes(usuario.nivel)) {
-      document.getElementById('dh-new-btn').style.display = 'inline-flex';
-      document.getElementById('fab-nova').style.display = 'flex';
+      document.getElementById('dh-new-btn').style.removeProperty('display'); // mostra na action bar
+      document.getElementById('fab-nova').style.display = 'flex'; // FAB mobile
     }
     await carregarRegioes();
     conectarSocket();
@@ -954,6 +980,22 @@ async function iniciarAgendada(id) {
     const sala = await r.json();
     await carregarSalas();
     await entrarSala(sala.id, sala.nome);
+    // Auto-convidar participantes agendados que estão online
+    if (a.participantes && a.participantes.length) {
+      setTimeout(() => {
+        let convidados = 0;
+        a.participantes.forEach(uid => {
+          const online = usuariosOnline.find(u => u.id === uid);
+          if (online) {
+            socket.emit('convidar-para-sala', { paraId: uid, salaId: sala.id, salaName: sala.nome, de: usuario.nome + ' (agendamento)' });
+            convidados++;
+          }
+        });
+        const ausentes = a.participantes.length - convidados;
+        if (convidados > 0) notif('📨 ' + convidados + ' participante(s) convidado(s) automaticamente!', 'success');
+        if (ausentes > 0) notif('⚠️ ' + ausentes + ' participante(s) não está(ão) online agora.', 'warn');
+      }, 1800); // aguarda socket entrar na sala antes de emitir convites
+    }
   } catch { notif('Erro ao iniciar', 'error'); }
 }
 
@@ -1043,10 +1085,8 @@ async function entrarSala(salaId, salaNome) {
 
   socket.emit('entrar-sala', { salaId, nome: usuario.nome });
 
-  // Oculta dashboard, mostra video
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('dash-header').style.display = 'none';
-  document.getElementById('video-container').style.display = 'flex';
+  // Mostra video em tela cheia (fixed overlay)
+  document.getElementById('video-container').classList.add('active');
   document.getElementById('quality-badge').style.display = 'flex';
   document.getElementById('loading').style.display = 'none';
 
@@ -1313,12 +1353,8 @@ async function sairDaSala() {
   setCtrl('btn-chat', { circleClass: 'ctrl-circle', icon: 'chat_bubble'                           });
   setCtrl('btn-rec',  { circleClass: 'ctrl-circle', icon: 'radio_button_checked', label: 'Gravar' });
   salaAtual = null; salaAtualId = null;
-  // Volta ao dashboard
-  document.getElementById('video-container').style.display = 'none';
-  document.getElementById('dash-header').style.display = 'flex';
-  document.getElementById('dashboard').style.display = 'flex';
-  document.getElementById('main-title').textContent = 'Reuniões';
-  document.getElementById('main-sub').textContent = 'Em chamada';
+  // Fecha o overlay de vídeo, volta ao dashboard
+  document.getElementById('video-container').classList.remove('active');
   renderOnline();
   await carregarSalas();
 }
