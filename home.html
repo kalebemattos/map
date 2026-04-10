@@ -861,24 +861,36 @@ footer {
 .ci-cand-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
+/* Avatar / Foto */
+.ci-avatar-wrap {
+  position: relative; z-index: 1; flex-shrink: 0;
+}
+.ci-photo {
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2.5px solid rgba(255,255,255,.3);
+  display: block;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+}
 .ci-avatar {
-  width: 36px; height: 36px;
+  width: 54px; height: 54px;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-family: 'Sora', sans-serif;
-  font-size: 14px; font-weight: 800; color: #fff;
+  font-size: 18px; font-weight: 800; color: #fff;
   flex-shrink: 0;
-  position: relative;
-  z-index: 1;
+  box-shadow: 0 4px 14px rgba(0,0,0,.3);
+  border: 2.5px solid rgba(255,255,255,.2);
 }
 
 .ci-cand-nome {
   font-family: 'Sora', sans-serif;
   font-size: 13px; font-weight: 700;
-  color: rgba(255,255,255,.93);
+  color: rgba(255,255,255,.95);
   line-height: 1.2;
   position: relative; z-index: 1;
 }
@@ -886,9 +898,30 @@ footer {
 .ci-cand-cargo {
   font-size: 10px;
   font-weight: 600;
-  color: rgba(255,255,255,.4);
+  color: rgba(255,255,255,.45);
   letter-spacing: .4px;
   text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Meta row */
+.ci-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative; z-index: 1;
+  margin-bottom: 3px;
+}
+.ci-meta-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,.38);
+  letter-spacing: .3px;
+}
+.ci-meta-val {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,.55);
 }
 
 .ci-stats-row {
@@ -1465,23 +1498,33 @@ function renderIndicadorCampanha(candidatos, totais) {
   let html = ''
 
   candidatos.forEach((cand, i) => {
-    const pal   = PALETA[i % PALETA.length]
-    const votos = totais[cand.chave] || 0
-    const pct   = totalGeral > 0 ? Math.round((votos / totalGeral) * 100) : 0
-    const ini   = (cand.nome || '?')[0].toUpperCase()
+    const pal     = PALETA[i % PALETA.length]
+    const votos   = totais[cand.chave] || 0
+    const pct     = totalGeral > 0 ? Math.round((votos / totalGeral) * 100) : 0
+    const ini     = (cand.nome || '?')[0].toUpperCase()
+    const temMeta = cand.meta_votos && Number(cand.meta_votos) > 0
+    const meta    = temMeta ? Number(cand.meta_votos) : 0
+    const metaPct = temMeta ? Math.min(Math.round((votos / meta) * 100), 100) : pct
 
-    // extrai cor da cor_fundo do candidato (se disponível)
-    // usa a paleta como fallback
-    const avatarBg = pal.solid
+    // Cor do candidato (usa cor_fundo do cadastro, fallback paleta)
+    const corSolid = cand.cor_fundo || pal.solid
+
+    // Avatar: foto real ou inicial
+    const avatarHtml = cand.foto_url
+      ? `<img src="${escHome(cand.foto_url)}" class="ci-photo" style="border-color:${corSolid};"
+            alt="${escHome(cand.nome)}"
+            onerror="this.style.display='none';document.getElementById('ci-av-fb-${escHome(cand.chave)}').style.display='flex';">
+         <div class="ci-avatar" id="ci-av-fb-${escHome(cand.chave)}" style="background:${corSolid};display:none;">${escHome(ini)}</div>`
+      : `<div class="ci-avatar" style="background:${corSolid};">${escHome(ini)}</div>`
 
     html += `
     <div class="ci-cand" style="background:${pal.light};border:1px solid ${pal.border};">
-      <div class="ci-cand-bg" style="background:${pal.solid};"></div>
+      <div class="ci-cand-bg" style="background:${corSolid};"></div>
       <div class="ci-cand-header">
-        <div class="ci-avatar" style="background:${avatarBg};">${escHome(ini)}</div>
-        <div>
+        <div class="ci-avatar-wrap">${avatarHtml}</div>
+        <div style="flex:1;min-width:0;position:relative;z-index:1;">
           <div class="ci-cand-nome">${escHome(cand.nome)}</div>
-          <div class="ci-cand-cargo">Candidato${i > 0 ? '' : ''}</div>
+          <div class="ci-cand-cargo">${escHome(cand.cargo || 'Candidato')}</div>
         </div>
       </div>
       <div class="ci-stats-row">
@@ -1489,16 +1532,26 @@ function renderIndicadorCampanha(candidatos, totais) {
           <div class="ci-stat-value" id="ci-votos-${escHome(cand.chave)}">0</div>
           <div class="ci-stat-label">Expectativa</div>
         </div>
+        ${temMeta ? `
         <div class="ci-stat">
-          <div class="ci-stat-value">${escHome(String(pct))}%</div>
+          <div class="ci-stat-value" id="ci-mpct-${escHome(cand.chave)}">0%</div>
+          <div class="ci-stat-label">da meta</div>
+        </div>` : `
+        <div class="ci-stat">
+          <div class="ci-stat-value">${pct}%</div>
           <div class="ci-stat-label">do total</div>
-        </div>
+        </div>`}
       </div>
+      ${temMeta ? `
+      <div class="ci-meta-row">
+        <span class="ci-meta-label">🎯 Meta</span>
+        <span class="ci-meta-val">${meta.toLocaleString('pt-BR')} votos</span>
+      </div>` : ''}
       <div class="ci-bar-wrap">
         <div class="ci-bar-track">
-          <div class="ci-bar-fill" id="ci-bar-${escHome(cand.chave)}" style="background:${pal.solid};"></div>
+          <div class="ci-bar-fill" id="ci-bar-${escHome(cand.chave)}" style="background:${corSolid};"></div>
         </div>
-        <div class="ci-bar-pct">${escHome(String(pct))}% do total geral</div>
+        <div class="ci-bar-pct">${temMeta ? metaPct + '% atingido' : pct + '% do total geral'}</div>
       </div>
     </div>`
   })
@@ -1533,11 +1586,26 @@ function renderIndicadorCampanha(candidatos, totais) {
   // Aguarda o próximo frame para as barras animarem (precisa estar no DOM)
   requestAnimationFrame(() => {
     candidatos.forEach(cand => {
-      const votos = totais[cand.chave] || 0
-      const pct   = totalGeral > 0 ? (votos / totalGeral) * 100 : 0
+      const votos   = totais[cand.chave] || 0
+      const temMeta = cand.meta_votos && Number(cand.meta_votos) > 0
+      const meta    = temMeta ? Number(cand.meta_votos) : 0
+      const barPct  = temMeta
+        ? Math.min((votos / meta) * 100, 100)
+        : (totalGeral > 0 ? (votos / totalGeral) * 100 : 0)
+
       animarContador(`ci-votos-${cand.chave}`, votos)
+
       const bar = document.getElementById(`ci-bar-${cand.chave}`)
-      if (bar) bar.style.width = pct.toFixed(1) + '%'
+      if (bar) bar.style.width = barPct.toFixed(1) + '%'
+
+      // Atualiza % da meta dinamicamente
+      if (temMeta) {
+        const metaPctEl = document.getElementById(`ci-mpct-${cand.chave}`)
+        if (metaPctEl) {
+          const pctVal = Math.min(Math.round((votos / meta) * 100), 100)
+          metaPctEl.textContent = pctVal + '%'
+        }
+      }
     })
     animarContador('ci-total-value', totalGeral)
   })

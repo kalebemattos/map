@@ -189,6 +189,17 @@
         </div>
       </div>
 
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cargo / Eleição</label>
+          <input type="text" id="c-cargo" placeholder="ex: Deputado Federal, Vereador...">
+        </div>
+        <div class="form-group">
+          <label>Meta de votos</label>
+          <input type="number" id="c-meta-votos" placeholder="ex: 50000" min="0">
+        </div>
+      </div>
+
       <div class="form-row" style="align-items:flex-end;">
         <div class="form-group">
           <label>Foto do candidato</label>
@@ -292,6 +303,8 @@ function editarCandidato(c) {
   document.getElementById('c-cor-texto').value = c.cor_texto || '#3730a3';
   document.getElementById('c-ordem').value  = c.ordem ?? 0;
   document.getElementById('c-votos2022').checked = !!c.tem_votos_2022;
+  document.getElementById('c-cargo').value  = c.cargo || '';
+  document.getElementById('c-meta-votos').value = c.meta_votos || '';
   const prev = document.getElementById('c-foto-preview');
   if (c.foto_url) { prev.src = c.foto_url; prev.style.display = 'block'; }
   else prev.style.display = 'none';
@@ -330,6 +343,9 @@ async function salvarCandidato() {
     fd.append('cor_texto',     document.getElementById('c-cor-texto').value);
     fd.append('ordem',         document.getElementById('c-ordem').value);
     fd.append('tem_votos_2022', document.getElementById('c-votos2022').checked);
+    fd.append('cargo',         document.getElementById('c-cargo').value.trim());
+    const metaVotos = document.getElementById('c-meta-votos').value;
+    if (metaVotos) fd.append('meta_votos', metaVotos);
     const foto = document.getElementById('c-foto').files[0];
     if (foto) fd.append('foto', foto);
 
@@ -339,7 +355,7 @@ async function salvarCandidato() {
     if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erro'); }
 
     // Limpa formulário
-    ['c-chave','c-nome'].forEach(id => document.getElementById(id).value = '');
+    ['c-chave','c-nome','c-cargo','c-meta-votos'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('c-ordem').value = '0';
     document.getElementById('c-votos2022').checked = false;
     document.getElementById('c-foto').value = '';
