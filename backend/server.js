@@ -206,10 +206,9 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Permite origens explicitamente listadas.
-    // 'null' cobre o Android WebView carregando de file:// assets.
-    // Requisições sem Origin (curl etc.) continuam bloqueadas em produção.
-    if (origin === 'null' || (origin && allowedOrigins.includes(origin))) {
+    // Permite origens listadas, o Android WebView (file:// envia 'null' ou
+    // ausente dependendo da versão do SO) e ausência de Origin.
+    if (!origin || origin === 'null' || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Não permitido por CORS'));
