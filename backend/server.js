@@ -201,14 +201,15 @@ const allowedOrigins = [
   'https://paralaxgestao.online',
   'http://www.paralaxgestao.online',
   'https://www.paralaxgestao.online',
+  'null', // Android WebView (file:// assets)
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
     // Permite origens explicitamente listadas.
-    // Requisições sem Origin (ferramentas server-side como curl) são bloqueadas
-    // em produção; em dev, adicione 'http://localhost:PORT' à lista acima.
-    if (origin && allowedOrigins.includes(origin)) {
+    // 'null' cobre o Android WebView carregando de file:// assets.
+    // Requisições sem Origin (curl etc.) continuam bloqueadas em produção.
+    if (origin === 'null' || (origin && allowedOrigins.includes(origin))) {
       callback(null, true);
     } else {
       callback(new Error('Não permitido por CORS'));
