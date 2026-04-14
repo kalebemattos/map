@@ -174,7 +174,7 @@ let lideresRegiao = {
   metropolitana: [
     {
       nome: "Léo Marmoraria",
-      contato: "",
+      contato: "2",
       foto: "img/lideres/Léo Marmoraria.jpg"
     },
     {
