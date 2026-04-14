@@ -650,6 +650,7 @@ app.get('/api/pessoas/buscar', auth, withTenant, async (req, res) => {
     const { rows } = await pool.query(`
       SELECT
         p.id, p.nome, p.foto, p.contato, p.perfil,
+        p.data_nascimento, p.release,
         COUNT(l.id) AS total_cidades,
         ARRAY_AGG(l.cidade ORDER BY l.cidade) FILTER (WHERE l.cidade IS NOT NULL) AS cidades
       FROM pessoas p

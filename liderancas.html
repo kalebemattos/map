@@ -1943,8 +1943,11 @@
 
     function limparAcSelecao() {
       ac.pessoaId = null; ac.pessoaNome = null;
-      const inp = document.getElementById('cad-nome');
-      if (inp) inp.value = '';
+      document.getElementById('cad-nome').value        = '';
+      document.getElementById('cad-contato').value     = '';
+      document.getElementById('cad-perfil').value      = '';
+      document.getElementById('cad-release').value     = '';
+      document.getElementById('cad-nascimento').value  = '';
       document.getElementById('ac-sel-info').classList.remove('show');
       document.getElementById('ac-dropdown').classList.remove('open');
     }
@@ -1952,8 +1955,21 @@
     function selecionarPessoa(p) {
       ac.pessoaId = p.id; ac.pessoaNome = p.nome;
       document.getElementById('cad-nome').value = p.nome;
-      if (p.contato) document.getElementById('cad-contato').value = p.contato;
-      if (p.perfil)  document.getElementById('cad-perfil').value  = p.perfil;
+      // Preenche todos os dados pessoais da pessoa selecionada (exceto votos)
+      document.getElementById('cad-contato').value    = p.contato || '';
+      document.getElementById('cad-perfil').value     = p.perfil  || '';
+      document.getElementById('cad-release').value    = p.release || '';
+      if (p.data_nascimento) {
+        // data_nascimento vem como "YYYY-MM-DDT..." do banco — pega só os 10 primeiros chars
+        document.getElementById('cad-nascimento').value = p.data_nascimento.substring(0, 10);
+      } else {
+        document.getElementById('cad-nascimento').value = '';
+      }
+      // Foto: mostra preview se existir
+      if (p.foto) {
+        const prev = document.getElementById('cad-foto-preview');
+        if (prev) prev.src = p.foto;
+      }
       const cidades = Array.isArray(p.cidades) && p.cidades.length
         ? p.cidades.join(', ') : 'sem vínculos ainda';
       document.getElementById('ac-sel-label').textContent = `✔ Já cadastrada · ${cidades}`;

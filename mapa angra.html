@@ -2485,71 +2485,7 @@ async function renderLiderancas(city) {
     list.appendChild(div);
   });
 }
-document.getElementById('add-lideranca').onclick = async function () {
-
-
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user && user.nivel === 'visualizador') {
-      alert('Acesso Negado.');
-      return;
-    }
-
-    if (!cidadeSelecionada) {
-      alert('Selecione uma cidade');
-      return;
-    }
-
-    const nome = document.getElementById('lideranca-nome').value.trim();
-    const contato = document.getElementById('lideranca-contato').value.trim();
-    const fotoFile = document.getElementById('lideranca-foto-file').files[0];
-
-    if (!nome) {
-      alert('Informe o nome da liderança');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('nome', nome);
-    formData.append('contato', contato);
-    formData.append('cidade', cidadeSelecionada);
-    formData.append('expectativa_votos', 0);
-
-    if (fotoFile) {
-      formData.append('foto', fotoFile);
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-
-      const response = await apiFetch('/liderancas', {
-  method: 'POST',
-  headers: {
-    Authorization: 'Bearer ' + localStorage.getItem('token')
-  },
-  body: formData
-});
-
-      if (!response.ok) {
-        const erro = await response.text();
-        console.error(erro);
-        alert('Erro ao adicionar liderança');
-        return;
-      }
-
-      document.getElementById('lideranca-nome').value = '';
-      document.getElementById('lideranca-contato').value = '';
-      document.getElementById('lideranca-foto-file').value = '';
-
-      await carregarTudo();
-      repaintMap();
-      atualizarTotalGeralOverlay();
-      renderLiderancas(cidadeSelecionada);
-
-    } catch (err) {
-      console.error(err);
-      alert('Erro ao conectar com o servidor');
-    }
-};
+// (handler consolidado abaixo)
 
 
 function renderObservacoes(city) {
@@ -2850,56 +2786,39 @@ function toggleCollapse(btn) {
     }
 }
 document.getElementById('add-lideranca').onclick = async function () {
-
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (user.nivel === 'visualizador') { alert('Acesso Negado.'); return; }
 
   const nome = document.getElementById('lideranca-nome').value.trim();
   const contato = document.getElementById('lideranca-contato').value.trim();
   const fileInput = document.getElementById('lideranca-foto-file');
   const city = cidadeSelecionada;
 
-  if (!nome || !contato || !city) {
-    alert('Selecione uma cidade e preencha o Nome e o Contato.');
-    return;
-  }
+  if (!nome) { alert('Informe o nome da liderança.'); return; }
+  if (!city)  { alert('Selecione uma cidade.');        return; }
 
   try {
-
     const formData = new FormData();
     formData.append('cidade', city);
     formData.append('nome', nome);
-    formData.append('contato', contato);
-    formData.append(
-      'expectativa_votos',
-      Number(document.getElementById('expectativa_votos')?.value || 0)
-    );
+    if (contato) formData.append('contato', contato);
+    formData.append('expectativa_votos',
+      Number(document.getElementById('expectativa_votos')?.value || 0));
+    if (fileInput.files.length > 0) formData.append('foto', fileInput.files[0]);
 
-    if (fileInput.files.length > 0) {
-      formData.append('foto', fileInput.files[0]);
-    }
-
-    const response = await apiFetch('/liderancas', {
-
-      method: 'POST',
-      headers: {
-  Authorization: 'Bearer ' + localStorage.getItem('token')
-},
-      body: formData
-    });
+    const response = await apiFetch('/liderancas', { method: 'POST', body: formData });
 
     if (!response.ok) {
-      const erro = await response.text();
-      console.error('Erro backend:', erro);
-      alert('Erro ao adicionar liderança');
+      const erro = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+      alert('Erro ao adicionar liderança: ' + (erro.error || ''));
       return;
     }
 
-    // 🔄 Atualiza dados
     await carregarTudo();
     repaintMap();
     atualizarTotalGeralOverlay();
     renderLiderancas(city);
 
-    // 🧹 Limpa formulário
     document.getElementById('lideranca-nome').value = '';
     document.getElementById('lideranca-contato').value = '';
     const votosInput = document.getElementById('expectativa_votos');
