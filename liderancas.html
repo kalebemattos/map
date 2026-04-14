@@ -988,9 +988,9 @@
 
     /* Autocomplete dropdown */
     .ac-wrap { position:relative; }
-    .ac-dropdown { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0;
+    .ac-dropdown { display:none; position:fixed;
       background:white; border:1.5px solid #e2e8f0; border-radius:12px;
-      box-shadow:0 8px 30px rgba(0,0,0,.12); z-index:2000; max-height:240px; overflow-y:auto; }
+      box-shadow:0 8px 30px rgba(0,0,0,.25); z-index:9999; max-height:240px; overflow-y:auto; }
     .ac-dropdown.open { display:block; }
     .ac-item { display:flex; align-items:center; gap:10px; padding:9px 12px;
       cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background .1s; }
@@ -1977,9 +1977,20 @@
       document.getElementById('ac-dropdown').classList.remove('open');
     }
 
+    function posicionarAcDropdown() {
+      const inp  = document.getElementById('cad-nome');
+      const drop = document.getElementById('ac-dropdown');
+      if (!inp || !drop) return;
+      const rect = inp.getBoundingClientRect();
+      drop.style.top   = (rect.bottom + 4) + 'px';
+      drop.style.left  = rect.left + 'px';
+      drop.style.width = rect.width + 'px';
+    }
+
     function renderAcDropdown(pessoas, termo) {
       const drop = document.getElementById('ac-dropdown');
       drop.innerHTML = ''; ac.idx = -1;
+      posicionarAcDropdown();
 
       // opção "criar novo"
       const novo = document.createElement('div');
