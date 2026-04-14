@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "paralax-eleicoes",
+  "private_key_id": "97891213ec72d303c221ba2a65c4b96fc3cf5765",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCs0sm1w7ZV2za1\nrObCM8X930sb7x5Vd83PIUpASgOCddsWw49GPtbUNpb4+i/i/7xKvx/Vocugl20l\nYHa2jkZdUWPYY2tJV+dgBWrfuQ51LM52YZJJSKofx5buamvuVr8BaX5VxgGT5Ekj\nifpg0FUMLd4z6jtDAeVK2jT53qcrbAuVvvdo2NcP7eSg+wiF2UTYlw4/v5DdsS3p\nfUFSTC4DmeT2p8EoGWtGXYifDJ9BWomF5lVYBm5+WW0O76gKKQp01Pxl4oWAOc3F\nPTbw9Tl6YqBJR5rlVI43OaehSSvaYtqERxrgYjcbib+bpGZbfFt90cqX/S/D4D4g\n6lDzYIA3AgMBAAECggEAOc/NX/tXLENHeuCa1M4C5ljixDZqHEcWVrqZHwZjRCnu\nnx/N9r6gmJ6mRCVVDYdk0lA68vjLqC3feghZzdmsGh1W3BTt17wLDyjgxnQeLP5P\nFnSvPcqL9lOK3rhE4JauEGfctg6linZsLPJECkzGlmtlkFJDfrfMnwx9ejSMEU7n\nm1sLeNfGzkgnHrr2fUAqH7ptd5Wm/N7Uvu+kN7/ApgLv7kUxrQ5hvymMaAToXdIr\nBMhkznCaPIGsGFbIYcXKqVQlBqXYzhkgZDA8I9fqctriUJEDIpYmfJQDRCLda2mU\nSFm0tj6v2G3/O65Yqwhn8FuuMVczArDWDrRa9F6JOQKBgQDTGSt9xAbPoRbaXwfg\nHWIdWIVuTJhN7TifbUpRZKUAwE0mOBW2ShNqyEwQkgHoT8gzUbeIVfd4GoCoTWLo\nbVAlCU0PYo03AcWNmacWPTuYkkXLeOJ3wajfLpZiT6uhTUCbzPLDbuaEH+rFgcb+\nIALgM8ee29il8oCvCY6wf1WGZQKBgQDRlXPg6ylDF13HayJsuqRmMlO6MzmWis+g\nY5ophBFdbCzJAZunR+l0ET6hPdlZtzzTg0eSsaHvl7TXplHmAzswp7G/4gf/f4R8\n7FjOh0fph7OVGQkK2vn9iv8gLveu10XFTA0ELGtclOjuzR2F1GYTCaHu9GYpCcms\nRC6XdwzEawKBgQCaviOkcJLxlstyziCux7tJeb9t6FXpIdDVBT9qRNWzpEOplYlM\n9CYhq6wepXkie4FtJSTdmu7qKrtPJFMxwBf03kmP0pVj0jenog/afI54PBlPm1Cf\nquWInNT+Qhq1BjUrQGRgoKX4CpGFsKlXVc3l3e8h41R/6TEtnlrrxJvEBQKBgQCs\nRfsAUIyUN2rAdtHPKgPkdU3Zai3WDrfoELcxlPtpHXgaqZW2hSfiXiJrC5nTYwk+\nm1SDwjtn4/2knXQIa3OF5PH41eTZIYpX3TaKXSzBSuhUkEWchK6kuFJJtBGnyA/z\nwzWXzqNZcJWfZT71OMfGsk5HSuGGriL11P2vRw5ZjQKBgBXSYKpP5lQOG2Vbzr5g\nqP0SzhqbgxkV/6XR5tzl7fR5kfManDedEKsSnrv3tuN64RtEAynnt/k7AdS5oWVL\nyWGmEgmUupQUlUh9Cz1NHJkA9Gmd9MFbhHmpq30Z61ZWZiQk7ND6fVubJ9Tkut3s\n5xNWw4kquLZAiFE++xblekgJ\n-----END PRIVATE KEY-----\n",
+  "client_email": "bigquery-app@paralax-eleicoes.iam.gserviceaccount.com",
+  "client_id": "115008110929993520696",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/bigquery-app%40paralax-eleicoes.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

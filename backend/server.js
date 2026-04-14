@@ -522,6 +522,13 @@ app.get('/api/expectativa-cidade', auth, withTenant, async (req, res) => {
   }
 });
 
+// ── Normalização de nomes (dedup lideranças) ─────────────────────────────────
+function normalizarNome(str) {
+  return (str || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
 /* ================= GASTOS POR LIDERANÇA ================= */
 app.post('/api/gastos',
   auth,
@@ -634,6 +641,33 @@ app.get('/api/gastos-total/:lideranca_id', auth, withTenant, async (req, res) =>
 });
 
 
+/* ================= AUTOCOMPLETE DE PESSOAS ================= */
+app.get('/api/pessoas/buscar', auth, withTenant, async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    if (q.length < 2) return res.json([]);
+    const norm = normalizarNome(q);
+    const { rows } = await pool.query(`
+      SELECT
+        p.id, p.nome, p.foto, p.contato, p.perfil,
+        COUNT(l.id) AS total_cidades,
+        ARRAY_AGG(l.cidade ORDER BY l.cidade) FILTER (WHERE l.cidade IS NOT NULL) AS cidades
+      FROM pessoas p
+      LEFT JOIN liderancas l ON l.pessoa_id = p.id AND l.tenant_id = p.tenant_id
+      WHERE p.tenant_id = $1 AND p.nome_norm ILIKE $2
+      GROUP BY p.id
+      ORDER BY
+        CASE WHEN p.nome_norm = $3 THEN 0 WHEN p.nome_norm LIKE $4 THEN 1 ELSE 2 END,
+        COUNT(l.id) DESC, p.nome
+      LIMIT 10
+    `, [req.tenantId, `%${norm}%`, norm, `${norm}%`]);
+    res.json(rows);
+  } catch (err) {
+    console.error('[pessoas/buscar]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /* ================= CRIAR LIDERANÇA ================= */
 app.post('/api/liderancas',
   createLiderancaLimiter,
@@ -642,142 +676,108 @@ app.post('/api/liderancas',
   allowAll(),
   upload.single('foto'),
   async (req, res) => {
-
+  const client = await pool.connect();
   try {
     const {
- nome,
- contato,
- cidade,
- expectativa_votos,
- perfil,
- responsavel,
- status,
- release,
- vinculo_politico,
- regiao: regiaoBody,
- data_nascimento,
- mapa
-} = req.body;
-    if (!validarTexto(cidade, 120)) {
-  return res.status(400).json({ error: 'Cidade inválida' });
-}
+      pessoa_id: pessoaIdRaw, nome, cidade, contato, perfil,
+      expectativa_votos, responsavel, status, release,
+      vinculo_politico, regiao: regiaoBody, data_nascimento, mapa
+    } = req.body;
 
-if (!validarTexto(nome, 120)) {
-  return res.status(400).json({ error: 'Nome inválido' });
-}
+    if (!validarTexto(cidade, 120))
+      return res.status(400).json({ error: 'Cidade inválida' });
 
-if (contato && !validarTexto(contato, 120)) {
-  return res.status(400).json({ error: 'Contato inválido' });
-}
+    const pessoaIdFornecido = pessoaIdRaw ? Number(pessoaIdRaw) : null;
+    if (!pessoaIdFornecido && !validarTexto(nome, 120))
+      return res.status(400).json({ error: 'Nome inválido (ou forneça pessoa_id)' });
+    if (contato && !validarTexto(contato, 120))
+      return res.status(400).json({ error: 'Contato inválido' });
+    if (expectativa_votos && !validarNumero(expectativa_votos, 0, 1000000))
+      return res.status(400).json({ error: 'Expectativa inválida' });
 
-if (expectativa_votos && !validarNumero(expectativa_votos, 0, 1000000)) {
-  return res.status(400).json({ error: 'Expectativa inválida' });
-}
-
-    const votos = Number(expectativa_votos) || 0;
-    
-    // --- LÓGICA SUPABASE STORAGE ---
-    let foto = null;
-    
-      if (req.file) {
-
-  const caminhoOtimizado = await otimizarImagem(req.file.path);
-
-  const fileBuffer = fs.readFileSync(caminhoOtimizado);
-  const fileName = `${Date.now()}.webp`;
-
-  const { error } = await supabase.storage
-    .from('liderancas')
-    .upload(fileName, fileBuffer, {
-      contentType: 'image/webp',
-      upsert: false
-    });
-
-  if (error) throw error;
-
-  const { data } = supabase.storage
-    .from('liderancas')
-    .getPublicUrl(fileName);
-
-  foto = data.publicUrl;
-
-  try {
-    fs.unlinkSync(caminhoOtimizado);
-  } catch (err) {
-    console.error('Erro ao remover arquivo local:', err);
-  }
-}
-
-    // -------------------------------
-
-    if (!cidade || !nome) {
-      return res.status(400).json({ error: 'Cidade e nome são obrigatórios' });
+    // Upload de foto
+    let fotoUrl = null;
+    if (req.file) {
+      const caminhoOtimizado = await otimizarImagem(req.file.path);
+      const fileBuffer = fs.readFileSync(caminhoOtimizado);
+      const fileName = `${Date.now()}.webp`;
+      const { error } = await supabase.storage
+        .from('liderancas').upload(fileName, fileBuffer, { contentType: 'image/webp', upsert: false });
+      if (error) throw error;
+      fotoUrl = supabase.storage.from('liderancas').getPublicUrl(fileName).data.publicUrl;
+      try { fs.unlinkSync(caminhoOtimizado); } catch (_) {}
     }
 
-    await pool.query(
-  `
-  INSERT INTO liderancas
-(cidade, nome, contato, foto, expectativa_votos, perfil, responsavel, status, release, regiao, vinculo_politico, data_nascimento, mapa, tenant_id)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-  `,
-  [
-  cidade,
-  nome,
-  contato,
-  foto,
-  votos,
-  perfil || null,
-  responsavel || null,
-  status || 'ativa',
-  release || null,
-  regiaoBody || req.user.regiao,
-  vinculo_politico || null,
-  data_nascimento || null,
-  req.body.mapa || null,
-  req.tenantId
-]
-);
-// 🔐 REGISTRA AUDITORIA AQUI
-try { await registrarAuditoria(req.user.id, 'CRIAR', 'lideranca', null); } catch (_) {}
-    res.json({ success: true });
+    await client.query('BEGIN');
+
+    let pessoaId = pessoaIdFornecido;
+
+    if (!pessoaId) {
+      // Cria ou recupera pessoa pelo nome normalizado
+      const upsert = await client.query(`
+        INSERT INTO pessoas (tenant_id, nome, nome_norm, contato, foto, perfil, data_nascimento, release)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        ON CONFLICT (tenant_id, nome_norm) DO UPDATE
+          SET contato         = COALESCE(EXCLUDED.contato,         pessoas.contato),
+              foto            = COALESCE(EXCLUDED.foto,            pessoas.foto),
+              perfil          = COALESCE(EXCLUDED.perfil,          pessoas.perfil),
+              data_nascimento = COALESCE(EXCLUDED.data_nascimento, pessoas.data_nascimento),
+              release         = COALESCE(EXCLUDED.release,         pessoas.release),
+              atualizado_em   = now()
+        RETURNING id
+      `, [req.tenantId, nome.trim(), normalizarNome(nome),
+          contato || null, fotoUrl, perfil || null,
+          data_nascimento || null, release || null]);
+      pessoaId = upsert.rows[0].id;
+    } else if (fotoUrl) {
+      await client.query(
+        'UPDATE pessoas SET foto=$1, atualizado_em=now() WHERE id=$2 AND tenant_id=$3',
+        [fotoUrl, pessoaId, req.tenantId]
+      );
+    }
+
+    // Cria vínculo pessoa ↔ cidade
+    await client.query(`
+      INSERT INTO liderancas
+        (pessoa_id, tenant_id, cidade, regiao, mapa, expectativa_votos, status, responsavel, vinculo_politico)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      ON CONFLICT (pessoa_id, cidade, tenant_id) DO UPDATE
+        SET expectativa_votos = EXCLUDED.expectativa_votos,
+            status            = EXCLUDED.status,
+            responsavel       = EXCLUDED.responsavel,
+            vinculo_politico  = EXCLUDED.vinculo_politico,
+            regiao            = EXCLUDED.regiao,
+            mapa              = EXCLUDED.mapa
+    `, [pessoaId, req.tenantId, cidade,
+        regiaoBody || req.user.regiao || null,
+        mapa || null, Number(expectativa_votos) || 0,
+        status || 'ativa', responsavel || null, vinculo_politico || null]);
+
+    await client.query('COMMIT');
+    try { await registrarAuditoria(req.user.id, 'CRIAR', 'lideranca', String(pessoaId)); } catch (_) {}
+    res.json({ success: true, pessoa_id: pessoaId });
 
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Erro ao salvar liderança:', err);
     res.status(500).json({ error: 'Erro ao salvar liderança: ' + err.message });
-  }
+  } finally { client.release(); }
 });
 
 /* ================= EXCLUIR LIDERANÇA ================= */
-app.delete('/api/liderancas/:id',
-  auth,
-  withTenant,
-  allowAll(),
-  async (req, res) => {
-
+app.delete('/api/liderancas/:id', auth, withTenant, allowAll(), async (req, res) => {
   try {
     const { id } = req.params;
-
     let result;
-
     if (isPrivileged(req.user.nivel)) {
-  result = await pool.query(
-    'DELETE FROM liderancas WHERE id = $1 AND tenant_id = $2',
-    [id, req.tenantId]
-  );
-} else {
-  result = await pool.query(
-    'DELETE FROM liderancas WHERE id = $1 AND regiao = $2 AND tenant_id = $3',
-    [id, req.user.regiao, req.tenantId]
-  );
-}
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Não encontrado' });
+      result = await pool.query('DELETE FROM liderancas WHERE id=$1 AND tenant_id=$2', [id, req.tenantId]);
+    } else {
+      result = await pool.query('DELETE FROM liderancas WHERE id=$1 AND regiao=$2 AND tenant_id=$3',
+        [id, req.user.regiao, req.tenantId]);
     }
-// 🔐 REGISTRA AUDITORIA AQUI
-try { await registrarAuditoria(req.user.id, 'EXCLUIR', 'lideranca', id); } catch (_) {}
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Não encontrado' });
+    try { await registrarAuditoria(req.user.id, 'EXCLUIR', 'lideranca', id); } catch (_) {}
     res.json({ ok: true });
-
   } catch (err) {
     console.error('Erro ao excluir liderança:', err);
     res.status(500).json({ error: 'Erro ao excluir liderança: ' + err.message });
@@ -785,190 +785,132 @@ try { await registrarAuditoria(req.user.id, 'EXCLUIR', 'lideranca', id); } catch
 });
 
 /* ================= EDITAR LIDERANÇA ================= */
-app.put('/api/liderancas/:id',
-  auth,
-  withTenant,
-  allowAll(),
-  upload.single('foto'),
-  async (req, res) => {
-
+app.put('/api/liderancas/:id', auth, withTenant, allowAll(), upload.single('foto'), async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
     const {
- nome,
- contato,
- cidade,
- expectativa_votos,
- perfil,
- responsavel,
- status,
- release,
- vinculo_politico,
- regiao: regiaoBody,
- data_nascimento,
- mapa
-} = req.body;
-    // 🔐 ===== VALIDAÇÃO =====
+      nome, contato, cidade, expectativa_votos, perfil, responsavel,
+      status, release, vinculo_politico, regiao: regiaoBody, data_nascimento, mapa
+    } = req.body;
 
-if (!validarTexto(cidade, 120)) {
-  return res.status(400).json({ error: 'Cidade inválida' });
-}
-
-if (!validarTexto(nome, 120)) {
-  return res.status(400).json({ error: 'Nome inválido' });
-}
-
-if (contato && !validarTexto(contato, 120)) {
-  return res.status(400).json({ error: 'Contato inválido' });
-}
-
-if (expectativa_votos && !validarNumero(expectativa_votos, 0, 1000000)) {
-  return res.status(400).json({ error: 'Expectativa inválida' });
-}
-
-    if (!cidade || !nome) {
-  return res.status(400).json({
-    error: 'Cidade e nome são obrigatórios'
-  });
-}
-
-    const votos = Number(expectativa_votos) || 0;
+    if (!validarTexto(cidade, 120)) return res.status(400).json({ error: 'Cidade inválida' });
+    if (!validarTexto(nome, 120))   return res.status(400).json({ error: 'Nome inválido' });
+    if (contato && !validarTexto(contato, 120)) return res.status(400).json({ error: 'Contato inválido' });
+    if (expectativa_votos && !validarNumero(expectativa_votos, 0, 1000000))
+      return res.status(400).json({ error: 'Expectativa inválida' });
 
     const atual = await dbGet(
-  'SELECT * FROM liderancas WHERE id = $1 AND tenant_id = $2',
-  [id, req.tenantId]
-);
-if (!atual) {
-  return res.status(404).json({ error: 'Liderança não encontrada' });
-}
+      'SELECT l.*, p.foto AS p_foto FROM liderancas l JOIN pessoas p ON p.id=l.pessoa_id WHERE l.id=$1 AND l.tenant_id=$2',
+      [id, req.tenantId]
+    );
+    if (!atual) return res.status(404).json({ error: 'Liderança não encontrada' });
+    if (!isPrivileged(req.user.nivel) && atual.regiao !== req.user.regiao)
+      return res.status(403).json({ error: 'Acesso negado' });
 
-if (
-  !isPrivileged(req.user.nivel) &&
-  atual.regiao !== req.user.regiao
-) {
-  return res.status(403).json({ error: 'Acesso negado' });
-}
-    // --- LÓGICA SUPABASE STORAGE ---
-    let foto = atual.foto; 
+    let fotoUrl = null;
     if (req.file) {
+      const caminhoOtimizado = await otimizarImagem(req.file.path);
+      const fileBuffer = fs.readFileSync(caminhoOtimizado);
+      const fileName = `${Date.now()}.webp`;
+      const { error } = await supabase.storage
+        .from('liderancas').upload(fileName, fileBuffer, { contentType: 'image/webp', upsert: false });
+      if (error) throw error;
+      fotoUrl = supabase.storage.from('liderancas').getPublicUrl(fileName).data.publicUrl;
+      try { fs.unlinkSync(caminhoOtimizado); } catch (_) {}
+    }
 
-  // 🔹 1. Otimiza imagem antes de enviar
-  const caminhoOtimizado = await otimizarImagem(req.file.path);
+    await client.query('BEGIN');
 
-  const fileBuffer = fs.readFileSync(caminhoOtimizado);
-  const fileName = `${Date.now()}.webp`;
+    // Atualiza dados pessoais em pessoas
+    await client.query(`
+      UPDATE pessoas SET
+        nome            = COALESCE($1, nome),
+        nome_norm       = COALESCE($2, nome_norm),
+        contato         = COALESCE($3, contato),
+        foto            = COALESCE($4, foto),
+        perfil          = COALESCE($5, perfil),
+        data_nascimento = COALESCE($6, data_nascimento),
+        release         = COALESCE($7, release),
+        atualizado_em   = now()
+      WHERE id=$8 AND tenant_id=$9
+    `, [nome ? nome.trim() : null, nome ? normalizarNome(nome) : null,
+        contato || null, fotoUrl,
+        perfil || null, data_nascimento || null, release || null,
+        atual.pessoa_id, req.tenantId]);
 
-  const { error } = await supabase.storage
-    .from('liderancas')
-    .upload(fileName, fileBuffer, {
-      contentType: 'image/webp',
-      upsert: false
-    });
+    // Atualiza vínculo em liderancas
+    const result = await client.query(`
+      UPDATE liderancas SET
+        cidade           = COALESCE($1, cidade),
+        expectativa_votos= COALESCE($2, expectativa_votos),
+        status           = COALESCE($3, status),
+        responsavel      = COALESCE($4, responsavel),
+        vinculo_politico = COALESCE($5, vinculo_politico),
+        regiao           = COALESCE($6, regiao),
+        mapa             = COALESCE($7, mapa)
+      WHERE id=$8 AND tenant_id=$9
+      AND (regiao=$6 OR $10=ANY(ARRAY['dono','admin']))
+    `, [cidade || null,
+        expectativa_votos ? Number(expectativa_votos) : null,
+        status || null, responsavel || null, vinculo_politico || null,
+        regiaoBody || req.user.regiao, mapa || null,
+        id, req.tenantId, req.user.nivel]);
 
-  if (error) throw error;
+    if (result.rowCount === 0)
+      return res.status(404).json({ error: 'Não encontrado ou sem permissão' });
 
-  const { data } = supabase.storage
-    .from('liderancas')
-    .getPublicUrl(fileName);
-
-  foto = data.publicUrl;
-
-  // 🧹 Remove arquivo local
-  try {
-    fs.unlinkSync(caminhoOtimizado);
-  } catch (err) {
-    console.error('Erro ao remover arquivo local:', err);
-  }
-}
-
-    // -------------------------------
-
-    const result = await pool.query(
-  `
-  UPDATE liderancas
-SET
-nome=$1,
-contato=$2,
-expectativa_votos=$3,
-perfil=$4,
-responsavel=$5,
-status=$6,
-release=$7,
-foto=$8,
-cidade=$9,
-vinculo_politico=$10,
-regiao=COALESCE($12, regiao),
-data_nascimento=$13
-WHERE id=$11 
-AND tenant_id = $15
-AND (
-  LOWER(regiao)=LOWER($12) 
-  OR $14 = ANY(ARRAY['dono','admin'])
-)
-  `,
-  [
-  nome,
-  contato,
-  votos,
-  perfil || null,
-  responsavel || null,
-  status || 'ativa',
-  release || null,
-  foto,
-  cidade,
-  vinculo_politico || null,
-  id,
-  regiaoBody || req.user.regiao,
-  data_nascimento || null,
-  req.user.nivel,
-  req.tenantId 
-]
-);
-if (result.rowCount === 0) {
-  return res.status(404).json({ error: 'Não encontrado ou sem permissão' });
-}
-
-// 🔐 REGISTRA AUDITORIA AQUI
-try { await registrarAuditoria(req.user.id, 'EDITAR', 'lideranca', id); } catch (_) {}
+    await client.query('COMMIT');
+    try { await registrarAuditoria(req.user.id, 'EDITAR', 'lideranca', id); } catch (_) {}
     res.json({ success: true });
 
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error(err);
     res.status(500).json({ error: 'Erro ao editar liderança: ' + err.message });
-  }
+  } finally { client.release(); }
 });
 
 /* ================= BUSCAR LIDERANÇAS ================= */
+// Mantém o formato agrupado por cidade que o frontend espera:
+// [{ cidade, liderancas: [...] }]
 app.get('/api/liderancas', auth, withTenant, async (req, res) => {
   try {
-
-    let query;
-    let params = [];
-
     const mapaFiltro = req.query.mapa || null;
+    const params = mapaFiltro ? [req.tenantId, mapaFiltro] : [req.tenantId];
+    const mapaClause = mapaFiltro ? 'AND l.mapa = $2' : '';
 
-    if (mapaFiltro) {
-      query = `
-        SELECT cidade, json_agg(l.*) AS liderancas 
-        FROM liderancas l 
-        WHERE mapa = $1 AND tenant_id = $2
-        GROUP BY cidade
-      `;
-      params = [mapaFiltro, req.tenantId];
-    } else {
-      query = `
-        SELECT cidade, json_agg(l.*) AS liderancas 
-        FROM liderancas l 
-        WHERE tenant_id = $1
-        GROUP BY cidade
-      `;
-      params = [req.tenantId];
-    }
+    const { rows } = await pool.query(`
+      SELECT
+        l.cidade,
+        json_agg(json_build_object(
+          'id',               l.id,
+          'cidade',           l.cidade,
+          'regiao',           l.regiao,
+          'mapa',             l.mapa,
+          'expectativa_votos',l.expectativa_votos,
+          'status',           l.status,
+          'responsavel',      l.responsavel,
+          'vinculo_politico', l.vinculo_politico,
+          'createdat',        l.createdat,
+          'pessoa_id',        l.pessoa_id,
+          'nome',             p.nome,
+          'contato',          p.contato,
+          'foto',             p.foto,
+          'perfil',           p.perfil,
+          'data_nascimento',  p.data_nascimento,
+          'release',          p.release
+        ) ORDER BY p.nome) AS liderancas
+      FROM liderancas l
+      JOIN pessoas p ON p.id = l.pessoa_id
+      WHERE l.tenant_id = $1 ${mapaClause}
+      GROUP BY l.cidade
+      ORDER BY l.cidade
+    `, params);
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
-
+    res.json(rows);
   } catch (err) {
+    console.error('[GET /liderancas]', err);
     res.status(500).json({ error: 'Erro ao buscar lideranças' });
   }
 });

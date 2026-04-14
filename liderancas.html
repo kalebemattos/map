@@ -960,6 +960,60 @@
       .aniv-chip { width: 100%; }
       .aniv-chip-nome { max-width: none; }
     }
+
+    /* ===== MODAL CADASTRO ===== */
+    #modal-cadastro { display:none; position:fixed; inset:0; background:rgba(8,18,48,.72);
+      backdrop-filter:blur(8px); justify-content:center; align-items:center;
+      z-index:1000; padding:16px; }
+    #modal-cadastro.aberto { display:flex; }
+    .cad-card { background:white; border-radius:20px; width:100%; max-width:520px;
+      max-height:90vh; overflow-y:auto; box-shadow:0 30px 70px rgba(0,0,0,.3);
+      animation:fadeUp .25s cubic-bezier(.34,1.56,.64,1); }
+    .cad-header { display:flex; justify-content:space-between; align-items:center;
+      padding:20px 22px 16px; border-bottom:1px solid #f1f5f9; }
+    .cad-header h3 { font-family:'Sora',sans-serif; font-size:16px; font-weight:700; color:#0f172a; }
+    .cad-body { padding:20px 22px 24px; display:flex; flex-direction:column; gap:14px; }
+    .cad-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .cad-field { display:flex; flex-direction:column; gap:5px; }
+    .cad-field label { font-size:10px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.6px; color:#64748b; }
+    .cad-field input, .cad-field select, .cad-field textarea {
+      padding:9px 12px; font-size:13px; font-family:inherit; font-weight:500;
+      border-radius:9px; border:1.5px solid #e2e8f0; background:#f8fafc;
+      color:#0f172a; outline:none; transition:border-color .2s,box-shadow .2s; width:100%; }
+    .cad-field input:focus, .cad-field select:focus, .cad-field textarea:focus {
+      border-color:#1565c0; box-shadow:0 0 0 3px rgba(21,101,192,.1); background:white; }
+    .cad-field textarea { resize:vertical; min-height:70px; }
+    .cad-footer { padding:0 22px 20px; display:flex; gap:10px; justify-content:flex-end; }
+
+    /* Autocomplete dropdown */
+    .ac-wrap { position:relative; }
+    .ac-dropdown { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0;
+      background:white; border:1.5px solid #e2e8f0; border-radius:12px;
+      box-shadow:0 8px 30px rgba(0,0,0,.12); z-index:2000; max-height:240px; overflow-y:auto; }
+    .ac-dropdown.open { display:block; }
+    .ac-item { display:flex; align-items:center; gap:10px; padding:9px 12px;
+      cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background .1s; }
+    .ac-item:last-child { border-bottom:none; }
+    .ac-item:hover, .ac-item.selected { background:#eff6ff; }
+    .ac-av { width:32px; height:32px; border-radius:50%; background:#e2e8f0; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:700; color:#64748b; overflow:hidden; }
+    .ac-av img { width:100%; height:100%; object-fit:cover; }
+    .ac-info { flex:1; min-width:0; }
+    .ac-nome { font-size:12px; font-weight:600; color:#0f172a; }
+    .ac-cidades { font-size:11px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ac-badge { font-size:10px; font-weight:700; border-radius:20px; padding:2px 7px; flex-shrink:0; }
+    .ac-badge-novo { background:#dcfce7; color:#166534; }
+    .ac-badge-ex  { background:#dbeafe; color:#1d4ed8; }
+    .ac-sel-info { display:none; align-items:center; gap:6px; margin-top:5px;
+      padding:7px 10px; background:#eff6ff; border:1.5px solid #bfdbfe;
+      border-radius:8px; font-size:11px; font-weight:600; color:#1d4ed8; }
+    .ac-sel-info.show { display:flex; }
+    .ac-clear { margin-left:auto; border:none; background:none; color:#94a3b8;
+      cursor:pointer; font-size:13px; line-height:1; padding:0 2px; }
+    .ac-clear:hover { color:#ef4444; }
+    @media (max-width:600px) { .cad-row { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -986,6 +1040,9 @@
       <div class="header-actions">
         <button class="btn btn-outline" onclick="exportarTodas()">
           ⬇ Exportar todas
+        </button>
+        <button class="btn btn-primary" onclick="abrirCadastro()">
+          + Nova liderança
         </button>
         <button class="btn btn-primary" onclick="exportarFiltradas()">
           ⬇ Exportar filtro atual
@@ -1117,7 +1174,94 @@
 
   </div>
 
-  <!-- MODAL -->
+  <!-- MODAL CADASTRO -->
+  <div id="modal-cadastro" onclick="fecharCadastroFora(event)">
+    <div class="cad-card">
+      <div class="cad-header">
+        <h3>👤 Nova liderança</h3>
+        <button class="modal-close" onclick="fecharCadastro()">✕</button>
+      </div>
+      <form class="cad-body" id="form-cadastro" onsubmit="salvarLideranca(event)">
+
+        <!-- Nome com autocomplete -->
+        <div class="cad-field">
+          <label>Nome *</label>
+          <div class="ac-wrap">
+            <input type="text" id="cad-nome" placeholder="Digite o nome..." autocomplete="off" required>
+            <div class="ac-dropdown" id="ac-dropdown"></div>
+          </div>
+          <div class="ac-sel-info" id="ac-sel-info">
+            <span id="ac-sel-label"></span>
+            <button type="button" class="ac-clear" onclick="limparAcSelecao()" title="Limpar seleção">✕</button>
+          </div>
+        </div>
+
+        <div class="cad-row">
+          <div class="cad-field">
+            <label>Cidade *</label>
+            <input type="text" id="cad-cidade" placeholder="Ex: Rio de Janeiro" required>
+          </div>
+          <div class="cad-field">
+            <label>Contato (WhatsApp)</label>
+            <input type="text" id="cad-contato" placeholder="(21) 99999-9999">
+          </div>
+        </div>
+
+        <div class="cad-row">
+          <div class="cad-field">
+            <label>Perfil / Bairro</label>
+            <input type="text" id="cad-perfil" placeholder="Ex: Liderança de bairro">
+          </div>
+          <div class="cad-field">
+            <label>Expectativa de votos</label>
+            <input type="number" id="cad-votos" placeholder="0" min="0" max="1000000">
+          </div>
+        </div>
+
+        <div class="cad-row">
+          <div class="cad-field">
+            <label>Campanha</label>
+            <select id="cad-campanha">
+              <option value="">— Selecione —</option>
+            </select>
+          </div>
+          <div class="cad-field">
+            <label>Status</label>
+            <select id="cad-status">
+              <option value="ativa">Ativa</option>
+              <option value="pendente">Pendente</option>
+              <option value="inativa">Inativa</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="cad-row">
+          <div class="cad-field">
+            <label>Aniversário</label>
+            <input type="date" id="cad-nascimento">
+          </div>
+          <div class="cad-field">
+            <label>Foto</label>
+            <input type="file" id="cad-foto" accept="image/*">
+          </div>
+        </div>
+
+        <div class="cad-field">
+          <label>Release / Observações</label>
+          <textarea id="cad-release" placeholder="Observações sobre a liderança..."></textarea>
+        </div>
+
+      </form>
+      <div class="cad-footer">
+        <button class="btn btn-ghost" type="button" onclick="fecharCadastro()">Cancelar</button>
+        <button class="btn btn-primary" type="submit" form="form-cadastro" id="cad-btn-salvar">
+          Salvar liderança
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL VISUALIZAÇÃO -->
   <div id="modal-lideranca" class="modal-overlay" style="display:none;" onclick="fecharModalFora(event)">
     <div class="modal-card">
       <div class="modal-header-bg">
@@ -1330,15 +1474,18 @@
     }
 
     function atualizarStats(lista) {
-      const ativas = lista.filter(l => (l.status || 'ativa') === 'ativa').length;
-      const votos = lista.reduce((acc, l) => acc + (Number(l.expectativa_votos) || 0), 0);
+      const ativas  = lista.filter(l => (l.status || 'ativa') === 'ativa').length;
+      const votos   = lista.reduce((acc, l) => acc + (Number(l.expectativa_votos) || 0), 0);
       const cidades = new Set(lista.map(l => l.cidade).filter(Boolean)).size;
-      document.getElementById('stat-total').textContent = lista.length.toLocaleString('pt-BR');
+      // pessoas únicas (mesma pessoa em cidades diferentes conta 1 vez)
+      const pessoas = new Set(lista.map(l => l.pessoa_id).filter(Boolean)).size;
+      const total   = pessoas || lista.length;
+      document.getElementById('stat-total').textContent  = total.toLocaleString('pt-BR');
       document.getElementById('stat-ativas').textContent = ativas.toLocaleString('pt-BR');
-      document.getElementById('stat-votos').textContent = votos.toLocaleString('pt-BR');
+      document.getElementById('stat-votos').textContent  = votos.toLocaleString('pt-BR');
       document.getElementById('stat-cidades').textContent = cidades;
       document.getElementById('subtitle-info').textContent =
-        `${lista.length} lideranças em ${cidades} cidades`;
+        `${total} pessoas em ${cidades} cidades`;
     }
 
     // ===== FILTROS =====
@@ -1756,6 +1903,178 @@
       link.download = `${nome || 'liderancas'}.csv`;
       link.click();
       URL.revokeObjectURL(url);
+    }
+
+    // ===== CADASTRO + AUTOCOMPLETE =====
+
+    // Estado do autocomplete
+    const ac = { pessoaId: null, pessoaNome: null, timer: null, idx: -1 };
+
+    function normalizarNome(str) {
+      return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().trim().replace(/\s+/g, ' ');
+    }
+
+    function abrirCadastro() {
+      // Preenche select de campanha com candidatos do sistema
+      const sel = document.getElementById('cad-campanha');
+      sel.innerHTML = '<option value="">— Selecione —</option>';
+      (configSistema.candidatos || []).forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.chave; opt.textContent = c.nome;
+        sel.appendChild(opt);
+      });
+      document.getElementById('modal-cadastro').classList.add('aberto');
+      setTimeout(() => {
+        document.getElementById('cad-nome').focus();
+        inicializarAc();
+      }, 100);
+    }
+
+    function fecharCadastro() {
+      document.getElementById('modal-cadastro').classList.remove('aberto');
+      document.getElementById('form-cadastro').reset();
+      limparAcSelecao();
+    }
+
+    function fecharCadastroFora(e) {
+      if (e.target === document.getElementById('modal-cadastro')) fecharCadastro();
+    }
+
+    function limparAcSelecao() {
+      ac.pessoaId = null; ac.pessoaNome = null;
+      const inp = document.getElementById('cad-nome');
+      if (inp) inp.value = '';
+      document.getElementById('ac-sel-info').classList.remove('show');
+      document.getElementById('ac-dropdown').classList.remove('open');
+    }
+
+    function selecionarPessoa(p) {
+      ac.pessoaId = p.id; ac.pessoaNome = p.nome;
+      document.getElementById('cad-nome').value = p.nome;
+      if (p.contato) document.getElementById('cad-contato').value = p.contato;
+      if (p.perfil)  document.getElementById('cad-perfil').value  = p.perfil;
+      const cidades = Array.isArray(p.cidades) && p.cidades.length
+        ? p.cidades.join(', ') : 'sem vínculos ainda';
+      document.getElementById('ac-sel-label').textContent = `✔ Já cadastrada · ${cidades}`;
+      document.getElementById('ac-sel-info').classList.add('show');
+      document.getElementById('ac-dropdown').classList.remove('open');
+    }
+
+    function renderAcDropdown(pessoas, termo) {
+      const drop = document.getElementById('ac-dropdown');
+      drop.innerHTML = ''; ac.idx = -1;
+
+      // opção "criar novo"
+      const novo = document.createElement('div');
+      novo.className = 'ac-item';
+      novo.innerHTML = `<div class="ac-av">+</div>
+        <div class="ac-info"><div class="ac-nome">"${termo}"</div>
+        <div class="ac-cidades">Criar como nova liderança</div></div>
+        <span class="ac-badge ac-badge-novo">Novo</span>`;
+      novo.addEventListener('click', () => {
+        ac.pessoaId = null;
+        document.getElementById('cad-nome').value = termo;
+        document.getElementById('ac-sel-info').classList.remove('show');
+        drop.classList.remove('open');
+      });
+      drop.appendChild(novo);
+
+      pessoas.forEach(p => {
+        const cidades = Array.isArray(p.cidades) && p.cidades.length
+          ? p.cidades.join(', ') : 'nenhuma cidade';
+        const av = p.foto
+          ? `<div class="ac-av"><img src="${p.foto}" onerror="this.parentElement.textContent='${(p.nome||'?')[0]}'"></div>`
+          : `<div class="ac-av">${(p.nome||'?')[0].toUpperCase()}</div>`;
+        const item = document.createElement('div');
+        item.className = 'ac-item';
+        item.innerHTML = `${av}<div class="ac-info">
+          <div class="ac-nome">${p.nome}</div>
+          <div class="ac-cidades">📍 ${cidades}</div></div>
+          <span class="ac-badge ac-badge-ex">Existente</span>`;
+        item.addEventListener('click', () => selecionarPessoa(p));
+        drop.appendChild(item);
+      });
+      drop.classList.add('open');
+    }
+
+    function inicializarAc() {
+      const inp = document.getElementById('cad-nome');
+      if (!inp || inp._acIniciado) return;
+      inp._acIniciado = true;
+
+      inp.addEventListener('input', () => {
+        const val = inp.value.trim();
+        if (ac.pessoaId && normalizarNome(val) !== normalizarNome(ac.pessoaNome)) {
+          ac.pessoaId = null; ac.pessoaNome = null;
+          document.getElementById('ac-sel-info').classList.remove('show');
+        }
+        clearTimeout(ac.timer);
+        if (val.length < 2) { document.getElementById('ac-dropdown').classList.remove('open'); return; }
+        ac.timer = setTimeout(async () => {
+          try {
+            const res  = await apiFetch(`/pessoas/buscar?q=${encodeURIComponent(val)}`);
+            const data = await res.json();
+            renderAcDropdown(data, val);
+          } catch(e) { console.warn('[ac]', e); }
+        }, 300);
+      });
+
+      inp.addEventListener('keydown', e => {
+        const drop  = document.getElementById('ac-dropdown');
+        const items = drop.querySelectorAll('.ac-item');
+        if (!drop.classList.contains('open') || !items.length) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); ac.idx = Math.min(ac.idx+1, items.length-1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); ac.idx = Math.max(ac.idx-1, 0); }
+        else if (e.key === 'Enter' && ac.idx >= 0) { e.preventDefault(); items[ac.idx].click(); return; }
+        else if (e.key === 'Escape') { drop.classList.remove('open'); return; }
+        items.forEach((el,i) => el.classList.toggle('selected', i === ac.idx));
+        if (ac.idx >= 0) items[ac.idx].scrollIntoView({ block:'nearest' });
+      });
+
+      document.addEventListener('click', e => {
+        if (!e.target.closest('.ac-wrap'))
+          document.getElementById('ac-dropdown')?.classList.remove('open');
+      }, { capture: false });
+    }
+
+    async function salvarLideranca(e) {
+      e.preventDefault();
+      const btn = document.getElementById('cad-btn-salvar');
+      btn.disabled = true; btn.textContent = 'Salvando...';
+
+      try {
+        const formData = new FormData();
+
+        if (ac.pessoaId) {
+          formData.append('pessoa_id', ac.pessoaId);
+        } else {
+          formData.append('nome', document.getElementById('cad-nome').value.trim());
+        }
+        formData.append('cidade',          document.getElementById('cad-cidade').value.trim());
+        formData.append('contato',         document.getElementById('cad-contato').value.trim());
+        formData.append('perfil',          document.getElementById('cad-perfil').value.trim());
+        formData.append('expectativa_votos', document.getElementById('cad-votos').value || 0);
+        formData.append('vinculo_politico',document.getElementById('cad-campanha').value);
+        formData.append('status',          document.getElementById('cad-status').value);
+        formData.append('data_nascimento', document.getElementById('cad-nascimento').value);
+        formData.append('release',         document.getElementById('cad-release').value.trim());
+
+        const fotoFile = document.getElementById('cad-foto').files[0];
+        if (fotoFile) formData.append('foto', fotoFile);
+
+        const res = await apiFetch('/liderancas', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Erro ao salvar');
+
+        fecharCadastro();
+        await carregarLiderancas();
+      } catch(err) {
+        alert('Erro: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Salvar liderança';
+      }
     }
 
     verificarLogin();
