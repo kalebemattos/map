@@ -1922,8 +1922,15 @@
 
     function abrirDropdown() {
       const inp  = document.getElementById('cad-nome');
-      const drop = document.getElementById('ac-dropdown');
+      let   drop = document.getElementById('ac-dropdown');
       if (!inp || !drop) return;
+
+      // backdrop-filter no modal quebra position:fixed dos filhos.
+      // Solução: mover o dropdown para o body, fora do modal.
+      if (drop.parentElement !== document.body) {
+        document.body.appendChild(drop);
+      }
+
       const r = inp.getBoundingClientRect();
       drop.style.position = 'fixed';
       drop.style.top      = (r.bottom + 2) + 'px';
