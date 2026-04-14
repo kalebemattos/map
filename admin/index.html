@@ -701,9 +701,12 @@ textarea {
     </div>
 
     <div class="form-row">
-      <div class="form-group">
+      <div class="form-group" style="position:relative">
         <label>Nome *</label>
-        <input id="nome" placeholder="Nome completo">
+        <input id="nome" placeholder="Nome completo" autocomplete="off">
+        <!-- Dropdown de autocomplete — será movido para body via JS -->
+        <div id="ac-nome-drop" style="display:none;position:fixed;background:white;border:1.5px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.18);z-index:99999;max-height:260px;overflow-y:auto;"></div>
+        <div id="ac-nome-info" style="display:none;margin-top:4px;font-size:12px;color:#1565c0;font-weight:600;"></div>
       </div>
       <div class="form-group">
         <label>Contato</label>
@@ -1403,6 +1406,7 @@ function editarLiderancaCompleta(id, nomeVal, contatoVal, votosVal, perfilVal, r
 
 function cancelarEdicao() {
   editandoId = null;
+  acNomePessoaId = null;
   nome.value = '';
   contato.value = '';
   expectativaVotosInput.value = '';
@@ -1417,7 +1421,120 @@ function cancelarEdicao() {
   document.getElementById('form-icon').textContent = '➕';
   cancelarBtn.classList.add('hidden');
   document.getElementById('gastos-card').style.display = 'none';
+  acFecharDrop();
+  document.getElementById('ac-nome-info').style.display = 'none';
 }
+
+/* ===== AUTOCOMPLETE DE NOME ===== */
+let acNomePessoaId = null;
+let acNomeTimer    = null;
+
+function acFecharDrop() {
+  const d = document.getElementById('ac-nome-drop');
+  if (d) d.style.display = 'none';
+}
+
+function acAbrirDrop() {
+  const inp = document.getElementById('nome');
+  const d   = document.getElementById('ac-nome-drop');
+  if (!inp || !d) return;
+  // Move para body para evitar que backdrop-filter do pai quebre position:fixed
+  if (d.parentElement !== document.body) document.body.appendChild(d);
+  const r = inp.getBoundingClientRect();
+  d.style.top    = (r.bottom + 2) + 'px';
+  d.style.left   = r.left + 'px';
+  d.style.width  = r.width + 'px';
+  d.style.display = 'block';
+}
+
+function acSelecionarPessoa(p) {
+  acNomePessoaId = p.id;
+  document.getElementById('nome').value    = p.nome;
+  document.getElementById('contato').value = p.contato || '';
+  perfilInput.value       = p.perfil  || '';
+  releaseInput.value      = p.release || '';
+  if (dataNascimentoInput) dataNascimentoInput.value = p.data_nascimento
+    ? String(p.data_nascimento).substring(0, 10) : '';
+  const cidades = Array.isArray(p.cidades) && p.cidades.length
+    ? p.cidades.join(', ') : 'sem cidades anteriores';
+  const info = document.getElementById('ac-nome-info');
+  info.textContent = `✔ Pessoa já cadastrada · ${cidades}`;
+  info.style.display = 'block';
+  acFecharDrop();
+}
+
+function acRenderDrop(lista, termo) {
+  const d = document.getElementById('ac-nome-drop');
+  d.innerHTML = '';
+
+  // Opção criar novo
+  const novo = document.createElement('div');
+  novo.style.cssText = 'padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;';
+  novo.innerHTML = `<span style="width:32px;height:32px;border-radius:50%;background:#e0e7ff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0">+</span>
+    <div><div style="font-weight:600;font-size:13px">"${termo}"</div>
+    <div style="font-size:11px;color:#64748b">Cadastrar como nova pessoa</div></div>
+    <span style="margin-left:auto;background:#dcfce7;color:#16a34a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">NOVO</span>`;
+  novo.addEventListener('mousedown', e => {
+    e.preventDefault();
+    acNomePessoaId = null;
+    document.getElementById('nome').value = termo;
+    document.getElementById('ac-nome-info').style.display = 'none';
+    acFecharDrop();
+  });
+  novo.addEventListener('mouseover', () => novo.style.background = '#f8fafc');
+  novo.addEventListener('mouseout',  () => novo.style.background = '');
+  d.appendChild(novo);
+
+  lista.forEach(p => {
+    const letra  = (p.nome || '?')[0].toUpperCase();
+    const cidades = Array.isArray(p.cidades) && p.cidades.length ? p.cidades.join(', ') : '';
+    const item = document.createElement('div');
+    item.style.cssText = 'padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;';
+    item.innerHTML = `<span style="width:32px;height:32px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${letra}</span>
+      <div style="min-width:0">
+        <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nome}</div>
+        ${cidades ? `<div style="font-size:11px;color:#64748b">📍 ${cidades}</div>` : ''}
+      </div>
+      <span style="margin-left:auto;background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;flex-shrink:0">EXISTENTE</span>`;
+    item.addEventListener('mousedown', e => { e.preventDefault(); acSelecionarPessoa(p); });
+    item.addEventListener('mouseover', () => item.style.background = '#f8fafc');
+    item.addEventListener('mouseout',  () => item.style.background = '');
+    d.appendChild(item);
+  });
+
+  acAbrirDrop();
+}
+
+function acInicializar() {
+  const inp = document.getElementById('nome');
+  if (!inp || inp._acAdminIniciado) return;
+  inp._acAdminIniciado = true;
+
+  inp.addEventListener('input', () => {
+    const val = inp.value.trim();
+    if (acNomePessoaId && val.toLowerCase() !== (window._acNomeAnterior || '').toLowerCase()) {
+      acNomePessoaId = null;
+      document.getElementById('ac-nome-info').style.display = 'none';
+    }
+    clearTimeout(acNomeTimer);
+    if (val.length < 2) { acFecharDrop(); return; }
+    acNomeTimer = setTimeout(async () => {
+      try {
+        const res = await apiFetch('/api/pessoas/buscar?q=' + encodeURIComponent(val));
+        const lista = res.ok ? (await res.json().catch(() => [])) : [];
+        acRenderDrop(Array.isArray(lista) ? lista : [], val);
+      } catch(e) { console.warn('[ac-admin]', e); }
+    }, 250);
+  });
+
+  document.addEventListener('mousedown', e => {
+    const d = document.getElementById('ac-nome-drop');
+    if (d && e.target !== inp && !d.contains(e.target)) acFecharDrop();
+  });
+}
+
+// Inicializa quando a página carregar
+document.addEventListener('DOMContentLoaded', () => setTimeout(acInicializar, 500));
 
 /* ===== SALVAR ===== */
 async function salvar() {
@@ -1444,7 +1561,11 @@ async function salvar() {
                 : ''
   if (mapaVal) fd.append('mapa', mapaVal);
   if (regiao.value) fd.append('regiao', regiao.value);
-  fd.append('nome', nome.value.trim());
+  if (acNomePessoaId && !editandoId) {
+    fd.append('pessoa_id', acNomePessoaId);
+  } else {
+    fd.append('nome', nome.value.trim());
+  }
   fd.append('contato', contato.value.trim());
   fd.append('expectativa_votos', Number(expectativaVotosInput.value) || 0);
   fd.append('perfil', perfilInput.value);
