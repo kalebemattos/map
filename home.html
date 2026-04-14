@@ -1331,12 +1331,23 @@ async function aplicarVisibilidadeCards(user) {
     })
 
     // 2. Visibilidade por nível (home_cards_config do tenant + defaults hardcoded)
+    // home_cards_config também pode ocultar cards de mapa (como fallback)
     const cardsConfig = cfg.home_cards_config || {}
 
     document.querySelectorAll('.card[id]').forEach(card => {
       const id = card.id
-      // Ignora cards de mapa (já tratados acima)
-      if (id.startsWith('card-mapa-')) return
+
+      // Para cards de mapa: já foram tratados pelo visivel acima,
+      // mas home_cards_config pode forçar ocultação adicional (ex: [])
+      if (id.startsWith('card-mapa-')) {
+        if (cardsConfig.hasOwnProperty(id)) {
+          const niveis = cardsConfig[id]
+          if (!Array.isArray(niveis) || niveis.length === 0 || !niveis.includes(nivel)) {
+            card.style.display = 'none'
+          }
+        }
+        return
+      }
 
       // Config do tenant tem prioridade; fallback para defaults
       const niveis = cardsConfig.hasOwnProperty(id)
