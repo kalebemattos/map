@@ -1906,17 +1906,143 @@
     }
 
     // ===== CADASTRO + AUTOCOMPLETE =====
-
-    // Estado do autocomplete
-    const ac = { pessoaId: null, pessoaNome: null, timer: null, idx: -1 };
+    let acTimer = null;
+    let acPessoaId = null;
+    let acPessoaNome = null;
 
     function normalizarNome(str) {
       return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
         .toLowerCase().trim().replace(/\s+/g, ' ');
     }
 
+    function fecharDropdown() {
+      const drop = document.getElementById('ac-dropdown');
+      if (drop) drop.style.display = 'none';
+    }
+
+    function abrirDropdown() {
+      const inp  = document.getElementById('cad-nome');
+      const drop = document.getElementById('ac-dropdown');
+      if (!inp || !drop) return;
+      const r = inp.getBoundingClientRect();
+      drop.style.position = 'fixed';
+      drop.style.top      = (r.bottom + 2) + 'px';
+      drop.style.left     = r.left + 'px';
+      drop.style.width    = r.width + 'px';
+      drop.style.display  = 'block';
+      drop.style.zIndex   = '99999';
+    }
+
+    function selecionarPessoa(p) {
+      acPessoaId   = p.id;
+      acPessoaNome = p.nome;
+      document.getElementById('cad-nome').value     = p.nome;
+      document.getElementById('cad-contato').value  = p.contato || '';
+      document.getElementById('cad-perfil').value   = p.perfil  || '';
+      document.getElementById('cad-release').value  = p.release || '';
+      document.getElementById('cad-nascimento').value = p.data_nascimento
+        ? String(p.data_nascimento).substring(0, 10) : '';
+      const cidades = Array.isArray(p.cidades) && p.cidades.length
+        ? p.cidades.join(', ') : 'sem vínculos ainda';
+      document.getElementById('ac-sel-label').textContent = `✔ Já cadastrada · ${cidades}`;
+      document.getElementById('ac-sel-info').classList.add('show');
+      fecharDropdown();
+    }
+
+    async function buscarPessoas(val) {
+      try {
+        const res = await apiFetch('/pessoas/buscar?q=' + encodeURIComponent(val));
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      } catch (e) {
+        console.warn('[ac]', e);
+        return [];
+      }
+    }
+
+    function renderDropdown(pessoas, termo) {
+      const drop = document.getElementById('ac-dropdown');
+      drop.innerHTML = '';
+
+      // Opção: criar novo
+      const novo = document.createElement('div');
+      novo.className = 'ac-item';
+      novo.innerHTML = `<div class="ac-av" style="font-size:18px;line-height:1">+</div>
+        <div class="ac-info">
+          <div class="ac-nome">"${termo}"</div>
+          <div class="ac-cidades">Cadastrar como nova pessoa</div>
+        </div>
+        <span class="ac-badge ac-badge-novo">Novo</span>`;
+      novo.addEventListener('mousedown', e => {
+        e.preventDefault();
+        acPessoaId = null;
+        document.getElementById('cad-nome').value = termo;
+        document.getElementById('ac-sel-info').classList.remove('show');
+        fecharDropdown();
+      });
+      drop.appendChild(novo);
+
+      pessoas.forEach(p => {
+        const cidades = Array.isArray(p.cidades) && p.cidades.length
+          ? p.cidades.join(', ') : 'sem cidade';
+        const letra = (p.nome || '?')[0].toUpperCase();
+        const av = p.foto
+          ? `<div class="ac-av"><img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>`
+          : `<div class="ac-av">${letra}</div>`;
+        const item = document.createElement('div');
+        item.className = 'ac-item';
+        item.innerHTML = `${av}
+          <div class="ac-info">
+            <div class="ac-nome">${p.nome}</div>
+            <div class="ac-cidades">📍 ${cidades}</div>
+          </div>
+          <span class="ac-badge ac-badge-ex">Existente</span>`;
+        item.addEventListener('mousedown', e => {
+          e.preventDefault();
+          selecionarPessoa(p);
+        });
+        drop.appendChild(item);
+      });
+
+      abrirDropdown();
+    }
+
+    function inicializarAc() {
+      const inp = document.getElementById('cad-nome');
+      if (!inp) return;
+
+      // Remove listener anterior se existir
+      if (inp._acHandler) inp.removeEventListener('input', inp._acHandler);
+
+      inp._acHandler = async function() {
+        const val = inp.value.trim();
+        // Se o usuário mudou o nome após selecionar alguém, limpa a seleção
+        if (acPessoaId && normalizarNome(val) !== normalizarNome(acPessoaNome)) {
+          acPessoaId = null; acPessoaNome = null;
+          document.getElementById('ac-sel-info').classList.remove('show');
+        }
+        clearTimeout(acTimer);
+        if (val.length < 2) { fecharDropdown(); return; }
+        acTimer = setTimeout(async () => {
+          const lista = await buscarPessoas(val);
+          renderDropdown(lista, val);
+        }, 250);
+      };
+
+      inp.addEventListener('input', inp._acHandler);
+
+      // Fecha ao clicar fora
+      if (!document._acClickHandler) {
+        document._acClickHandler = e => {
+          if (!e.target.closest('#ac-dropdown') && e.target.id !== 'cad-nome') fecharDropdown();
+        };
+        document.addEventListener('mousedown', document._acClickHandler);
+      }
+    }
+
     function abrirCadastro() {
-      // Preenche select de campanha com candidatos do sistema
+      acPessoaId = null; acPessoaNome = null;
       const sel = document.getElementById('cad-campanha');
       sel.innerHTML = '<option value="">— Selecione —</option>';
       (configSistema.candidatos || []).forEach(c => {
@@ -1925,16 +2051,20 @@
         sel.appendChild(opt);
       });
       document.getElementById('modal-cadastro').classList.add('aberto');
+      fecharDropdown();
+      document.getElementById('ac-sel-info').classList.remove('show');
       setTimeout(() => {
-        document.getElementById('cad-nome').focus();
         inicializarAc();
-      }, 100);
+        document.getElementById('cad-nome').focus();
+      }, 50);
     }
 
     function fecharCadastro() {
       document.getElementById('modal-cadastro').classList.remove('aberto');
       document.getElementById('form-cadastro').reset();
-      limparAcSelecao();
+      fecharDropdown();
+      acPessoaId = null; acPessoaNome = null;
+      document.getElementById('ac-sel-info').classList.remove('show');
     }
 
     function fecharCadastroFora(e) {
@@ -1942,139 +2072,14 @@
     }
 
     function limparAcSelecao() {
-      ac.pessoaId = null; ac.pessoaNome = null;
+      acPessoaId = null; acPessoaNome = null;
       document.getElementById('cad-nome').value        = '';
       document.getElementById('cad-contato').value     = '';
       document.getElementById('cad-perfil').value      = '';
       document.getElementById('cad-release').value     = '';
       document.getElementById('cad-nascimento').value  = '';
       document.getElementById('ac-sel-info').classList.remove('show');
-      document.getElementById('ac-dropdown').classList.remove('open');
-    }
-
-    function selecionarPessoa(p) {
-      ac.pessoaId = p.id; ac.pessoaNome = p.nome;
-      document.getElementById('cad-nome').value = p.nome;
-      // Preenche todos os dados pessoais da pessoa selecionada (exceto votos)
-      document.getElementById('cad-contato').value    = p.contato || '';
-      document.getElementById('cad-perfil').value     = p.perfil  || '';
-      document.getElementById('cad-release').value    = p.release || '';
-      if (p.data_nascimento) {
-        // data_nascimento vem como "YYYY-MM-DDT..." do banco — pega só os 10 primeiros chars
-        document.getElementById('cad-nascimento').value = p.data_nascimento.substring(0, 10);
-      } else {
-        document.getElementById('cad-nascimento').value = '';
-      }
-      // Foto: mostra preview se existir
-      if (p.foto) {
-        const prev = document.getElementById('cad-foto-preview');
-        if (prev) prev.src = p.foto;
-      }
-      const cidades = Array.isArray(p.cidades) && p.cidades.length
-        ? p.cidades.join(', ') : 'sem vínculos ainda';
-      document.getElementById('ac-sel-label').textContent = `✔ Já cadastrada · ${cidades}`;
-      document.getElementById('ac-sel-info').classList.add('show');
-      document.getElementById('ac-dropdown').classList.remove('open');
-    }
-
-    function posicionarAcDropdown() {
-      const inp  = document.getElementById('cad-nome');
-      const drop = document.getElementById('ac-dropdown');
-      if (!inp || !drop) return;
-      const rect = inp.getBoundingClientRect();
-      drop.style.top   = (rect.bottom + 4) + 'px';
-      drop.style.left  = rect.left + 'px';
-      drop.style.width = rect.width + 'px';
-    }
-
-    function renderAcDropdown(pessoas, termo) {
-      const drop = document.getElementById('ac-dropdown');
-      drop.innerHTML = ''; ac.idx = -1;
-      posicionarAcDropdown();
-
-      // opção "criar novo"
-      const novo = document.createElement('div');
-      novo.className = 'ac-item';
-      novo.innerHTML = `<div class="ac-av">+</div>
-        <div class="ac-info"><div class="ac-nome">"${termo}"</div>
-        <div class="ac-cidades">Criar como nova liderança</div></div>
-        <span class="ac-badge ac-badge-novo">Novo</span>`;
-      novo.addEventListener('click', () => {
-        ac.pessoaId = null;
-        document.getElementById('cad-nome').value = termo;
-        document.getElementById('ac-sel-info').classList.remove('show');
-        drop.classList.remove('open');
-      });
-      drop.appendChild(novo);
-
-      if (!Array.isArray(pessoas) || !pessoas.length) {
-        drop.classList.add('open');
-        return;
-      }
-
-      pessoas.forEach(p => {
-        const cidades = Array.isArray(p.cidades) && p.cidades.length
-          ? p.cidades.join(', ') : 'nenhuma cidade';
-        const av = p.foto
-          ? `<div class="ac-av"><img src="${p.foto}" onerror="this.parentElement.textContent='${(p.nome||'?')[0]}'"></div>`
-          : `<div class="ac-av">${(p.nome||'?')[0].toUpperCase()}</div>`;
-        const item = document.createElement('div');
-        item.className = 'ac-item';
-        item.innerHTML = `${av}<div class="ac-info">
-          <div class="ac-nome">${p.nome}</div>
-          <div class="ac-cidades">📍 ${cidades}</div></div>
-          <span class="ac-badge ac-badge-ex">Existente</span>`;
-        item.addEventListener('click', () => selecionarPessoa(p));
-        drop.appendChild(item);
-      });
-      drop.classList.add('open');
-    }
-
-    function inicializarAc() {
-      const inp = document.getElementById('cad-nome');
-      if (!inp || inp._acIniciado) return;
-      inp._acIniciado = true;
-
-      inp.addEventListener('input', () => {
-        const val = inp.value.trim();
-        if (ac.pessoaId && normalizarNome(val) !== normalizarNome(ac.pessoaNome)) {
-          ac.pessoaId = null; ac.pessoaNome = null;
-          document.getElementById('ac-sel-info').classList.remove('show');
-        }
-        clearTimeout(ac.timer);
-        if (val.length < 2) { document.getElementById('ac-dropdown').classList.remove('open'); return; }
-        ac.timer = setTimeout(async () => {
-          try {
-            const res  = await apiFetch(`/pessoas/buscar?q=${encodeURIComponent(val)}`);
-            if (!res.ok) {
-              console.warn('[ac] endpoint retornou', res.status, res.statusText);
-              renderAcDropdown([], val);
-              return;
-            }
-            const data = await res.json();
-            const lista = Array.isArray(data) ? data : [];
-            if (!Array.isArray(data)) console.warn('[ac] resposta inesperada:', data);
-            renderAcDropdown(lista, val);
-          } catch(e) { console.warn('[ac] erro na busca:', e); renderAcDropdown([], val); }
-        }, 300);
-      });
-
-      inp.addEventListener('keydown', e => {
-        const drop  = document.getElementById('ac-dropdown');
-        const items = drop.querySelectorAll('.ac-item');
-        if (!drop.classList.contains('open') || !items.length) return;
-        if (e.key === 'ArrowDown') { e.preventDefault(); ac.idx = Math.min(ac.idx+1, items.length-1); }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); ac.idx = Math.max(ac.idx-1, 0); }
-        else if (e.key === 'Enter' && ac.idx >= 0) { e.preventDefault(); items[ac.idx].click(); return; }
-        else if (e.key === 'Escape') { drop.classList.remove('open'); return; }
-        items.forEach((el,i) => el.classList.toggle('selected', i === ac.idx));
-        if (ac.idx >= 0) items[ac.idx].scrollIntoView({ block:'nearest' });
-      });
-
-      document.addEventListener('click', e => {
-        if (!e.target.closest('.ac-wrap'))
-          document.getElementById('ac-dropdown')?.classList.remove('open');
-      }, { capture: false });
+      fecharDropdown();
     }
 
     async function salvarLideranca(e) {
@@ -2085,8 +2090,8 @@
       try {
         const formData = new FormData();
 
-        if (ac.pessoaId) {
-          formData.append('pessoa_id', ac.pessoaId);
+        if (acPessoaId) {
+          formData.append('pessoa_id', acPessoaId);
         } else {
           formData.append('nome', document.getElementById('cad-nome').value.trim());
         }
