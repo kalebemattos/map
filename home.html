@@ -1187,7 +1187,7 @@ setTimeout(function() {
         </div>
       </a>
 
-      <a href="./analise/" class="card card-amber">
+      <a href="./analise/" class="card card-amber" id="card-analise">
         <div class="card-shine"></div>
         <div class="card-icon-wrap">📊</div>
         <div class="card-body">
@@ -1198,7 +1198,7 @@ setTimeout(function() {
       </a>
 
       <!-- ── LINHA 3: Gestão ── -->
-      <a href="./admin/" class="card card-purple">
+      <a href="./admin/" class="card card-purple" id="card-painel-admin">
         <div class="card-shine"></div>
         <div class="card-icon-wrap">👥</div>
         <div class="card-body">
@@ -1208,7 +1208,7 @@ setTimeout(function() {
         </div>
       </a>
 
-      <a href="./liderancas.html" class="card card-blue">
+      <a href="./liderancas.html" class="card card-blue" id="card-liderancas">
         <div class="card-shine"></div>
         <div class="card-icon-wrap">📋</div>
         <div class="card-body">
@@ -1290,18 +1290,8 @@ window.iniciarAplicacao = function() {
   // Mostra botão logout
   const logoutBtn = document.getElementById('logout-btn')
   if (logoutBtn) logoutBtn.style.display = 'inline-block'
-  // Mostra card admin se dono
-  if (user.nivel === 'dono') {
-    const adminCard = document.getElementById('card-admin')
-    if (adminCard) adminCard.style.display = 'flex'
-  }
-  // Mostra command center para dono e admin
-  if (user.nivel === 'dono' || user.nivel === 'admin') {
-    const ccCard = document.getElementById('card-command-center')
-    if (ccCard) ccCard.style.display = 'flex'
-  }
-  // Aplica visibilidade dos mapas conforme config do tenant
-  aplicarVisibilidadeMapas()
+  // Aplica visibilidade de todos os cards conforme config do tenant + nível do usuário
+  aplicarVisibilidadeCards(user)
   // Busca salas de vídeo ativas e exibe badge
   carregarSalasAtivas()
   // Busca aniversariantes da região
@@ -1310,30 +1300,67 @@ window.iniciarAplicacao = function() {
   carregarIndicadorCampanha()
 }
 
-async function aplicarVisibilidadeMapas() {
+// Definição completa dos cards do home — usada pela config e para defaults
+const HOME_CARDS_DEFAULTS = {
+  // card-id: niveis que podem ver (null = todos)
+  'card-admin':          ['dono'],
+  'card-command-center': ['dono', 'admin'],
+}
+
+async function aplicarVisibilidadeCards(user) {
   try {
     const token = localStorage.getItem('token')
     if (!token) return
+    const nivel = user?.nivel || ''
+
     const r = await fetch(API_URL + '/api/config', {
       headers: { Authorization: 'Bearer ' + token }
     })
     if (!r.ok) return
     const cfg = await r.json()
-    // cfg.mapas é array de { id, nome, visivel, ... }
-    // mapas sem entrada na tabela ficam visíveis por padrão
+
+    // 1. Visibilidade dos mapas (toggle visivel da tabela tenant_mapas)
     const mapaMap = {}
     ;(cfg.mapas || []).forEach(m => { mapaMap[m.id] = m })
-    // IDs dos cards de mapa no HTML: card-mapa-{mapa_id}
     document.querySelectorAll('[id^="card-mapa-"]').forEach(card => {
       const mapaId = card.id.replace('card-mapa-', '')
-      const cfg = mapaMap[mapaId]
-      // Se o mapa está na tabela e visivel = false, oculta
-      if (cfg && cfg.visivel === false) {
+      const mapa   = mapaMap[mapaId]
+      if (mapa && mapa.visivel === false) {
         card.style.display = 'none'
       }
     })
+
+    // 2. Visibilidade por nível (home_cards_config do tenant + defaults hardcoded)
+    const cardsConfig = cfg.home_cards_config || {}
+
+    document.querySelectorAll('.card[id]').forEach(card => {
+      const id = card.id
+      // Ignora cards de mapa (já tratados acima)
+      if (id.startsWith('card-mapa-')) return
+
+      // Config do tenant tem prioridade; fallback para defaults
+      const niveis = cardsConfig.hasOwnProperty(id)
+        ? cardsConfig[id]
+        : (HOME_CARDS_DEFAULTS[id] ?? null)  // null = visível para todos
+
+      if (niveis === null || niveis === undefined) {
+        // Sem restrição — mostra para todos
+        if (card.style.display === 'none') card.style.display = 'flex'
+      } else if (Array.isArray(niveis)) {
+        if (niveis.length === 0 || !niveis.includes(nivel)) {
+          card.style.display = 'none'
+        } else {
+          card.style.display = 'flex'
+        }
+      }
+    })
   } catch (e) {
-    // silencioso — em caso de erro, todos os cards ficam visíveis
+    // Fallback silencioso — em caso de erro aplica defaults hardcoded
+    const nivel = user?.nivel || ''
+    const adminCard = document.getElementById('card-admin')
+    if (adminCard) adminCard.style.display = nivel === 'dono' ? 'flex' : 'none'
+    const ccCard = document.getElementById('card-command-center')
+    if (ccCard) ccCard.style.display = (nivel === 'dono' || nivel === 'admin') ? 'flex' : 'none'
   }
 }
 
@@ -1506,20 +1533,24 @@ function renderIndicadorCampanha(candidatos, totais) {
     const meta    = temMeta ? Number(cand.meta_votos) : 0
     const metaPct = temMeta ? Math.min(Math.round((votos / meta) * 100), 100) : pct
 
-    // Cor do candidato (usa cor_fundo do cadastro, fallback paleta)
-    const corSolid = cand.cor_fundo || pal.solid
+    // Cor do candidato
+    // cor_fundo = cor de fundo dos blocos (pode ser clara, ex: #fce7f3)
+    // cor_texto = cor de destaque (mais escura, ex: #be185d) — usada no avatar
+    // Para o avatar (círculo com inicial), usa cor_texto ou a cor sólida da paleta
+    const corFundo  = cand.cor_fundo || pal.light
+    const avatarBg  = cand.cor_texto || pal.solid   // cor escura → texto branco legível
 
-    // Avatar: foto real ou inicial
+    // Avatar: foto real ou inicial com cor legível
     const avatarHtml = cand.foto_url
-      ? `<img src="${escHome(cand.foto_url)}" class="ci-photo" style="border-color:${corSolid};"
+      ? `<img src="${escHome(cand.foto_url)}" class="ci-photo" style="border-color:${avatarBg};"
             alt="${escHome(cand.nome)}"
             onerror="this.style.display='none';document.getElementById('ci-av-fb-${escHome(cand.chave)}').style.display='flex';">
-         <div class="ci-avatar" id="ci-av-fb-${escHome(cand.chave)}" style="background:${corSolid};display:none;">${escHome(ini)}</div>`
-      : `<div class="ci-avatar" style="background:${corSolid};">${escHome(ini)}</div>`
+         <div class="ci-avatar" id="ci-av-fb-${escHome(cand.chave)}" style="background:${avatarBg};display:none;">${escHome(ini)}</div>`
+      : `<div class="ci-avatar" style="background:${avatarBg};">${escHome(ini)}</div>`
 
     html += `
     <div class="ci-cand" style="background:${pal.light};border:1px solid ${pal.border};">
-      <div class="ci-cand-bg" style="background:${corSolid};"></div>
+      <div class="ci-cand-bg" style="background:${avatarBg};"></div>
       <div class="ci-cand-header">
         <div class="ci-avatar-wrap">${avatarHtml}</div>
         <div style="flex:1;min-width:0;position:relative;z-index:1;">
@@ -1549,7 +1580,7 @@ function renderIndicadorCampanha(candidatos, totais) {
       </div>` : ''}
       <div class="ci-bar-wrap">
         <div class="ci-bar-track">
-          <div class="ci-bar-fill" id="ci-bar-${escHome(cand.chave)}" style="background:${corSolid};"></div>
+          <div class="ci-bar-fill" id="ci-bar-${escHome(cand.chave)}" style="background:${avatarBg};"></div>
         </div>
         <div class="ci-bar-pct">${temMeta ? metaPct + '% atingido' : pct + '% do total geral'}</div>
       </div>

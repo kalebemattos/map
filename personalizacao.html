@@ -260,6 +260,28 @@
     .switch input:checked + .switch-slider { background: #22c55e; }
     .switch input:checked + .switch-slider::before { transform: translateX(20px); }
     .switch input:disabled + .switch-slider { opacity: .5; cursor: not-allowed; }
+
+    /* ── TABELA DE CARDS POR NÍVEL ── */
+    .cards-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 560px; }
+    .cards-table th {
+      padding: 9px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .5px; color: #64748b; background: #f8fafc;
+      border-bottom: 2px solid #e2e8f0; text-align: center; white-space: nowrap;
+    }
+    .cards-table th:first-child { text-align: left; }
+    .cards-table td {
+      padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle; text-align: center;
+    }
+    .cards-table td:first-child { text-align: left; font-weight: 600; color: #0f172a; }
+    .cards-table tr:last-child td { border-bottom: none; }
+    .cards-table tr:hover td { background: #f8fafc; }
+    .card-level-icon { font-size: 14px; margin-right: 5px; }
+    .cards-table input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: #1565c0; }
+    .level-header { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .level-header-icon { font-size: 16px; }
+    .cards-table-saving { animation: pulse-save .8s ease infinite; }
+    @keyframes pulse-save { 0%,100% { opacity:1; } 50% { opacity:.4; } }
   </style>
 </head>
 <body>
@@ -579,12 +601,28 @@
       <!-- Grade de mapas com toggles -->
       <div class="card">
         <div class="card-title">
-          🏠 Cards de mapa exibidos no Home
+          🗺️ Visibilidade dos mapas no Home
           <button class="btn-secondary ml" onclick="carregarVisibilidadeMapas()">↺ Atualizar</button>
         </div>
         <div id="home-mapas-grid" style="display:flex;flex-direction:column;gap:10px;">
           <div class="empty-state">Carregando...</div>
         </div>
+      </div>
+
+      <!-- Cards por nível de usuário -->
+      <div class="card">
+        <div class="card-title">
+          🃏 Visibilidade dos cards por nível de usuário
+          <button class="btn-secondary ml" onclick="carregarCardsHome()">↺ Atualizar</button>
+        </div>
+        <p style="font-size:12px;color:#64748b;margin-bottom:16px;line-height:1.5;">
+          Marque quais níveis de usuário podem ver cada card no Home. Cards desmarcados para todos ficam ocultos.
+          Deixar todos marcados = visível para todos. Alterações são salvas automaticamente.
+        </p>
+        <div id="home-cards-table-wrap" style="overflow-x:auto;">
+          <div class="empty-state">Carregando...</div>
+        </div>
+        <div id="home-cards-status" style="margin-top:10px;font-size:12px;font-weight:600;display:none;"></div>
       </div>
 
     </div>
@@ -713,6 +751,7 @@ function iniciarApp() {
   carregarRegioes();
   carregarIdentidade();
   carregarVisibilidadeMapas();
+  carregarCardsHome();
 }
 
 /* ══════════════════════════════════════
@@ -812,6 +851,161 @@ async function toggleVisibilidadeMapa(mapaId, visivel) {
   } finally {
     if (chk) chk.disabled = false;
   }
+}
+
+/* ══════════════════════════════════════
+   HOME — VISIBILIDADE DOS CARDS POR NÍVEL
+══════════════════════════════════════ */
+
+// Todos os cards do home com seus metadados
+const CARDS_HOME_DEF = [
+  { id: 'card-mapa-rj',        icone: '🗺️', nome: 'Mapa Estratégico do Estado' },
+  { id: 'card-mapa-angra',     icone: '🏝️', nome: 'Mapa de Angra dos Reis' },
+  { id: 'card-mapa-rjcapital', icone: '🏙️', nome: 'Mapa Rio de Janeiro' },
+  { id: 'card-mapa-pirai',     icone: '🌿', nome: 'Mapa de Piraí' },
+  { id: 'card-analise',        icone: '📊', nome: 'Análise Eleitoral' },
+  { id: 'card-painel-admin',   icone: '👥', nome: 'Painel Administrativo' },
+  { id: 'card-liderancas',     icone: '📋', nome: 'Lista de Lideranças' },
+  { id: 'card-reunioes',       icone: '🎥', nome: 'Videoconferência' },
+  { id: 'card-command-center', icone: '📡', nome: 'Command Center' },
+  { id: 'card-organograma',    icone: '🏛️', nome: 'Organograma Político' },
+  { id: 'card-admin',          icone: '🛡️', nome: 'Gestão de Acessos' },
+];
+
+// Defaults do sistema (sem config do tenant)
+const CARDS_HOME_DEFAULTS_ADMIN = {
+  'card-admin':          ['dono'],
+  'card-command-center': ['dono', 'admin'],
+};
+
+// Níveis base do sistema
+const NIVEIS_BASE = [
+  { id: 'dono',         label: 'Dono',         icone: '👑' },
+  { id: 'admin',        label: 'Admin',        icone: '⚙️' },
+  { id: 'visualizador', label: 'Visualizador', icone: '👁️' },
+  { id: 'lider_regiao', label: 'Líder Região', icone: '📍' },
+];
+
+let _cardsConfig  = {};   // config atual do tenant
+let _niveisDinamicos = []; // níveis extras dos mapas
+let _salvarTimeout = null;
+
+async function carregarCardsHome() {
+  const wrap = document.getElementById('home-cards-table-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="empty-state">Carregando...</div>';
+
+  try {
+    // Carrega config de cards e mapas (para níveis dinâmicos) em paralelo
+    const [resCards, resMapas] = await Promise.all([
+      apiFetch('/admin/config/home-cards'),
+      apiFetch('/admin/config/mapas'),
+    ]);
+
+    _cardsConfig = resCards.ok ? (await resCards.json()) : {};
+    const mapas  = resMapas.ok ? (await resMapas.json()) : [];
+
+    // Nivéis dinâmicos dos mapas (ex: 'rj', 'angra', ...)
+    _niveisDinamicos = mapas
+      .map(m => ({ id: m.nivel_usuario, label: m.nome || m.nivel_usuario, icone: '🗺️' }))
+      .filter((n, i, arr) => n.id && arr.findIndex(x => x.id === n.id) === i); // unique
+
+    const todosNiveis = [...NIVEIS_BASE, ..._niveisDinamicos];
+
+    // Monta tabela
+    let html = `<table class="cards-table">
+      <thead><tr>
+        <th>Card</th>
+        ${todosNiveis.map(n => `
+          <th>
+            <div class="level-header">
+              <span class="level-header-icon">${n.icone}</span>
+              <span>${n.label}</span>
+            </div>
+          </th>`).join('')}
+      </tr></thead>
+      <tbody>`;
+
+    CARDS_HOME_DEF.forEach(card => {
+      // Resolve os níveis que podem ver este card
+      let niveisAtivos;
+      if (_cardsConfig.hasOwnProperty(card.id)) {
+        niveisAtivos = _cardsConfig[card.id] || [];
+      } else if (CARDS_HOME_DEFAULTS_ADMIN[card.id]) {
+        niveisAtivos = CARDS_HOME_DEFAULTS_ADMIN[card.id];
+      } else {
+        // Não configurado = todos (marcamos todos como checked)
+        niveisAtivos = todosNiveis.map(n => n.id);
+      }
+
+      html += `<tr>
+        <td><span class="card-level-icon">${card.icone}</span>${card.nome}</td>
+        ${todosNiveis.map(nivel => `
+          <td>
+            <input type="checkbox" data-card="${card.id}" data-nivel="${nivel.id}"
+              ${niveisAtivos.includes(nivel.id) ? 'checked' : ''}
+              onchange="onCardNivelChange(this)">
+          </td>`).join('')}
+      </tr>`;
+    });
+
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty-state" style="color:#b91c1c;">Erro: ${e.message}</div>`;
+  }
+}
+
+function onCardNivelChange(chk) {
+  // Lê estado atual de todos os checkboxes e reconstrói _cardsConfig
+  const todosNiveis = [...NIVEIS_BASE, ..._niveisDinamicos].map(n => n.id);
+
+  CARDS_HOME_DEF.forEach(card => {
+    const boxes = document.querySelectorAll(`input[type=checkbox][data-card="${card.id}"]`);
+    const checked = [...boxes].filter(b => b.checked).map(b => b.dataset.nivel);
+    const allChecked = todosNiveis.every(n => checked.includes(n));
+
+    if (allChecked) {
+      // Todos marcados = sem restrição (remove da config)
+      delete _cardsConfig[card.id];
+    } else {
+      _cardsConfig[card.id] = checked;
+    }
+  });
+
+  // Salva com debounce de 800ms
+  const statusEl = document.getElementById('home-cards-status');
+  if (statusEl) {
+    statusEl.textContent = '💾 Salvando...';
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#1565c0';
+    statusEl.classList.add('cards-table-saving');
+  }
+
+  clearTimeout(_salvarTimeout);
+  _salvarTimeout = setTimeout(async () => {
+    try {
+      const res = await apiFetch('/admin/config/home-cards', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(_cardsConfig),
+      });
+      if (!res.ok) throw new Error('Erro ' + res.status);
+      if (statusEl) {
+        statusEl.textContent = '✅ Salvo com sucesso!';
+        statusEl.style.color = '#059669';
+        statusEl.classList.remove('cards-table-saving');
+        setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
+      }
+    } catch(e) {
+      if (statusEl) {
+        statusEl.textContent = '❌ Erro ao salvar: ' + e.message;
+        statusEl.style.color = '#dc2626';
+        statusEl.classList.remove('cards-table-saving');
+      }
+    }
+  }, 800);
 }
 
 /* ══════════════════════════════════════

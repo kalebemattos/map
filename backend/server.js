@@ -27,19 +27,20 @@ async function getConfigTenant(tenantId) {
 
   try {
     const [cfgRow, candidatos, mapas, regioes] = await Promise.all([
-      dbGet('SELECT nome_sistema, logo_url, cores FROM tenant_config WHERE tenant_id = $1', [tenantId]),
+      dbGet('SELECT nome_sistema, logo_url, cores, home_cards_config FROM tenant_config WHERE tenant_id = $1', [tenantId]),
       dbAll('SELECT chave, nome, cor_fundo, cor_texto, tem_votos_2022, foto_url FROM tenant_candidatos WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
       dbAll('SELECT mapa_id AS id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes, COALESCE(visivel, true) AS visivel FROM tenant_mapas WHERE tenant_id = $1', [tenantId]),
       dbAll('SELECT chave, label, cidades, lideres FROM tenant_regioes WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
     ]);
 
     const data = {
-      nome_sistema: cfgRow?.nome_sistema ?? 'Gestão Política',
-      logo_url:     cfgRow?.logo_url     ?? null,
-      cores:        cfgRow?.cores        ?? config.cores,
-      candidatos:   candidatos.length    ? candidatos : config.candidatos,
-      mapas:        mapas.length         ? mapas      : config.mapas,
-      regioes:      regioes.length       ? regioes    : config.regioes,
+      nome_sistema:       cfgRow?.nome_sistema       ?? 'Gestão Política',
+      logo_url:           cfgRow?.logo_url           ?? null,
+      cores:              cfgRow?.cores              ?? config.cores,
+      home_cards_config:  cfgRow?.home_cards_config  ?? {},
+      candidatos:         candidatos.length          ? candidatos : config.candidatos,
+      mapas:              mapas.length               ? mapas      : config.mapas,
+      regioes:            regioes.length             ? regioes    : config.regioes,
     };
 
     _tenantConfigCache.set(tenantId, { data, expiresAt: Date.now() + CONFIG_TTL_MS });
@@ -2107,6 +2108,39 @@ app.delete('/api/admin/config/mapas/:mapa_id', auth, withTenant, allow('dono'), 
   res.json({ ok: true });
 });
 
+// ── Home Cards Config ─────────────────────────────────────────────────────────
+
+// GET — retorna configuração de visibilidade dos cards do home por nível
+app.get('/api/admin/config/home-cards', auth, withTenant, allow('dono'), async (req, res) => {
+  try {
+    const row = await dbGet('SELECT home_cards_config FROM tenant_config WHERE tenant_id = $1', [req.tenantId]);
+    res.json(row?.home_cards_config ?? {});
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao carregar config de cards' });
+  }
+});
+
+// PUT — salva configuração de visibilidade dos cards do home
+app.put('/api/admin/config/home-cards', auth, withTenant, allow('dono'), async (req, res) => {
+  try {
+    const cardsConfig = req.body;
+    if (typeof cardsConfig !== 'object' || Array.isArray(cardsConfig)) {
+      return res.status(400).json({ error: 'Formato inválido' });
+    }
+    await pool.query(
+      `INSERT INTO tenant_config (tenant_id, home_cards_config)
+       VALUES ($1, $2)
+       ON CONFLICT (tenant_id) DO UPDATE SET home_cards_config = $2`,
+      [req.tenantId, JSON.stringify(cardsConfig)]
+    );
+    invalidateTenantCache(req.tenantId);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[PUT /api/admin/config/home-cards]', err);
+    res.status(500).json({ error: 'Erro ao salvar config de cards' });
+  }
+});
+
 // ── Regiões ──────────────────────────────────────────────────────────────────
 
 app.get('/api/admin/config/regioes', auth, withTenant, allow('dono'), async (req, res) => {
@@ -2200,6 +2234,12 @@ server.listen(PORT, async () => {
     console.log('[migration] tenant_mapas.visivel OK');
   } catch (e) {
     console.warn('[migration] tenant_mapas.visivel:', e.message);
+  }
+  try {
+    await pool.query(`ALTER TABLE tenant_config ADD COLUMN IF NOT EXISTS home_cards_config JSONB DEFAULT '{}'`);
+    console.log('[migration] tenant_config.home_cards_config OK');
+  } catch (e) {
+    console.warn('[migration] tenant_config.home_cards_config:', e.message);
   }
   try {
     await pool.query(`ALTER TABLE expectativa_cidade ADD COLUMN IF NOT EXISTS expectativas JSONB DEFAULT '{}'`);
