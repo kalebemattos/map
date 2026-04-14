@@ -1996,6 +1996,11 @@
       });
       drop.appendChild(novo);
 
+      if (!Array.isArray(pessoas) || !pessoas.length) {
+        drop.classList.add('open');
+        return;
+      }
+
       pessoas.forEach(p => {
         const cidades = Array.isArray(p.cidades) && p.cidades.length
           ? p.cidades.join(', ') : 'nenhuma cidade';
@@ -2030,9 +2035,16 @@
         ac.timer = setTimeout(async () => {
           try {
             const res  = await apiFetch(`/pessoas/buscar?q=${encodeURIComponent(val)}`);
+            if (!res.ok) {
+              console.warn('[ac] endpoint retornou', res.status, res.statusText);
+              renderAcDropdown([], val);
+              return;
+            }
             const data = await res.json();
-            renderAcDropdown(data, val);
-          } catch(e) { console.warn('[ac]', e); }
+            const lista = Array.isArray(data) ? data : [];
+            if (!Array.isArray(data)) console.warn('[ac] resposta inesperada:', data);
+            renderAcDropdown(lista, val);
+          } catch(e) { console.warn('[ac] erro na busca:', e); renderAcDropdown([], val); }
         }, 300);
       });
 
