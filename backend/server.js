@@ -481,7 +481,7 @@ async function salvarExpectativaHelper(cidade, expectativas, regiao, mapa, tenan
     `INSERT INTO expectativa_cidade
      (cidade, expectativa_celia, expectativa_fernando, expectativas, regiao, mapa, tenant_id)
      VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7)
-     ON CONFLICT (cidade, regiao, mapa, tenant_id)
+     ON CONFLICT (cidade, COALESCE(regiao,''), COALESCE(mapa,''), COALESCE(tenant_id::text,''))
      DO UPDATE SET
        expectativa_celia    = COALESCE($2, expectativa_cidade.expectativa_celia),
        expectativa_fernando = COALESCE($3, expectativa_cidade.expectativa_fernando),
