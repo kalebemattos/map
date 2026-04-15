@@ -403,6 +403,7 @@ function repaintMapa() {
     })
   })
   calcularTotalGeral()
+  atualizarLegenda()
 }
 
 // ─────────────────────────────────────────────
@@ -847,15 +848,19 @@ function atualizarLegenda() {
       <div class="legenda-row"><div class="legenda-swatch" style="background:#e5f5f9;"></div><span>0 <small>sem lideranças</small></span></div>`
     titulo.textContent = "Lideranças"
   } else {
-    gradBar.style.background = "linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d)"
+    // Usa a cor do candidato ativo para a escala
+    const cand = (configSistema.candidatos||[]).find(c => c.chave === filtroCampanha)
+    const base = (cand && cand.cor_mapa) ? cand.cor_mapa : '#cb181d'
+    const pal  = _paletaMeta(base)
+    gradBar.style.background = `linear-gradient(to right,${pal[0]},${pal[1]},${pal[2]},${pal[3]},${pal[4]},${pal[5]})`
     labels.innerHTML  = "<span>0</span><span>300</span><span>1k</span><span>5k+</span>"
     steps.innerHTML   = `
-      <div class="legenda-row"><div class="legenda-swatch" style="background:#67000d;"></div><span>5.000+ <small>muito alto</small></span></div>
-      <div class="legenda-row"><div class="legenda-swatch" style="background:#a50f15;"></div><span>2.000–4.999 <small>alto</small></span></div>
-      <div class="legenda-row"><div class="legenda-swatch" style="background:#cb181d;"></div><span>1.000–1.999 <small>moderado</small></span></div>
-      <div class="legenda-row"><div class="legenda-swatch" style="background:#fb6a4a;"></div><span>300–999 <small>baixo</small></span></div>
-      <div class="legenda-row"><div class="legenda-swatch" style="background:#fcae91;"></div><span>1–299 <small>muito baixo</small></span></div>
-      <div class="legenda-row"><div class="legenda-swatch" style="background:#fee5d9;"></div><span>0 <small>sem expectativa</small></span></div>`
+      <div class="legenda-row"><div class="legenda-swatch" style="background:${pal[5]};"></div><span>5.000+ <small>muito alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:${pal[4]};"></div><span>2.000–4.999 <small>alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:${pal[3]};"></div><span>1.000–1.999 <small>moderado</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:${pal[2]};"></div><span>300–999 <small>baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:${pal[1]};"></div><span>1–299 <small>muito baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:${pal[0]};"></div><span>0 <small>sem expectativa</small></span></div>`
     titulo.textContent = "Expectativa"
   }
 }

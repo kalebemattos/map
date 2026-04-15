@@ -1774,6 +1774,7 @@ function injetarCandidatos() {
         el.classList.add('ativa');
         filtroCampanha = el.dataset.campanha;
         repaintMap();
+        updateLegendByMode();
         atualizarTotalGeralOverlay();
         if (cidadeSelecionada) renderLiderancas(cidadeSelecionada);
       });
@@ -3155,13 +3156,17 @@ function updateLegendByMode() {
   }
 
   if (mode === 'expectedVotes') {
+    // Usa a cor do candidato ativo para a escala da legenda
+    const cand = (configSistema.candidatos||[]).find(c => c.chave === filtroCampanha)
+    const base = (cand && cand.cor_mapa) ? cand.cor_mapa : '#cb181d'
+    const pal  = _paletaMeta(base)
     const steps = [
-      { color: '#67000d', label: '5.000+',         sub: 'muito alto' },
-      { color: '#a50f15', label: '2.000 – 4.999',  sub: 'alto' },
-      { color: '#cb181d', label: '1.000 – 1.999',  sub: 'moderado' },
-      { color: '#fb6a4a', label: '300 – 999',       sub: 'baixo' },
-      { color: '#fcae91', label: '1 – 299',         sub: 'muito baixo' },
-      { color: '#fee5d9', label: 'Nenhuma',         sub: 'sem meta' },
+      { color: pal[5], label: '5.000+',        sub: 'muito alto' },
+      { color: pal[4], label: '2.000 – 4.999', sub: 'alto' },
+      { color: pal[3], label: '1.000 – 1.999', sub: 'moderado' },
+      { color: pal[2], label: '300 – 999',      sub: 'baixo' },
+      { color: pal[1], label: '1 – 299',        sub: 'muito baixo' },
+      { color: pal[0], label: 'Nenhuma',        sub: 'sem meta' },
     ];
     div.innerHTML = `
       <div class="legend-title">
@@ -3169,7 +3174,7 @@ function updateLegendByMode() {
         <span class="legend-title-text">Meta de votos</span>
       </div>
       <div class="legend-gradient-wrap">
-        <div class="legend-gradient-bar" style="background:linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d);"></div>
+        <div class="legend-gradient-bar" style="background:linear-gradient(to right,${pal[0]},${pal[1]},${pal[2]},${pal[3]},${pal[4]},${pal[5]});"></div>
         <div class="legend-gradient-labels">
           <span>0</span>
           <span>300</span>

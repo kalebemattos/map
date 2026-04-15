@@ -381,6 +381,10 @@
             <label>Cor texto do badge</label>
             <input type="color" id="c-cor-texto" value="#3730a3" oninput="atualizarPreviewCor()">
           </div>
+          <div class="form-group" style="flex:0 0 auto;min-width:0;">
+            <label title="Cor usada para pintar cidades no mapa conforme a meta">🗺️ Cor do mapa</label>
+            <input type="color" id="c-cor-mapa" value="#cb181d">
+          </div>
           <div class="form-group" style="flex:0 0 80px;min-width:0;">
             <label>Ordem</label>
             <input type="number" id="c-ordem" value="0" min="0">
@@ -390,6 +394,17 @@
               <input type="checkbox" id="c-votos2022">
               Tinha votos em 2022
             </label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cargo / Função</label>
+            <input type="text" id="c-cargo" placeholder="ex: Deputado Estadual">
+          </div>
+          <div class="form-group" style="flex:0 0 160px;min-width:0;">
+            <label>Meta de votos</label>
+            <input type="number" id="c-meta-votos" placeholder="ex: 50000" min="0">
           </div>
         </div>
 
@@ -1052,10 +1067,13 @@ async function carregarCandidatos() {
 function editarCandidato(c) {
   document.getElementById('c-chave').value        = c.chave;
   document.getElementById('c-nome').value         = c.nome;
-  document.getElementById('c-cor-fundo').value    = c.cor_fundo || '#e0e7ff';
-  document.getElementById('c-cor-texto').value    = c.cor_texto || '#3730a3';
+  document.getElementById('c-cor-fundo').value    = c.cor_fundo  || '#e0e7ff';
+  document.getElementById('c-cor-texto').value    = c.cor_texto  || '#3730a3';
+  document.getElementById('c-cor-mapa').value     = c.cor_mapa   || c.cor_texto || '#cb181d';
   document.getElementById('c-ordem').value        = c.ordem ?? 0;
   document.getElementById('c-votos2022').checked  = !!c.tem_votos_2022;
+  document.getElementById('c-cargo').value        = c.cargo      || '';
+  document.getElementById('c-meta-votos').value   = c.meta_votos || '';
   const prev = document.getElementById('c-foto-preview');
   if (c.foto_url) { prev.src = c.foto_url; prev.style.display = 'block'; }
   else prev.style.display = 'none';
@@ -1069,13 +1087,14 @@ function editarCandidato(c) {
 }
 
 function cancelarEdicaoCandidato() {
-  ['c-chave','c-nome'].forEach(id => document.getElementById(id).value = '');
+  ['c-chave','c-nome','c-cargo','c-meta-votos'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('c-ordem').value = '0';
   document.getElementById('c-votos2022').checked = false;
   document.getElementById('c-foto').value = '';
   document.getElementById('c-foto-preview').style.display = 'none';
   document.getElementById('c-cor-fundo').value = '#e0e7ff';
   document.getElementById('c-cor-texto').value = '#3730a3';
+  document.getElementById('c-cor-mapa').value  = '#cb181d';
   document.getElementById('c-chave').removeAttribute('data-original');
   document.getElementById('c-salvar-btn').textContent = '💾 Salvar candidato';
   document.getElementById('c-cancelar-btn').style.display = 'none';
@@ -1111,8 +1130,13 @@ async function salvarCandidato() {
     fd.append('nome',           nome);
     fd.append('cor_fundo',      document.getElementById('c-cor-fundo').value);
     fd.append('cor_texto',      document.getElementById('c-cor-texto').value);
+    fd.append('cor_mapa',       document.getElementById('c-cor-mapa').value);
     fd.append('ordem',          document.getElementById('c-ordem').value);
     fd.append('tem_votos_2022', document.getElementById('c-votos2022').checked);
+    const cargo     = document.getElementById('c-cargo').value.trim();
+    const metaVotos = document.getElementById('c-meta-votos').value;
+    if (cargo)     fd.append('cargo',      cargo);
+    if (metaVotos) fd.append('meta_votos', metaVotos);
     const foto = document.getElementById('c-foto').files[0];
     if (foto) fd.append('foto', foto);
 
