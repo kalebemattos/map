@@ -496,11 +496,17 @@ body {
   50%      { opacity: .4; transform: scale(.8); }
 }
 
-/* Admin card (hidden by default) */
-#card-admin { display: none; }
-
-/* Command Center card (hidden by default) */
+/* Cards ocultos por padrão — JS mostra conforme config do tenant */
+#card-admin          { display: none; }
 #card-command-center { display: none; }
+#card-organograma    { display: none; }
+#card-mapa-pirai     { display: none; }
+#card-mapa-angra     { display: none; }
+#card-mapa-rjcapital { display: none; }
+#card-analise        { display: none; }
+#card-painel-admin   { display: none; }
+#card-liderancas     { display: none; }
+#card-reunioes       { display: none; }
 
 .card-indigo .card-icon-wrap { background: rgba(99,102,241,0.3); box-shadow: 0 4px 12px rgba(99,102,241,0.25); }
 .card-indigo:hover { border-color: rgba(165,180,252,0.3); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(99,102,241,0.15); }
@@ -1308,70 +1314,95 @@ const HOME_CARDS_DEFAULTS = {
 }
 
 async function aplicarVisibilidadeCards(user) {
+  const nivel = user?.nivel || ''
+
+  // Fallback imediato com defaults hardcoded (antes da API responder)
+  function mostrarCardSeAutorizado(id, niveis) {
+    const el = document.getElementById(id)
+    if (!el) return
+    if (!niveis || niveis.includes(nivel)) el.style.display = 'flex'
+  }
+
   try {
     const token = localStorage.getItem('token')
     if (!token) return
-    const nivel = user?.nivel || ''
 
     const r = await fetch(API_URL + '/api/config', {
       headers: { Authorization: 'Bearer ' + token }
     })
-    if (!r.ok) return
+    if (!r.ok) throw new Error('config indisponível')
     const cfg = await r.json()
 
-    // 1. Visibilidade dos mapas (toggle visivel da tabela tenant_mapas)
-    const mapaMap = {}
-    ;(cfg.mapas || []).forEach(m => { mapaMap[m.id] = m })
-    document.querySelectorAll('[id^="card-mapa-"]').forEach(card => {
-      const mapaId = card.id.replace('card-mapa-', '')
-      const mapa   = mapaMap[mapaId]
-      if (mapa && mapa.visivel === false) {
-        card.style.display = 'none'
-      }
-    })
-
-    // 2. Visibilidade por nível (home_cards_config do tenant + defaults hardcoded)
-    // home_cards_config também pode ocultar cards de mapa (como fallback)
     const cardsConfig = cfg.home_cards_config || {}
 
-    document.querySelectorAll('.card[id]').forEach(card => {
-      const id = card.id
+    // ── Mapa RJ (hero, sempre visível — não tem toggle de visibilidade) ──
+    const rjCard = document.getElementById('card-mapa-rj')
+    if (rjCard) rjCard.style.display = 'flex'
 
-      // Para cards de mapa: já foram tratados pelo visivel acima,
-      // mas home_cards_config pode forçar ocultação adicional (ex: [])
-      if (id.startsWith('card-mapa-')) {
-        if (cardsConfig.hasOwnProperty(id)) {
-          const niveis = cardsConfig[id]
-          if (!Array.isArray(niveis) || niveis.length === 0 || !niveis.includes(nivel)) {
-            card.style.display = 'none'
-          }
-        }
-        return
+    // ── Cards de mapa: mostra apenas se visivel !== false no tenant_mapas
+    //    E não bloqueado via home_cards_config ──
+    const mapaMap = {}
+    ;(cfg.mapas || []).forEach(m => { mapaMap[m.id] = m })
+
+    const mapaCardIds = ['card-mapa-angra', 'card-mapa-rjcapital', 'card-mapa-pirai']
+    mapaCardIds.forEach(cardId => {
+      const mapaId = cardId.replace('card-mapa-', '')
+      const card   = document.getElementById(cardId)
+      if (!card) return
+
+      // Verifica config de nível (home_cards_config)
+      if (cardsConfig.hasOwnProperty(cardId)) {
+        const niveis = cardsConfig[cardId]
+        // array vazio ou nivel não incluido = oculto
+        if (!Array.isArray(niveis) || niveis.length === 0 || !niveis.includes(nivel)) return
       }
 
-      // Config do tenant tem prioridade; fallback para defaults
+      // Verifica visibilidade no tenant_mapas
+      const mapa = mapaMap[mapaId]
+      if (mapa && (mapa.visivel === false || mapa.visivel === 0 || mapa.visivel === 'false')) return
+
+      // Passou em todos os filtros → mostra
+      card.style.display = 'flex'
+    })
+
+    // ── Cards não-mapa: mostra conforme home_cards_config + defaults ──
+    const outrosCards = [
+      'card-analise', 'card-painel-admin', 'card-liderancas',
+      'card-reunioes', 'card-command-center', 'card-organograma', 'card-admin'
+    ]
+    outrosCards.forEach(id => {
+      const card = document.getElementById(id)
+      if (!card) return
+
       const niveis = cardsConfig.hasOwnProperty(id)
         ? cardsConfig[id]
         : (HOME_CARDS_DEFAULTS[id] ?? null)  // null = visível para todos
 
-      if (niveis === null || niveis === undefined) {
-        // Sem restrição — mostra para todos
-        if (card.style.display === 'none') card.style.display = 'flex'
-      } else if (Array.isArray(niveis)) {
-        if (niveis.length === 0 || !niveis.includes(nivel)) {
-          card.style.display = 'none'
-        } else {
-          card.style.display = 'flex'
-        }
+      if (niveis === null || niveis === undefined || (Array.isArray(niveis) && niveis.includes(nivel))) {
+        card.style.display = 'flex'
       }
+      // senão: fica com display:none do CSS
     })
+
   } catch (e) {
-    // Fallback silencioso — em caso de erro aplica defaults hardcoded
-    const nivel = user?.nivel || ''
-    const adminCard = document.getElementById('card-admin')
-    if (adminCard) adminCard.style.display = nivel === 'dono' ? 'flex' : 'none'
-    const ccCard = document.getElementById('card-command-center')
-    if (ccCard) ccCard.style.display = (nivel === 'dono' || nivel === 'admin') ? 'flex' : 'none'
+    // Fallback: mostra cards básicos conforme nível hardcoded
+    const semRestricao = ['card-analise', 'card-painel-admin', 'card-liderancas', 'card-reunioes']
+    semRestricao.forEach(id => {
+      const el = document.getElementById(id)
+      if (el) el.style.display = 'flex'
+    })
+    // card-mapa-rj sempre visível
+    const rj = document.getElementById('card-mapa-rj')
+    if (rj) rj.style.display = 'flex'
+    // Mapas: mostra todos no fallback (sem config = visível)
+    ;['card-mapa-angra', 'card-mapa-rjcapital'].forEach(id => {
+      const el = document.getElementById(id)
+      if (el) el.style.display = 'flex'
+    })
+    // Admin/CC: só para níveis elevados
+    mostrarCardSeAutorizado('card-admin',          ['dono'])
+    mostrarCardSeAutorizado('card-command-center', ['dono','admin'])
+    mostrarCardSeAutorizado('card-organograma',    ['dono','admin'])
   }
 }
 
