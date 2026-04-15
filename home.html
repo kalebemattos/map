@@ -1512,7 +1512,7 @@ async function carregarIndicadorCampanha() {
 
     // Detecta se o usuário está vinculado a uma região
     const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const regiaoKey = user.regiao_vinculada || null
+    const regiaoKey = user.regiao || user.regiao_vinculada || null
     let cidadesRegiao = null
     let regiaoInfo = null
     if (regiaoKey) {

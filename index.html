@@ -3777,22 +3777,21 @@ initLiderancaSearch();
 carregarPins();
 
         // Se já havia região ativa antes do GeoJSON carregar (ex: lider_regiao no boot),
-        // aplica o zoom e o limite de zoom-out agora que layersPorCidade está populado
+        // aplica o zoom e o limite de zoom-out agora que os layers estão prontos
         if (regiaoAtiva && regiaoAtiva !== 'all') {
-          const munNames = regions[regiaoAtiva];
-          if (munNames && munNames.length) {
-            let regionBounds = null;
-            munNames.forEach(cidade => {
-              const l = layersPorCidade[cidade];
-              if (!l) return;
-              const b = l.getBounds();
+          const munNamesAtiva = regions[regiaoAtiva];
+          let regionBounds = null;
+          layerRJ.eachLayer(layer => {
+            const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name;
+            if (munNamesAtiva && munNamesAtiva.includes(nome)) {
+              const b = layer.getBounds();
               regionBounds = regionBounds ? regionBounds.extend(b) : b;
-            });
-            if (regionBounds) {
-              const fitZoom = map.getBoundsZoom(regionBounds, false, [40, 40]);
-              map.setMinZoom(Math.max(fitZoom - 1, 7));
-              map.fitBounds(regionBounds, { padding: [40, 40], maxZoom: 11, animate: true, duration: 0.9 });
             }
+          });
+          if (regionBounds) {
+            const fitZoom = map.getBoundsZoom(regionBounds, false, [40, 40]);
+            map.setMinZoom(Math.max(fitZoom - 1, 7));
+            map.fitBounds(regionBounds, { padding: [40, 40], maxZoom: 11, animate: true, duration: 0.9 });
           }
         }
 
@@ -3964,19 +3963,20 @@ regiaoSelect.addEventListener('change', () => {
             // Restaura zoom livre e volta ao estado completo
             map.setMinZoom(7);
             map.flyTo([-22.5, -43.5], 7, { duration: 0.8 });
-        } else if (munNames && munNames.length) {
-            // Calcula o bounding box de todas as cidades da região
+        } else {
+            // Calcula o bounding box diretamente dos layers do GeoJSON
+            // usa munNames.includes(nome) — mesma lógica que já funciona na opacidade
             let regionBounds = null;
-            munNames.forEach(cidade => {
-                const l = layersPorCidade[cidade];
-                if (!l) return;
-                const b = l.getBounds();
-                regionBounds = regionBounds ? regionBounds.extend(b) : b;
+            layerRJ.eachLayer(layer => {
+                const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name;
+                if (munNames && munNames.includes(nome)) {
+                    const b = layer.getBounds();
+                    regionBounds = regionBounds ? regionBounds.extend(b) : b;
+                }
             });
             if (regionBounds) {
-                // Descobre o zoom que cabe a região e usa como minZoom (limite de zoom-out)
                 const fitZoom = map.getBoundsZoom(regionBounds, false, [40, 40]);
-                map.setMinZoom(Math.max(fitZoom - 1, 7)); // 1 nível de margem
+                map.setMinZoom(Math.max(fitZoom - 1, 7));
                 map.fitBounds(regionBounds, { padding: [40, 40], maxZoom: 11, animate: true, duration: 0.9 });
             }
         }
