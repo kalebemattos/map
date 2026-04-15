@@ -1841,10 +1841,11 @@ function injetarCandidatos() {
   const regiaoCandsEl = document.getElementById('regiao-cand-rows');
   if (regiaoCandsEl) {
     regiaoCandsEl.innerHTML = cands.map(c =>
-      `<div class="regiao-totais-row">
+      `${c.tem_votos_2022 ? `
+      <div class="regiao-totais-row">
         <span class="regiao-totais-label">🗳️ Votos ${c.nome} (2022)</span>
         <span class="regiao-totais-val" id="regiao-votos-${c.chave}">0</span>
-      </div>
+      </div>` : ''}
       <div class="regiao-totais-row">
         <span class="regiao-totais-label">🏙️ Meta ${c.nome}</span>
         <span class="regiao-totais-val" id="regiao-exp-${c.chave}">0</span>
@@ -3775,6 +3776,25 @@ initCitySearch();
 initLiderancaSearch();
 carregarPins();
 
+        // Se já havia região ativa antes do GeoJSON carregar (ex: lider_regiao no boot),
+        // aplica o zoom e o limite de zoom-out agora que layersPorCidade está populado
+        if (regiaoAtiva && regiaoAtiva !== 'all') {
+          const munNames = regions[regiaoAtiva];
+          if (munNames && munNames.length) {
+            let regionBounds = null;
+            munNames.forEach(cidade => {
+              const l = layersPorCidade[cidade];
+              if (!l) return;
+              const b = l.getBounds();
+              regionBounds = regionBounds ? regionBounds.extend(b) : b;
+            });
+            if (regionBounds) {
+              const fitZoom = map.getBoundsZoom(regionBounds, false, [40, 40]);
+              map.setMinZoom(Math.max(fitZoom - 1, 7));
+              map.fitBounds(regionBounds, { padding: [40, 40], maxZoom: 11, animate: true, duration: 0.9 });
+            }
+          }
+        }
 
         map.on('zoomend moveend', () => {
           layerRJ.eachLayer(layer => {
@@ -3941,6 +3961,24 @@ regiaoSelect.addEventListener('change', () => {
                 layer.setStyle({ fillOpacity: 0.8, opacity: 1 });
                 if (elsv) elsv.style.pointerEvents = 'auto';
             });
+            // Restaura zoom livre e volta ao estado completo
+            map.setMinZoom(7);
+            map.flyTo([-22.5, -43.5], 7, { duration: 0.8 });
+        } else if (munNames && munNames.length) {
+            // Calcula o bounding box de todas as cidades da região
+            let regionBounds = null;
+            munNames.forEach(cidade => {
+                const l = layersPorCidade[cidade];
+                if (!l) return;
+                const b = l.getBounds();
+                regionBounds = regionBounds ? regionBounds.extend(b) : b;
+            });
+            if (regionBounds) {
+                // Descobre o zoom que cabe a região e usa como minZoom (limite de zoom-out)
+                const fitZoom = map.getBoundsZoom(regionBounds, false, [40, 40]);
+                map.setMinZoom(Math.max(fitZoom - 1, 7)); // 1 nível de margem
+                map.fitBounds(regionBounds, { padding: [40, 40], maxZoom: 11, animate: true, duration: 0.9 });
+            }
         }
     });
 }
