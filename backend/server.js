@@ -2112,7 +2112,9 @@ app.delete('/api/admin/config/mapas/:mapa_id', auth, withTenant, allow('dono'), 
 // ── Home Cards Config ─────────────────────────────────────────────────────────
 
 // GET — retorna configuração de visibilidade dos cards do home por nível
-app.get('/api/admin/config/home-cards', auth, withTenant, allow('dono'), async (req, res) => {
+// Qualquer usuário autenticado pode ler (para home.html filtrar corretamente)
+// Apenas dono pode modificar (PUT abaixo)
+app.get('/api/admin/config/home-cards', auth, withTenant, async (req, res) => {
   try {
     const row = await dbGet('SELECT home_cards_config FROM tenant_config WHERE tenant_id = $1', [req.tenantId]);
     res.json(row?.home_cards_config ?? {});

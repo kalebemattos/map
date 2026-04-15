@@ -1300,11 +1300,20 @@ async function renderizarCards() {
 
   try {
     if (!token) throw new Error('sem token')
-    const r = await fetch(API_URL + '/api/config', { headers: { Authorization: 'Bearer ' + token } })
-    if (!r.ok) throw new Error('config falhou')
-    const cfg = await r.json()
 
-    const cardsConfig = cfg.home_cards_config || {}
+    // Busca config geral e home_cards_config em paralelo
+    // home_cards_config é lido direto do DB (sem cache) para garantir sempre o valor atual
+    const headers = { Authorization: 'Bearer ' + token }
+    const [rCfg, rCards] = await Promise.all([
+      fetch(API_URL + '/api/config',                  { headers }),
+      fetch(API_URL + '/api/admin/config/home-cards', { headers }),
+    ])
+    if (!rCfg.ok) throw new Error('config falhou')
+    const cfg = await rCfg.json()
+
+    // home_cards_config: prioridade ao endpoint dedicado (leitura direta do DB)
+    // fallback para cfg.home_cards_config (servidores antigos que incluem no /api/config)
+    const cardsConfig = rCards.ok ? (await rCards.json()) : (cfg.home_cards_config || {})
 
     // Mapa de visibilidade dos mapas (tenant_mapas.visivel)
     const mapaVisivel = {}
@@ -1315,22 +1324,28 @@ async function renderizarCards() {
 
     // Filtra os cards que devem aparecer para este usuário/tenant
     const cardsVisiveis = CATALOGO_CARDS.filter(card => {
-      // 1. Card de mapa: checa tenant_mapas.visivel
+      // ── Regra 1: mapa desligado globalmente → card nunca aparece
       if (card.mapaId && card.mapaId !== 'rj') {
-        // Se não está no tenant_mapas, é visível por padrão
-        // Se está, respeita o flag visivel
         if (mapaVisivel.hasOwnProperty(card.mapaId) && !mapaVisivel[card.mapaId]) {
-          return false // mapa desligado no tenant
+          return false
         }
       }
 
-      // 2. Checa home_cards_config (config do tenant por nível)
-      const niveisConfig = cardsConfig.hasOwnProperty(card.id)
-        ? cardsConfig[card.id]
-        : (CARDS_NIVEL_PADRAO.hasOwnProperty(card.id) ? CARDS_NIVEL_PADRAO[card.id] : null)
+      // ── Regra 2: home_cards_config controla visibilidade por nível
+      //    Se o card tem configuração explícita, ela é soberana.
+      //    Se não tem, usa o padrão do sistema (CARDS_NIVEL_PADRAO).
+      //    Se não há padrão definido, o card é visível para todos.
+      let niveisConfig
+      if (cardsConfig.hasOwnProperty(card.id)) {
+        niveisConfig = cardsConfig[card.id]     // configuração explícita do tenant
+      } else if (CARDS_NIVEL_PADRAO.hasOwnProperty(card.id)) {
+        niveisConfig = CARDS_NIVEL_PADRAO[card.id]  // padrão do sistema
+      } else {
+        niveisConfig = null                     // sem restrição
+      }
 
-      if (niveisConfig === null || niveisConfig === undefined) return true  // sem restrição
-      if (!Array.isArray(niveisConfig) || niveisConfig.length === 0) return false  // bloqueado
+      if (niveisConfig === null || niveisConfig === undefined) return true
+      if (!Array.isArray(niveisConfig) || niveisConfig.length === 0) return false
       return niveisConfig.includes(nivel)
     })
 
