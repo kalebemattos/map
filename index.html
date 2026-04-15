@@ -1733,6 +1733,32 @@ function injetarRegioes() {
     ).join('');
 }
 
+// Carrega líderes de região da gestão de acesso e atualiza lideresRegiao
+const API_BASE = API_URL.replace(/\/api$/, '');
+
+async function carregarLideresRegiao() {
+  try {
+    const res = await apiFetch('/lideres-regiao');
+    if (!res.ok) return;
+    const lideres = await res.json();
+    // Garante que lideresRegiao existe
+    if (typeof lideresRegiao === 'undefined') window.lideresRegiao = {};
+    // Limpa entradas existentes para sobrescrever com dados vivos
+    Object.keys(lideresRegiao).forEach(k => { lideresRegiao[k] = []; });
+    lideres.forEach(l => {
+      if (!l.regiao_vinculada) return;
+      if (!lideresRegiao[l.regiao_vinculada]) lideresRegiao[l.regiao_vinculada] = [];
+      lideresRegiao[l.regiao_vinculada].push({
+        nome:     l.nome,
+        contato:  l.contato,
+        foto_url: l.foto_url  // foto_url vinda do banco
+      });
+    });
+  } catch (e) {
+    console.warn('[lideres-regiao] Não carregado:', e);
+  }
+}
+
 function candidatoFotoSrc(c) {
   // Usa foto_url do banco se disponível; cai no arquivo local como fallback
   return c.foto_url || `img/${c.chave}.jpg`;
@@ -3924,7 +3950,8 @@ window.iniciarAplicacao = async function () {
 
   console.log('[BOOT] iniciarAplicacao chamada');
 
-  await carregarConfig();   // carrega candidatos/cores/mapas antes de tudo
+  await carregarConfig();          // carrega candidatos/cores/mapas antes de tudo
+  await carregarLideresRegiao();   // carrega líderes de região da gestão de acesso
   await carregarTudo();
   atualizarTotalGeralOverlay();
   initializeMapAndApp();
@@ -4416,12 +4443,16 @@ function mostrarLiderRegiao(regiaoKey) {
   });
 
   // 🔥 FOTO DO PRIMEIRO LÍDER
-  const primeiraFoto = lideres[0].foto;
+  // Aceita foto_url (banco de dados) ou foto (campo legado / data.js)
+  const fotoRaw = lideres[0].foto_url || lideres[0].foto || null;
+  const primeiraFoto = fotoRaw
+    ? (fotoRaw.startsWith('http') ? fotoRaw : API_BASE + fotoRaw)
+    : null;
 
   if (primeiraFoto) {
     fotoEl.innerHTML = `
       <img src="${primeiraFoto}"
-           style="width:100%;height:100%;object-fit:cover;">
+           style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
     `;
   } else {
     fotoEl.innerHTML = "👤";

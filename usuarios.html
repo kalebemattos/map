@@ -291,6 +291,21 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
 .modal-actions { display: flex; gap: 8px; margin-top: 6px; }
 .modal-actions .btn { flex: 1; }
 
+/* ===== LIDER TOGGLE ===== */
+.btn-icon-lider { background: var(--slate-100); color: var(--slate-400); font-size: 16px; }
+.btn-icon-lider:hover { background: #fef3c7; color: #d97706; }
+.btn-icon-lider.ativo { background: #fef3c7; color: #d97706; }
+.btn-icon-lider.ativo:hover { background: #fde68a; color: #92400e; }
+
+/* ===== FOTO AVATAR ===== */
+.user-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.foto-preview-wrap { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.foto-preview {
+  width: 56px; height: 56px; border-radius: 50%;
+  object-fit: cover; border: 2px solid var(--slate-200);
+  flex-shrink: 0;
+}
+
 /* ===== ANIM ===== */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
@@ -457,6 +472,19 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
       </div>
       <!-- divs de sub-região por mapa injetadas por carregarConfig() -->
       <div id="mapa-divs-editar"></div>
+      <div class="form-group">
+        <label>Contato (WhatsApp / telefone)</label>
+        <input id="edit-contato" placeholder="Ex: (21) 99999-0000">
+      </div>
+      <div class="form-group">
+        <label>Foto do líder <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;">(opcional — JPG, PNG, WEBP)</span></label>
+        <div class="foto-preview-wrap">
+          <img id="edit-foto-preview" class="foto-preview" src="" alt="Foto" style="display:none;">
+          <input id="edit-foto" type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+            style="flex:1;min-width:0;padding:6px 10px;font-size:13px;"
+            onchange="previewFoto(this,'edit-foto-preview')">
+        </div>
+      </div>
       <div class="feedback" id="feedback-editar"></div>
       <div class="modal-actions">
         <button class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
@@ -468,7 +496,8 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
 
 <script src="tenant.js"></script>
 <script>
-const API_URL = 'https://map-backend-j88s.onrender.com/api'
+const API_URL  = 'https://map-backend-j88s.onrender.com/api'
+const API_BASE = 'https://map-backend-j88s.onrender.com'
 
 // ── Config do sistema (carregada de /api/config) ──────────
 let configSistema = { candidatos: [], cores: {}, mapas: [] }
@@ -583,6 +612,36 @@ async function apiFetch(endpoint, options = {}) {
     throw new Error('Sem permissão')
   }
   return res
+}
+
+// Versão multipart/form-data (sem Content-Type fixo – deixa o browser setar boundary)
+async function apiFetchForm(endpoint, formData) {
+  const token = localStorage.getItem('token')
+  if (!token) { logout(); throw new Error('Sem token') }
+  const res = await fetch(API_URL + endpoint, {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer ' + token },
+    body: formData
+  })
+  if (res.status === 401 || res.status === 403) {
+    alert('Sessão expirada ou acesso negado.')
+    logout()
+    throw new Error('Sem permissão')
+  }
+  return res
+}
+
+function previewFoto(input, previewId) {
+  const prev = document.getElementById(previewId)
+  if (!prev) return
+  const file = input.files && input.files[0]
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = e => { prev.src = e.target.result; prev.style.display = 'block' }
+    reader.readAsDataURL(file)
+  } else {
+    prev.style.display = 'none'
+  }
 }
 
 function logout() {
@@ -760,12 +819,20 @@ async function carregarUsuarios() {
       const regiaoLabel = u.regiao_vinculada ? (REGIOES_LABEL[u.regiao_vinculada] || u.regiao_vinculada) : ''
       const isSelf = String(u.id) === String(meId)
 
+      const avatarHtml = u.foto_url
+        ? `<div class="user-avatar" style="padding:0;overflow:hidden;"><img src="${API_BASE + u.foto_url}" alt="${u.nome}"></div>`
+        : `<div class="user-avatar">${initials}</div>`
+
+      const liderAtivo = !!u.lider_principal
+      const liderClass = 'btn-icon btn-icon-lider' + (liderAtivo ? ' ativo' : '')
+      const liderTitle = liderAtivo ? 'Líder principal ativo (clique para desativar)' : 'Tornar líder principal'
+
       const div = document.createElement('div')
       div.className = 'user-item'
       div.innerHTML = `
-        <div class="user-avatar">${initials}</div>
+        ${avatarHtml}
         <div class="user-info">
-          <div class="user-nome">${u.nome || '—'}${isSelf ? ' <span style="font-size:11px;color:var(--slate-400);font-weight:500;">(você)</span>' : ''}</div>
+          <div class="user-nome">${u.nome || '—'}${isSelf ? ' <span style="font-size:11px;color:var(--slate-400);font-weight:500;">(você)</span>' : ''}${liderAtivo ? ' <span style="font-size:11px;color:#d97706;font-weight:600;">⭐ líder</span>' : ''}</div>
           <div class="user-sub">
             <span>@${u.usuario}</span>
             <span class="nivel-badge ${nivelClass}" ${badgeStyle}>${NIVEL_LABEL[u.nivel] || u.nivel}</span>
@@ -773,10 +840,14 @@ async function carregarUsuarios() {
           </div>
         </div>
         <div class="user-actions">
+          <button class="${liderClass}" title="${liderTitle}" data-id="${u.id}" data-estado="${liderAtivo}">⭐</button>
           <button class="btn-icon btn-icon-edit" title="Editar" data-u='${JSON.stringify(u).replace(/'/g,"&#39;")}'>✏️</button>
           ${isSelf ? '' : `<button class="btn-icon btn-icon-del" title="Excluir" data-id="${u.id}" data-nome="${(u.nome||'').replace(/"/g,'&quot;')}">🗑</button>`}
         </div>`
 
+      div.querySelector('.btn-icon-lider').addEventListener('click', () => {
+        toggleLiderPrincipal(u.id, liderAtivo)
+      })
       div.querySelector('.btn-icon-edit').addEventListener('click', () => {
         abrirModalEditar(u)
       })
@@ -808,6 +879,12 @@ function abrirModalEditar(u) {
   document.getElementById('edit-nome').value  = u.nome || ''
   document.getElementById('edit-pass').value  = ''
   document.getElementById('edit-nivel').value = u.nivel || 'visualizador'
+  document.getElementById('edit-contato').value = u.contato || ''
+  // Foto preview
+  const prev = document.getElementById('edit-foto-preview')
+  document.getElementById('edit-foto').value = ''
+  if (u.foto_url) { prev.src = API_BASE + u.foto_url; prev.style.display = 'block' }
+  else            { prev.src = ''; prev.style.display = 'none' }
   // Pré-seleciona o sub-campo correto conforme o nível
   document.getElementById('edit-regiao').value = u.nivel === 'lider_regiao' ? (u.regiao_vinculada || '') : ''
   // Pré-seleciona sub-região para qualquer mapa do config
@@ -849,15 +926,20 @@ async function salvarEdicao() {
   btn.disabled = true
 
   const regiao_vinculada = getRegiaoEdit()
+  const contato = document.getElementById('edit-contato').value.trim()
+  const fotoInput = document.getElementById('edit-foto')
 
-  const dados = {
-    nome, nivel,
-    regiao_vinculada,
-    ...(pass ? { senha: pass } : {})
-  }
+  // Usa FormData para suportar upload de foto
+  const fd = new FormData()
+  fd.append('nome', nome)
+  fd.append('nivel', nivel)
+  fd.append('regiao_vinculada', regiao_vinculada || '')
+  fd.append('contato', contato)
+  if (pass) fd.append('senha', pass)
+  if (fotoInput.files && fotoInput.files[0]) fd.append('foto', fotoInput.files[0])
 
   try {
-    const res = await apiFetch('/usuarios/' + _editId, { method: 'PUT', body: JSON.stringify(dados) })
+    const res = await apiFetchForm('/usuarios/' + _editId, fd)
     if (res.ok) { fecharModal(); carregarUsuarios() }
     else {
       const d = await res.json().catch(() => ({}))
@@ -865,6 +947,21 @@ async function salvarEdicao() {
     }
   } catch { showFeedback('feedback-editar','❌ Erro de conexão.','error') }
   finally { btn.textContent = 'Salvar'; btn.disabled = false }
+}
+
+// ── Toggle lider_principal ────────────────────────────────
+async function toggleLiderPrincipal(id, estadoAtual) {
+  const novoEstado = !estadoAtual
+  const fd = new FormData()
+  fd.append('lider_principal', String(novoEstado))
+  try {
+    const res = await apiFetchForm('/usuarios/' + id, fd)
+    if (res.ok) carregarUsuarios()
+    else {
+      const d = await res.json().catch(() => ({}))
+      alert('Erro: ' + (d.error || 'Não foi possível atualizar.'))
+    }
+  } catch { alert('Erro de conexão.') }
 }
 
 carregarUsuarios()

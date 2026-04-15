@@ -1322,7 +1322,7 @@ app.get('/api/usuarios',
   async (req, res) => {
   try {
     const users = await dbAll(
-      'SELECT id, usuario, nome, nivel, regiao_vinculada FROM usuarios WHERE tenant_id = $1',
+      'SELECT id, usuario, nome, nivel, regiao_vinculada, foto_url, contato, lider_principal FROM usuarios WHERE tenant_id = $1',
       [req.tenantId]
     );
     res.json(users);
@@ -1332,10 +1332,10 @@ app.get('/api/usuarios',
 });
 
 // Rota para editar usuário
-app.put('/api/usuarios/:id', auth, withTenant, allow('dono'), async (req, res) => {
+app.put('/api/usuarios/:id', auth, withTenant, allow('dono'), upload.single('foto'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, nivel, regiao_vinculada, senha } = req.body;
+    const { nome, nivel, regiao_vinculada, senha, contato, lider_principal } = req.body;
 
     const niveisPermitidos = NIVEIS_TODOS;
     if (nivel && !niveisPermitidos.includes(nivel)) {
@@ -1347,13 +1347,24 @@ app.put('/api/usuarios/:id', auth, withTenant, allow('dono'), async (req, res) =
     const values = [];
     let idx = 1;
 
-    if (nome)             { fields.push(`nome = $${idx++}`);             values.push(nome); }
-    if (nivel)            { fields.push(`nivel = $${idx++}`);            values.push(nivel); }
+    if (nome !== undefined)             { fields.push(`nome = $${idx++}`);             values.push(nome); }
+    if (nivel !== undefined)            { fields.push(`nivel = $${idx++}`);            values.push(nivel); }
     if (regiao_vinculada !== undefined) { fields.push(`regiao_vinculada = $${idx++}`); values.push(regiao_vinculada); }
+    if (contato !== undefined)          { fields.push(`contato = $${idx++}`);          values.push(contato); }
+    if (lider_principal !== undefined)  { fields.push(`lider_principal = $${idx++}`);  values.push(lider_principal === 'true' || lider_principal === true); }
     if (senha) {
       const hash = await require('bcrypt').hash(senha, 10);
       fields.push(`senha_hash = $${idx++}`);
       values.push(hash);
+    }
+
+    // Foto upload
+    if (req.file) {
+      let fotoPath = req.file.path;
+      try { fotoPath = await otimizarImagem(req.file.path); } catch (e) { /* mantém original */ }
+      const fotoUrl = '/uploads/' + path.basename(fotoPath);
+      fields.push(`foto_url = $${idx++}`);
+      values.push(fotoUrl);
     }
 
     if (!fields.length) return res.status(400).json({ error: 'Nenhum campo para atualizar.' });
@@ -1370,6 +1381,22 @@ app.put('/api/usuarios/:id', auth, withTenant, allow('dono'), async (req, res) =
   } catch (err) {
     console.error('Erro ao editar usuário:', err);
     res.status(500).json({ error: 'Erro ao editar usuário.' });
+  }
+});
+
+// Rota pública (auth) para buscar líderes de região
+app.get('/api/lideres-regiao', auth, withTenant, async (req, res) => {
+  try {
+    const lideres = await dbAll(
+      `SELECT id, nome, contato, foto_url, regiao_vinculada
+       FROM usuarios
+       WHERE tenant_id = $1 AND lider_principal = TRUE`,
+      [req.tenantId]
+    );
+    res.json(lideres);
+  } catch (err) {
+    console.error('Erro ao buscar líderes de região:', err);
+    res.status(500).json({ error: 'Erro ao buscar líderes.' });
   }
 });
 
