@@ -496,17 +496,25 @@ body {
   50%      { opacity: .4; transform: scale(.8); }
 }
 
-/* Cards ocultos por padrão — JS mostra conforme config do tenant */
-#card-admin          { display: none; }
-#card-command-center { display: none; }
-#card-organograma    { display: none; }
-#card-mapa-pirai     { display: none; }
-#card-mapa-angra     { display: none; }
-#card-mapa-rjcapital { display: none; }
-#card-analise        { display: none; }
-#card-painel-admin   { display: none; }
-#card-liderancas     { display: none; }
-#card-reunioes       { display: none; }
+/* Skeleton enquanto os cards carregam */
+.cards-skeleton {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: rgba(255,255,255,0.3);
+  font-size: 14px;
+}
+.cards-skeleton-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  animation: sk-bounce 1.2s ease infinite;
+}
+.cards-skeleton-dot:nth-child(2) { animation-delay: .2s; }
+.cards-skeleton-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes sk-bounce { 0%,80%,100% { transform:scale(0); } 40% { transform:scale(1); } }
 
 .card-indigo .card-icon-wrap { background: rgba(99,102,241,0.3); box-shadow: 0 4px 12px rgba(99,102,241,0.25); }
 .card-indigo:hover { border-color: rgba(165,180,252,0.3); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(99,102,241,0.15); }
@@ -1147,126 +1155,14 @@ setTimeout(function() {
     </div>
   </div>
 
-  <!-- CARDS -->
+  <!-- CARDS — preenchido dinamicamente por renderizarCards() -->
   <section class="cards-section">
-    <div class="cards-grid">
-
-      <!-- ── DESTAQUE: Mapa Estratégico ── -->
-      <a href="./" class="card card-blue card-hero" id="card-mapa-rj">
-        <div class="card-shine"></div>
-        <div class="card-icon-wrap">🗺️</div>
-        <div class="card-body">
-          <div class="card-title">Mapa Estratégico do Estado</div>
-          <div class="card-desc">Visualização interativa de todos os municípios do Rio de Janeiro — lideranças, dados eleitorais e expectativas organizadas por região.</div>
-          <div class="card-cta">Abrir mapa <div class="card-cta-arrow">→</div></div>
-        </div>
-      </a>
-
-      <!-- ── LINHA 2: Mapas por cidade ── -->
-      <a href="./angra/" class="card card-green" id="card-mapa-angra">
-        <div class="card-shine"></div>
-        <div class="card-icon-wrap">🏝️</div>
-        <div class="card-body">
-          <div class="card-title">Mapa de Angra dos Reis</div>
-          <div class="card-desc">Lideranças e expectativa de votos por bairro, com ranking por campanha e distritos.</div>
-          <div class="card-cta">Abrir mapa <div class="card-cta-arrow">→</div></div>
-        </div>
-      </a>
-
-      <a href="./rjcapital/" class="card card-teal" id="card-mapa-rjcapital">
-        <div class="card-shine"></div>
-        <div class="card-icon-wrap">🏙️</div>
-        <div class="card-body">
-          <div class="card-title">Mapa Rio de Janeiro</div>
-          <div class="card-desc">Bairros da capital com expectativa eleitoral, lideranças e análise territorial detalhada.</div>
-          <div class="card-cta">Abrir mapa <div class="card-cta-arrow">→</div></div>
-        </div>
-      </a>
-
-      <a href="./pirai/" class="card card-green" id="card-mapa-pirai">
-        <div class="card-shine"></div>
-        <div class="card-icon-wrap">🌿</div>
-        <div class="card-body">
-          <div class="card-title">Mapa de Piraí</div>
-          <div class="card-desc">Distritos de Piraí com expectativa de votos, lideranças e análise territorial por distrito.</div>
-          <div class="card-cta">Abrir mapa <div class="card-cta-arrow">→</div></div>
-        </div>
-      </a>
-
-      <a href="./analise/" class="card card-amber" id="card-analise">
-        <div class="card-shine"></div>
-        <div class="card-icon-wrap">📊</div>
-        <div class="card-body">
-          <div class="card-title">Análise Eleitoral</div>
-          <div class="card-desc">Dashboard com ranking, comparativos e histórico por ano e por região.</div>
-          <div class="card-cta">Abrir análise <div class="card-cta-arrow">→</div></div>
-        </div>
-      </a>
-
-      <!-- ── LINHA 3: Gestão ── -->
-      <a href="./admin/" class="card card-purple" id="card-painel-admin">
-        <div class="card-shine"></div>
-        <div class="card-icon-wrap">👥</div>
-        <div class="card-body">
-          <div class="card-title">Painel Administrativo</div>
-          <div class="card-desc">Cadastro e gerenciamento completo de lideranças com controle estratégico.</div>
-          <div class="card-cta">Abrir painel <div class="card-cta-arrow">→</div></div>
-        </div>
-      </a>
-
-      <a href="./liderancas.html" class="card card-blue" id="card-liderancas">
-        <div class="card-shine"></div>
-        <div class="card-icon-wrap">📋</div>
-        <div class="card-body">
-          <div class="card-title">Lista de Lideranças</div>
-          <div class="card-desc">Busca inteligente por nome, cidade, bairro, região ou contato em todas as lideranças.</div>
-          <div class="card-cta">Ver lideranças <div class="card-cta-arrow">→</div></div>
-        </div>
-      </a>
-
-      <a href="./reunioes.html" class="card card-cyan" id="card-reunioes">
-        <div class="card-shine"></div>
-        <div class="card-icon-wrap">🎥</div>
-        <div class="card-body">
-          <div id="reunioes-live-badge" class="card-live-badge" style="display:none">
-            <span id="reunioes-live-count">0</span> sala<span id="reunioes-live-plural">s</span> ao vivo
-          </div>
-          <div class="card-title">Videoconferência</div>
-          <div class="card-desc">Reuniões por vídeo com as lideranças — salas por região, agenda, convites e chat em tempo real.</div>
-          <div class="card-cta">Abrir reuniões <div class="card-cta-arrow">→</div></div>
-        </div>
-      </a>
-
-      <a href="./command-center.html" class="card card-indigo" id="card-command-center">
-        <div class="card-shine"></div>
-        <div class="card-icon-wrap">📡</div>
-        <div class="card-body">
-          <div class="card-title">Command Center</div>
-          <div class="card-desc">Painel estratégico com KPIs, metas, expectativas de lideranças, alertas e resumo por região em tempo real.</div>
-          <div class="card-cta">Abrir command center <div class="card-cta-arrow">→</div></div>
-        </div>
-      </a>
-
-      <a href="./organograma-politico.html" class="card card-orange" id="card-organograma">
-        <div class="card-shine"></div>
-        <div class="card-icon-wrap">🏛️</div>
-        <div class="card-body">
-          <div class="card-title">Organograma Político</div>
-          <div class="card-desc">Estrutura hierárquica da campanha — coordenações, zonas, lideranças e metas por área.</div>
-          <div class="card-cta">Abrir organograma <div class="card-cta-arrow">→</div></div>
-        </div>
-      </a>
-
-      <a href="./usuarios.html" class="card card-rose" id="card-admin">
-        <div class="card-shine"></div>
-        <div class="card-icon-wrap">🛡️</div>
-        <div class="card-body">
-          <div class="card-title">Gestão de Acessos</div>
-          <div class="card-desc">Permissões, usuários e configurações de segurança da plataforma.</div>
-          <div class="card-cta">Configurar <div class="card-cta-arrow">→</div></div>
-        </div>
-      </a>
-
+    <div class="cards-grid" id="cards-grid">
+      <div class="cards-skeleton">
+        <div class="cards-skeleton-dot"></div>
+        <div class="cards-skeleton-dot"></div>
+        <div class="cards-skeleton-dot"></div>
+      </div>
     </div>
   </section>
 
@@ -1296,113 +1192,179 @@ window.iniciarAplicacao = function() {
   // Mostra botão logout
   const logoutBtn = document.getElementById('logout-btn')
   if (logoutBtn) logoutBtn.style.display = 'inline-block'
-  // Aplica visibilidade de todos os cards conforme config do tenant + nível do usuário
-  aplicarVisibilidadeCards(user)
-  // Busca salas de vídeo ativas e exibe badge
-  carregarSalasAtivas()
+  // Renderiza cards dinamicamente conforme config do tenant + nível do usuário
+  renderizarCards()
   // Busca aniversariantes da região
   carregarAniversariantes()
   // Carrega indicador de campanha
   carregarIndicadorCampanha()
 }
 
-// Definição completa dos cards do home — usada pela config e para defaults
-const HOME_CARDS_DEFAULTS = {
-  // card-id: niveis que podem ver (null = todos)
+// ─── CATÁLOGO COMPLETO DE CARDS ────────────────────────────────────────────
+// Fonte única da verdade. Nenhum card existe no HTML — só aqui.
+const CATALOGO_CARDS = [
+  {
+    id: 'card-mapa-rj', href: './', cor: 'card-blue', hero: true, mapaId: 'rj',
+    icon: '🗺️', titulo: 'Mapa Estratégico do Estado',
+    desc: 'Visualização interativa de todos os municípios do Rio de Janeiro — lideranças, dados eleitorais e expectativas organizadas por região.',
+    cta: 'Abrir mapa',
+  },
+  {
+    id: 'card-mapa-angra', href: './angra/', cor: 'card-green', mapaId: 'angra',
+    icon: '🏝️', titulo: 'Mapa de Angra dos Reis',
+    desc: 'Lideranças e expectativa de votos por bairro, com ranking por campanha e distritos.',
+    cta: 'Abrir mapa',
+  },
+  {
+    id: 'card-mapa-rjcapital', href: './rjcapital/', cor: 'card-teal', mapaId: 'rjcapital',
+    icon: '🏙️', titulo: 'Mapa Rio de Janeiro',
+    desc: 'Bairros da capital com expectativa eleitoral, lideranças e análise territorial detalhada.',
+    cta: 'Abrir mapa',
+  },
+  {
+    id: 'card-mapa-pirai', href: './pirai/', cor: 'card-green', mapaId: 'pirai',
+    icon: '🌿', titulo: 'Mapa de Piraí',
+    desc: 'Distritos de Piraí com expectativa de votos, lideranças e análise territorial por distrito.',
+    cta: 'Abrir mapa',
+  },
+  {
+    id: 'card-analise', href: './analise/', cor: 'card-amber',
+    icon: '📊', titulo: 'Análise Eleitoral',
+    desc: 'Dashboard com ranking, comparativos e histórico por ano e por região.',
+    cta: 'Abrir análise',
+  },
+  {
+    id: 'card-painel-admin', href: './admin/', cor: 'card-purple',
+    icon: '👥', titulo: 'Painel Administrativo',
+    desc: 'Cadastro e gerenciamento completo de lideranças com controle estratégico.',
+    cta: 'Abrir painel',
+  },
+  {
+    id: 'card-liderancas', href: './liderancas.html', cor: 'card-blue',
+    icon: '📋', titulo: 'Lista de Lideranças',
+    desc: 'Busca inteligente por nome, cidade, bairro, região ou contato em todas as lideranças.',
+    cta: 'Ver lideranças',
+  },
+  {
+    id: 'card-reunioes', href: './reunioes.html', cor: 'card-cyan',
+    icon: '🎥', titulo: 'Videoconferência',
+    desc: 'Reuniões por vídeo com as lideranças — salas por região, agenda, convites e chat em tempo real.',
+    cta: 'Abrir reuniões',
+    liveBadge: true,
+  },
+  {
+    id: 'card-command-center', href: './command-center.html', cor: 'card-indigo',
+    icon: '📡', titulo: 'Command Center',
+    desc: 'Painel estratégico com KPIs, metas, expectativas de lideranças, alertas e resumo por região em tempo real.',
+    cta: 'Abrir command center',
+  },
+  {
+    id: 'card-organograma', href: './organograma-politico.html', cor: 'card-orange',
+    icon: '🏛️', titulo: 'Organograma Político',
+    desc: 'Estrutura hierárquica da campanha — coordenações, zonas, lideranças e metas por área.',
+    cta: 'Abrir organograma',
+  },
+  {
+    id: 'card-admin', href: './usuarios.html', cor: 'card-rose',
+    icon: '🛡️', titulo: 'Gestão de Acessos',
+    desc: 'Permissões, usuários e configurações de segurança da plataforma.',
+    cta: 'Configurar',
+  },
+]
+
+// Defaults do sistema quando não há home_cards_config configurado
+// null = visível para todos os níveis
+const CARDS_NIVEL_PADRAO = {
   'card-admin':          ['dono'],
   'card-command-center': ['dono', 'admin'],
+  'card-organograma':    null,
 }
 
-async function aplicarVisibilidadeCards(user) {
-  const nivel = user?.nivel || ''
+async function renderizarCards() {
+  const grid = document.getElementById('cards-grid')
+  if (!grid) return
 
-  // Fallback imediato com defaults hardcoded (antes da API responder)
-  function mostrarCardSeAutorizado(id, niveis) {
-    const el = document.getElementById(id)
-    if (!el) return
-    if (!niveis || niveis.includes(nivel)) el.style.display = 'flex'
-  }
+  const user  = JSON.parse(localStorage.getItem('user') || '{}')
+  const nivel = user.nivel || ''
+  const token = localStorage.getItem('token')
 
   try {
-    const token = localStorage.getItem('token')
-    if (!token) return
-
-    const r = await fetch(API_URL + '/api/config', {
-      headers: { Authorization: 'Bearer ' + token }
-    })
-    if (!r.ok) throw new Error('config indisponível')
+    if (!token) throw new Error('sem token')
+    const r = await fetch(API_URL + '/api/config', { headers: { Authorization: 'Bearer ' + token } })
+    if (!r.ok) throw new Error('config falhou')
     const cfg = await r.json()
 
     const cardsConfig = cfg.home_cards_config || {}
 
-    // ── Mapa RJ (hero, sempre visível — não tem toggle de visibilidade) ──
-    const rjCard = document.getElementById('card-mapa-rj')
-    if (rjCard) rjCard.style.display = 'flex'
-
-    // ── Cards de mapa: mostra apenas se visivel !== false no tenant_mapas
-    //    E não bloqueado via home_cards_config ──
-    const mapaMap = {}
-    ;(cfg.mapas || []).forEach(m => { mapaMap[m.id] = m })
-
-    const mapaCardIds = ['card-mapa-angra', 'card-mapa-rjcapital', 'card-mapa-pirai']
-    mapaCardIds.forEach(cardId => {
-      const mapaId = cardId.replace('card-mapa-', '')
-      const card   = document.getElementById(cardId)
-      if (!card) return
-
-      // Verifica config de nível (home_cards_config)
-      if (cardsConfig.hasOwnProperty(cardId)) {
-        const niveis = cardsConfig[cardId]
-        // array vazio ou nivel não incluido = oculto
-        if (!Array.isArray(niveis) || niveis.length === 0 || !niveis.includes(nivel)) return
-      }
-
-      // Verifica visibilidade no tenant_mapas
-      const mapa = mapaMap[mapaId]
-      if (mapa && (mapa.visivel === false || mapa.visivel === 0 || mapa.visivel === 'false')) return
-
-      // Passou em todos os filtros → mostra
-      card.style.display = 'flex'
+    // Mapa de visibilidade dos mapas (tenant_mapas.visivel)
+    const mapaVisivel = {}
+    ;(cfg.mapas || []).forEach(m => {
+      // Converte qualquer representação de false para boolean
+      mapaVisivel[m.id] = !(m.visivel === false || m.visivel === 'false' || m.visivel === 0)
     })
 
-    // ── Cards não-mapa: mostra conforme home_cards_config + defaults ──
-    const outrosCards = [
-      'card-analise', 'card-painel-admin', 'card-liderancas',
-      'card-reunioes', 'card-command-center', 'card-organograma', 'card-admin'
-    ]
-    outrosCards.forEach(id => {
-      const card = document.getElementById(id)
-      if (!card) return
-
-      const niveis = cardsConfig.hasOwnProperty(id)
-        ? cardsConfig[id]
-        : (HOME_CARDS_DEFAULTS[id] ?? null)  // null = visível para todos
-
-      if (niveis === null || niveis === undefined || (Array.isArray(niveis) && niveis.includes(nivel))) {
-        card.style.display = 'flex'
+    // Filtra os cards que devem aparecer para este usuário/tenant
+    const cardsVisiveis = CATALOGO_CARDS.filter(card => {
+      // 1. Card de mapa: checa tenant_mapas.visivel
+      if (card.mapaId && card.mapaId !== 'rj') {
+        // Se não está no tenant_mapas, é visível por padrão
+        // Se está, respeita o flag visivel
+        if (mapaVisivel.hasOwnProperty(card.mapaId) && !mapaVisivel[card.mapaId]) {
+          return false // mapa desligado no tenant
+        }
       }
-      // senão: fica com display:none do CSS
+
+      // 2. Checa home_cards_config (config do tenant por nível)
+      const niveisConfig = cardsConfig.hasOwnProperty(card.id)
+        ? cardsConfig[card.id]
+        : (CARDS_NIVEL_PADRAO.hasOwnProperty(card.id) ? CARDS_NIVEL_PADRAO[card.id] : null)
+
+      if (niveisConfig === null || niveisConfig === undefined) return true  // sem restrição
+      if (!Array.isArray(niveisConfig) || niveisConfig.length === 0) return false  // bloqueado
+      return niveisConfig.includes(nivel)
     })
+
+    // Renderiza os cards visíveis no DOM
+    grid.innerHTML = cardsVisiveis.map((card, i) => `
+      <a href="${card.href}" class="card ${card.cor}${card.hero ? ' card-hero' : ''}" id="${card.id}"
+         style="animation-delay:${(i * 0.07).toFixed(2)}s">
+        <div class="card-shine"></div>
+        <div class="card-icon-wrap">${card.icon}</div>
+        <div class="card-body">
+          ${card.liveBadge ? `<div class="card-live-badge" id="reunioes-live-badge" style="display:none">
+            <span id="reunioes-live-count">0</span> sala<span id="reunioes-live-plural">s</span> ao vivo
+          </div>` : ''}
+          <div class="card-title">${card.titulo}</div>
+          <div class="card-desc">${card.desc}</div>
+          <div class="card-cta">${card.cta} <div class="card-cta-arrow">→</div></div>
+        </div>
+      </a>`).join('')
+
+    // Reaplica tilt 3D nos novos cards
+    inicializarTiltCards()
+
+    // Busca salas ativas para o badge de reuniões (agora que o elemento existe)
+    carregarSalasAtivas()
 
   } catch (e) {
-    // Fallback: mostra cards básicos conforme nível hardcoded
-    const semRestricao = ['card-analise', 'card-painel-admin', 'card-liderancas', 'card-reunioes']
-    semRestricao.forEach(id => {
-      const el = document.getElementById(id)
-      if (el) el.style.display = 'flex'
-    })
-    // card-mapa-rj sempre visível
-    const rj = document.getElementById('card-mapa-rj')
-    if (rj) rj.style.display = 'flex'
-    // Mapas: mostra todos no fallback (sem config = visível)
-    ;['card-mapa-angra', 'card-mapa-rjcapital'].forEach(id => {
-      const el = document.getElementById(id)
-      if (el) el.style.display = 'flex'
-    })
-    // Admin/CC: só para níveis elevados
-    mostrarCardSeAutorizado('card-admin',          ['dono'])
-    mostrarCardSeAutorizado('card-command-center', ['dono','admin'])
-    mostrarCardSeAutorizado('card-organograma',    ['dono','admin'])
+    // Fallback: mostra cards básicos sem restrição de nível
+    const fallback = CATALOGO_CARDS.filter(c =>
+      !['card-admin','card-command-center'].includes(c.id) &&
+      !c.mapaId   // sem mapas secundários no fallback
+      || c.mapaId === 'rj'
+    )
+    grid.innerHTML = fallback.map((card, i) => `
+      <a href="${card.href}" class="card ${card.cor}${card.hero ? ' card-hero' : ''}" id="${card.id}"
+         style="animation-delay:${(i * 0.07).toFixed(2)}s">
+        <div class="card-shine"></div>
+        <div class="card-icon-wrap">${card.icon}</div>
+        <div class="card-body">
+          <div class="card-title">${card.titulo}</div>
+          <div class="card-desc">${card.desc}</div>
+          <div class="card-cta">${card.cta} <div class="card-cta-arrow">→</div></div>
+        </div>
+      </a>`).join('')
+    inicializarTiltCards()
   }
 }
 
@@ -1749,73 +1711,82 @@ animateParallax()
 const MAX_TILT   = 12   // graus máximo
 const SCALE_HOVER = 1.03
 
-document.querySelectorAll('.card').forEach(card => {
-  let tiltRaf = null
-  let currentRX = 0, currentRY = 0
-  let targetRX  = 0, targetRY  = 0
+function inicializarTiltCards() {
+  document.querySelectorAll('.card').forEach(card => {
+    // Evita duplicar listeners se já foram adicionados
+    if (card._tiltInitialized) return
+    card._tiltInitialized = true
 
-  card.addEventListener('mousemove', e => {
-    if (isMobile()) return
-    const rect = card.getBoundingClientRect()
-    const cx = rect.left + rect.width  / 2
-    const cy = rect.top  + rect.height / 2
-    const dx = (e.clientX - cx) / (rect.width  / 2)  // -1 a 1
-    const dy = (e.clientY - cy) / (rect.height / 2)  // -1 a 1
+    let tiltRaf = null
+    let currentRX = 0, currentRY = 0
+    let targetRX  = 0, targetRY  = 0
 
-    targetRY =  dx * MAX_TILT
-    targetRX = -dy * MAX_TILT
+    card.addEventListener('mousemove', e => {
+      if (isMobile()) return
+      const rect = card.getBoundingClientRect()
+      const cx = rect.left + rect.width  / 2
+      const cy = rect.top  + rect.height / 2
+      const dx = (e.clientX - cx) / (rect.width  / 2)  // -1 a 1
+      const dy = (e.clientY - cy) / (rect.height / 2)  // -1 a 1
 
-    // Brilho segue o mouse
-    const shine = card.querySelector('.card-shine')
-    if (shine) {
-      const px = ((e.clientX - rect.left) / rect.width  * 100).toFixed(1)
-      const py = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1)
-      shine.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.16) 0%, transparent 55%)`
-    }
+      targetRY =  dx * MAX_TILT
+      targetRX = -dy * MAX_TILT
 
-    if (!tiltRaf) tiltRaf = requestAnimationFrame(animateTilt)
-
-    function animateTilt() {
-      currentRX += (targetRX - currentRX) * 0.18
-      currentRY += (targetRY - currentRY) * 0.18
-
-      card.style.transform =
-        `perspective(800px) rotateX(${currentRX}deg) rotateY(${currentRY}deg) scale(${SCALE_HOVER})`
-
-      if (Math.abs(targetRX - currentRX) > 0.05 || Math.abs(targetRY - currentRY) > 0.05) {
-        tiltRaf = requestAnimationFrame(animateTilt)
-      } else {
-        tiltRaf = null
+      // Brilho segue o mouse
+      const shine = card.querySelector('.card-shine')
+      if (shine) {
+        const px = ((e.clientX - rect.left) / rect.width  * 100).toFixed(1)
+        const py = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1)
+        shine.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.16) 0%, transparent 55%)`
       }
-    }
-  })
 
-  card.addEventListener('mouseleave', () => {
-    targetRX = 0
-    targetRY = 0
-    const shine = card.querySelector('.card-shine')
+      if (!tiltRaf) tiltRaf = requestAnimationFrame(animateTilt)
 
-    function resetTilt() {
-      currentRX += (0 - currentRX) * 0.14
-      currentRY += (0 - currentRY) * 0.14
+      function animateTilt() {
+        currentRX += (targetRX - currentRX) * 0.18
+        currentRY += (targetRY - currentRY) * 0.18
 
-      card.style.transform =
-        `perspective(800px) rotateX(${currentRX}deg) rotateY(${currentRY}deg) scale(1)`
+        card.style.transform =
+          `perspective(800px) rotateX(${currentRX}deg) rotateY(${currentRY}deg) scale(${SCALE_HOVER})`
 
-      if (shine) shine.style.background =
-        'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12) 0%, transparent 60%)'
-
-      if (Math.abs(currentRX) > 0.05 || Math.abs(currentRY) > 0.05) {
-        tiltRaf = requestAnimationFrame(resetTilt)
-      } else {
-        card.style.transform = ''
-        tiltRaf = null
+        if (Math.abs(targetRX - currentRX) > 0.05 || Math.abs(targetRY - currentRY) > 0.05) {
+          tiltRaf = requestAnimationFrame(animateTilt)
+        } else {
+          tiltRaf = null
+        }
       }
-    }
-    if (tiltRaf) cancelAnimationFrame(tiltRaf)
-    tiltRaf = requestAnimationFrame(resetTilt)
+    })
+
+    card.addEventListener('mouseleave', () => {
+      targetRX = 0
+      targetRY = 0
+      const shine = card.querySelector('.card-shine')
+
+      function resetTilt() {
+        currentRX += (0 - currentRX) * 0.14
+        currentRY += (0 - currentRY) * 0.14
+
+        card.style.transform =
+          `perspective(800px) rotateX(${currentRX}deg) rotateY(${currentRY}deg) scale(1)`
+
+        if (shine) shine.style.background =
+          'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12) 0%, transparent 60%)'
+
+        if (Math.abs(currentRX) > 0.05 || Math.abs(currentRY) > 0.05) {
+          tiltRaf = requestAnimationFrame(resetTilt)
+        } else {
+          card.style.transform = ''
+          tiltRaf = null
+        }
+      }
+      if (tiltRaf) cancelAnimationFrame(tiltRaf)
+      tiltRaf = requestAnimationFrame(resetTilt)
+    })
   })
-})
+}
+
+// Inicializa nos cards que já existirem no DOM (nenhum, mas por segurança)
+inicializarTiltCards()
 
 // ── Partículas flutuantes ──
 ;(function initParticles() {
