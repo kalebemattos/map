@@ -277,13 +277,54 @@ function calcularTotalGeral() {
 // ─────────────────────────────────────────────
 // CORES
 // ─────────────────────────────────────────────
+
+function _hexToHsl(hex) {
+  let r = parseInt(hex.slice(1,3),16)/255, g = parseInt(hex.slice(3,5),16)/255, b = parseInt(hex.slice(5,7),16)/255
+  const max = Math.max(r,g,b), min = Math.min(r,g,b)
+  let h, s, l = (max+min)/2
+  if (max === min) { h = s = 0 } else {
+    const d = max-min
+    s = l > 0.5 ? d/(2-max-min) : d/(max+min)
+    switch(max) {
+      case r: h=((g-b)/d+(g<b?6:0))/6; break
+      case g: h=((b-r)/d+2)/6; break
+      default: h=((r-g)/d+4)/6
+    }
+  }
+  return [h*360, s*100, l*100]
+}
+function _hslToHex(h, s, l) {
+  h/=360; s/=100; l/=100
+  const hue2rgb = (p,q,t) => { if(t<0)t+=1; if(t>1)t-=1; if(t<1/6)return p+(q-p)*6*t; if(t<1/2)return q; if(t<2/3)return p+(q-p)*(2/3-t)*6; return p }
+  let r,g,b
+  if(s===0){r=g=b=l}else{const q=l<0.5?l*(1+s):l+s-l*s,p=2*l-q;r=hue2rgb(p,q,h+1/3);g=hue2rgb(p,q,h);b=hue2rgb(p,q,h-1/3)}
+  return '#'+[r,g,b].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('')
+}
+function _paletaMeta(hex) {
+  try {
+    if (!hex || hex.length < 4) throw new Error('hex inválido')
+    const [h,s] = _hexToHsl(hex)
+    return [
+      _hslToHex(h, Math.max(s*0.15,8),  94),
+      _hslToHex(h, Math.max(s*0.5, 20), 80),
+      _hslToHex(h, Math.max(s*0.8, 40), 65),
+      _hslToHex(h, s,                   48),
+      _hslToHex(h, Math.min(s*1.1,100), 32),
+      _hslToHex(h, Math.min(s*1.2,100), 18),
+    ]
+  } catch { return ['#e8f4ff','#fcae91','#fb6a4a','#cb181d','#a50f15','#67000d'] }
+}
+
 function corPorExpectativa(v) {
-  if (v >= 5000) return "#67000d"
-  if (v >= 2000) return "#a50f15"
-  if (v >= 1000) return "#cb181d"
-  if (v >= 300)  return "#fb6a4a"
-  if (v >  0)    return "#fcae91"
-  return "#e8f4ff"
+  const cand = (configSistema.candidatos||[]).find(c => c.chave === filtroCampanha)
+  const base = (cand && cand.cor_mapa) ? cand.cor_mapa : '#cb181d'
+  const pal  = _paletaMeta(base)
+  if (v >= 5000) return pal[5]
+  if (v >= 2000) return pal[4]
+  if (v >= 1000) return pal[3]
+  if (v >= 300)  return pal[2]
+  if (v >  0)    return pal[1]
+  return pal[0]
 }
 
 function corPorVotosValidos(v) {

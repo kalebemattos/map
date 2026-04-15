@@ -177,6 +177,10 @@
           <label>Cor texto do badge</label>
           <input type="color" id="c-cor-texto" value="#3730a3">
         </div>
+        <div class="form-group" style="flex:0.4;">
+          <label title="Cor usada para pintar as cidades no mapa conforme a meta">🗺️ Cor do mapa</label>
+          <input type="color" id="c-cor-mapa" value="#cb181d">
+        </div>
         <div class="form-group" style="flex:0.3;">
           <label>Ordem</label>
           <input type="number" id="c-ordem" value="0" min="0">
@@ -301,6 +305,7 @@ function editarCandidato(c) {
   document.getElementById('c-nome').value   = c.nome;
   document.getElementById('c-cor-fundo').value = c.cor_fundo || '#e0e7ff';
   document.getElementById('c-cor-texto').value = c.cor_texto || '#3730a3';
+  document.getElementById('c-cor-mapa').value  = c.cor_mapa  || c.cor_texto || '#cb181d';
   document.getElementById('c-ordem').value  = c.ordem ?? 0;
   document.getElementById('c-votos2022').checked = !!c.tem_votos_2022;
   document.getElementById('c-cargo').value  = c.cargo || '';
@@ -341,6 +346,7 @@ async function salvarCandidato() {
     fd.append('nome',          nome);
     fd.append('cor_fundo',     document.getElementById('c-cor-fundo').value);
     fd.append('cor_texto',     document.getElementById('c-cor-texto').value);
+    fd.append('cor_mapa',      document.getElementById('c-cor-mapa').value);
     fd.append('ordem',         document.getElementById('c-ordem').value);
     fd.append('tem_votos_2022', document.getElementById('c-votos2022').checked);
     fd.append('cargo',         document.getElementById('c-cargo').value.trim());

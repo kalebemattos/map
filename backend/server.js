@@ -28,7 +28,7 @@ async function getConfigTenant(tenantId) {
   try {
     const [cfgRow, candidatos, mapas, regioes] = await Promise.all([
       dbGet('SELECT nome_sistema, logo_url, cores, home_cards_config FROM tenant_config WHERE tenant_id = $1', [tenantId]),
-      dbAll('SELECT chave, nome, cor_fundo, cor_texto, tem_votos_2022, foto_url FROM tenant_candidatos WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
+      dbAll('SELECT chave, nome, cor_fundo, cor_texto, cor_mapa, tem_votos_2022, foto_url FROM tenant_candidatos WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
       dbAll('SELECT mapa_id AS id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes, COALESCE(visivel, true) AS visivel FROM tenant_mapas WHERE tenant_id = $1', [tenantId]),
       dbAll('SELECT chave, label, cidades, lideres FROM tenant_regioes WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
     ]);
@@ -2018,7 +2018,7 @@ app.get('/api/admin/config/candidatos', auth, withTenant, allow('dono'), async (
 
 app.post('/api/admin/config/candidatos', auth, withTenant, allow('dono'), upload.single('foto'), async (req, res) => {
   try {
-    const { chave, nome, cor_fundo, cor_texto, tem_votos_2022, ordem } = req.body;
+    const { chave, nome, cor_fundo, cor_texto, cor_mapa, tem_votos_2022, ordem } = req.body;
     if (!chave || !nome) return res.status(400).json({ error: 'chave e nome são obrigatórios' });
 
     // Upload de foto para Supabase (bucket 'candidatos')
@@ -2037,12 +2037,13 @@ app.post('/api/admin/config/candidatos', auth, withTenant, allow('dono'), upload
     }
 
     await pool.query(
-      `INSERT INTO tenant_candidatos (tenant_id, chave, nome, cor_fundo, cor_texto, tem_votos_2022, ordem, foto_url)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      `INSERT INTO tenant_candidatos (tenant_id, chave, nome, cor_fundo, cor_texto, cor_mapa, tem_votos_2022, ordem, foto_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        ON CONFLICT (tenant_id, chave) DO UPDATE SET
-         nome = $3, cor_fundo = $4, cor_texto = $5, tem_votos_2022 = $6, ordem = $7,
-         foto_url = COALESCE($8, tenant_candidatos.foto_url)`,
+         nome = $3, cor_fundo = $4, cor_texto = $5, cor_mapa = $6, tem_votos_2022 = $7, ordem = $8,
+         foto_url = COALESCE($9, tenant_candidatos.foto_url)`,
       [req.tenantId, chave, nome, cor_fundo ?? '#e0e7ff', cor_texto ?? '#3730a3',
+       cor_mapa ?? cor_texto ?? '#cb181d',
        tem_votos_2022 === 'true' || tem_votos_2022 === true, ordem ?? 0, foto_url]
     );
     invalidateTenantCache(req.tenantId);
@@ -2228,6 +2229,12 @@ server.listen(PORT, async () => {
     console.log('[migration] tenant_candidatos.foto_url OK');
   } catch (e) {
     console.warn('[migration] tenant_candidatos.foto_url:', e.message);
+  }
+  try {
+    await pool.query(`ALTER TABLE tenant_candidatos ADD COLUMN IF NOT EXISTS cor_mapa TEXT DEFAULT '#cb181d'`);
+    console.log('[migration] tenant_candidatos.cor_mapa OK');
+  } catch (e) {
+    console.warn('[migration] tenant_candidatos.cor_mapa:', e.message);
   }
   try {
     await pool.query(`ALTER TABLE tenant_mapas ADD COLUMN IF NOT EXISTS visivel BOOLEAN DEFAULT TRUE`);
