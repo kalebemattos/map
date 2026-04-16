@@ -2211,6 +2211,39 @@ app.delete('/api/admin/config/regioes/:chave', auth, withTenant, allow('dono'), 
 
 /* ================= BIGQUERY – ELEIÇÕES ================= */
 
+/* ---------- Lookup bairro: zona+seção → bairro (carregado do CSV) ---------- */
+// Estrutura: bairrosLookup[id_municipio_tse][zona_secao] = 'BOTAFOGO'
+const bairrosLookup = {};
+(function loadBairrosCSV() {
+  const csvPath = path.join(__dirname, '..', 'bairros.csv');
+  try {
+    if (!fs.existsSync(csvPath)) {
+      console.warn('[bairros] bairros.csv não encontrado em', csvPath);
+      return;
+    }
+    // CSV usa encoding Latin-1 (ISO-8859-1)
+    const raw = fs.readFileSync(csvPath, 'latin1');
+    const lines = raw.split(/\r?\n/).slice(1); // pula cabeçalho
+    let count = 0;
+    for (const line of lines) {
+      const cols = line.split(';');
+      if (cols.length < 9) continue;
+      const zona   = cols[0].trim();
+      const idMun  = cols[1].trim(); // Código Município TSE, ex: "60011"
+      const bairro = cols[3].trim();
+      const secao  = cols[8].trim();
+      if (!zona || !idMun || !bairro || !secao) continue;
+      if (!bairrosLookup[idMun]) bairrosLookup[idMun] = {};
+      bairrosLookup[idMun][`${zona}_${secao}`] = bairro;
+      count++;
+    }
+    const muns = Object.keys(bairrosLookup).length;
+    console.log(`[bairros] ${count} seções carregadas para ${muns} município(s)`);
+  } catch (e) {
+    console.error('[bairros] Erro ao carregar CSV:', e.message);
+  }
+})();
+
 // Rota de diagnóstico — acesse /api/eleicoes/ping no browser para confirmar deploy
 app.get('/api/eleicoes/ping', (req, res) => {
   res.json({ ok: true, msg: 'bigquery-routes-online', ts: Date.now() });
@@ -2413,7 +2446,7 @@ app.get('/api/eleicoes/zonas', async (req, res) => {
       turno: parseInt(turno),
       uf: uf.trim().toUpperCase(),
       sequencial: sequencial.trim(),
-      id_municipio: parseInt(id_municipio)
+      id_municipio: String(id_municipio).trim()
     };
 
     // Votos do candidato por zona
@@ -2479,6 +2512,104 @@ app.get('/api/eleicoes/zonas', async (req, res) => {
     res.json({ ok: true, data });
   } catch (e) {
     console.error('[/api/eleicoes/zonas]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+/**
+ * GET /api/eleicoes/bairros
+ * Retorna votos por bairro para eleições municipais (prefeito/vereador).
+ * Cruza dados de seção eleitoral do BigQuery com o CSV zona+seção → bairro.
+ * Query params: sequencial, ano, uf, id_municipio, turno (padrão 1)
+ */
+app.get('/api/eleicoes/bairros', async (req, res) => {
+  try {
+    const { sequencial, ano, uf, id_municipio, turno = '1' } = req.query;
+    if (!sequencial || !ano || !uf || !id_municipio) {
+      return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: sequencial, ano, uf, id_municipio' });
+    }
+
+    const params = {
+      ano:          parseInt(ano),
+      turno:        parseInt(turno),
+      uf:           uf.trim().toUpperCase(),
+      sequencial:   sequencial.trim(),
+      id_municipio: String(id_municipio).trim()
+    };
+
+    // Votos do candidato por zona+seção
+    const sqlSecoes = `
+      SELECT
+        r.zona,
+        r.secao,
+        SUM(r.votos) AS votos
+      FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio_secao\` r
+      WHERE r.ano = @ano
+        AND r.turno = @turno
+        AND r.sigla_uf = @uf
+        AND CAST(r.sequencial_candidato AS STRING) = @sequencial
+        AND r.id_municipio = @id_municipio
+        AND r.votos IS NOT NULL
+      GROUP BY r.zona, r.secao
+      ORDER BY r.zona, r.secao
+    `;
+
+    // Votos nominais por zona+seção (para calcular %)
+    const sqlTotal = `
+      SELECT
+        p.zona,
+        p.secao,
+        SUM(p.votos_nominais) AS votos_nominais
+      FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio_secao\` p
+      WHERE p.ano = @ano
+        AND p.turno = @turno
+        AND p.sigla_uf = @uf
+        AND p.id_municipio = @id_municipio
+      GROUP BY p.zona, p.secao
+    `;
+
+    const [rowsSecoes, rowsTotal] = await Promise.all([
+      runBQ(sqlSecoes, params),
+      runBQ(sqlTotal, params)
+    ]);
+
+    // Mapa zona_secao → votos_nominais
+    const totalMap = {};
+    for (const r of rowsTotal) {
+      totalMap[`${r.zona}_${r.secao}`] = Number(r.votos_nominais) || 0;
+    }
+
+    // Lookup bairro para este município (tenta pela id_municipio passada)
+    const munLookup = bairrosLookup[String(id_municipio).trim()] || {};
+    const temLookup = Object.keys(munLookup).length > 0;
+
+    // Agrega por bairro
+    const bairroAgg = {};
+    for (const r of rowsSecoes) {
+      const chave  = `${r.zona}_${r.secao}`;
+      const bairro = temLookup
+        ? (munLookup[chave] || `Zona ${r.zona}`)
+        : `Zona ${r.zona}`;
+
+      if (!bairroAgg[bairro]) bairroAgg[bairro] = { votos: 0, votos_nominais: 0 };
+      bairroAgg[bairro].votos          += Number(r.votos) || 0;
+      bairroAgg[bairro].votos_nominais += totalMap[chave] || 0;
+    }
+
+    const data = Object.entries(bairroAgg)
+      .map(([bairro, d]) => ({
+        bairro,
+        votos:          d.votos,
+        votos_nominais: d.votos_nominais,
+        percentual:     d.votos_nominais > 0
+          ? ((d.votos / d.votos_nominais) * 100).toFixed(2)
+          : null
+      }))
+      .sort((a, b) => b.votos - a.votos);
+
+    res.json({ ok: true, data, por_bairro: temLookup });
+  } catch (e) {
+    console.error('[/api/eleicoes/bairros]', e.message);
     res.status(500).json({ ok: false, error: e.message });
   }
 });
