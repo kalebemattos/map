@@ -681,6 +681,191 @@ tbody tr:last-child td { border-bottom: none; }
       .modal-bairros-card { max-height: 92vh; border-radius: 20px 20px 0 0; }
       #modal-bairros { align-items: flex-end; padding: 0; }
     }
+
+/* ================================================================
+   [NEW UI] — Adicionado incrementalmente. useNewUI=false reverte.
+   Não remove nem sobrescreve nenhum estilo existente.
+   ================================================================ */
+
+/* ── Seletor de tipo de eleição ────────────────────────────────── */
+.et-selector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.et-card {
+  flex: 1;
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: rgba(255,255,255,0.55);
+  user-select: none;
+}
+.et-card:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.22);
+  color: rgba(255,255,255,0.88);
+  transform: translateY(-1px);
+}
+.et-card.active {
+  background: rgba(21,101,192,0.22);
+  border-color: #1565c0;
+  color: white;
+  box-shadow: 0 4px 18px rgba(21,101,192,0.3);
+}
+.et-card.active .et-icon { transform: scale(1.1); }
+.et-icon { font-size: 26px; transition: transform 0.2s; flex-shrink: 0; }
+.et-label { font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700; line-height: 1.2; }
+.et-sub   { font-size: 11px; opacity: 0.65; margin-top: 3px; }
+.et-check {
+  margin-left: auto;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+.et-card.active .et-check {
+  background: #1565c0;
+  border-color: #1565c0;
+  color: white;
+}
+
+/* ── Context header ────────────────────────────────────────────── */
+.ctx-header {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  animation: fadeUp 0.2s ease;
+}
+.ctx-header.visible { display: flex; }
+.ctx-sep { color: rgba(255,255,255,0.2); }
+.ctx-badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.ctx-badge-municipal { background: rgba(34,197,94,0.18); color: #4ade80; }
+.ctx-badge-geral     { background: rgba(99,102,241,0.18); color: #a5b4fc; }
+.ctx-nome { font-weight: 600; color: rgba(255,255,255,0.88); }
+
+/* ── Cards de resultado (substitui tabela quando useNewUI=true) ── */
+#view-table { display: block; }
+#view-cards { display: none;  }
+
+.cities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+.city-result-card {
+  background: white;
+  border-radius: 14px;
+  padding: 16px 18px;
+  border: 1.5px solid var(--slate-200);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  animation: fadeUp 0.25s ease both;
+}
+.city-result-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(21,101,192,0.14);
+  border-color: var(--blue-main);
+}
+.crc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.crc-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--slate-900);
+  line-height: 1.3;
+}
+.crc-votes {
+  font-family: 'Sora', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--blue-main);
+  margin: 6px 0 2px;
+}
+.crc-sub {
+  font-size: 11px;
+  color: var(--slate-400);
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+.crc-bar {
+  height: 4px;
+  background: var(--slate-100);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.crc-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue-main), #42a5f5);
+  border-radius: 10px;
+  transition: width 0.6s ease;
+}
+.crc-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.crc-pct-total {
+  font-size: 11px;
+  color: var(--slate-400);
+  font-weight: 600;
+}
+.crc-btn {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--blue-main);
+  background: var(--slate-100);
+  border: none;
+  padding: 5px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.crc-btn:hover { background: var(--blue-main); color: white; }
+
+/* ── Resultado vazio em modo cards ─────────────────────────────── */
+#view-cards .empty-state { padding: 40px 20px; }
+
+/* ── Responsivo novo ───────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .et-selector { flex-direction: column; gap: 8px; }
+  .et-card { padding: 14px 16px; }
+  .cities-grid { grid-template-columns: 1fr; padding: 12px; gap: 8px; }
+}
+@media (min-width: 701px) and (max-width: 1100px) {
+  .cities-grid { grid-template-columns: repeat(2, 1fr); }
+}
 </style>
 </head>
 <body>
@@ -701,6 +886,26 @@ tbody tr:last-child td { border-bottom: none; }
     </div>
     <a href="../home.html" class="nav-back">← Voltar</a>
   </nav>
+
+  <!-- [NEW] SELETOR DE TIPO DE ELEIÇÃO -->
+  <div class="et-selector" id="et-selector">
+    <div class="et-card" data-tipo="municipal" onclick="setTipoEleicao('municipal')">
+      <span class="et-icon">🏘️</span>
+      <div>
+        <div class="et-label">Municipal</div>
+        <div class="et-sub">Prefeito · Vereador · 2024, 2020…</div>
+      </div>
+      <span class="et-check">✓</span>
+    </div>
+    <div class="et-card" data-tipo="geral" onclick="setTipoEleicao('geral')">
+      <span class="et-icon">🏛️</span>
+      <div>
+        <div class="et-label">Geral</div>
+        <div class="et-sub">Dep. · Senador · Governador · 2022, 2018…</div>
+      </div>
+      <span class="et-check">✓</span>
+    </div>
+  </div>
 
   <!-- CONTROLS CARD -->
   <div class="card">
@@ -785,6 +990,9 @@ tbody tr:last-child td { border-bottom: none; }
     </div>
   </div>
 
+  <!-- [NEW] CONTEXT HEADER -->
+  <div class="ctx-header" id="ctx-header"></div>
+
   <!-- TABLE CARD -->
   <div class="card" style="padding:0;overflow:hidden;">
     <div style="padding:18px 22px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -793,35 +1001,192 @@ tbody tr:last-child td { border-bottom: none; }
         Resultado por cidade
       </div>
     </div>
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Cidade</th>
-            <th>Votos</th>
-            <th>Válidos</th>
-            <th>% Cidade</th>
-            <th>% do Total</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="resultado"></tbody>
-      </table>
-      <div class="result-footer" id="result-footer" style="display:none;"></div>
+    <!-- [ORIGINAL] view em tabela — exibida quando useNewUI=false -->
+    <div id="view-table">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Cidade</th>
+              <th>Votos</th>
+              <th>Válidos</th>
+              <th>% Cidade</th>
+              <th>% do Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="resultado"></tbody>
+        </table>
+      </div>
     </div>
+    <!-- [NEW] view em cards — exibida quando useNewUI=true -->
+    <div id="view-cards">
+      <div class="cities-grid" id="resultado-cards"></div>
+    </div>
+    <div class="result-footer" id="result-footer" style="display:none;"></div>
   </div>
 
 </div>
 
 <script>
 // ── Configuração ──────────────────────────────────────────────────────────────
-// Auto-detecta a URL base do backend.
-// Se aberto via file://, assume localhost:10000. Se servido pelo próprio Express,
-// usa mesma origem. Pode ser sobrescrito com window.ELEICOES_API_BASE.
 const API_BASE = 'https://map-backend-j88s.onrender.com';
 
 // Cargos de eleição municipal — usam votos por bairro (via seção eleitoral)
 const CARGOS_MUNICIPAIS = new Set(['PREFEITO', 'VEREADOR']);
+
+// ── [NEW] Feature flag — set false para reverter à UI original instantaneamente
+const useNewUI = true;
+
+// ── [NEW] Tipo de eleição ─────────────────────────────────────────────────────
+let tipoEleicao = null; // 'municipal' | 'geral' | null
+
+const ANOS_MUNICIPAL = ['2024','2020','2016','2012','2008'];
+const ANOS_GERAL     = ['2022','2018','2014','2010','2006'];
+const CARGOS_POR_TIPO = {
+  municipal: ['PREFEITO','VEREADOR'],
+  geral:     ['DEPUTADO ESTADUAL','DEPUTADO FEDERAL','SENADOR','GOVERNADOR']
+};
+
+/**
+ * [NEW] Define o tipo de eleição e atualiza filtros dinamicamente.
+ * Clicar no mesmo tipo desativa (toggle). Não altera nenhum contrato de API.
+ */
+function setTipoEleicao(tipo) {
+  // Toggle: clique duplo desmarca
+  tipoEleicao = tipoEleicao === tipo ? null : tipo;
+
+  // Atualiza visual dos cards
+  document.querySelectorAll('.et-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.tipo === tipoEleicao);
+  });
+
+  // Atualiza opções de ano e cargo
+  _updateFiltrosPorTipo(tipoEleicao);
+
+  // Reseta estado de candidato para evitar inconsistência
+  candidatoAtual = null;
+  resultadosAtual = [];
+  document.getElementById('cardCandidato').style.display = 'none';
+  document.getElementById('resultado').innerHTML = '';
+  document.getElementById('resultado-cards').innerHTML = '';
+  document.getElementById('result-footer').style.display = 'none';
+  document.getElementById('candidatoSelect').innerHTML =
+    '<option value="">— busque um candidato acima —</option>';
+  document.getElementById('buscarCandidato').value = '';
+
+  _renderContextHeader();
+}
+
+/**
+ * [NEW] Filtra opções de ano e cargo conforme o tipo selecionado.
+ * Apenas esconde/mostra options — não remove nem altera o DOM original.
+ */
+function _updateFiltrosPorTipo(tipo) {
+  const anoSel   = document.getElementById('anoSelect');
+  const cargoSel = document.getElementById('cargoSelect');
+
+  if (tipo === 'municipal') {
+    Array.from(anoSel.options).forEach(o => { o.hidden = !ANOS_MUNICIPAL.includes(o.value); });
+    Array.from(cargoSel.options).forEach(o => {
+      o.hidden = o.value !== '' && !CARGOS_POR_TIPO.municipal.includes(o.value);
+    });
+    if (!ANOS_MUNICIPAL.includes(anoSel.value))                       anoSel.value   = '2024';
+    if (cargoSel.value && !CARGOS_POR_TIPO.municipal.includes(cargoSel.value)) cargoSel.value = 'VEREADOR';
+
+  } else if (tipo === 'geral') {
+    Array.from(anoSel.options).forEach(o => { o.hidden = !ANOS_GERAL.includes(o.value); });
+    Array.from(cargoSel.options).forEach(o => {
+      o.hidden = o.value !== '' && !CARGOS_POR_TIPO.geral.includes(o.value);
+    });
+    if (!ANOS_GERAL.includes(anoSel.value))                           anoSel.value   = '2022';
+    if (cargoSel.value && !CARGOS_POR_TIPO.geral.includes(cargoSel.value)) cargoSel.value = 'DEPUTADO ESTADUAL';
+
+  } else {
+    // Sem tipo: restaura todas as opções
+    Array.from(anoSel.options).forEach(o => { o.hidden = false; });
+    Array.from(cargoSel.options).forEach(o => { o.hidden = false; });
+  }
+}
+
+/**
+ * [NEW] Atualiza o context header acima da tabela de resultados.
+ * Só renderiza se useNewUI = true. Não afeta lógica de dados.
+ */
+function _renderContextHeader() {
+  if (!useNewUI) return;
+  const el = document.getElementById('ctx-header');
+  if (!el) return;
+
+  if (!tipoEleicao && !candidatoAtual) {
+    el.classList.remove('visible');
+    return;
+  }
+
+  const parts = [];
+  if (tipoEleicao) {
+    const cls  = tipoEleicao === 'municipal' ? 'ctx-badge-municipal' : 'ctx-badge-geral';
+    const icon = tipoEleicao === 'municipal' ? '🏘️' : '🏛️';
+    const label = tipoEleicao === 'municipal' ? 'Municipal' : 'Geral';
+    parts.push(`<span class="ctx-badge ${cls}">${icon} ${label}</span>`);
+  }
+  if (candidatoAtual) {
+    parts.push(`<span class="ctx-nome">${candidatoAtual.nome}</span>`);
+    parts.push(`<span class="ctx-sep">·</span>`);
+    parts.push(`<span>${candidatoAtual.cargo}</span>`);
+    parts.push(`<span class="ctx-sep">·</span>`);
+    parts.push(`<span>${candidatoAtual.uf} ${candidatoAtual.ano}</span>`);
+  }
+
+  el.innerHTML = parts.join('');
+  el.classList.add('visible');
+}
+
+/**
+ * [NEW] Renderiza resultados como grid de cards (useNewUI=true).
+ * Chamado por renderTabela() — não substitui a função original, apenas a estende.
+ */
+function _renderCidadesCards(dados, totalVotos, maxVotos) {
+  const grid = document.getElementById('resultado-cards');
+  grid.innerHTML = '';
+
+  if (!dados.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>Nenhum resultado encontrado</p></div>';
+    return;
+  }
+
+  const ehMunicipal = candidatoAtual && CARGOS_MUNICIPAIS.has(candidatoAtual.cargo);
+  const btnLabel    = ehMunicipal ? '🏘️ Bairros' : '🗺️ Zonas';
+
+  dados.forEach((r, i) => {
+    const pctTotal = totalVotos > 0 ? ((r.votos / totalVotos) * 100).toFixed(2) : '0.00';
+    const barW     = (r.votos / maxVotos * 100).toFixed(1);
+    const pos      = i + 1;
+    const posClass = pos === 1 ? 'pos-1' : pos === 2 ? 'pos-2' : pos === 3 ? 'pos-3' : 'pos-other';
+    const municipioEsc = r.municipio.replace(/'/g, "\\'");
+
+    const card = document.createElement('div');
+    card.className = 'city-result-card';
+    card.style.animationDelay = `${Math.min(i * 30, 300)}ms`;
+    card.addEventListener('click', () => abrirModalDetalhe(r.municipio, r.id_municipio));
+    card.innerHTML = `
+      <div class="crc-header">
+        <div class="crc-name">${r.municipio}</div>
+        <span class="posicao-badge ${posClass}">${pos}º</span>
+      </div>
+      <div class="crc-votes">${r.votos.toLocaleString('pt-BR')}</div>
+      <div class="crc-sub">votos${r.percentual !== null ? ' · ' + r.percentual + '% dos válidos' : ''} · ${pctTotal}% do total</div>
+      <div class="crc-bar"><div class="crc-bar-fill" style="width:${barW}%"></div></div>
+      <div class="crc-footer">
+        <span style="font-size:11px;color:#94a3b8;">${(r.votos_validos||0).toLocaleString('pt-BR')} válidos</span>
+        <button class="crc-btn"
+          onclick="event.stopPropagation();abrirModalDetalhe('${municipioEsc}','${r.id_municipio}')">
+          ${btnLabel}
+        </button>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
 
 // ── Estado ────────────────────────────────────────────────────────────────────
 let candidatoAtual = null; // { sequencial, nome, cargo, uf, ano }
@@ -848,6 +1213,16 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('candidatoSelect').addEventListener('change', onCandidatoChange);
   document.getElementById('turnoSelect').addEventListener('change', () => { if (candidatoAtual) carregarResultados(); });
   document.getElementById('buscarCidade').addEventListener('input', renderTabela);
+
+  // [NEW] Oculta seletor de tipo se useNewUI=false; ativa view correta
+  if (!useNewUI) {
+    const sel = document.getElementById('et-selector');
+    if (sel) sel.style.display = 'none';
+    const ctxH = document.getElementById('ctx-header');
+    if (ctxH) ctxH.style.display = 'none';
+    document.getElementById('view-table').style.display = 'block';
+    document.getElementById('view-cards').style.display = 'none';
+  }
 });
 
 // ── Busca de candidatos ───────────────────────────────────────────────────────
@@ -920,6 +1295,7 @@ function onCandidatoChange() {
   document.getElementById('nomeCandidatoDisplay').textContent = candidatoAtual.nome;
   document.getElementById('cardCandidato').style.cssText = 'display:flex';
 
+  _renderContextHeader(); // [NEW] atualiza context header
   carregarResultados();
 }
 
@@ -951,62 +1327,82 @@ async function carregarResultados() {
   }
 }
 
-// ── Renderiza tabela (com filtro de cidade) ────────────────────────────────────
+// ── Renderiza resultados (tabela original ou cards, via useNewUI) ──────────────
 function renderTabela() {
   const filtro = normalizarTexto(document.getElementById('buscarCidade').value);
-  const tbody  = document.getElementById('resultado');
-  tbody.innerHTML = '';
 
   const dados = filtro
     ? resultadosAtual.filter(r => normalizarTexto(r.municipio).includes(filtro))
     : resultadosAtual;
 
-  if (!dados.length) {
-    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">🔍</div><p>Nenhum resultado encontrado</p></div></td></tr>';
-    document.getElementById('result-footer').style.display = 'none';
-    return;
-  }
-
   const totalVotos = dados.reduce((s, r) => s + r.votos, 0);
   const maxVotos   = Math.max(...dados.map(r => r.votos), 1);
 
-  dados.forEach(r => {
-    const pctTotal = totalVotos > 0 ? ((r.votos / totalVotos) * 100).toFixed(2) : '0.00';
-    const barW     = (r.votos / maxVotos * 100).toFixed(1);
-    const cidEsc    = r.municipio.replace(/'/g, "\\'");
-    const ehMunicipal = candidatoAtual && CARGOS_MUNICIPAIS.has(candidatoAtual.cargo);
-    const btnLabel  = ehMunicipal ? '🏘️ Bairros' : '🗺️ Zonas';
-    const tr        = document.createElement('tr');
-    tr.className    = 'cidade-clicavel';
-    tr.addEventListener('click', () => abrirModalDetalhe(r.municipio, r.id_municipio));
-    tr.innerHTML = `
-      <td data-label="Cidade"><span class="city-name">${r.municipio}</span></td>
-      <td data-label="Votos"><span class="votos-num">${r.votos.toLocaleString('pt-BR')}</span></td>
-      <td data-label="Válidos">${(r.votos_validos || 0).toLocaleString('pt-BR')}</td>
-      <td data-label="% Cidade">
-        <div class="pct-bar-wrap">
-          <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
-          <span class="pct-label">${r.percentual !== null ? r.percentual + '%' : '—'}</span>
-        </div>
-      </td>
-      <td data-label="% Total"><span style="font-size:12px;">${pctTotal}%</span></td>
-      <td data-label="">
-        <button class="btn-perfil"
-          onclick="event.stopPropagation();abrirModalDetalhe('${cidEsc}','${r.id_municipio}')">
-          ${btnLabel}
-        </button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
+  // [NEW] Alterna entre as duas views conforme a feature flag
+  const viewTable = document.getElementById('view-table');
+  const viewCards = document.getElementById('view-cards');
+  if (useNewUI) {
+    viewTable.style.display = 'none';
+    viewCards.style.display = 'block';
+    _renderCidadesCards(dados, totalVotos, maxVotos);
+  } else {
+    // ── [ORIGINAL] Renderização em tabela (preservada integralmente) ──────────
+    viewTable.style.display = 'block';
+    viewCards.style.display = 'none';
+    const tbody = document.getElementById('resultado');
+    tbody.innerHTML = '';
 
-  const footer       = document.getElementById('result-footer');
-  footer.style.display = 'flex';
-  footer.textContent = `${dados.length} cidades · Total: ${totalVotos.toLocaleString('pt-BR')} votos`;
+    if (!dados.length) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">🔍</div><p>Nenhum resultado encontrado</p></div></td></tr>';
+      document.getElementById('result-footer').style.display = 'none';
+      return;
+    }
 
-  // Atualiza total no card do candidato
+    dados.forEach(r => {
+      const pctTotal    = totalVotos > 0 ? ((r.votos / totalVotos) * 100).toFixed(2) : '0.00';
+      const barW        = (r.votos / maxVotos * 100).toFixed(1);
+      const cidEsc      = r.municipio.replace(/'/g, "\\'");
+      const ehMunicipal = candidatoAtual && CARGOS_MUNICIPAIS.has(candidatoAtual.cargo);
+      const btnLabel    = ehMunicipal ? '🏘️ Bairros' : '🗺️ Zonas';
+      const tr          = document.createElement('tr');
+      tr.className      = 'cidade-clicavel';
+      tr.addEventListener('click', () => abrirModalDetalhe(r.municipio, r.id_municipio));
+      tr.innerHTML = `
+        <td data-label="Cidade"><span class="city-name">${r.municipio}</span></td>
+        <td data-label="Votos"><span class="votos-num">${r.votos.toLocaleString('pt-BR')}</span></td>
+        <td data-label="Válidos">${(r.votos_validos || 0).toLocaleString('pt-BR')}</td>
+        <td data-label="% Cidade">
+          <div class="pct-bar-wrap">
+            <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
+            <span class="pct-label">${r.percentual !== null ? r.percentual + '%' : '—'}</span>
+          </div>
+        </td>
+        <td data-label="% Total"><span style="font-size:12px;">${pctTotal}%</span></td>
+        <td data-label="">
+          <button class="btn-perfil"
+            onclick="event.stopPropagation();abrirModalDetalhe('${cidEsc}','${r.id_municipio}')">
+            ${btnLabel}
+          </button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Footer e totais — comuns a ambas as views
+  const footer = document.getElementById('result-footer');
+  if (dados.length) {
+    footer.style.display = 'flex';
+    footer.textContent   = `${dados.length} cidades · Total: ${totalVotos.toLocaleString('pt-BR')} votos`;
+  } else {
+    footer.style.display = 'none';
+  }
+
   const totalGeral = resultadosAtual.reduce((s, r) => s + r.votos, 0);
   document.getElementById('totalVotosCandidato').innerHTML =
     `Total de votos: <strong>${totalGeral.toLocaleString('pt-BR')}</strong>`;
+
+  // [NEW] Atualiza context header com info do candidato atual
+  _renderContextHeader();
 }
 
 // ── Modal de Detalhe (Bairros para municipal, Zonas para estadual/federal) ────
