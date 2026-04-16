@@ -2516,31 +2516,37 @@ app.get('/api/eleicoes/zonas', async (req, res) => {
   }
 });
 
-/* ---------- Tenta rodar BQ com lista de tabelas alternativas ---------- */
-// tablePlaceholder: string que aparece no SQL e será substituída pelo nome real da tabela
-async function runBQTryTables(sqlTemplate, tablePlaceholder, tableNames, params) {
-  let lastErr;
+/* ---------- Helpers para tentativa com fallback de tabela ---------- */
+// Retorna true se o erro indica tabela inacessível/inexistente (não é erro de query)
+function isBQTableError(e) {
+  const msg = (e && e.message) ? e.message : '';
+  return msg.includes('Not found') || msg.includes('Access Denied') || msg.includes('does not exist');
+}
+
+// Tenta a query em múltiplos nomes de tabela, pulando os inacessíveis
+async function tryTables(sqlTemplate, placeholder, tableNames, params) {
   for (const tbl of tableNames) {
-    const sql = sqlTemplate.replace(tablePlaceholder, tbl);
     try {
-      return { rows: await runBQ(sql, params), table: tbl };
+      const rows = await runBQ(sqlTemplate.replace(placeholder, tbl), params);
+      console.log(`[BQ] tabela ok: ${tbl}`);
+      return { rows, table: tbl };
     } catch (e) {
-      if (e.message && e.message.includes('Not found')) {
-        console.warn(`[BQ] tabela ${tbl} não encontrada, tentando próxima...`);
-        lastErr = e;
+      if (isBQTableError(e)) {
+        console.warn(`[BQ] ${tbl} inacessível: ${e.message.split('\n')[0]}`);
       } else {
-        throw e; // erro real — não é "not found"
+        throw e;
       }
     }
   }
-  throw lastErr || new Error('Nenhuma tabela encontrada: ' + tableNames.join(', '));
+  return null; // nenhuma funcionou
 }
 
 /**
  * GET /api/eleicoes/bairros
  * Retorna votos por bairro para eleições municipais.
- * Estratégia primária: JOIN direto no BigQuery (cobre todos os municípios).
- * Fallback: CSV zona+seção → bairro carregado em memória.
+ *
+ * Estratégia 1 (melhor): votos por zona+seção do BigQuery + lookup bairro pelo CSV.
+ * Estratégia 2 (fallback): votos por zona (tabelas que já sabemos funcionar).
  * Query params: sequencial, ano, uf, id_municipio, turno (padrão 1)
  */
 app.get('/api/eleicoes/bairros', async (req, res) => {
@@ -2558,86 +2564,10 @@ app.get('/api/eleicoes/bairros', async (req, res) => {
       id_municipio: String(id_municipio).trim()
     };
 
-    // ── Estratégia 1: JOIN BigQuery (resultados + bairro + votos nominais) ──────
-    // A tabela de perfil eleitorado do TSE tem bairro por zona+seção.
-    // Tentamos nomes alternativos conhecidos na Base dos Dados.
-    const sqlBQJoin = `
-      SELECT
-        UPPER(COALESCE(
-          NULLIF(TRIM(CAST(s.bairro AS STRING)), ''),
-          CONCAT('Zona ', CAST(r.zona AS STRING))
-        )) AS bairro,
-        SUM(r.votos)          AS votos,
-        SUM(d.votos_nominais) AS votos_nominais
-      FROM \`basedosdados.br_tse_eleicoes.{{RESULT_TABLE}}\` r
-      LEFT JOIN \`basedosdados.br_tse_eleitorado.{{PERFIL_TABLE}}\` s
-        ON  s.ano          = r.ano
-        AND s.sigla_uf     = r.sigla_uf
-        AND s.id_municipio = r.id_municipio
-        AND CAST(s.zona   AS STRING) = CAST(r.zona  AS STRING)
-        AND CAST(s.secao  AS STRING) = CAST(r.secao AS STRING)
-      LEFT JOIN \`basedosdados.br_tse_eleicoes.{{DETALHE_TABLE}}\` d
-        ON  d.ano          = r.ano
-        AND d.turno        = r.turno
-        AND d.sigla_uf     = r.sigla_uf
-        AND d.id_municipio = r.id_municipio
-        AND CAST(d.zona   AS STRING) = CAST(r.zona  AS STRING)
-        AND CAST(d.secao  AS STRING) = CAST(r.secao AS STRING)
-      WHERE r.ano    = @ano
-        AND r.turno  = @turno
-        AND r.sigla_uf = @uf
-        AND CAST(r.sequencial_candidato AS STRING) = @sequencial
-        AND r.id_municipio = @id_municipio
-        AND r.votos IS NOT NULL
-      GROUP BY bairro
-      ORDER BY votos DESC
-    `;
-
-    // Combinações de nomes de tabela a tentar (resultado × perfil × detalhe)
-    const combos = [
-      { r: 'resultados_candidato_secao',           p: 'microdados_secao',          d: 'detalhes_votacao_secao' },
-      { r: 'resultados_candidato_secao',           p: 'perfil_eleitorado_secao',   d: 'detalhes_votacao_secao' },
-      { r: 'resultados_candidato_municipio_secao', p: 'microdados_secao',          d: 'detalhes_votacao_municipio_secao' },
-      { r: 'resultados_candidato_municipio_secao', p: 'perfil_eleitorado_secao',   d: 'detalhes_votacao_municipio_secao' },
-    ];
-
-    let bqData = null;
-    for (const combo of combos) {
-      const sql = sqlBQJoin
-        .replace('{{RESULT_TABLE}}',  combo.r)
-        .replace('{{PERFIL_TABLE}}',  combo.p)
-        .replace('{{DETALHE_TABLE}}', combo.d);
-      try {
-        const rows = await runBQ(sql, params);
-        console.log(`[bairros] JOIN ok: ${combo.r} + ${combo.p}`);
-        bqData = rows.map(r => ({
-          bairro:         String(r.bairro),
-          votos:          Number(r.votos) || 0,
-          votos_nominais: Number(r.votos_nominais) || 0,
-          percentual:     r.votos_nominais > 0
-            ? ((Number(r.votos) / Number(r.votos_nominais)) * 100).toFixed(2)
-            : null
-        }));
-        break;
-      } catch (e) {
-        if (e.message && e.message.includes('Not found')) {
-          console.warn(`[bairros] combo ${combo.r}+${combo.p} não encontrado`);
-        } else {
-          throw e;
-        }
-      }
-    }
-
-    if (bqData) {
-      return res.json({ ok: true, data: bqData, fonte: 'bigquery' });
-    }
-
-    // ── Fallback: votos por zona+seção com lookup no CSV em memória ────────────
-    console.warn('[bairros] Nenhum JOIN BigQuery funcionou — usando fallback CSV');
-
+    // ── Estratégia 1: seção → bairro via CSV ─────────────────────────────────
     const sqlSecoes = `
       SELECT r.zona, r.secao, SUM(r.votos) AS votos
-      FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_secao\` r
+      FROM \`basedosdados.br_tse_eleicoes.{{T}}\` r
       WHERE r.ano = @ano AND r.turno = @turno AND r.sigla_uf = @uf
         AND CAST(r.sequencial_candidato AS STRING) = @sequencial
         AND r.id_municipio = @id_municipio AND r.votos IS NOT NULL
@@ -2645,46 +2575,101 @@ app.get('/api/eleicoes/bairros', async (req, res) => {
     `;
     const sqlTotal = `
       SELECT p.zona, p.secao, SUM(p.votos_nominais) AS votos_nominais
-      FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_secao\` p
+      FROM \`basedosdados.br_tse_eleicoes.{{T}}\` p
       WHERE p.ano = @ano AND p.turno = @turno AND p.sigla_uf = @uf
         AND p.id_municipio = @id_municipio
       GROUP BY p.zona, p.secao
     `;
-    const [rowsSecoes, rowsTotal] = await Promise.all([
-      runBQ(sqlSecoes, params),
-      runBQ(sqlTotal, params).catch(() => [])
+
+    const [resSecoes, resTotal] = await Promise.all([
+      tryTables(sqlSecoes, '{{T}}',
+        ['resultados_candidato_secao', 'resultados_candidato_municipio_secao'],
+        params),
+      tryTables(sqlTotal, '{{T}}',
+        ['detalhes_votacao_secao', 'detalhes_votacao_municipio_secao'],
+        params)
     ]);
 
-    const totalMap = {};
-    for (const r of rowsTotal) {
-      totalMap[`${r.zona}_${r.secao}`] = Number(r.votos_nominais) || 0;
+    if (resSecoes) {
+      // Conseguimos dados por seção — aplica lookup CSV para bairro
+      const totalMap = {};
+      if (resTotal) {
+        for (const r of resTotal.rows) {
+          totalMap[`${r.zona}_${r.secao}`] = Number(r.votos_nominais) || 0;
+        }
+      }
+
+      const munLookup = bairrosLookup[String(id_municipio).trim()] || {};
+      const temBairro = Object.keys(munLookup).length > 0;
+
+      const agg = {};
+      for (const r of resSecoes.rows) {
+        const chave  = `${r.zona}_${r.secao}`;
+        const bairro = temBairro ? (munLookup[chave] || `Zona ${r.zona}`) : `Zona ${r.zona}`;
+        if (!agg[bairro]) agg[bairro] = { votos: 0, votos_nominais: 0 };
+        agg[bairro].votos          += Number(r.votos) || 0;
+        agg[bairro].votos_nominais += totalMap[chave] || 0;
+      }
+
+      const data = Object.entries(agg)
+        .map(([bairro, d]) => ({
+          bairro,
+          votos:          d.votos,
+          votos_nominais: d.votos_nominais,
+          percentual:     d.votos_nominais > 0
+            ? ((d.votos / d.votos_nominais) * 100).toFixed(2)
+            : null
+        }))
+        .sort((a, b) => b.votos - a.votos);
+
+      return res.json({ ok: true, data, fonte: 'secao', por_bairro: temBairro });
     }
 
-    // CSV indexado por id_municipio_tse — tenta IBGE direto como fallback também
-    const munLookup = bairrosLookup[String(id_municipio).trim()] || {};
-    const temLookup = Object.keys(munLookup).length > 0;
+    // ── Estratégia 2: fallback para zona (tabelas garantidas) ────────────────
+    console.warn('[bairros] Tabelas de seção indisponíveis — usando zonas como fallback');
 
-    const bairroAgg = {};
-    for (const r of rowsSecoes) {
-      const chave  = `${r.zona}_${r.secao}`;
-      const bairro = temLookup ? (munLookup[chave] || `Zona ${r.zona}`) : `Zona ${r.zona}`;
-      if (!bairroAgg[bairro]) bairroAgg[bairro] = { votos: 0, votos_nominais: 0 };
-      bairroAgg[bairro].votos          += Number(r.votos) || 0;
-      bairroAgg[bairro].votos_nominais += totalMap[chave] || 0;
+    const sqlZonaVotos = `
+      SELECT r.zona, SUM(r.votos) AS votos
+      FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio_zona\` r
+      WHERE r.ano = @ano AND r.turno = @turno AND r.sigla_uf = @uf
+        AND CAST(r.sequencial_candidato AS STRING) = @sequencial
+        AND r.id_municipio = @id_municipio AND r.votos IS NOT NULL
+      GROUP BY r.zona ORDER BY r.zona
+    `;
+    const sqlZonaPart = `
+      SELECT p.zona, SUM(p.votos_nominais) AS votos_nominais, SUM(p.comparecimento) AS comparecimento
+      FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio_zona\` p
+      WHERE p.ano = @ano AND p.turno = @turno AND p.sigla_uf = @uf
+        AND p.id_municipio = @id_municipio
+      GROUP BY p.zona
+    `;
+    const [rowsZona, rowsPart] = await Promise.all([
+      runBQ(sqlZonaVotos, params),
+      runBQ(sqlZonaPart, params).catch(() => [])
+    ]);
+
+    const partMap = {};
+    for (const r of rowsPart) {
+      partMap[String(r.zona)] = {
+        votos_nominais: Number(r.votos_nominais) || 0,
+        comparecimento: Number(r.comparecimento) || 0
+      };
     }
 
-    const csvData = Object.entries(bairroAgg)
-      .map(([bairro, d]) => ({
-        bairro,
-        votos:          d.votos,
-        votos_nominais: d.votos_nominais,
-        percentual:     d.votos_nominais > 0
-          ? ((d.votos / d.votos_nominais) * 100).toFixed(2)
-          : null
-      }))
-      .sort((a, b) => b.votos - a.votos);
+    const dataZona = rowsZona.map(r => {
+      const votos    = Number(r.votos) || 0;
+      const part     = partMap[String(r.zona)] || {};
+      const nominais = part.votos_nominais || 0;
+      return {
+        bairro:         `Zona ${r.zona}`,
+        votos,
+        votos_nominais: nominais,
+        comparecimento: part.comparecimento || 0,
+        percentual:     nominais > 0 ? ((votos / nominais) * 100).toFixed(2) : null
+      };
+    }).sort((a, b) => b.votos - a.votos);
 
-    res.json({ ok: true, data: csvData, fonte: 'csv', por_bairro: temLookup });
+    res.json({ ok: true, data: dataZona, fonte: 'zona', por_bairro: false });
 
   } catch (e) {
     console.error('[/api/eleicoes/bairros]', e.message);

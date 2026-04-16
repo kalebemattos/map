@@ -1050,8 +1050,8 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
 
       const maxV   = Math.max(...lista.map(b => b.votos), 1);
       const totalV = lista.reduce((s, b) => s + b.votos, 0);
-      // fonte='bigquery' = bairros reais; fonte='csv' com por_bairro = fallback CSV; senão só zonas
-      const temBairro = json.fonte === 'bigquery' || json.por_bairro;
+      // fonte='secao'+por_bairro = bairros reais via CSV; 'zona' = fallback por zona
+      const temBairro = json.por_bairro === true;
       const rotulo = temBairro ? 'Bairro' : 'Zona';
 
       const rows = lista.map(b => {
