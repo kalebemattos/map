@@ -7,8 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-
 <style>
 :root {
   --blue-deep: #0d2d6b;
@@ -160,9 +158,16 @@ body {
 /* ===== CONTROLS ===== */
 .controls-grid {
   display: grid;
-  grid-template-columns: 120px 160px 1fr 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   align-items: end;
+}
+.controls-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 10px;
+  align-items: end;
+  margin-top: 10px;
 }
 
 .form-group {
@@ -497,6 +502,7 @@ tbody tr:last-child td { border-bottom: none; }
 /* ===== TABLET ===== */
 @media (max-width: 900px) {
   .controls-grid { grid-template-columns: 1fr 1fr; }
+  .controls-grid-2 { grid-template-columns: 1fr 1fr; }
 }
 
 /* ===== MOBILE ===== */
@@ -509,6 +515,7 @@ tbody tr:last-child td { border-bottom: none; }
 
   /* Filtros: 1 coluna */
   .controls-grid { grid-template-columns: 1fr; gap: 8px; }
+  .controls-grid-2 { grid-template-columns: 1fr; gap: 8px; }
 
   /* Card candidato: empilha */
   .candidato-card {
@@ -689,7 +696,7 @@ tbody tr:last-child td { border-bottom: none; }
       <div class="nav-logo">📊</div>
       <div>
         <h1>Análise Estratégica</h1>
-        <p>Rio de Janeiro · Dados eleitorais</p>
+        <p>Dados eleitorais · BigQuery / TSE</p>
       </div>
     </div>
     <a href="../home.html" class="nav-back">← Voltar</a>
@@ -705,26 +712,63 @@ tbody tr:last-child td { border-bottom: none; }
       <div class="form-group">
         <label>Ano</label>
         <select id="anoSelect">
-          <option value="2022">2022</option>
+          <option value="2024">2024</option>
+          <option value="2022" selected>2022</option>
+          <option value="2020">2020</option>
           <option value="2018">2018</option>
+          <option value="2016">2016</option>
           <option value="2014">2014</option>
+          <option value="2012">2012</option>
           <option value="2010">2010</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Estado (UF)</label>
+        <select id="ufSelect">
+          <option value="AC">AC</option><option value="AL">AL</option>
+          <option value="AP">AP</option><option value="AM">AM</option>
+          <option value="BA">BA</option><option value="CE">CE</option>
+          <option value="DF">DF</option><option value="ES">ES</option>
+          <option value="GO">GO</option><option value="MA">MA</option>
+          <option value="MT">MT</option><option value="MS">MS</option>
+          <option value="MG">MG</option><option value="PA">PA</option>
+          <option value="PB">PB</option><option value="PR">PR</option>
+          <option value="PE">PE</option><option value="PI">PI</option>
+          <option value="RJ" selected>RJ</option><option value="RN">RN</option>
+          <option value="RS">RS</option><option value="RO">RO</option>
+          <option value="RR">RR</option><option value="SC">SC</option>
+          <option value="SP">SP</option><option value="SE">SE</option>
+          <option value="TO">TO</option>
         </select>
       </div>
       <div class="form-group">
         <label>Cargo</label>
         <select id="cargoSelect">
-          <option value="DEPUTADO ESTADUAL">Dep. Estadual</option>
+          <option value="">Todos os cargos</option>
+          <option value="DEPUTADO ESTADUAL" selected>Dep. Estadual</option>
           <option value="DEPUTADO FEDERAL">Dep. Federal</option>
+          <option value="SENADOR">Senador</option>
+          <option value="GOVERNADOR">Governador</option>
+          <option value="PREFEITO">Prefeito</option>
+          <option value="VEREADOR">Vereador</option>
         </select>
       </div>
       <div class="form-group">
+        <label>Turno</label>
+        <select id="turnoSelect">
+          <option value="1">1º Turno</option>
+          <option value="2">2º Turno</option>
+        </select>
+      </div>
+    </div>
+    <div class="controls-grid-2" style="margin-top:10px;">
+      <div class="form-group">
         <label>Buscar candidato</label>
-        <input type="text" id="buscarCandidato" placeholder="Nome do candidato...">
+        <input type="text" id="buscarCandidato" placeholder="Digite o nome...">
       </div>
       <div class="form-group">
-        <label>Candidato</label>
-        <select id="candidatoSelect"></select>
+        <label>Selecionar candidato</label>
+        <select id="candidatoSelect"><option value="">— busque um candidato acima —</option></select>
       </div>
       <div class="form-group">
         <label>Filtrar cidade</label>
@@ -734,8 +778,7 @@ tbody tr:last-child td { border-bottom: none; }
   </div>
 
   <!-- CANDIDATO CARD -->
-  <div class="candidato-card" id="cardCandidato">
-    <img class="candidato-avatar" id="fotoCandidato" alt="Foto do candidato">
+  <div class="candidato-card" id="cardCandidato" style="display:none;">
     <div class="candidato-info">
       <h3 id="nomeCandidatoDisplay"></h3>
       <div class="candidato-votos" id="totalVotosCandidato"></div>
@@ -758,9 +801,8 @@ tbody tr:last-child td { border-bottom: none; }
             <th>Votos</th>
             <th>Válidos</th>
             <th>% Cidade</th>
-            <th>Posição</th>
-            <th>% RJ</th>
-            <th>Perfil</th>
+            <th>% do Total</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="resultado"></tbody>
@@ -771,333 +813,271 @@ tbody tr:last-child td { border-bottom: none; }
 
 </div>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="modal" onclick="fecharModalFora(event)">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h3 id="tituloCidade"></h3>
-      <button class="modal-close" onclick="fecharModal()">✕</button>
-    </div>
-    <div class="charts-grid">
-      <div class="chart-card"><h4>Distribuição por Gênero</h4><canvas id="chartGenero"></canvas></div>
-      <div class="chart-card"><h4>Faixa Etária</h4><canvas id="chartFaixa"></canvas></div>
-      <div class="chart-card"><h4>Estado Civil</h4><canvas id="chartEstadoCivil"></canvas></div>
-      <div class="chart-card"><h4>Escolaridade</h4><canvas id="chartEscolaridade"></canvas></div>
-    </div>
-  </div>
-</div>
-
 <script>
-const BASE_PATH = "./";
-let resumo = {};
-let eleitorado = {};
-let candidatoSelecionado = null;
-let sqSelecionado = null;
-let charts = [];
-let anoSelecionado = "2022";
-const UF = "RJ";
+// ── Configuração ──────────────────────────────────────────────────────────────
+// Se o backend rodar em outra origem, defina window.ELEICOES_API_BASE antes deste script.
+// Ex: <script>window.ELEICOES_API_BASE = "https://meu-backend.onrender.com"</script>
+const API_BASE = (window.ELEICOES_API_BASE || '').replace(/\/$/, '');
 
-document.addEventListener("DOMContentLoaded", () => {
-  carregarAno(anoSelecionado);
-});
+// ── Estado ────────────────────────────────────────────────────────────────────
+let candidatoAtual = null; // { sequencial, nome, cargo, uf, ano }
+let resultadosAtual = [];  // array de { municipio, id_municipio, votos, votos_validos, percentual }
 
-document.getElementById("anoSelect").addEventListener("change", function() {
-  anoSelecionado = this.value;
-  carregarAno(anoSelecionado);
-});
-document.getElementById("cargoSelect").addEventListener("change", preencherCandidatos);
-document.getElementById("buscarCandidato").addEventListener("input", preencherCandidatos);
-document.getElementById("buscarCidade").addEventListener("input", mostrarAnalise);
-
+// ── Utilitários ───────────────────────────────────────────────────────────────
 function normalizarTexto(txt) {
-  if (!txt) return "";
-  return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+  if (!txt) return '';
+  return txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
 }
 
-async function carregarAno(ano) {
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+// ── Event Listeners ───────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Busca automática quando muda filtros principais
+  ['anoSelect', 'ufSelect', 'cargoSelect'].forEach(id => {
+    document.getElementById(id).addEventListener('change', debounce(buscarCandidatos, 200));
+  });
+  document.getElementById('buscarCandidato').addEventListener('input', debounce(buscarCandidatos, 450));
+  document.getElementById('candidatoSelect').addEventListener('change', onCandidatoChange);
+  document.getElementById('turnoSelect').addEventListener('change', () => { if (candidatoAtual) carregarResultados(); });
+  document.getElementById('buscarCidade').addEventListener('input', renderTabela);
+});
+
+// ── Busca de candidatos ───────────────────────────────────────────────────────
+async function buscarCandidatos() {
+  const nome  = document.getElementById('buscarCandidato').value.trim();
+  const ano   = document.getElementById('anoSelect').value;
+  const uf    = document.getElementById('ufSelect').value;
+  const cargo = document.getElementById('cargoSelect').value;
+  const select = document.getElementById('candidatoSelect');
+
+  if (!nome && !cargo) {
+    select.innerHTML = '<option value="">— digite o nome ou escolha um cargo —</option>';
+    return;
+  }
+
+  select.innerHTML = '<option value="">⏳ Buscando...</option>';
+  select.disabled = true;
+
+  const params = new URLSearchParams({ ano, uf, turno: '1' });
+  if (nome)  params.set('nome', nome);
+  if (cargo) params.set('cargo', cargo);
+
   try {
-    const [resumoResp, eleitorResp] = await Promise.all([
-      fetch(`${BASE_PATH}dados/${ano}/resumo.json`),
-      fetch(`${BASE_PATH}dados/${ano}/eleitorado.json`)
-    ]);
-    resumo = await resumoResp.json();
-    eleitorado = await eleitorResp.json();
-    preencherCandidatos();
+    const res  = await fetch(`${API_BASE}/api/eleicoes/candidatos?${params}`);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+
+    select.innerHTML = '';
+    if (!json.data.length) {
+      select.innerHTML = '<option value="">Nenhum candidato encontrado</option>';
+    } else {
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = `— ${json.data.length} candidato(s) encontrado(s) —`;
+      select.appendChild(placeholder);
+
+      json.data.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value           = c.sequencial;
+        opt.textContent     = `${c.nome} · ${c.cargo} · ${c.partido} · ${c.ano}`;
+        opt.dataset.nome    = c.nome;
+        opt.dataset.cargo   = c.cargo;
+        opt.dataset.uf      = c.uf;
+        opt.dataset.ano     = c.ano;
+        select.appendChild(opt);
+      });
+    }
   } catch (e) {
-    console.error("Erro ao carregar ano:", ano, e);
+    select.innerHTML = `<option value="">❌ Erro: ${e.message}</option>`;
+    console.error('[buscarCandidatos]', e);
+  } finally {
+    select.disabled = false;
   }
 }
 
-function preencherCandidatos() {
-  const cargoSelecionado = document.getElementById("cargoSelect").value;
-  const filtro = normalizarTexto(document.getElementById("buscarCandidato").value);
-  const select = document.getElementById("candidatoSelect");
-  select.innerHTML = "";
+// ── Seleciona candidato ───────────────────────────────────────────────────────
+function onCandidatoChange() {
+  const select = document.getElementById('candidatoSelect');
+  const opt    = select.options[select.selectedIndex];
+  if (!opt || !opt.value) return;
 
-  const chaveCargo = Object.keys(resumo).find(k => k.toUpperCase() === cargoSelecionado.toUpperCase());
-  if (!chaveCargo) return;
-
-  const dadosCargo = resumo[chaveCargo];
-  const mapa = {};
-  Object.values(dadosCargo.CIDADES).forEach(cidade => {
-    cidade.candidatos.forEach(c => {
-      if (c.sq_candidato > 0) mapa[c.nome] = c.sq_candidato;
-    });
-  });
-
-  const nomesFiltrados = Object.keys(mapa).sort().filter(n => normalizarTexto(n).includes(filtro));
-  nomesFiltrados.forEach(nome => {
-    const opt = document.createElement("option");
-    opt.value = nome; opt.text = nome; opt.dataset.sq = mapa[nome];
-    select.appendChild(opt);
-  });
-
-  select.onchange = function() {
-    if (this.selectedIndex === -1) return;
-    candidatoSelecionado = this.value;
-    sqSelecionado = this.options[this.selectedIndex].dataset.sq;
-    document.getElementById("nomeCandidatoDisplay").textContent = candidatoSelecionado;
-    atualizarFoto();
-    mostrarAnalise();
+  candidatoAtual = {
+    sequencial: opt.value,
+    nome:       opt.dataset.nome,
+    cargo:      opt.dataset.cargo,
+    uf:         opt.dataset.uf,
+    ano:        opt.dataset.ano
   };
-  if (nomesFiltrados.length > 0) select.onchange();
+
+  document.getElementById('nomeCandidatoDisplay').textContent = candidatoAtual.nome;
+  document.getElementById('cardCandidato').style.cssText = 'display:flex';
+
+  carregarResultados();
 }
 
-function atualizarFoto() {
-  if (!sqSelecionado) return;
-  const prefixo = anoSelecionado >= 2018 ? "F" + UF : UF;
-  const img = document.getElementById("fotoCandidato");
-  img.src = `./fotos/${anoSelecionado}/${UF}/${prefixo}${sqSelecionado}_div.jpg`;
-  img.onerror = function() { this.src = "./sem-foto.png"; };
-  document.getElementById("cardCandidato").style.display = "flex";
-}
+// ── Carrega resultados por cidade ─────────────────────────────────────────────
+async function carregarResultados() {
+  if (!candidatoAtual) return;
+  const turno = document.getElementById('turnoSelect').value;
+  const tbody = document.getElementById('resultado');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:36px;color:#94a3b8;">⏳ Consultando BigQuery...</td></tr>';
+  document.getElementById('result-footer').style.display = 'none';
 
-function getPosClass(pos) {
-  return ['pos-1','pos-2','pos-3'][pos - 1] || 'pos-other';
-}
-
-function mostrarAnalise() {
-  if (!candidatoSelecionado) return;
-  const cargo = document.getElementById("cargoSelect").value;
-  const filtroCidade = normalizarTexto(document.getElementById("buscarCidade").value);
-  const tbody = document.getElementById("resultado");
-  tbody.innerHTML = "";
-
-  const chaveCargo = Object.keys(resumo).find(k => k.toUpperCase() === cargo.toUpperCase());
-  if (!chaveCargo) return;
-
-  const dadosCargo = resumo[chaveCargo];
-  const totalRJ = dadosCargo.TOTAL_RJ;
-  const cidades = dadosCargo.CIDADES;
-  let totalVotosGeral = 0;
-  let rowCount = 0;
-
-  // Calcular max % cidade para barras proporcionais
-  let maxPct = 0;
-  Object.values(cidades).forEach(dadosCidade => {
-    const c = dadosCidade.candidatos.find(c => normalizarTexto(c.nome) === normalizarTexto(candidatoSelecionado));
-    if (c) {
-      const pct = c.votos / dadosCidade.total_validos * 100;
-      if (pct > maxPct) maxPct = pct;
-    }
+  const params = new URLSearchParams({
+    sequencial: candidatoAtual.sequencial,
+    ano:        candidatoAtual.ano,
+    uf:         candidatoAtual.uf,
+    turno
   });
 
-  Object.keys(cidades).sort().forEach(cidadeNome => {
-    if (filtroCidade && !normalizarTexto(cidadeNome).includes(filtroCidade)) return;
-    const dadosCidade = cidades[cidadeNome];
-    const candidato = dadosCidade.candidatos.find(c => normalizarTexto(c.nome) === normalizarTexto(candidatoSelecionado));
-    if (!candidato) return;
+  try {
+    const res  = await fetch(`${API_BASE}/api/eleicoes/resultados?${params}`);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
 
-    totalVotosGeral += candidato.votos;
-    rowCount++;
-    const pctCidade = (candidato.votos / dadosCidade.total_validos * 100).toFixed(2);
-    const pctRJ = (candidato.votos / totalRJ * 100).toFixed(4);
-    const barW = maxPct > 0 ? (candidato.votos / dadosCidade.total_validos * 100 / maxPct * 100).toFixed(1) : 0;
+    resultadosAtual = json.data;
+    renderTabela();
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">❌</div><p>${e.message}</p></div></td></tr>`;
+    console.error('[carregarResultados]', e);
+  }
+}
 
-    const tr = document.createElement("tr");
-    tr.className = 'cidade-clicavel';
-    tr.addEventListener('click', () => abrirModalBairros(cidadeNome));
+// ── Renderiza tabela (com filtro de cidade) ────────────────────────────────────
+function renderTabela() {
+  const filtro = normalizarTexto(document.getElementById('buscarCidade').value);
+  const tbody  = document.getElementById('resultado');
+  tbody.innerHTML = '';
+
+  const dados = filtro
+    ? resultadosAtual.filter(r => normalizarTexto(r.municipio).includes(filtro))
+    : resultadosAtual;
+
+  if (!dados.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">🔍</div><p>Nenhum resultado encontrado</p></div></td></tr>';
+    document.getElementById('result-footer').style.display = 'none';
+    return;
+  }
+
+  const totalVotos = dados.reduce((s, r) => s + r.votos, 0);
+  const maxVotos   = Math.max(...dados.map(r => r.votos), 1);
+
+  dados.forEach(r => {
+    const pctTotal = totalVotos > 0 ? ((r.votos / totalVotos) * 100).toFixed(2) : '0.00';
+    const barW     = (r.votos / maxVotos * 100).toFixed(1);
+    const cidEsc   = r.municipio.replace(/'/g, "\\'");
+    const tr       = document.createElement('tr');
+    tr.className   = 'cidade-clicavel';
+    tr.addEventListener('click', () => abrirModalZonas(r.municipio, r.id_municipio));
     tr.innerHTML = `
-      <td data-label="Cidade"><span class="city-name">${cidadeNome}</span></td>
-      <td data-label="Votos"><span class="votos-num">${candidato.votos.toLocaleString('pt-BR')}</span></td>
-      <td data-label="Válidos">${dadosCidade.total_validos.toLocaleString('pt-BR')}</td>
+      <td data-label="Cidade"><span class="city-name">${r.municipio}</span></td>
+      <td data-label="Votos"><span class="votos-num">${r.votos.toLocaleString('pt-BR')}</span></td>
+      <td data-label="Válidos">${(r.votos_validos || 0).toLocaleString('pt-BR')}</td>
       <td data-label="% Cidade">
         <div class="pct-bar-wrap">
           <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
-          <span class="pct-label">${pctCidade}%</span>
+          <span class="pct-label">${r.percentual !== null ? r.percentual + '%' : '—'}</span>
         </div>
       </td>
-      <td data-label="Posição"><span class="posicao-badge ${getPosClass(candidato.posicao)}">${candidato.posicao}º</span></td>
-      <td data-label="% RJ"><span style="font-size:12px;">${pctRJ}%</span></td>
-      <td data-label=""><button class="btn-perfil" onclick="abrirModal('${cidadeNome.replace(/'/g,"\\'")}')">📊 Ver</button></td>
-    `;
+      <td data-label="% Total"><span style="font-size:12px;">${pctTotal}%</span></td>
+      <td data-label="">
+        <button class="btn-perfil"
+          onclick="event.stopPropagation();abrirModalZonas('${cidEsc}','${r.id_municipio}')">
+          🗺️ Zonas
+        </button>
+      </td>`;
     tbody.appendChild(tr);
   });
 
-  if (rowCount === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">🔍</div><p>Nenhum resultado encontrado</p></div></td></tr>`;
-    document.getElementById("result-footer").style.display = "none";
-  } else {
-    const footer = document.getElementById("result-footer");
-    footer.style.display = "flex";
-    footer.textContent = `${rowCount} cidades · Total: ${totalVotosGeral.toLocaleString('pt-BR')} votos`;
-  }
+  const footer       = document.getElementById('result-footer');
+  footer.style.display = 'flex';
+  footer.textContent = `${dados.length} cidades · Total: ${totalVotos.toLocaleString('pt-BR')} votos`;
 
-  const totalEl = document.getElementById("totalVotosCandidato");
-  totalEl.innerHTML = `Total no estado:<strong>${totalVotosGeral.toLocaleString('pt-BR')}</strong>`;
+  // Atualiza total no card do candidato
+  const totalGeral = resultadosAtual.reduce((s, r) => s + r.votos, 0);
+  document.getElementById('totalVotosCandidato').innerHTML =
+    `Total de votos: <strong>${totalGeral.toLocaleString('pt-BR')}</strong>`;
 }
 
-function abrirModal(cidade) {
-  document.getElementById("tituloCidade").textContent = "Perfil do eleitorado — " + cidade;
-  destruirGraficos();
-  const dados = eleitorado[cidade];
-  if (!dados) { alert("Dados de perfil não disponíveis para esta cidade."); return; }
-
-  const paleta = ['#0d2d6b','#1565c0','#1976d2','#1e88e5','#42a5f5','#64b5f6','#90caf9','#bbdefb'];
-  criarGrafico("chartGenero", dados.genero, paleta);
-  criarGrafico("chartFaixa", dados.faixa_etaria, paleta);
-  criarGrafico("chartEstadoCivil", dados.estado_civil, paleta);
-  criarGrafico("chartEscolaridade", dados.escolaridade, paleta);
-
-  document.getElementById("modal").style.display = "flex";
-}
-
-function fecharModal() { document.getElementById("modal").style.display = "none"; }
-
-// ── Cache dos JSONs de bairros por cidade/ano ──
-const _bCache = {};
-
-function _nomeArq(nome) {
-  // Mantém acentos pois os arquivos estão nomeados com acentos
-  // ex: "Aperibé" -> "APERIBÉ", "São Gonçalo" -> "SÃO_GONÇALO"
-  return nome.toUpperCase()
-    .replace(/\s+/g, '_')
-    .replace(/[^A-ZÁÀÃÂÉÊÍÓÔÕÚÜÇÑ0-9_\-]/g, '');
-}
-
-async function abrirModalBairros(cidade) {
-  const mb = document.getElementById('modal-bairros');
+// ── Modal de Zonas ────────────────────────────────────────────────────────────
+async function abrirModalZonas(municipio, idMunicipio) {
+  if (!candidatoAtual) return;
+  const mb      = document.getElementById('modal-bairros');
   const conteudo = document.getElementById('mb-conteudo');
-  const cargo = document.getElementById('cargoSelect').value;
+  const turno   = document.getElementById('turnoSelect').value;
 
-  document.getElementById('mb-titulo').textContent = cidade;
+  document.getElementById('mb-titulo').textContent = municipio;
   document.getElementById('mb-sub').textContent =
-    candidatoSelecionado + ' · ' + cargo + ' · ' + anoSelecionado;
-  conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">⏳ Carregando...</div>';
+    candidatoAtual.nome + ' · ' + candidatoAtual.cargo + ' · ' + candidatoAtual.ano;
+  conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">⏳ Consultando zonas eleitorais...</div>';
   mb.classList.add('aberto');
 
-  // Carrega JSON da cidade (com cache)
-  const key = _nomeArq(cidade) + '_' + anoSelecionado;
-  if (!(key in _bCache)) {
-    const url = BASE_PATH + 'dados/' + anoSelecionado + '/cidades/' + _nomeArq(cidade) + '.json';
-    console.log('[Bairros] Buscando:', url);
-    try {
-      const res = await fetch(url);
-      console.log('[Bairros] Status:', res.status, res.ok ? 'OK' : 'ERRO');
-      _bCache[key] = res.ok ? await res.json() : null;
-    } catch(e) { console.error('[Bairros] Erro:', e); _bCache[key] = null; }
+  const params = new URLSearchParams({
+    sequencial:   candidatoAtual.sequencial,
+    ano:          candidatoAtual.ano,
+    uf:           candidatoAtual.uf,
+    id_municipio: idMunicipio,
+    turno
+  });
+
+  try {
+    const res  = await fetch(`${API_BASE}/api/eleicoes/zonas?${params}`);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+
+    const lista = json.data;
+    if (!lista.length) {
+      conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de zonas para esta cidade.</div>';
+      return;
+    }
+
+    const maxV   = Math.max(...lista.map(b => b.votos), 1);
+    const totalV = lista.reduce((s, b) => s + b.votos, 0);
+
+    const rows = lista.map(b => {
+      const barW = (b.votos / maxV * 100).toFixed(1);
+      return `<tr>
+        <td><span class="b-nome">Zona ${b.zona}</span></td>
+        <td><span class="b-votos">${b.votos.toLocaleString('pt-BR')}</span></td>
+        <td>
+          <div class="pct-bar-wrap">
+            <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
+            <span class="pct-label">${b.percentual !== null ? b.percentual + '%' : '—'}</span>
+          </div>
+        </td>
+        <td style="font-size:12px;color:#64748b;">
+          ${b.comparecimento ? b.comparecimento.toLocaleString('pt-BR') : '—'}
+        </td>
+      </tr>`;
+    }).join('');
+
+    conteudo.innerHTML =
+      '<table class="tb"><thead><tr>' +
+        '<th>Zona Eleitoral</th><th>Votos</th><th>% Nominais</th><th>Comparecimento</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="tb-footer">' +
+        '<span>' + lista.length + ' zonas</span>' +
+        '<span>Total: <strong>' + totalV.toLocaleString('pt-BR') + '</strong> votos</span>' +
+      '</div>';
+  } catch (e) {
+    conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;">❌ ${e.message}</div>`;
+    console.error('[abrirModalZonas]', e);
   }
-  const data = _bCache[key];
-
-  if (!data) {
-    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Dados por bairro não disponíveis para esta cidade.</div>';
-    return;
-  }
-
-  // Acha o cargo no JSON
-  const chave = Object.keys(data).find(k => k.toUpperCase() === cargo.toUpperCase());
-  if (!chave) {
-    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de "' + cargo + '" para esta cidade.</div>';
-    return;
-  }
-
-  // Acha a cidade dentro do JSON
-  const cidades = data[chave].CIDADES;
-  const nomeCidade = Object.keys(cidades).find(
-    k => normalizarTexto(k) === normalizarTexto(cidade)
-  );
-  if (!nomeCidade || !cidades[nomeCidade].BAIRROS) {
-    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Dados por bairro não disponíveis.</div>';
-    return;
-  }
-
-  const bairros = cidades[nomeCidade].BAIRROS;
-  const lista = Object.entries(bairros).map(([nome, d]) => {
-    const cand = (d.candidatos || []).find(
-      c => normalizarTexto(c.nome) === normalizarTexto(candidatoSelecionado)
-    );
-    return {
-      nome,
-      votos:   cand ? cand.votos   : 0,
-      posicao: cand ? cand.posicao : null,
-      total:   d.total_validos || 0
-    };
-  }).sort((a, b) => b.votos - a.votos);
-
-  const maxVotos  = Math.max(...lista.map(b => b.votos), 1);
-  const totalVotos = lista.reduce((s, b) => s + b.votos, 0);
-
-  const rows = lista.map(b => {
-    const pct  = b.total > 0 ? (b.votos / b.total * 100).toFixed(1) : '0.0';
-    const barW = (b.votos / maxVotos * 100).toFixed(1);
-    const pc   = b.posicao === 1 ? 'pos-1' : b.posicao === 2 ? 'pos-2' : b.posicao === 3 ? 'pos-3' : 'pos-other';
-    return '<tr><td><span class="b-nome">' + b.nome + '</span></td>' +
-      '<td><span class="b-votos">' + b.votos.toLocaleString('pt-BR') + '</span></td>' +
-      '<td><div class="pct-bar-wrap"><div class="pct-bar"><div class="pct-bar-fill" style="width:' + barW + '%"></div></div>' +
-      '<span class="pct-label">' + pct + '%</span></div></td>' +
-      '<td><span class="posicao-badge ' + pc + '">' + (b.posicao ? b.posicao + 'º' : '—') + '</span></td></tr>';
-  }).join('');
-
-  conteudo.innerHTML =
-    '<table class="tb"><thead><tr><th>Bairro</th><th>Votos</th><th>% Válidos</th><th>Posição</th></tr></thead>' +
-    '<tbody>' + rows + '</tbody></table>' +
-    '<div class="tb-footer"><span>' + lista.length + ' bairros</span>' +
-    '<span>Total: <strong>' + totalVotos.toLocaleString('pt-BR') + '</strong> votos</span></div>';
 }
 
 function fecharModalBairros() {
   document.getElementById('modal-bairros').classList.remove('aberto');
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModalBairros(); });
-function fecharModalFora(e) { if (e.target === document.getElementById("modal")) fecharModal(); }
-document.addEventListener("keydown", e => { if (e.key === "Escape") fecharModal(); });
 
-function criarGrafico(id, dadosObj, cores) {
-  const ctx = document.getElementById(id);
-  const labels = Object.keys(dadosObj);
-  const chart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        data: Object.values(dadosObj),
-        backgroundColor: labels.map((_, i) => cores[i % cores.length]),
-        borderRadius: 6,
-        borderSkipped: false,
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: { label: ctx => ` ${ctx.parsed.y.toLocaleString('pt-BR')} eleitores` }
-        }
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 11, family: 'DM Sans' }, color: '#64748b' } },
-        y: {
-          beginAtZero: true,
-          grid: { color: "rgba(0,0,0,0.04)" },
-          ticks: { font: { size: 11, family: 'DM Sans' }, color: '#64748b', callback: v => v.toLocaleString('pt-BR') }
-        }
-      }
-    }
-  });
-  charts.push(chart);
-}
-
-function destruirGraficos() { charts.forEach(c => c.destroy()); charts = []; }
+function fecharModal() { document.getElementById('modal').style.display = 'none'; }
+function fecharModalFora(e) { if (e.target === document.getElementById('modal')) fecharModal(); }
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { fecharModal(); fecharModalBairros(); }
+});
 </script>
 
 

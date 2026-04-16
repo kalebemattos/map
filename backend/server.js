@@ -1,5 +1,6 @@
 const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
+const { BigQuery } = require('@google-cloud/bigquery');
 const { createClient } = require('@supabase/supabase-js');
 const { Pool } = require('pg');
 const express = require('express');
@@ -2204,6 +2205,268 @@ app.delete('/api/admin/config/regioes/:chave', auth, withTenant, allow('dono'), 
   res.json({ ok: true });
 });
 
+
+/* ================= BIGQUERY – ELEIÇÕES ================= */
+
+// Inicializa cliente BigQuery (lazy singleton)
+let _bq = null;
+function getBQ() {
+  if (_bq) return _bq;
+  const credJson = process.env.BIGQUERY_CREDENTIALS;
+  if (credJson) {
+    try {
+      _bq = new BigQuery({ projectId: 'paralax-eleicoes', credentials: JSON.parse(credJson) });
+    } catch (e) {
+      console.error('[BigQuery] Erro ao parsear BIGQUERY_CREDENTIALS:', e.message);
+    }
+  } else {
+    const keyPath = path.join(__dirname, '..', 'chave.json');
+    if (fs.existsSync(keyPath)) {
+      _bq = new BigQuery({ projectId: 'paralax-eleicoes', keyFilename: keyPath });
+    } else {
+      console.warn('[BigQuery] chave.json não encontrado e BIGQUERY_CREDENTIALS não definido.');
+    }
+  }
+  return _bq;
+}
+
+// Helper: executa query parametrizada no BigQuery
+async function runBQ(sql, params) {
+  const bq = getBQ();
+  if (!bq) throw new Error('Cliente BigQuery não inicializado. Verifique as credenciais.');
+  const [rows] = await bq.query({ query: sql, params, location: 'US' });
+  return rows;
+}
+
+/**
+ * GET /api/eleicoes/candidatos
+ * Busca candidatos por nome (parcial), com filtros opcionais de ano, cargo e UF.
+ * Query params: nome, ano, cargo, uf, turno (padrão 1)
+ */
+app.get('/api/eleicoes/candidatos', async (req, res) => {
+  try {
+    const { nome = '', ano, cargo, uf, turno = '1' } = req.query;
+
+    const conds = [];
+    const params = {};
+
+    if (nome.trim()) {
+      conds.push('UPPER(c.nome_urna) LIKE @nome');
+      params.nome = `%${nome.trim().toUpperCase()}%`;
+    }
+    if (ano) {
+      conds.push('c.ano = @ano');
+      params.ano = parseInt(ano);
+    }
+    if (cargo) {
+      conds.push('UPPER(c.descricao_cargo) = @cargo');
+      params.cargo = cargo.trim().toUpperCase();
+    }
+    if (uf) {
+      conds.push('c.sigla_uf = @uf');
+      params.uf = uf.trim().toUpperCase();
+    }
+    if (turno) {
+      conds.push('c.turno = @turno');
+      params.turno = parseInt(turno);
+    }
+
+    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+
+    const sql = `
+      SELECT
+        c.ano,
+        c.sigla_uf                              AS uf,
+        UPPER(c.descricao_cargo)                AS cargo,
+        UPPER(c.nome_urna)                      AS nome,
+        CAST(c.sequencial AS STRING)            AS sequencial,
+        c.numero_candidato                      AS numero,
+        UPPER(c.sigla_partido)                  AS partido,
+        UPPER(COALESCE(m.nome, c.sigla_uf))     AS municipio_candidatura
+      FROM \`basedosdados.br_tse_eleicoes.candidatos\` c
+      LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
+        ON c.id_municipio = m.id_municipio
+      ${where}
+      ORDER BY c.ano DESC, c.nome_urna
+      LIMIT 200
+    `;
+
+    const rows = await runBQ(sql, params);
+    res.json({ ok: true, data: rows });
+  } catch (e) {
+    console.error('[/api/eleicoes/candidatos]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+/**
+ * GET /api/eleicoes/resultados
+ * Retorna votos por município para um candidato específico.
+ * Query params: sequencial (obrigatório), ano (obrigatório), uf (obrigatório), turno (padrão 1)
+ */
+app.get('/api/eleicoes/resultados', async (req, res) => {
+  try {
+    const { sequencial, ano, uf, turno = '1' } = req.query;
+    if (!sequencial || !ano || !uf) {
+      return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: sequencial, ano, uf' });
+    }
+
+    // Votos do candidato por município
+    const sqlVotos = `
+      SELECT
+        UPPER(COALESCE(m.nome, CAST(r.id_municipio AS STRING))) AS municipio,
+        r.id_municipio,
+        SUM(r.votos) AS votos
+      FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
+      LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
+        ON r.id_municipio = m.id_municipio
+      WHERE r.ano = @ano
+        AND r.turno = @turno
+        AND r.sigla_uf = @uf
+        AND r.sequencial_candidato = @sequencial
+        AND r.votos IS NOT NULL
+      GROUP BY municipio, r.id_municipio
+      ORDER BY votos DESC
+    `;
+
+    // Votos válidos por município (para calcular % do candidato)
+    const sqlValidos = `
+      SELECT
+        UPPER(COALESCE(m.nome, CAST(p.id_municipio AS STRING))) AS municipio,
+        p.id_municipio,
+        SUM(p.votos_validos) AS votos_validos
+      FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` p
+      LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
+        ON p.id_municipio = m.id_municipio
+      WHERE p.ano = @ano
+        AND p.turno = @turno
+        AND p.sigla_uf = @uf
+      GROUP BY municipio, p.id_municipio
+    `;
+
+    const params = {
+      ano: parseInt(ano),
+      turno: parseInt(turno),
+      uf: uf.trim().toUpperCase(),
+      sequencial: sequencial.trim()
+    };
+
+    const [rowsVotos, rowsValidos] = await Promise.all([
+      runBQ(sqlVotos, params),
+      runBQ(sqlValidos, params)
+    ]);
+
+    // Monta mapa de votos válidos por id_municipio
+    const validosMap = {};
+    for (const r of rowsValidos) {
+      validosMap[String(r.id_municipio)] = Number(r.votos_validos) || 0;
+    }
+
+    const data = rowsVotos.map(r => {
+      const votos = Number(r.votos) || 0;
+      const validos = validosMap[String(r.id_municipio)] || 0;
+      return {
+        municipio: r.municipio,
+        id_municipio: String(r.id_municipio),
+        votos,
+        votos_validos: validos,
+        percentual: validos > 0 ? ((votos / validos) * 100).toFixed(2) : null
+      };
+    });
+
+    res.json({ ok: true, data });
+  } catch (e) {
+    console.error('[/api/eleicoes/resultados]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+/**
+ * GET /api/eleicoes/zonas
+ * Retorna votos por zona eleitoral para um candidato em um município.
+ * Query params: sequencial (obrigatório), ano (obrigatório), uf (obrigatório), id_municipio (obrigatório), turno (padrão 1)
+ */
+app.get('/api/eleicoes/zonas', async (req, res) => {
+  try {
+    const { sequencial, ano, uf, id_municipio, turno = '1' } = req.query;
+    if (!sequencial || !ano || !uf || !id_municipio) {
+      return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: sequencial, ano, uf, id_municipio' });
+    }
+
+    const params = {
+      ano: parseInt(ano),
+      turno: parseInt(turno),
+      uf: uf.trim().toUpperCase(),
+      sequencial: sequencial.trim(),
+      id_municipio: parseInt(id_municipio)
+    };
+
+    // Votos do candidato por zona
+    const sqlVotos = `
+      SELECT
+        r.zona,
+        SUM(r.votos) AS votos
+      FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio_zona\` r
+      WHERE r.ano = @ano
+        AND r.turno = @turno
+        AND r.sigla_uf = @uf
+        AND r.sequencial_candidato = @sequencial
+        AND r.id_municipio = @id_municipio
+        AND r.votos IS NOT NULL
+      GROUP BY r.zona
+      ORDER BY r.zona
+    `;
+
+    // Participação por zona (votos nominais totais, aptos, comparecimento)
+    const sqlPart = `
+      SELECT
+        p.zona,
+        SUM(p.votos_nominais)   AS votos_nominais,
+        SUM(p.aptos)            AS aptos,
+        SUM(p.comparecimento)   AS comparecimento
+      FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio_zona\` p
+      WHERE p.ano = @ano
+        AND p.turno = @turno
+        AND p.sigla_uf = @uf
+        AND p.id_municipio = @id_municipio
+      GROUP BY p.zona
+    `;
+
+    const [rowsVotos, rowsPart] = await Promise.all([
+      runBQ(sqlVotos, params),
+      runBQ(sqlPart, params)
+    ]);
+
+    // Mapa zona → participação
+    const partMap = {};
+    for (const r of rowsPart) {
+      partMap[String(r.zona)] = {
+        votos_nominais: Number(r.votos_nominais) || 0,
+        aptos: Number(r.aptos) || 0,
+        comparecimento: Number(r.comparecimento) || 0
+      };
+    }
+
+    const data = rowsVotos.map(r => {
+      const votos = Number(r.votos) || 0;
+      const part = partMap[String(r.zona)] || {};
+      const nominais = part.votos_nominais || 0;
+      return {
+        zona: String(r.zona),
+        votos,
+        votos_nominais: nominais,
+        aptos: part.aptos || 0,
+        comparecimento: part.comparecimento || 0,
+        percentual: nominais > 0 ? ((votos / nominais) * 100).toFixed(2) : null
+      };
+    });
+
+    res.json({ ok: true, data });
+  } catch (e) {
+    console.error('[/api/eleicoes/zonas]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
 
 /* ================= KEEP ALIVE (RENDER) ================= */
 app.get("/ping", (req, res) => {
