@@ -2211,6 +2211,11 @@ app.delete('/api/admin/config/regioes/:chave', auth, withTenant, allow('dono'), 
 
 /* ================= BIGQUERY – ELEIÇÕES ================= */
 
+// Rota de diagnóstico — acesse /api/eleicoes/ping no browser para confirmar deploy
+app.get('/api/eleicoes/ping', (req, res) => {
+  res.json({ ok: true, msg: 'bigquery-routes-online', ts: Date.now() });
+});
+
 // Inicializa cliente BigQuery (lazy singleton — require feito aqui para não
 // crashar o servidor se @google-cloud/bigquery ainda não estiver instalado)
 let _bq = null;
