@@ -1,6 +1,7 @@
 const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
-const { BigQuery } = require('@google-cloud/bigquery');
+// BigQuery é carregado de forma lazy dentro de getBQ() para não crashar o
+// servidor caso o pacote ainda não tenha sido instalado neste ambiente.
 const { createClient } = require('@supabase/supabase-js');
 const { Pool } = require('pg');
 const express = require('express');
@@ -2210,10 +2211,17 @@ app.delete('/api/admin/config/regioes/:chave', auth, withTenant, allow('dono'), 
 
 /* ================= BIGQUERY – ELEIÇÕES ================= */
 
-// Inicializa cliente BigQuery (lazy singleton)
+// Inicializa cliente BigQuery (lazy singleton — require feito aqui para não
+// crashar o servidor se @google-cloud/bigquery ainda não estiver instalado)
 let _bq = null;
 function getBQ() {
   if (_bq) return _bq;
+  let BigQuery;
+  try {
+    BigQuery = require('@google-cloud/bigquery').BigQuery;
+  } catch (e) {
+    throw new Error('Pacote @google-cloud/bigquery não instalado. Execute "npm install" e reinicie o servidor.');
+  }
   const credJson = process.env.BIGQUERY_CREDENTIALS;
   if (credJson) {
     try {
