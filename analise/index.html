@@ -818,13 +818,7 @@ tbody tr:last-child td { border-bottom: none; }
 // Auto-detecta a URL base do backend.
 // Se aberto via file://, assume localhost:10000. Se servido pelo próprio Express,
 // usa mesma origem. Pode ser sobrescrito com window.ELEICOES_API_BASE.
-(function detectApiBase() {
-  if (window.ELEICOES_API_BASE) return;
-  window.ELEICOES_API_BASE = (location.protocol === 'file:')
-    ? 'http://localhost:10000'
-    : '';
-})();
-const API_BASE = (window.ELEICOES_API_BASE || '').replace(/\/$/, '');
+const API_BASE = 'https://map-backend-j88s.onrender.com';
 
 // ── Estado ────────────────────────────────────────────────────────────────────
 let candidatoAtual = null; // { sequencial, nome, cargo, uf, ano }
