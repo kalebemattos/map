@@ -2302,7 +2302,7 @@ app.get('/api/eleicoes/candidatos', async (req, res) => {
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
         ON c.id_municipio = m.id_municipio
       ${where}
-      ORDER BY c.ano DESC, c.nome_urna
+      ORDER BY ano DESC, nome
       LIMIT 200
     `;
 
