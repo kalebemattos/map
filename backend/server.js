@@ -2516,6 +2516,41 @@ app.get('/api/eleicoes/zonas', async (req, res) => {
   }
 });
 
+/* ---------- Cache IBGE → TSE para lookup de bairros ---------- */
+const _ibgeToTseCache = new Map();
+async function getIdMunicipioTSE(idMunicipioIBGE) {
+  const key = String(idMunicipioIBGE).trim();
+  if (_ibgeToTseCache.has(key)) return _ibgeToTseCache.get(key);
+  try {
+    const rows = await runBQ(
+      `SELECT CAST(id_municipio_tse AS STRING) AS tse
+         FROM \`basedosdados.br_bd_diretorios_brasil.municipio\`
+        WHERE id_municipio = @id LIMIT 1`,
+      { id: key }
+    );
+    const tse = rows.length ? String(rows[0].tse) : null;
+    _ibgeToTseCache.set(key, tse);
+    return tse;
+  } catch (e) {
+    console.warn('[ibge→tse]', e.message);
+    _ibgeToTseCache.set(key, null);
+    return null;
+  }
+}
+
+/* ---------- Tenta rodar BQ com fallback de nome de tabela ---------- */
+async function runBQWithFallback(sqlPrimario, sqlFallback, params) {
+  try {
+    return await runBQ(sqlPrimario, params);
+  } catch (e) {
+    if (e.message && e.message.includes('Not found')) {
+      console.warn('[BQ] tabela não encontrada, tentando fallback:', e.message.split('\n')[0]);
+      return await runBQ(sqlFallback, params);
+    }
+    throw e;
+  }
+}
+
 /**
  * GET /api/eleicoes/bairros
  * Retorna votos por bairro para eleições municipais (prefeito/vereador).
@@ -2537,40 +2572,47 @@ app.get('/api/eleicoes/bairros', async (req, res) => {
       id_municipio: String(id_municipio).trim()
     };
 
-    // Votos do candidato por zona+seção
-    const sqlSecoes = `
-      SELECT
-        r.zona,
-        r.secao,
-        SUM(r.votos) AS votos
+    // Tenta obter código TSE para lookup no CSV (BigQuery usa IBGE, CSV usa TSE)
+    const idTSE = await getIdMunicipioTSE(id_municipio);
+    console.log(`[bairros] IBGE ${id_municipio} → TSE ${idTSE}`);
+
+    // Votos por zona+seção — tenta tabela com "municipio" e sem
+    const sqlSecoesPrimario = `
+      SELECT r.zona, r.secao, SUM(r.votos) AS votos
       FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio_secao\` r
-      WHERE r.ano = @ano
-        AND r.turno = @turno
-        AND r.sigla_uf = @uf
+      WHERE r.ano = @ano AND r.turno = @turno AND r.sigla_uf = @uf
         AND CAST(r.sequencial_candidato AS STRING) = @sequencial
-        AND r.id_municipio = @id_municipio
-        AND r.votos IS NOT NULL
-      GROUP BY r.zona, r.secao
-      ORDER BY r.zona, r.secao
+        AND r.id_municipio = @id_municipio AND r.votos IS NOT NULL
+      GROUP BY r.zona, r.secao ORDER BY r.zona, r.secao
+    `;
+    const sqlSecoesFallback = `
+      SELECT r.zona, r.secao, SUM(r.votos) AS votos
+      FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_secao\` r
+      WHERE r.ano = @ano AND r.turno = @turno AND r.sigla_uf = @uf
+        AND CAST(r.sequencial_candidato AS STRING) = @sequencial
+        AND r.id_municipio = @id_municipio AND r.votos IS NOT NULL
+      GROUP BY r.zona, r.secao ORDER BY r.zona, r.secao
     `;
 
-    // Votos nominais por zona+seção (para calcular %)
-    const sqlTotal = `
-      SELECT
-        p.zona,
-        p.secao,
-        SUM(p.votos_nominais) AS votos_nominais
+    // Votos nominais por zona+seção — tenta idem
+    const sqlTotalPrimario = `
+      SELECT p.zona, p.secao, SUM(p.votos_nominais) AS votos_nominais
       FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio_secao\` p
-      WHERE p.ano = @ano
-        AND p.turno = @turno
-        AND p.sigla_uf = @uf
+      WHERE p.ano = @ano AND p.turno = @turno AND p.sigla_uf = @uf
+        AND p.id_municipio = @id_municipio
+      GROUP BY p.zona, p.secao
+    `;
+    const sqlTotalFallback = `
+      SELECT p.zona, p.secao, SUM(p.votos_nominais) AS votos_nominais
+      FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_secao\` p
+      WHERE p.ano = @ano AND p.turno = @turno AND p.sigla_uf = @uf
         AND p.id_municipio = @id_municipio
       GROUP BY p.zona, p.secao
     `;
 
     const [rowsSecoes, rowsTotal] = await Promise.all([
-      runBQ(sqlSecoes, params),
-      runBQ(sqlTotal, params)
+      runBQWithFallback(sqlSecoesPrimario, sqlSecoesFallback, params),
+      runBQWithFallback(sqlTotalPrimario, sqlTotalFallback, params).catch(() => [])
     ]);
 
     // Mapa zona_secao → votos_nominais
@@ -2579,8 +2621,11 @@ app.get('/api/eleicoes/bairros', async (req, res) => {
       totalMap[`${r.zona}_${r.secao}`] = Number(r.votos_nominais) || 0;
     }
 
-    // Lookup bairro para este município (tenta pela id_municipio passada)
-    const munLookup = bairrosLookup[String(id_municipio).trim()] || {};
+    // Lookup bairro: tenta código TSE primeiro, depois IBGE (caso CSV seja reindexado)
+    const munLookup =
+      (idTSE && bairrosLookup[idTSE]) ||
+      bairrosLookup[String(id_municipio).trim()] ||
+      {};
     const temLookup = Object.keys(munLookup).length > 0;
 
     // Agrega por bairro
@@ -2607,7 +2652,7 @@ app.get('/api/eleicoes/bairros', async (req, res) => {
       }))
       .sort((a, b) => b.votos - a.votos);
 
-    res.json({ ok: true, data, por_bairro: temLookup });
+    res.json({ ok: true, data, por_bairro: temLookup, id_municipio_tse: idTSE });
   } catch (e) {
     console.error('[/api/eleicoes/bairros]', e.message);
     res.status(500).json({ ok: false, error: e.message });
