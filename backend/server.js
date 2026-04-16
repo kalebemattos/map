@@ -2274,7 +2274,7 @@ app.get('/api/eleicoes/candidatos', async (req, res) => {
       params.ano = parseInt(ano);
     }
     if (cargo) {
-      conds.push('UPPER(c.descricao_cargo) = @cargo');
+      conds.push('UPPER(c.cargo) = @cargo');
       params.cargo = cargo.trim().toUpperCase();
     }
     if (uf) {
@@ -2291,19 +2291,18 @@ app.get('/api/eleicoes/candidatos', async (req, res) => {
     const sql = `
       SELECT DISTINCT
         c.ano,
-        c.turno,
         c.sigla_uf                              AS uf,
-        UPPER(c.descricao_cargo)                AS cargo,
+        UPPER(c.cargo)                          AS cargo,
         UPPER(c.nome_urna)                      AS nome,
         CAST(c.sequencial AS STRING)            AS sequencial,
-        c.numero_candidato                      AS numero,
+        c.numero                                AS numero,
         UPPER(COALESCE(c.sigla_partido, ''))    AS partido,
         UPPER(COALESCE(m.nome, c.sigla_uf))     AS municipio_candidatura
       FROM \`basedosdados.br_tse_eleicoes.candidatos\` c
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
         ON c.id_municipio = m.id_municipio
       ${where}
-      ORDER BY c.ano DESC, c.turno, c.nome_urna
+      ORDER BY c.ano DESC, c.nome_urna
       LIMIT 200
     `;
 
