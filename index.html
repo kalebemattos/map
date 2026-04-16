@@ -3926,27 +3926,6 @@ if (key !== 'all') {
                 if (el) el.style.pointerEvents = 'none';
             }
         });
-// ================================
-// FILTRO POR REGIÃO PERSONALIZADA
-// ================================
-regiaoSelect.addEventListener('change', () => {
-  const nome = regiaoSelect.value;
-  if (!nome || !regioesPersonalizadas[nome]) return;
-
-  const cidades = regioesPersonalizadas[nome].cidades;
-
-  layerRJ.eachLayer(layer => {
-    const cityName =
-      layer.feature.properties.NM_MUN ||
-      layer.feature.properties.name;
-
-    if (cidades.includes(cityName)) {
-      layer.setStyle({ fillOpacity: 0.8, opacity: 1 });
-    } else {
-      layer.setStyle({ fillOpacity: 0.1, opacity: 0.1 });
-    }
-  });
-});
         document.querySelectorAll('.city-label').forEach(el => {
             const name = el.innerText && el.innerText.trim();
             if (!munNames || munNames.includes(name)) el.style.opacity = 0.5;

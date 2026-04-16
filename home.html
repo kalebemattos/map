@@ -1531,43 +1531,53 @@ async function carregarIndicadorCampanha() {
     if (!expRes.ok) return
     const expData = await expRes.json()  // [{ cidade, expectativas: { celia:N, ... } }]
 
-    // 3. Agrega por candidato (filtrado por região se aplicável)
-    const totais = {}
-    candidatos.forEach(c => { totais[c.chave] = 0 })
+    // 3a. Totais globais (todos os municípios — sempre calculado)
+    const totaisGlobal = {}
+    candidatos.forEach(c => { totaisGlobal[c.chave] = 0 })
     expData.forEach(row => {
-      if (cidadesRegiao && !cidadesRegiao.has(row.cidade)) return
       const exp = row.expectativas || {}
       Object.keys(exp).forEach(chave => {
-        if (totais[chave] !== undefined) {
-          totais[chave] += (Number(exp[chave]) || 0)
-        }
+        if (totaisGlobal[chave] !== undefined)
+          totaisGlobal[chave] += (Number(exp[chave]) || 0)
       })
     })
 
-    // 4. Renderiza (passa info da região para adaptar labels)
-    renderIndicadorCampanha(candidatos, totais, regiaoInfo)
+    // 3b. Totais regionais (apenas municípios da região do usuário, se aplicável)
+    let totaisRegiao = null
+    if (cidadesRegiao) {
+      totaisRegiao = {}
+      candidatos.forEach(c => { totaisRegiao[c.chave] = 0 })
+      expData.forEach(row => {
+        if (!cidadesRegiao.has(row.cidade)) return
+        const exp = row.expectativas || {}
+        Object.keys(exp).forEach(chave => {
+          if (totaisRegiao[chave] !== undefined)
+            totaisRegiao[chave] += (Number(exp[chave]) || 0)
+        })
+      })
+    }
+
+    // 4. Renderiza: 1º card = global, 2º card = regional (se houver)
+    renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao, regiaoInfo)
 
   } catch (e) { /* silencioso */ }
 }
 
-function renderIndicadorCampanha(candidatos, totais, regiaoInfo = null) {
+// totaisGlobal  = sempre calculado (todos os municípios)
+// totaisRegiao  = calculado só quando há região vinculada (pode ser null)
+// regiaoInfo    = { chave, label } quando há região vinculada (pode ser null)
+// 1º card usa totaisGlobal; 2º card usa totaisRegiao (se disponível)
+function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, regiaoInfo = null) {
   const panel   = document.getElementById('campaign-indicator')
   const body    = document.getElementById('ci-body')
   const updated = document.getElementById('ci-updated')
   if (!panel || !body) return
 
-  // Injeta badge de região no título, se aplicável
+  // Remove badge do título (caso tenha sobrado de render anterior)
   const titleEl = panel.querySelector('.ci-title')
   if (titleEl) {
     const existingBadge = titleEl.querySelector('.ci-regiao-badge')
     if (existingBadge) existingBadge.remove()
-    if (regiaoInfo) {
-      const badge = document.createElement('span')
-      badge.className = 'ci-regiao-badge'
-      badge.style.cssText = 'margin-left:8px;font-size:10px;font-weight:700;background:rgba(255,255,255,.13);color:rgba(255,255,255,.75);padding:2px 8px;border-radius:20px;letter-spacing:.3px;'
-      badge.textContent = '📍 ' + regiaoInfo.label
-      titleEl.appendChild(badge)
-    }
   }
 
   // Paleta de cores fallback para cada candidato
@@ -1578,38 +1588,46 @@ function renderIndicadorCampanha(candidatos, totais, regiaoInfo = null) {
     { solid: '#dc2626', light: 'rgba(220,38,38,.22)',  border: 'rgba(252,165,165,.28)' },
   ]
 
-  const totalGeral = candidatos.reduce((s, c) => s + (totais[c.chave] || 0), 0)
+  // Total geral sempre usa dados globais
+  const totalGeral  = candidatos.reduce((s, c) => s + (totaisGlobal[c.chave] || 0), 0)
+  const totalRegiao = totaisRegiao
+    ? candidatos.reduce((s, c) => s + (totaisRegiao[c.chave] || 0), 0)
+    : 0
 
   let html = ''
 
   candidatos.forEach((cand, i) => {
+    // 1º card = global; 2º card em diante = regional (se disponível)
+    const isRegional = (i >= 1 && totaisRegiao !== null && regiaoInfo !== null)
+    const totaisAtivos = isRegional ? totaisRegiao : totaisGlobal
+    const totalAtivo   = isRegional ? totalRegiao  : totalGeral
+
     const pal     = PALETA[i % PALETA.length]
-    const votos   = totais[cand.chave] || 0
-    const pct     = totalGeral > 0 ? Math.round((votos / totalGeral) * 100) : 0
+    const votos   = totaisAtivos[cand.chave] || 0
+    const pct     = totalAtivo > 0 ? Math.round((votos / totalAtivo) * 100) : 0
     const ini     = (cand.nome || '?')[0].toUpperCase()
     const temMeta = cand.meta_votos && Number(cand.meta_votos) > 0
     const meta    = temMeta ? Number(cand.meta_votos) : 0
     const metaPct = temMeta ? Math.min(Math.round((votos / meta) * 100), 100) : pct
-    // Label da meta: quando em visão regional, deixa claro que é a meta geral da campanha
-    const metaLabel = regiaoInfo ? '🎯 Meta da região' : '🎯 Meta'
-    const barLabel  = regiaoInfo
+
+    const metaLabel = isRegional ? '🎯 Meta da região' : '🎯 Meta'
+    const barLabel  = isRegional
       ? (temMeta ? metaPct + '% da meta' : pct + '% do total na região')
       : (temMeta ? metaPct + '% atingido' : pct + '% do total geral')
 
-    // Cor do candidato
-    // cor_fundo = cor de fundo dos blocos (pode ser clara, ex: #fce7f3)
-    // cor_texto = cor de destaque (mais escura, ex: #be185d) — usada no avatar
-    // Para o avatar (círculo com inicial), usa cor_texto ou a cor sólida da paleta
-    const corFundo  = cand.cor_fundo || pal.light
-    const avatarBg  = cand.cor_texto || pal.solid   // cor escura → texto branco legível
+    const avatarBg  = cand.cor_texto || pal.solid
 
-    // Avatar: foto real ou inicial com cor legível
     const avatarHtml = cand.foto_url
       ? `<img src="${escHome(cand.foto_url)}" class="ci-photo" style="border-color:${avatarBg};"
             alt="${escHome(cand.nome)}"
             onerror="this.style.display='none';document.getElementById('ci-av-fb-${escHome(cand.chave)}').style.display='flex';">
          <div class="ci-avatar" id="ci-av-fb-${escHome(cand.chave)}" style="background:${avatarBg};display:none;">${escHome(ini)}</div>`
       : `<div class="ci-avatar" style="background:${avatarBg};">${escHome(ini)}</div>`
+
+    // Badge de região aparece apenas no 2º card
+    const regiaoTag = isRegional
+      ? `<div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.55);letter-spacing:.3px;margin-top:1px;">📍 ${escHome(regiaoInfo.label)}</div>`
+      : ''
 
     html += `
     <div class="ci-cand" style="background:${pal.light};border:1px solid ${pal.border};">
@@ -1619,12 +1637,13 @@ function renderIndicadorCampanha(candidatos, totais, regiaoInfo = null) {
         <div style="flex:1;min-width:0;position:relative;z-index:1;">
           <div class="ci-cand-nome">${escHome(cand.nome)}</div>
           <div class="ci-cand-cargo">${escHome(cand.cargo || 'Candidato')}</div>
+          ${regiaoTag}
         </div>
       </div>
       <div class="ci-stats-row">
         <div class="ci-stat">
           <div class="ci-stat-value" id="ci-votos-${escHome(cand.chave)}">0</div>
-          <div class="ci-stat-label">Expectativa</div>
+          <div class="ci-stat-label">${isRegional ? 'Exp. região' : 'Expectativa'}</div>
         </div>
         ${temMeta ? `
         <div class="ci-stat">
@@ -1650,18 +1669,12 @@ function renderIndicadorCampanha(candidatos, totais, regiaoInfo = null) {
     </div>`
   })
 
-  // Bloco total geral (ou total da região se filtrado)
-  const totalLabel = regiaoInfo
-    ? 'Sua região'
-    : 'Total geral'
-  const totalSub = regiaoInfo
-    ? 'expectativa na ' + regiaoInfo.label
-    : 'expectativa de votos'
+  // Bloco total — sempre global
   html += `
   <div class="ci-total">
-    <div class="ci-total-label">${totalLabel}</div>
+    <div class="ci-total-label">Total geral</div>
     <div class="ci-total-value" id="ci-total-value">0</div>
-    <div class="ci-total-sub">${totalSub}</div>
+    <div class="ci-total-sub">expectativa de votos</div>
     <div class="ci-total-divider"></div>
     <div class="ci-total-label">${escHome(String(candidatos.length))} campanha${candidatos.length !== 1 ? 's' : ''} ativa${candidatos.length !== 1 ? 's' : ''}</div>
   </div>`
@@ -1685,20 +1698,23 @@ function renderIndicadorCampanha(candidatos, totais, regiaoInfo = null) {
 
   // Aguarda o próximo frame para as barras animarem (precisa estar no DOM)
   requestAnimationFrame(() => {
-    candidatos.forEach(cand => {
-      const votos   = totais[cand.chave] || 0
+    candidatos.forEach((cand, i) => {
+      const isRegional   = (i >= 1 && totaisRegiao !== null && regiaoInfo !== null)
+      const totaisAtivos = isRegional ? totaisRegiao : totaisGlobal
+      const totalAtivo   = isRegional ? totalRegiao  : totalGeral
+
+      const votos   = totaisAtivos[cand.chave] || 0
       const temMeta = cand.meta_votos && Number(cand.meta_votos) > 0
       const meta    = temMeta ? Number(cand.meta_votos) : 0
       const barPct  = temMeta
         ? Math.min((votos / meta) * 100, 100)
-        : (totalGeral > 0 ? (votos / totalGeral) * 100 : 0)
+        : (totalAtivo > 0 ? (votos / totalAtivo) * 100 : 0)
 
       animarContador(`ci-votos-${cand.chave}`, votos)
 
       const bar = document.getElementById(`ci-bar-${cand.chave}`)
       if (bar) bar.style.width = barPct.toFixed(1) + '%'
 
-      // Atualiza % da meta dinamicamente
       if (temMeta) {
         const metaPctEl = document.getElementById(`ci-mpct-${cand.chave}`)
         if (metaPctEl) {
