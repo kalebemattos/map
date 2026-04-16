@@ -220,6 +220,8 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Serve os arquivos da raiz do projeto (home, analise, assets, etc.)
+app.use(express.static(path.join(__dirname, '..')));
 app.use(express.static(__dirname));
 app.set('trust proxy', 1);
 
@@ -2245,7 +2247,7 @@ async function runBQ(sql, params) {
  */
 app.get('/api/eleicoes/candidatos', async (req, res) => {
   try {
-    const { nome = '', ano, cargo, uf, turno = '1' } = req.query;
+    const { nome = '', ano, cargo, uf } = req.query;
 
     const conds = [];
     const params = {};
@@ -2266,28 +2268,29 @@ app.get('/api/eleicoes/candidatos', async (req, res) => {
       conds.push('c.sigla_uf = @uf');
       params.uf = uf.trim().toUpperCase();
     }
-    if (turno) {
-      conds.push('c.turno = @turno');
-      params.turno = parseInt(turno);
+
+    if (conds.length === 0) {
+      return res.status(400).json({ ok: false, error: 'Informe ao menos um filtro: nome ou cargo.' });
     }
 
-    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+    const where = 'WHERE ' + conds.join(' AND ');
 
     const sql = `
-      SELECT
+      SELECT DISTINCT
         c.ano,
+        c.turno,
         c.sigla_uf                              AS uf,
         UPPER(c.descricao_cargo)                AS cargo,
         UPPER(c.nome_urna)                      AS nome,
         CAST(c.sequencial AS STRING)            AS sequencial,
         c.numero_candidato                      AS numero,
-        UPPER(c.sigla_partido)                  AS partido,
+        UPPER(COALESCE(c.sigla_partido, ''))    AS partido,
         UPPER(COALESCE(m.nome, c.sigla_uf))     AS municipio_candidatura
       FROM \`basedosdados.br_tse_eleicoes.candidatos\` c
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
         ON c.id_municipio = m.id_municipio
       ${where}
-      ORDER BY c.ano DESC, c.nome_urna
+      ORDER BY c.ano DESC, c.turno, c.nome_urna
       LIMIT 200
     `;
 
@@ -2323,7 +2326,7 @@ app.get('/api/eleicoes/resultados', async (req, res) => {
       WHERE r.ano = @ano
         AND r.turno = @turno
         AND r.sigla_uf = @uf
-        AND r.sequencial_candidato = @sequencial
+        AND CAST(r.sequencial_candidato AS STRING) = @sequencial
         AND r.votos IS NOT NULL
       GROUP BY municipio, r.id_municipio
       ORDER BY votos DESC
@@ -2410,7 +2413,7 @@ app.get('/api/eleicoes/zonas', async (req, res) => {
       WHERE r.ano = @ano
         AND r.turno = @turno
         AND r.sigla_uf = @uf
-        AND r.sequencial_candidato = @sequencial
+        AND CAST(r.sequencial_candidato AS STRING) = @sequencial
         AND r.id_municipio = @id_municipio
         AND r.votos IS NOT NULL
       GROUP BY r.zona

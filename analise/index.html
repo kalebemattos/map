@@ -815,8 +815,15 @@ tbody tr:last-child td { border-bottom: none; }
 
 <script>
 // ── Configuração ──────────────────────────────────────────────────────────────
-// Se o backend rodar em outra origem, defina window.ELEICOES_API_BASE antes deste script.
-// Ex: <script>window.ELEICOES_API_BASE = "https://meu-backend.onrender.com"</script>
+// Auto-detecta a URL base do backend.
+// Se aberto via file://, assume localhost:10000. Se servido pelo próprio Express,
+// usa mesma origem. Pode ser sobrescrito com window.ELEICOES_API_BASE.
+(function detectApiBase() {
+  if (window.ELEICOES_API_BASE) return;
+  window.ELEICOES_API_BASE = (location.protocol === 'file:')
+    ? 'http://localhost:10000'
+    : '';
+})();
 const API_BASE = (window.ELEICOES_API_BASE || '').replace(/\/$/, '');
 
 // ── Estado ────────────────────────────────────────────────────────────────────
