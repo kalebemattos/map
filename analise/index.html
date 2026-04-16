@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <title>Análise Estratégica Estadual</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- viewport-fit=cover: conteúdo chega até as bordas no iPhone (notch/home bar) -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- Cor da barra do browser no Android Chrome e Safari iOS -->
+<meta name="theme-color" content="#0d1f4a">
+<!-- Permite adicionar à home screen como app -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Análise Eleitoral">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -866,6 +874,189 @@ tbody tr:last-child td { border-bottom: none; }
 @media (min-width: 701px) and (max-width: 1100px) {
   .cities-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ================================================================
+   MOBILE APP EXPERIENCE
+   Melhorias incrementais — não sobrescreve lógica existente.
+   ================================================================ */
+
+/* ── Remove delay de 300ms no toque (todos os elementos) ────────── */
+a, button, select, input, label, .et-card, .city-result-card,
+.cidade-clicavel, .btn-perfil, .crc-btn, .nav-back, .modal-close {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Scroll momentum nativo iOS nos modais e tabela ─────────────── */
+.modal-card,
+.modal-bairros-card,
+.table-wrapper,
+#view-cards {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* ── Trava scroll do fundo quando um modal está aberto ──────────── */
+body.modal-aberto {
+  overflow: hidden;
+  /* Não usa position:fixed para não perder posição de scroll */
+}
+
+/* ── Safe area: notch, home bar, Dynamic Island ─────────────────── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .page {
+    padding-left:  max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+    padding-bottom: max(60px, calc(40px + env(safe-area-inset-bottom)));
+  }
+  /* Modais bottom-sheet: espaço extra para home bar */
+  .modal-bairros-card,
+  .modal-card {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* ── Handle visual no bottom sheet (indicador de arraste) ───────── */
+@media (max-width: 600px) {
+  .modal-bairros-card::before,
+  .modal-card::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--slate-300);
+    border-radius: 2px;
+    margin: 10px auto -4px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BREAKPOINT MOBILE ≤ 600px
+   ════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+
+  /* ── FIX CRÍTICO: iOS faz auto-zoom em inputs com font-size < 16px ── */
+  select,
+  input[type="text"],
+  input[type="search"],
+  input[type="number"] {
+    font-size: 16px !important;  /* impede o zoom automático do Safari */
+  }
+
+  /* ── Tap targets mínimos 44×44px (Apple HIG / WCAG 2.5.5) ─────── */
+  select,
+  input[type="text"] {
+    min-height: 46px;
+    padding: 0 14px;
+  }
+  select {
+    padding-right: 36px;
+    background-position: right 12px center;
+  }
+
+  .btn-perfil,
+  .crc-btn {
+    min-height: 38px;
+    padding: 0 16px;
+    font-size: 12px;
+  }
+
+  .nav-back {
+    min-height: 40px;
+    padding: 0 16px;
+  }
+
+  .modal-close {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .et-card {
+    min-height: 56px;
+  }
+
+  /* ── Filtros: 2×2 em vez de 4 colunas empilhadas ──────────────── */
+  /* Ano | UF  /  Cargo | Turno  — reduz a altura pela metade */
+  .controls-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px;
+  }
+
+  /* Buscar / Selecionar / Cidade: 1 coluna (ok, precisa de largura total) */
+  .controls-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+
+  /* ── ET selector: horizontal compacto, sem texto de apoio ─────── */
+  .et-selector {
+    flex-direction: row !important;
+    gap: 8px;
+  }
+  .et-card {
+    padding: 12px 14px;
+    gap: 10px;
+    flex: 1;
+  }
+  .et-icon   { font-size: 22px; }
+  .et-label  { font-size: 13px; }
+  .et-sub    { display: none; }   /* economiza espaço vertical */
+  .et-check  { display: none; }
+
+  /* ── Card do candidato: mais compacto ──────────────────────────── */
+  .candidato-card {
+    padding: 14px 16px;
+    gap: 10px;
+    border-radius: 14px;
+  }
+
+  /* ── Card de resultado: tamanhos tocáveis ──────────────────────── */
+  .city-result-card { padding: 14px 16px; }
+  .crc-votes        { font-size: 20px; }
+  .cities-grid      { padding: 10px; gap: 8px; }
+
+  /* ── Context header: mais compacto ────────────────────────────── */
+  .ctx-header { font-size: 12px; padding: 8px 14px; gap: 6px; }
+
+  /* ── Card geral: padding reduzido ──────────────────────────────── */
+  .card {
+    padding: 16px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+  }
+
+  /* ── Page: menos padding ───────────────────────────────────────── */
+  .page { padding: 12px 12px 60px; }
+
+  /* ── Nav brand: sem subtítulo ─────────────────────────────────── */
+  .nav-brand p { display: none; }
+  .nav-brand h1 { font-size: 15px; }
+
+  /* ── Form labels: legíveis sem serem grandes ──────────────────── */
+  .form-group label { font-size: 11px; }
+
+  /* ────────────────────────────────────────────────────────────────
+     FEEDBACK TÁTIL
+     Todos os elementos interativos têm resposta visual imediata
+     ──────────────────────────────────────────────────────────────── */
+  .et-card:active             { transform: scale(0.96); opacity: 0.85; }
+  .city-result-card:active    { transform: scale(0.98); box-shadow: none; }
+  .crc-btn:active,
+  .btn-perfil:active          { transform: scale(0.94); }
+  .nav-back:active            { transform: scale(0.96); }
+  .modal-close:active         { transform: scale(0.92); background: var(--slate-200); }
+  tbody tr.cidade-clicavel:active td { background: #e8f0fe !important; }
+}
+
+/* ── Breakpoint extra-small (iPhone SE, 375px) ──────────────────── */
+@media (max-width: 390px) {
+  .et-label  { font-size: 12px; }
+  .et-card   { padding: 10px 12px; }
+  .card      { padding: 14px; }
+  .crc-votes { font-size: 18px; }
+  .page      { padding: 10px 10px 60px; }
+}
 </style>
 </head>
 <body>
@@ -1422,6 +1613,7 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
     : '⏳ Consultando zonas eleitorais...';
   conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;">${msgEspera}</div>`;
   mb.classList.add('aberto');
+  document.body.classList.add('modal-aberto'); // [MOBILE] trava scroll do fundo
 
   const params = new URLSearchParams({
     sequencial:   candidatoAtual.sequencial,
@@ -1526,6 +1718,7 @@ function abrirModalZonas(municipio, idMunicipio) { return abrirModalDetalhe(muni
 
 function fecharModalBairros() {
   document.getElementById('modal-bairros').classList.remove('aberto');
+  document.body.classList.remove('modal-aberto'); // [MOBILE] libera scroll do fundo
 }
 
 function fecharModal() { document.getElementById('modal').style.display = 'none'; }
@@ -1533,6 +1726,58 @@ function fecharModalFora(e) { if (e.target === document.getElementById('modal'))
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { fecharModal(); fecharModalBairros(); }
 });
+
+// ── [MOBILE] Swipe down para fechar modal bottom-sheet ────────────────────────
+(function initSwipeToClose() {
+  let startY = 0, isDragging = false;
+
+  function onTouchStart(e) {
+    // Só ativa se o toque começar perto do topo do card (handle area)
+    const card = e.currentTarget.querySelector('.modal-bairros-card, .modal-card');
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const touchY = e.touches[0].clientY;
+    if (touchY - rect.top > 60) return; // só nos primeiros 60px do card
+    startY = touchY;
+    isDragging = true;
+    card.style.transition = 'none';
+  }
+
+  function onTouchMove(e) {
+    if (!isDragging) return;
+    const card = e.currentTarget.querySelector('.modal-bairros-card, .modal-card');
+    if (!card) return;
+    const delta = e.touches[0].clientY - startY;
+    if (delta > 0) {
+      card.style.transform = `translateY(${delta}px)`;
+      card.style.opacity   = String(Math.max(0.5, 1 - delta / 400));
+    }
+  }
+
+  function onTouchEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    const card = e.currentTarget.querySelector('.modal-bairros-card, .modal-card');
+    if (!card) return;
+    const delta = (e.changedTouches[0]?.clientY || 0) - startY;
+    card.style.transition = '';
+    card.style.transform  = '';
+    card.style.opacity    = '';
+    if (delta > 100) {
+      // swipe suficiente → fecha
+      if (e.currentTarget.id === 'modal-bairros') fecharModalBairros();
+      else fecharModal();
+    }
+  }
+
+  ['modal-bairros'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove',  onTouchMove,  { passive: true });
+    el.addEventListener('touchend',   onTouchEnd,   { passive: true });
+  });
+})();
 </script>
 
 
