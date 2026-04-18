@@ -348,27 +348,43 @@ app.get('/api/config', async (req, res) => {
 
 /* ================= LOGIN ================= */
 app.post('/api/login', loginLimiter, async (req, res) => {
-  const { usuario, senha } = req.body;
+  const { usuario, senha, tenantId } = req.body;
 
-if (!usuario || !senha) {
-  return res.status(400).json({ error: 'Dados incompletos' });
-}
+  if (!usuario || !senha) {
+    return res.status(400).json({ error: 'Dados incompletos' });
+  }
 
   try {
-    // Procure por: SELECT id, usuario, senha_hash, nome FROM usuarios...
-// E troque por:
-const user = await dbGet(
-  'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE usuario = $1',
-  [usuario]
-);
+    // Busca TODOS os usuários com aquele nome (pode existir em múltiplos tenants).
+    // Se o frontend enviar tenantId, filtra direto; caso contrário percorre todos
+    // e usa bcrypt para achar o match correto.
+    let users;
+    if (tenantId != null && tenantId !== '' && tenantId !== 'default') {
+      // Filtro preciso por tenant — evita ambiguidade quando o mesmo username
+      // existe em tenants diferentes com senhas distintas.
+      users = await dbAll(
+        'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE usuario = $1 AND tenant_id = $2',
+        [usuario, tenantId]
+      );
+    } else {
+      users = await dbAll(
+        'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE usuario = $1 ORDER BY tenant_id ASC',
+        [usuario]
+      );
+    }
 
-    if (!user) {
+    if (!users || users.length === 0) {
       return res.status(401).json({ error: 'Usuário ou senha inválidos' });
     }
 
-    const ok = await bcrypt.compare(senha, user.senha_hash);
+    // Verifica bcrypt em cada registro até achar o correto
+    let user = null;
+    for (const candidate of users) {
+      const ok = await bcrypt.compare(senha, candidate.senha_hash);
+      if (ok) { user = candidate; break; }
+    }
 
-    if (!ok) {
+    if (!user) {
       return res.status(401).json({ error: 'Usuário ou senha inválidos' });
     }
 

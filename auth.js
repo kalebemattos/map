@@ -132,10 +132,20 @@ function iniciarLogin() {
     btn.disabled = true;
 
     try {
+      // Inclui tenantId numérico para o backend filtrar pelo tenant correto.
+      // Só envia quando o tenant é explicitamente configurado (> 1) — para não
+      // bloquear usuários de tenants distintos num frontend padrão.
+      // window.TENANT_NUM_ID é definido em tenant.js (1 = padrão, 2 = betão, etc.).
+      const tenantId = (typeof window.TENANT_NUM_ID !== 'undefined' &&
+                        window.TENANT_NUM_ID != null &&
+                        window.TENANT_NUM_ID > 1)
+        ? window.TENANT_NUM_ID
+        : undefined;
+
       const res = await fetch(`${window.API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario, senha })
+        body: JSON.stringify({ usuario, senha, ...(tenantId != null ? { tenantId } : {}) })
       });
 
       const data = await res.json();

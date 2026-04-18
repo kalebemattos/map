@@ -1081,7 +1081,7 @@ async function login() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         usuario: loginUser.value.trim(),
-        senha: loginPass.value.trim()
+        senha: loginPass.value   // ⚠️ não aplicar .trim() — espaços podem ser parte da senha
       })
     });
     if (!res.ok) throw new Error();
