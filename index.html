@@ -1666,10 +1666,15 @@ async function apiFetch(endpoint, options = {}) {
     throw new Error('Sem token');
   }
 
+  // FormData: NÃO definir Content-Type — o browser precisa definir
+  // automaticamente com o boundary correto (multipart/form-data; boundary=...).
+  // Para JSON e outros: define application/json como padrão.
+  const isFormData = options.body instanceof FormData;
+
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       Authorization: 'Bearer ' + token,
       ...(options.headers || {})
     }
@@ -2858,12 +2863,9 @@ document.getElementById('add-lideranca').onclick = async function () {
       const token = localStorage.getItem('token');
 
       const response = await apiFetch('/liderancas', {
-  method: 'POST',
-  headers: {
-    Authorization: 'Bearer ' + localStorage.getItem('token')
-  },
-  body: formData
-});
+        method: 'POST',
+        body: formData
+      });
 
       if (!response.ok) {
         const erro = await response.text();
@@ -3318,11 +3320,7 @@ document.getElementById('add-lideranca').onclick = async function () {
     }
 
     const response = await apiFetch('/liderancas', {
-
       method: 'POST',
-      headers: {
-  Authorization: 'Bearer ' + localStorage.getItem('token')
-},
       body: formData
     });
 
