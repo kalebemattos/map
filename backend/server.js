@@ -1284,12 +1284,13 @@ app.put('/api/pins/:id',
   }
 });
 
-// Rota para o Dono criar novos usuários
+// Rota para o Dono ou Admin criar novos usuários
+// Admin não pode criar usuários com nível "dono"
 app.post('/api/usuarios',
   createUserLimiter,
   auth,
   withTenant,
-  allow('dono'),
+  allow('dono', 'admin'),
   async (req, res) => {
 
   try {
@@ -1309,6 +1310,11 @@ if (!niveisPermitidos.includes(nivel)) {
   return res.status(400).json({
     error: 'Nivel inválido'
   });
+}
+
+// Admin não pode criar usuários com nível dono
+if (req.user.nivel === 'admin' && nivel === 'dono') {
+  return res.status(403).json({ error: 'Administradores não podem criar usuários com nível Dono.' });
 }
 
     
@@ -1338,7 +1344,7 @@ if (!niveisPermitidos.includes(nivel)) {
 app.get('/api/usuarios',
   auth,
   withTenant,
-  allow('dono'),
+  allow('dono', 'admin'),
   async (req, res) => {
   try {
     const users = await dbAll(
@@ -1352,7 +1358,8 @@ app.get('/api/usuarios',
 });
 
 // Rota para editar usuário
-app.put('/api/usuarios/:id', auth, withTenant, allow('dono'), upload.single('foto'), async (req, res) => {
+// Admin pode editar qualquer usuário exceto os de nível dono
+app.put('/api/usuarios/:id', auth, withTenant, allow('dono', 'admin'), upload.single('foto'), async (req, res) => {
   try {
     const { id } = req.params;
     const { nome, nivel, regiao_vinculada, senha, contato, lider_principal } = req.body;
@@ -1360,6 +1367,14 @@ app.put('/api/usuarios/:id', auth, withTenant, allow('dono'), upload.single('fot
     const niveisPermitidos = NIVEIS_TODOS;
     if (nivel && !niveisPermitidos.includes(nivel)) {
       return res.status(400).json({ error: 'Nível inválido' });
+    }
+
+    // Admin não pode editar usuários dono nem promover alguém a dono
+    if (req.user.nivel === 'admin') {
+      const alvo = await dbGet('SELECT nivel FROM usuarios WHERE id = $1 AND tenant_id = $2', [id, req.tenantId]);
+      if (!alvo) return res.status(404).json({ error: 'Usuário não encontrado.' });
+      if (alvo.nivel === 'dono') return res.status(403).json({ error: 'Administradores não podem editar usuários com nível Dono.' });
+      if (nivel === 'dono') return res.status(403).json({ error: 'Administradores não podem promover usuários para o nível Dono.' });
     }
 
     // Monta os campos a atualizar dinamicamente
@@ -1421,9 +1436,17 @@ app.get('/api/lideres-regiao', auth, withTenant, async (req, res) => {
 });
 
 // Rota para excluir usuário
-app.delete('/api/usuarios/:id', auth, withTenant, allow('dono'), async (req, res) => {
+// Admin pode excluir qualquer usuário exceto os de nível dono
+app.delete('/api/usuarios/:id', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
 
   try {
+    // Admin não pode excluir usuários dono
+    if (req.user.nivel === 'admin') {
+      const alvo = await dbGet('SELECT nivel FROM usuarios WHERE id = $1 AND tenant_id = $2', [req.params.id, req.tenantId]);
+      if (!alvo) return res.status(404).json({ error: 'Usuário não encontrado.' });
+      if (alvo.nivel === 'dono') return res.status(403).json({ error: 'Administradores não podem excluir usuários com nível Dono.' });
+    }
+
     const result = await pool.query(
       'DELETE FROM usuarios WHERE id = $1 AND tenant_id = $2',
       [req.params.id, req.tenantId]

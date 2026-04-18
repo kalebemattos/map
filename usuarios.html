@@ -579,18 +579,32 @@ const NIVEL_LABEL = {
 }
 
 // ── Auth ──────────────────────────────────────────────────
+let meuNivel = null  // nivel do usuário logado — usado em todo o script
+
 ;(async function init() {
   const user  = JSON.parse(localStorage.getItem('user') || 'null')
   const token = localStorage.getItem('token')
-  if (!token || !user || user.nivel !== 'dono') {
-    alert('Acesso restrito ao Dono do sistema.')
+  if (!token || !user || (user.nivel !== 'dono' && user.nivel !== 'admin')) {
+    alert('Acesso restrito a Administradores e Donos do sistema.')
     location.href = '../index.html'
     return
   }
-  const nome = user.nome || user.usuario || 'Dono'
+  meuNivel = user.nivel
+
+  const nome = user.nome || user.usuario || 'Usuário'
   document.getElementById('header-nome').textContent = nome
   document.getElementById('header-initials').textContent =
     nome.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase()
+
+  // Admin não pode criar ou promover usuários para "dono" — esconde a opção
+  if (meuNivel === 'admin') {
+    ;['u_nivel', 'edit-nivel'].forEach(id => {
+      const sel = document.getElementById(id)
+      if (!sel) return
+      Array.from(sel.options).forEach(o => { if (o.value === 'dono') o.hidden = true })
+    })
+  }
+
   await carregarConfig()
   carregarUsuarios()
 })()
@@ -818,6 +832,8 @@ async function carregarUsuarios() {
       const badgeStyle = mapaNivel ? `style="background:${mapaNivel.badge_fundo};color:${mapaNivel.badge_texto}"` : ''
       const regiaoLabel = u.regiao_vinculada ? (REGIOES_LABEL[u.regiao_vinculada] || u.regiao_vinculada) : ''
       const isSelf = String(u.id) === String(meId)
+      // Admin não pode tocar em usuários dono
+      const isProtegido = meuNivel === 'admin' && u.nivel === 'dono'
 
       const avatarHtml = u.foto_url
         ? `<div class="user-avatar" style="padding:0;overflow:hidden;"><img src="${API_BASE + u.foto_url}" alt="${u.nome}"></div>`
@@ -840,17 +856,15 @@ async function carregarUsuarios() {
           </div>
         </div>
         <div class="user-actions">
-          <button class="${liderClass}" title="${liderTitle}" data-id="${u.id}" data-estado="${liderAtivo}">⭐</button>
-          <button class="btn-icon btn-icon-edit" title="Editar" data-u='${JSON.stringify(u).replace(/'/g,"&#39;")}'>✏️</button>
-          ${isSelf ? '' : `<button class="btn-icon btn-icon-del" title="Excluir" data-id="${u.id}" data-nome="${(u.nome||'').replace(/"/g,'&quot;')}">🗑</button>`}
+          ${!isProtegido ? `<button class="${liderClass}" title="${liderTitle}" data-id="${u.id}" data-estado="${liderAtivo}">⭐</button>` : ''}
+          ${!isProtegido ? `<button class="btn-icon btn-icon-edit" title="Editar" data-u='${JSON.stringify(u).replace(/'/g,"&#39;")}'>✏️</button>` : ''}
+          ${(!isSelf && !isProtegido) ? `<button class="btn-icon btn-icon-del" title="Excluir" data-id="${u.id}" data-nome="${(u.nome||'').replace(/"/g,'&quot;')}">🗑</button>` : ''}
         </div>`
 
-      div.querySelector('.btn-icon-lider').addEventListener('click', () => {
-        toggleLiderPrincipal(u.id, liderAtivo)
-      })
-      div.querySelector('.btn-icon-edit').addEventListener('click', () => {
-        abrirModalEditar(u)
-      })
+      const btnLider = div.querySelector('.btn-icon-lider')
+      if (btnLider) btnLider.addEventListener('click', () => toggleLiderPrincipal(u.id, liderAtivo))
+      const btnEdit = div.querySelector('.btn-icon-edit')
+      if (btnEdit) btnEdit.addEventListener('click', () => abrirModalEditar(u))
       const btnDel = div.querySelector('.btn-icon-del')
       if (btnDel) btnDel.addEventListener('click', () => excluirUsuario(u.id, u.nome || u.usuario))
 
