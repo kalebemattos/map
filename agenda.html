@@ -504,7 +504,9 @@ body {
       </div>
       <div class="form-group">
         <label>Cidade</label>
-        <input id="ev-cidade" type="text" placeholder="Ex: Campos dos Goytacazes" maxlength="120">
+        <select id="ev-cidade">
+          <option value="">— nenhuma —</option>
+        </select>
       </div>
     </div>
 
@@ -642,6 +644,30 @@ function preencherSelectRegiao() {
   if (meNivel === 'lider_regiao' && meRegiao) {
     sel.value = meRegiao; sel.disabled = true;
   }
+  // Quando a região muda, recarrega o select de cidades
+  sel.addEventListener('change', () => preencherCidades(sel.value));
+}
+
+// Preenche o <select id="ev-cidade"> com as cidades da região escolhida
+function preencherCidades(regiaoChave, cidadeAtual) {
+  const selCidade = document.getElementById('ev-cidade');
+  // Limpa opções anteriores
+  selCidade.innerHTML = '<option value="">— nenhuma —</option>';
+
+  if (!regiaoChave) return; // sem região → mantém vazio
+
+  const regiao = (configSistema.regioes || []).find(r => r.chave === regiaoChave);
+  if (!regiao) return;
+
+  const cidades = Array.isArray(regiao.cidades) ? regiao.cidades : [];
+  cidades.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    selCidade.appendChild(opt);
+  });
+
+  // Pré-seleciona cidade se vier do evento (edição)
+  if (cidadeAtual) selCidade.value = cidadeAtual;
 }
 
 // ── CALENDÁRIO ───────────────────────────────────────────────────────────────
@@ -822,7 +848,7 @@ async function aceitarSugestao(id) {
   document.getElementById('ev-titulo').value     = s.titulo;
   document.getElementById('ev-descricao').value  = s.descricao || '';
   document.getElementById('ev-regiao').value     = s.regiao || '';
-  document.getElementById('ev-cidade').value     = s.cidade || '';
+  preencherCidades(s.regiao || '', s.cidade || '');
   if (s.pessoa_id) {
     pessoaIdSelecionada = s.pessoa_id;
     document.getElementById('ev-pessoa-id').value = s.pessoa_id;
@@ -895,6 +921,7 @@ function agendarVisitaRegiao(regiao) {
   abrirModalCriar();
   document.getElementById('ev-titulo').value = `Visita à região ${regiao}`;
   document.getElementById('ev-regiao').value = regiao;
+  preencherCidades(regiao);
   selecionarTipo(document.querySelector('[data-tipo="visita"]'));
   selecionarPrioridade(document.querySelector('.prio-btn[data-p="1"]'));
   mostrarTab('sug');
@@ -948,7 +975,6 @@ function abrirModalCriar(dataSel) {
   document.getElementById('modal-titulo').textContent = 'Novo Evento';
   document.getElementById('ev-titulo').value    = '';
   document.getElementById('ev-descricao').value = '';
-  document.getElementById('ev-cidade').value    = '';
   document.getElementById('ev-recorrencia').value = '';
   document.getElementById('btn-salvar-evento').removeAttribute('data-sugestao-origem');
   limparLider();
@@ -959,7 +985,13 @@ function abrirModalCriar(dataSel) {
   document.getElementById('ev-data-inicio').value = toLocalInputVal(inicio);
   document.getElementById('ev-data-fim').value    = toLocalInputVal(fim);
 
-  if (meNivel === 'lider_regiao' && meRegiao) document.getElementById('ev-regiao').value = meRegiao;
+  if (meNivel === 'lider_regiao' && meRegiao) {
+    document.getElementById('ev-regiao').value = meRegiao;
+    preencherCidades(meRegiao);
+  } else {
+    document.getElementById('ev-regiao').value = '';
+    preencherCidades('');
+  }
 
   selecionarTipo(document.querySelector('[data-tipo="reuniao"]'));
   selecionarPrioridade(document.querySelector('.prio-btn[data-p="2"]'));
@@ -1093,8 +1125,8 @@ function abrirEditar(ev) {
   document.getElementById('modal-titulo').textContent = 'Editar Evento';
   document.getElementById('ev-titulo').value     = ev.titulo || '';
   document.getElementById('ev-descricao').value  = ev.descricao || '';
-  document.getElementById('ev-cidade').value     = ev.cidade || '';
   document.getElementById('ev-regiao').value     = ev.regiao || '';
+  preencherCidades(ev.regiao || '', ev.cidade || '');
   document.getElementById('ev-data-inicio').value = toLocalInputVal(new Date(ev.data_inicio));
   if (ev.data_fim) document.getElementById('ev-data-fim').value = toLocalInputVal(new Date(ev.data_fim));
   if (ev.pessoa_id) {
