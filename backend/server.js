@@ -2951,8 +2951,9 @@ app.get('/api/agenda/eventos', auth, withTenant, allowAll(), async (req, res) =>
     let whereParts = [`e.tenant_id = $${idx++}`];
 
     if (mes) {
-      whereParts.push(`date_trunc('month', e.data_inicio AT TIME ZONE 'America/Sao_Paulo') = date_trunc('month', $${idx}::timestamptz AT TIME ZONE 'America/Sao_Paulo')`);
-      params.push(mes + '-01');
+      // Compara o mês no fuso de Brasília usando TO_CHAR — evita problemas com cast UTC→local
+      whereParts.push(`TO_CHAR(e.data_inicio AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM') = $${idx}`);
+      params.push(mes); // ex: '2026-04'
       idx++;
     }
     if (rf.sql) {
