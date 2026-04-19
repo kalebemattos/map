@@ -3409,7 +3409,7 @@ server.listen(PORT, async () => {
         regiao       TEXT,
         cidade       TEXT,
         pessoa_id    INTEGER REFERENCES pessoas(id) ON DELETE SET NULL,
-        criado_por   INTEGER,
+        criado_por   TEXT,    -- UUID do usuario que criou
         -- metadados extras (lat/lng, link, notas)
         meta         JSONB NOT NULL DEFAULT '{}',
         -- se veio de sugestão automática
