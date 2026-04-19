@@ -1249,6 +1249,12 @@ const CATALOGO_CARDS = [
     cta: 'Ver lideranças',
   },
   {
+    id: 'card-agenda', href: './agenda.html', cor: 'card-teal',
+    icon: '🗓️', titulo: 'Agenda Inteligente',
+    desc: 'Gerencie compromissos, receba sugestões automáticas de visitas e identifique regiões e líderes sem atividade recente.',
+    cta: 'Abrir agenda',
+  },
+  {
     id: 'card-reunioes', href: './reunioes.html', cor: 'card-cyan',
     icon: '🎥', titulo: 'Videoconferência',
     desc: 'Reuniões por vídeo com as lideranças — salas por região, agenda, convites e chat em tempo real.',
@@ -1288,6 +1294,7 @@ const CARDS_NIVEL_PADRAO = {
   'card-personalizacao':  ['dono'],
   'card-command-center':  ['dono', 'admin'],
   'card-organograma':     null,
+  'card-agenda':          null,   // visível para todos os níveis
 }
 
 async function renderizarCards() {

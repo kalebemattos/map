@@ -2781,6 +2781,518 @@ app.get('/api/eleicoes/bairros', async (req, res) => {
 });
 
 /* ================= KEEP ALIVE (RENDER) ================= */
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║                    AGENDA INTELIGENTE                                ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+
+// ── helpers internos ──────────────────────────────────────────────────────
+
+/**
+ * Retorna filtro de região dependendo do nível do usuário.
+ * dono/admin → sem filtro de região
+ * demais     → restringe à regiao_vinculada do token
+ */
+function regiaoFilter(req) {
+  if (isPrivileged(req.user.nivel)) return { sql: '', params: [] };
+  const reg = req.user.regiao ?? null;
+  if (!reg) return { sql: ' AND 1=0', params: [] }; // sem região = sem acesso
+  return { sql: ' AND regiao = $__REG__', params: [reg] };
+}
+
+/**
+ * Engine de sugestões: analisa dados do tenant e (re)gera sugestões
+ * automáticas na tabela agenda_sugestoes.
+ * Chamada ao criar/concluir eventos e via GET /api/agenda/sugestoes.
+ */
+async function gerarSugestoes(tenantId) {
+  const client = await pool.connect();
+  try {
+    // ── 1. Regiões com baixa atividade (poucos eventos nos últimos 30 dias) ──
+    const regioesBaixas = await client.query(`
+      SELECT DISTINCT l.regiao,
+        COUNT(DISTINCT l.id) AS total_lideres,
+        COALESCE(SUM(l.expectativa_votos),0) AS votos_potenciais,
+        COUNT(DISTINCT e.id) AS eventos_recentes
+      FROM liderancas l
+      LEFT JOIN agenda_eventos e
+        ON e.tenant_id = l.tenant_id
+        AND e.regiao   = l.regiao
+        AND e.data_inicio >= NOW() - INTERVAL '30 days'
+        AND e.status  <> 'cancelado'
+      WHERE l.tenant_id = $1
+        AND l.regiao IS NOT NULL
+      GROUP BY l.regiao
+      HAVING COUNT(DISTINCT e.id) < 2
+      ORDER BY votos_potenciais DESC
+      LIMIT 5
+    `, [tenantId]);
+
+    // ── 2. Líderes inativos (sem evento vinculado nos últimos 45 dias) ──
+    const lideresInativos = await client.query(`
+      SELECT p.id AS pessoa_id, p.nome, l.regiao, l.cidade,
+        l.expectativa_votos,
+        MAX(e.data_inicio) AS ultimo_contato
+      FROM pessoas p
+      JOIN liderancas l ON l.pessoa_id = p.id AND l.tenant_id = p.tenant_id
+      LEFT JOIN agenda_eventos e
+        ON e.pessoa_id = p.id
+        AND e.tenant_id = p.tenant_id
+        AND e.status <> 'cancelado'
+      WHERE p.tenant_id = $1
+        AND l.status = 'ativa'
+      GROUP BY p.id, p.nome, l.regiao, l.cidade, l.expectativa_votos
+      HAVING MAX(e.data_inicio) < NOW() - INTERVAL '45 days'
+          OR MAX(e.data_inicio) IS NULL
+      ORDER BY l.expectativa_votos DESC NULLS LAST
+      LIMIT 8
+    `, [tenantId]);
+
+    // ── 3. Cidades prioritárias (muitos votos potenciais, poucos eventos) ──
+    const cidadesPrioritarias = await client.query(`
+      SELECT l.cidade, l.regiao,
+        COALESCE(SUM(l.expectativa_votos),0) AS votos_potenciais,
+        COUNT(DISTINCT l.id) AS total_lideres,
+        COUNT(DISTINCT e.id) AS eventos_recentes
+      FROM liderancas l
+      LEFT JOIN agenda_eventos e
+        ON e.tenant_id = l.tenant_id
+        AND e.cidade   = l.cidade
+        AND e.data_inicio >= NOW() - INTERVAL '60 days'
+        AND e.status <> 'cancelado'
+      WHERE l.tenant_id = $1
+        AND l.cidade IS NOT NULL
+      GROUP BY l.cidade, l.regiao
+      HAVING COUNT(DISTINCT e.id) < 1
+      ORDER BY votos_potenciais DESC
+      LIMIT 5
+    `, [tenantId]);
+
+    await client.query('BEGIN');
+
+    // Expira sugestões pendentes antigas (> 7 dias) antes de regenerar
+    await client.query(`
+      UPDATE agenda_sugestoes
+      SET aceita = FALSE, aceita_em = NOW()
+      WHERE tenant_id = $1
+        AND aceita IS NULL
+        AND gerada_em < NOW() - INTERVAL '7 days'
+    `, [tenantId]);
+
+    const inserirSugestao = async (tipo, titulo, descricao, score, regiao, cidade, pessoaId) => {
+      // Evita duplicata pendente do mesmo tipo + regiao/pessoa
+      const dup = await client.query(`
+        SELECT id FROM agenda_sugestoes
+        WHERE tenant_id = $1 AND tipo = $2 AND aceita IS NULL
+          AND COALESCE(regiao,'') = COALESCE($3,'')
+          AND COALESCE(pessoa_id::text,'') = COALESCE($4::text,'')
+        LIMIT 1
+      `, [tenantId, tipo, regiao ?? null, pessoaId ?? null]);
+      if (dup.rows.length) return; // já existe
+
+      await client.query(`
+        INSERT INTO agenda_sugestoes
+          (tenant_id, tipo, titulo, descricao, score, regiao, cidade, pessoa_id, expira_em)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8, NOW() + INTERVAL '7 days')
+      `, [tenantId, tipo, titulo, descricao, score, regiao ?? null, cidade ?? null, pessoaId ?? null]);
+    };
+
+    for (const r of regioesBaixas.rows) {
+      const score = Math.min(95, 50 + Math.round(Number(r.votos_potenciais) / 500));
+      await inserirSugestao(
+        'regiao_inativa',
+        `Visitar região ${r.regiao}`,
+        `A região ${r.regiao} tem ${r.total_lideres} líder(es) e ${r.votos_potenciais} votos potenciais, mas apenas ${r.eventos_recentes} evento(s) nos últimos 30 dias.`,
+        score, r.regiao, null, null
+      );
+    }
+
+    for (const l of lideresInativos.rows) {
+      const diasSemContato = l.ultimo_contato
+        ? Math.round((Date.now() - new Date(l.ultimo_contato)) / 86400000)
+        : 999;
+      const score = Math.min(90, 40 + Math.round(diasSemContato / 3));
+      await inserirSugestao(
+        'lider_inativo',
+        `Contatar ${l.nome}`,
+        `${l.nome} (${l.cidade || l.regiao}) está sem contato há ${diasSemContato > 500 ? 'mais de 1 ano' : diasSemContato + ' dias'}. Expectativa: ${l.expectativa_votos} votos.`,
+        score, l.regiao, l.cidade, l.pessoa_id
+      );
+    }
+
+    for (const c of cidadesPrioritarias.rows) {
+      const score = Math.min(85, 45 + Math.round(Number(c.votos_potenciais) / 400));
+      await inserirSugestao(
+        'cidade_prioritaria',
+        `Agendar visita em ${c.cidade}`,
+        `${c.cidade} tem ${c.total_lideres} líder(es) e ${c.votos_potenciais} votos potenciais, mas nenhum evento agendado nos últimos 60 dias.`,
+        score, c.regiao, c.cidade, null
+      );
+    }
+
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[gerarSugestoes] erro:', err.message);
+  } finally {
+    client.release();
+  }
+}
+
+// ── GET /api/agenda/eventos ─────────────────────────────────────────────
+// Query params: mes (YYYY-MM), regiao, tipo, status
+app.get('/api/agenda/eventos', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const t   = req.tenantId;
+    const mes = req.query.mes; // ex: "2026-04"
+    const rf  = regiaoFilter(req);
+
+    let idx = 1;
+    const params = [t];
+    let whereParts = [`e.tenant_id = $${idx++}`];
+
+    if (mes) {
+      whereParts.push(`date_trunc('month', e.data_inicio AT TIME ZONE 'America/Sao_Paulo') = date_trunc('month', $${idx}::timestamptz AT TIME ZONE 'America/Sao_Paulo')`);
+      params.push(mes + '-01');
+      idx++;
+    }
+    if (rf.sql) {
+      // substitui placeholder pelo índice correto
+      const rfSql = rf.sql.replace('$__REG__', `$${idx}`);
+      whereParts.push(rfSql.replace(/^ AND /, ''));
+      params.push(...rf.params);
+      idx += rf.params.length;
+    }
+    if (req.query.tipo)   { whereParts.push(`e.tipo = $${idx++}`);   params.push(req.query.tipo); }
+    if (req.query.status) { whereParts.push(`e.status = $${idx++}`); params.push(req.query.status); }
+
+    const rows = await dbAll(`
+      SELECT e.*,
+        p.nome AS pessoa_nome,
+        p.foto AS pessoa_foto
+      FROM agenda_eventos e
+      LEFT JOIN pessoas p ON p.id = e.pessoa_id AND p.tenant_id = e.tenant_id
+      WHERE ${whereParts.join(' AND ')}
+      ORDER BY e.data_inicio ASC
+    `, params);
+
+    res.json(rows);
+  } catch (err) {
+    console.error('[GET /api/agenda/eventos]', err);
+    res.status(500).json({ error: 'Erro ao buscar eventos' });
+  }
+});
+
+// ── POST /api/agenda/eventos ────────────────────────────────────────────
+app.post('/api/agenda/eventos', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const t = req.tenantId;
+    const {
+      titulo, descricao, tipo = 'reuniao', prioridade = 2,
+      data_inicio, data_fim, regiao, cidade, pessoa_id, meta = {},
+      sugestao_origem, recorrencia
+    } = req.body;
+
+    if (!titulo || !data_inicio) {
+      return res.status(400).json({ error: 'titulo e data_inicio são obrigatórios' });
+    }
+
+    // lider_regiao só pode criar em sua própria região
+    if (!isPrivileged(req.user.nivel) && regiao && regiao !== req.user.regiao) {
+      return res.status(403).json({ error: 'Você só pode criar eventos na sua região' });
+    }
+
+    const row = await dbGet(`
+      INSERT INTO agenda_eventos
+        (tenant_id, titulo, descricao, tipo, prioridade, data_inicio, data_fim,
+         regiao, cidade, pessoa_id, criado_por, meta, sugestao_origem)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      RETURNING *
+    `, [t, titulo.trim(), descricao ?? null, tipo, Number(prioridade),
+        data_inicio, data_fim ?? null, regiao ?? null, cidade ?? null,
+        pessoa_id ?? null, req.user.id, meta, sugestao_origem ?? null]);
+
+    // Se o evento veio de uma sugestão, marca como aceita
+    if (sugestao_origem) {
+      await pool.query(`
+        UPDATE agenda_sugestoes SET aceita = TRUE, aceita_em = NOW(), evento_gerado = $1
+        WHERE id = $2 AND tenant_id = $3
+      `, [row.id, parseInt(sugestao_origem), t]);
+    }
+
+    // Configura recorrência se solicitado
+    if (recorrencia?.frequencia) {
+      await pool.query(`
+        INSERT INTO agenda_recorrencias (tenant_id, evento_id, frequencia, dia_semana, proximo_em)
+        VALUES ($1,$2,$3,$4,$5)
+      `, [t, row.id, recorrencia.frequencia,
+          recorrencia.dia_semana ?? null,
+          recorrencia.proximo_em ?? data_inicio]);
+    }
+
+    // Regenera sugestões em background (sem bloquear resposta)
+    gerarSugestoes(t).catch(e => console.error('[bg sugestoes]', e.message));
+
+    res.status(201).json(row);
+  } catch (err) {
+    console.error('[POST /api/agenda/eventos]', err);
+    res.status(500).json({ error: 'Erro ao criar evento' });
+  }
+});
+
+// ── PUT /api/agenda/eventos/:id ─────────────────────────────────────────
+app.put('/api/agenda/eventos/:id', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const t  = req.tenantId;
+    const id = parseInt(req.params.id);
+
+    const existing = await dbGet(
+      'SELECT * FROM agenda_eventos WHERE id = $1 AND tenant_id = $2', [id, t]
+    );
+    if (!existing) return res.status(404).json({ error: 'Evento não encontrado' });
+
+    // lider_regiao só edita eventos da sua região
+    if (!isPrivileged(req.user.nivel) && existing.regiao !== req.user.regiao) {
+      return res.status(403).json({ error: 'Sem permissão para editar este evento' });
+    }
+
+    const fields = [];
+    const values = [];
+    let idx = 1;
+    const set = (col, val) => { if (val !== undefined) { fields.push(`${col} = $${idx++}`); values.push(val); } };
+
+    const b = req.body;
+    set('titulo',       b.titulo);
+    set('descricao',    b.descricao);
+    set('tipo',         b.tipo);
+    set('prioridade',   b.prioridade != null ? Number(b.prioridade) : undefined);
+    set('status',       b.status);
+    set('data_inicio',  b.data_inicio);
+    set('data_fim',     b.data_fim);
+    set('regiao',       b.regiao);
+    set('cidade',       b.cidade);
+    set('pessoa_id',    b.pessoa_id);
+    set('meta',         b.meta);
+
+    if (!fields.length) return res.status(400).json({ error: 'Nenhum campo para atualizar' });
+    fields.push(`atualizado_em = NOW()`);
+
+    values.push(id, t);
+    const updated = await dbGet(`
+      UPDATE agenda_eventos SET ${fields.join(', ')}
+      WHERE id = $${idx} AND tenant_id = $${idx + 1}
+      RETURNING *
+    `, values);
+
+    // Se concluído, regenera sugestões
+    if (b.status === 'concluido') {
+      gerarSugestoes(t).catch(e => console.error('[bg sugestoes]', e.message));
+    }
+
+    res.json(updated);
+  } catch (err) {
+    console.error('[PUT /api/agenda/eventos/:id]', err);
+    res.status(500).json({ error: 'Erro ao atualizar evento' });
+  }
+});
+
+// ── DELETE /api/agenda/eventos/:id ─────────────────────────────────────
+app.delete('/api/agenda/eventos/:id', auth, withTenant, allow('dono', 'admin', 'lider_regiao'), async (req, res) => {
+  try {
+    const t  = req.tenantId;
+    const id = parseInt(req.params.id);
+
+    const existing = await dbGet(
+      'SELECT regiao, criado_por FROM agenda_eventos WHERE id = $1 AND tenant_id = $2', [id, t]
+    );
+    if (!existing) return res.status(404).json({ error: 'Evento não encontrado' });
+
+    // lider_regiao só apaga eventos da sua região
+    if (!isPrivileged(req.user.nivel) && existing.regiao !== req.user.regiao) {
+      return res.status(403).json({ error: 'Sem permissão para excluir este evento' });
+    }
+
+    await pool.query('DELETE FROM agenda_eventos WHERE id = $1 AND tenant_id = $2', [id, t]);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[DELETE /api/agenda/eventos/:id]', err);
+    res.status(500).json({ error: 'Erro ao excluir evento' });
+  }
+});
+
+// ── GET /api/agenda/sugestoes ───────────────────────────────────────────
+// Retorna as sugestões pendentes (aceita IS NULL) ordenadas por score DESC
+app.get('/api/agenda/sugestoes', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const t  = req.tenantId;
+    const rf = regiaoFilter(req);
+    let extraSql = '', extraParams = [];
+    if (rf.sql) {
+      extraSql = rf.sql.replace('$__REG__', `$2`);
+      extraParams = rf.params;
+    }
+
+    // Dispara regeneração em background na primeira chamada do dia
+    gerarSugestoes(t).catch(e => console.error('[bg sugestoes]', e.message));
+
+    const sugestoes = await dbAll(`
+      SELECT s.*, p.nome AS pessoa_nome
+      FROM agenda_sugestoes s
+      LEFT JOIN pessoas p ON p.id = s.pessoa_id AND p.tenant_id = s.tenant_id
+      WHERE s.tenant_id = $1
+        AND s.aceita IS NULL
+        AND (s.expira_em IS NULL OR s.expira_em > NOW())
+        ${extraSql}
+      ORDER BY s.score DESC, s.gerada_em DESC
+      LIMIT 20
+    `, [t, ...extraParams]);
+
+    res.json(sugestoes);
+  } catch (err) {
+    console.error('[GET /api/agenda/sugestoes]', err);
+    res.status(500).json({ error: 'Erro ao buscar sugestões' });
+  }
+});
+
+// ── PATCH /api/agenda/sugestoes/:id ────────────────────────────────────
+// Aceitar (aceita=true) ou ignorar (aceita=false) uma sugestão
+app.patch('/api/agenda/sugestoes/:id', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const t      = req.tenantId;
+    const id     = parseInt(req.params.id);
+    const aceita = req.body.aceita === true;
+
+    await pool.query(`
+      UPDATE agenda_sugestoes SET aceita = $1, aceita_em = NOW()
+      WHERE id = $2 AND tenant_id = $3
+    `, [aceita, id, t]);
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[PATCH /api/agenda/sugestoes/:id]', err);
+    res.status(500).json({ error: 'Erro ao atualizar sugestão' });
+  }
+});
+
+// ── GET /api/agenda/insights ────────────────────────────────────────────
+// Painel de inteligência: KPIs de atividade, regiões quentes/frias, etc.
+app.get('/api/agenda/insights', auth, withTenant, allow('dono', 'admin', 'lider_regiao'), async (req, res) => {
+  try {
+    const t  = req.tenantId;
+    const rf = regiaoFilter(req);
+
+    let regParams = [t];
+    let regWhere  = '';
+    if (rf.sql) {
+      regWhere = rf.sql.replace('$__REG__', '$2');
+      regParams.push(...rf.params);
+    }
+
+    const [proximos, concluidos, porTipo, regioesFrias, topLideres] = await Promise.all([
+      // Próximos 7 dias
+      dbAll(`
+        SELECT COUNT(*) AS total,
+          COUNT(*) FILTER (WHERE prioridade = 1) AS alta,
+          COUNT(*) FILTER (WHERE prioridade = 2) AS media,
+          COUNT(*) FILTER (WHERE prioridade = 3) AS baixa
+        FROM agenda_eventos
+        WHERE tenant_id = $1
+          AND status = 'pendente'
+          AND data_inicio BETWEEN NOW() AND NOW() + INTERVAL '7 days'
+          ${regWhere}
+      `, regParams),
+
+      // Concluídos últimos 30 dias
+      dbAll(`
+        SELECT COUNT(*) AS total
+        FROM agenda_eventos
+        WHERE tenant_id = $1
+          AND status = 'concluido'
+          AND data_inicio >= NOW() - INTERVAL '30 days'
+          ${regWhere}
+      `, regParams),
+
+      // Distribuição por tipo (últimos 60 dias)
+      dbAll(`
+        SELECT tipo, COUNT(*) AS total
+        FROM agenda_eventos
+        WHERE tenant_id = $1
+          AND data_inicio >= NOW() - INTERVAL '60 days'
+          ${regWhere}
+        GROUP BY tipo ORDER BY total DESC
+      `, regParams),
+
+      // Regiões sem eventos nos últimos 30 dias
+      dbAll(`
+        SELECT l.regiao,
+          COUNT(DISTINCT l.id) AS lideres,
+          COALESCE(SUM(l.expectativa_votos),0) AS votos,
+          MAX(e.data_inicio) AS ultimo_evento
+        FROM liderancas l
+        LEFT JOIN agenda_eventos e
+          ON e.tenant_id = l.tenant_id AND e.regiao = l.regiao
+          AND e.data_inicio >= NOW() - INTERVAL '30 days'
+          AND e.status <> 'cancelado'
+        WHERE l.tenant_id = $1
+          AND l.regiao IS NOT NULL
+          ${regWhere}
+        GROUP BY l.regiao
+        HAVING COUNT(DISTINCT e.id) = 0
+        ORDER BY votos DESC
+        LIMIT 6
+      `, regParams),
+
+      // Top líderes por expectativa sem contato recente
+      dbAll(`
+        SELECT p.id, p.nome, l.regiao, l.cidade, l.expectativa_votos,
+          MAX(e.data_inicio) AS ultimo_contato
+        FROM pessoas p
+        JOIN liderancas l ON l.pessoa_id = p.id AND l.tenant_id = p.tenant_id
+        LEFT JOIN agenda_eventos e ON e.pessoa_id = p.id AND e.tenant_id = p.tenant_id
+          AND e.status <> 'cancelado'
+        WHERE p.tenant_id = $1 AND l.status = 'ativa'
+          ${regWhere.replace(/regiao/g, 'l.regiao')}
+        GROUP BY p.id, p.nome, l.regiao, l.cidade, l.expectativa_votos
+        ORDER BY l.expectativa_votos DESC NULLS LAST
+        LIMIT 5
+      `, regParams),
+    ]);
+
+    res.json({
+      proximos_7dias:  proximos[0] || {},
+      concluidos_30d:  concluidos[0]?.total || 0,
+      por_tipo:        porTipo,
+      regioes_frias:   regioesFrias,
+      top_lideres:     topLideres,
+    });
+  } catch (err) {
+    console.error('[GET /api/agenda/insights]', err);
+    res.status(500).json({ error: 'Erro ao buscar insights' });
+  }
+});
+
+// ── GET /api/agenda/eventos/:id ─────────────────────────────────────────
+app.get('/api/agenda/eventos/:id', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const t  = req.tenantId;
+    const id = parseInt(req.params.id);
+    const row = await dbGet(`
+      SELECT e.*, p.nome AS pessoa_nome, p.foto AS pessoa_foto
+      FROM agenda_eventos e
+      LEFT JOIN pessoas p ON p.id = e.pessoa_id AND p.tenant_id = e.tenant_id
+      WHERE e.id = $1 AND e.tenant_id = $2
+    `, [id, t]);
+    if (!row) return res.status(404).json({ error: 'Evento não encontrado' });
+
+    // lider_regiao só vê eventos de sua região
+    if (!isPrivileged(req.user.nivel) && row.regiao !== req.user.regiao) {
+      return res.status(403).json({ error: 'Sem permissão' });
+    }
+    res.json(row);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar evento' });
+  }
+});
+
 app.get("/ping", (req, res) => {
   res.status(200).send("pong");
 });
@@ -2867,5 +3379,95 @@ server.listen(PORT, async () => {
     console.log('[migration] expectativa_cidade.expectativas JSONB OK');
   } catch (e) {
     console.warn('[migration] expectativa_cidade.expectativas:', e.message);
+  }
+
+  // ── AGENDA INTELIGENTE ────────────────────────────────────────────────────
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS agenda_eventos (
+        id           SERIAL PRIMARY KEY,
+        tenant_id    INTEGER NOT NULL,
+        titulo       TEXT NOT NULL,
+        descricao    TEXT,
+        tipo         TEXT NOT NULL DEFAULT 'reuniao',
+        -- tipos: reuniao | visita | atendimento | evento_politico | ligacao | tarefa
+        status       TEXT NOT NULL DEFAULT 'pendente',
+        -- status: pendente | concluido | cancelado
+        prioridade   INTEGER NOT NULL DEFAULT 2,
+        -- 1=alta 2=media 3=baixa
+        data_inicio  TIMESTAMPTZ NOT NULL,
+        data_fim     TIMESTAMPTZ,
+        regiao       TEXT,
+        cidade       TEXT,
+        pessoa_id    INTEGER REFERENCES pessoas(id) ON DELETE SET NULL,
+        criado_por   INTEGER,
+        -- metadados extras (lat/lng, link, notas)
+        meta         JSONB NOT NULL DEFAULT '{}',
+        -- se veio de sugestão automática
+        sugestao_origem TEXT,
+        criado_em    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_eventos_tenant    ON agenda_eventos(tenant_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_eventos_data       ON agenda_eventos(tenant_id, data_inicio)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_eventos_regiao     ON agenda_eventos(tenant_id, regiao)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_eventos_pessoa     ON agenda_eventos(pessoa_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_eventos_status     ON agenda_eventos(tenant_id, status)`);
+    console.log('[migration] agenda_eventos OK');
+  } catch (e) {
+    console.warn('[migration] agenda_eventos:', e.message);
+  }
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS agenda_recorrencias (
+        id           SERIAL PRIMARY KEY,
+        tenant_id    INTEGER NOT NULL,
+        evento_id    INTEGER NOT NULL REFERENCES agenda_eventos(id) ON DELETE CASCADE,
+        frequencia   TEXT NOT NULL,
+        -- diaria | semanal | quinzenal | mensal
+        dia_semana   INTEGER[],
+        -- 0=dom … 6=sab (para semanal)
+        proximo_em   TIMESTAMPTZ NOT NULL,
+        ativa        BOOLEAN NOT NULL DEFAULT TRUE,
+        criado_em    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_rec_tenant ON agenda_recorrencias(tenant_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_rec_proximo ON agenda_recorrencias(proximo_em) WHERE ativa = TRUE`);
+    console.log('[migration] agenda_recorrencias OK');
+  } catch (e) {
+    console.warn('[migration] agenda_recorrencias:', e.message);
+  }
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS agenda_sugestoes (
+        id           SERIAL PRIMARY KEY,
+        tenant_id    INTEGER NOT NULL,
+        tipo         TEXT NOT NULL,
+        -- regiao_inativa | lider_inativo | cidade_prioritaria | followup | marco_eleitoral
+        titulo       TEXT NOT NULL,
+        descricao    TEXT,
+        score        INTEGER NOT NULL DEFAULT 50,
+        -- 0-100: quanto maior mais urgente
+        regiao       TEXT,
+        cidade       TEXT,
+        pessoa_id    INTEGER REFERENCES pessoas(id) ON DELETE CASCADE,
+        aceita       BOOLEAN,
+        -- NULL=pendente TRUE=aceita FALSE=ignorada
+        aceita_em    TIMESTAMPTZ,
+        evento_gerado INTEGER REFERENCES agenda_eventos(id) ON DELETE SET NULL,
+        gerada_em    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        expira_em    TIMESTAMPTZ
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_sug_tenant  ON agenda_sugestoes(tenant_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_sug_score   ON agenda_sugestoes(tenant_id, score DESC) WHERE aceita IS NULL`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_sug_regiao  ON agenda_sugestoes(tenant_id, regiao)`);
+    console.log('[migration] agenda_sugestoes OK');
+  } catch (e) {
+    console.warn('[migration] agenda_sugestoes:', e.message);
   }
 });
