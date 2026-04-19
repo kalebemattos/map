@@ -1284,6 +1284,136 @@ app.put('/api/pins/:id',
   }
 });
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   PINS × AGENDA — integração bidirecional
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// Mapa de cores de estado — usado para serializar o visual junto à API
+const ESTADO_COR = {
+  agendado:      '#22c55e',   // verde  — tem evento futuro
+  ativo:         '#3b82f6',   // azul   — ação < 14 dias
+  atencao:       '#f59e0b',   // âmbar  — 14-30 dias sem ação
+  inativo:       '#f97316',   // laranja — 30-60 dias sem ação
+  critico:       '#ef4444',   // vermelho — > 60 dias sem ação
+  nunca_ativado: '#94a3b8',   // cinza  — nunca teve evento
+};
+
+// Cor base por tipo (fallback quando não há estado calculado)
+const TIPO_COR_BASE = {
+  comite:             '#8e44ad',
+  base_forte:         '#0057ff',
+  lideranca_regional: '#00a650',
+  expansao:           '#ffd500',
+  agenda:             '#6ec6ff',
+  risco:              '#e53935',
+};
+
+// ── GET /api/pins/com-status ─────────────────────────────────────────────────
+// Retorna todos os pins com estado dinâmico, score de urgência e contadores
+// calculados via vw_pin_status (VIEW no Postgres).
+app.get('/api/pins/com-status', auth, withTenant, async (req, res) => {
+  try {
+    const t  = req.tenantId;
+    const rf = regiaoFilter(req);
+
+    let where = 'tenant_id = $1';
+    const params = [t];
+
+    if (rf.sql && rf.params.length) {
+      where += rf.sql.replace('$__REG__', `$${params.length + 1}`).replace(/^ AND /, ' AND ');
+      params.push(...rf.params);
+    }
+
+    const rows = await dbAll(
+      `SELECT *, '${Object.entries(ESTADO_COR).map(([k,v]) => `'${k}':'${v}'`).join(',')}'::json AS _ignorar
+       FROM vw_pin_status WHERE ${where} ORDER BY score_urgencia DESC`,
+      params
+    );
+
+    // Injeta cor_estado em cada pin para facilitar o frontend
+    const resultado = rows.map(p => ({
+      ...p,
+      cor_estado: ESTADO_COR[p.estado] || TIPO_COR_BASE[p.tipo] || '#555',
+      cor_tipo:   TIPO_COR_BASE[p.tipo] || '#555',
+    }));
+
+    res.json(resultado);
+  } catch (err) {
+    console.error('[GET /api/pins/com-status]', err);
+    res.status(500).json({ error: 'Erro ao buscar status dos pins' });
+  }
+});
+
+// ── GET /api/pins/:id/contexto ───────────────────────────────────────────────
+// Contexto completo de um pin: status + eventos recentes + próximos + líderes
+app.get('/api/pins/:id/contexto', auth, withTenant, async (req, res) => {
+  try {
+    const t  = req.tenantId;
+    const id = parseInt(req.params.id);
+
+    // Status calculado pela view
+    const pin = await dbGet(
+      'SELECT * FROM vw_pin_status WHERE id = $1 AND tenant_id = $2',
+      [id, t]
+    );
+    if (!pin) return res.status(404).json({ error: 'Pin não encontrado' });
+
+    // Eventos futuros (próximos 60 dias)
+    const eventosFuturos = await dbAll(`
+      SELECT e.id, e.titulo, e.tipo, e.prioridade, e.data_inicio, e.status,
+             p.nome AS pessoa_nome
+      FROM agenda_eventos e
+      LEFT JOIN pessoas p ON p.id = e.pessoa_id
+      WHERE e.pin_id = $1 AND e.tenant_id = $2
+        AND e.status = 'pendente'
+        AND e.data_inicio >= NOW()
+      ORDER BY e.data_inicio ASC
+      LIMIT 5
+    `, [id, t]);
+
+    // Eventos passados (últimos 90 dias)
+    const eventosRecentes = await dbAll(`
+      SELECT e.id, e.titulo, e.tipo, e.prioridade, e.data_inicio, e.status,
+             p.nome AS pessoa_nome
+      FROM agenda_eventos e
+      LEFT JOIN pessoas p ON p.id = e.pessoa_id
+      WHERE e.pin_id = $1 AND e.tenant_id = $2
+        AND e.status <> 'cancelado'
+        AND e.data_inicio < NOW()
+        AND e.data_inicio >= NOW() - INTERVAL '90 days'
+      ORDER BY e.data_inicio DESC
+      LIMIT 5
+    `, [id, t]);
+
+    // Lideranças próximas à cidade do pin
+    const liderancas = await dbAll(`
+      SELECT l.id AS lideranca_id, p.id AS pessoa_id, p.nome, p.foto,
+             l.expectativa_votos, l.status AS status_lideranca
+      FROM liderancas l
+      JOIN pessoas p ON p.id = l.pessoa_id AND p.tenant_id = l.tenant_id
+      WHERE l.tenant_id = $1
+        AND LOWER(l.cidade) = LOWER($2)
+        AND l.status = 'ativa'
+      ORDER BY l.expectativa_votos DESC NULLS LAST
+      LIMIT 5
+    `, [t, pin.cidade]);
+
+    res.json({
+      pin: {
+        ...pin,
+        cor_estado: ESTADO_COR[pin.estado] || TIPO_COR_BASE[pin.tipo] || '#555',
+        cor_tipo:   TIPO_COR_BASE[pin.tipo] || '#555',
+      },
+      eventos_futuros:  eventosFuturos,
+      eventos_recentes: eventosRecentes,
+      liderancas,
+    });
+  } catch (err) {
+    console.error('[GET /api/pins/:id/contexto]', err);
+    res.status(500).json({ error: 'Erro ao buscar contexto do pin' });
+  }
+});
+
 // Rota para o Dono ou Admin criar novos usuários
 // Admin não pode criar usuários com nível "dono"
 app.post('/api/usuarios',
@@ -2965,6 +3095,7 @@ app.get('/api/agenda/eventos', auth, withTenant, allowAll(), async (req, res) =>
     }
     if (req.query.tipo)   { whereParts.push(`e.tipo = $${idx++}`);   params.push(req.query.tipo); }
     if (req.query.status) { whereParts.push(`e.status = $${idx++}`); params.push(req.query.status); }
+    if (req.query.pin_id) { whereParts.push(`e.pin_id = $${idx++}`); params.push(parseInt(req.query.pin_id)); }
 
     const rows = await dbAll(`
       SELECT e.*,
@@ -2990,7 +3121,7 @@ app.post('/api/agenda/eventos', auth, withTenant, allowAll(), async (req, res) =
     const {
       titulo, descricao, tipo = 'reuniao', prioridade = 2,
       data_inicio, data_fim, regiao, cidade, pessoa_id, meta = {},
-      sugestao_origem, recorrencia
+      sugestao_origem, recorrencia, pin_id
     } = req.body;
 
     if (!titulo || !data_inicio) {
@@ -3010,16 +3141,34 @@ app.post('/api/agenda/eventos', auth, withTenant, allowAll(), async (req, res) =
       ? parseInt(sugestao_origem, 10) || null
       : null;
 
+    // Se o evento vem de um pin, valida que o pin é do mesmo tenant
+    const pinId = pin_id ? parseInt(pin_id) || null : null;
+    if (pinId) {
+      const pinOk = await dbGet('SELECT id FROM pins WHERE id = $1 AND tenant_id = $2', [pinId, t]);
+      if (!pinOk) return res.status(400).json({ error: 'Pin inválido para este tenant' });
+    }
+
+    // Auto-preenche regiao/cidade a partir do pin (se não fornecida explicitamente)
+    let regiaoFinal = regiao ?? null;
+    let cidadeFinal = cidade ?? null;
+    if (pinId && (!regiaoFinal || !cidadeFinal)) {
+      const pinData = await dbGet('SELECT regiao, cidade FROM pins WHERE id = $1', [pinId]);
+      if (pinData) {
+        regiaoFinal = regiaoFinal || pinData.regiao || null;
+        cidadeFinal = cidadeFinal || pinData.cidade || null;
+      }
+    }
+
     const row = await dbGet(`
       INSERT INTO agenda_eventos
         (tenant_id, titulo, descricao, tipo, prioridade, data_inicio, data_fim,
-         regiao, cidade, pessoa_id, criado_por, meta, sugestao_origem)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13)
+         regiao, cidade, pessoa_id, criado_por, meta, sugestao_origem, pin_id)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14)
       RETURNING *
     `, [t, titulo.trim(), descricao ?? null, tipo, Number(prioridade),
-        data_inicio, data_fim ?? null, regiao ?? null, cidade ?? null,
+        data_inicio, data_fim ?? null, regiaoFinal, cidadeFinal,
         pessoa_id ? Number(pessoa_id) : null, req.user.id,
-        metaJson, sugOrigemId ? String(sugOrigemId) : null]);
+        metaJson, sugOrigemId ? String(sugOrigemId) : null, pinId]);
 
     // Se o evento veio de uma sugestão, marca como aceita
     if (sugOrigemId) {
@@ -3424,6 +3573,9 @@ server.listen(PORT, async () => {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_eventos_regiao     ON agenda_eventos(tenant_id, regiao)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_eventos_pessoa     ON agenda_eventos(pessoa_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_eventos_status     ON agenda_eventos(tenant_id, status)`);
+    // Integração pins × agenda
+    await pool.query(`ALTER TABLE agenda_eventos ADD COLUMN IF NOT EXISTS pin_id INTEGER REFERENCES pins(id) ON DELETE SET NULL`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_agenda_eventos_pin ON agenda_eventos(pin_id)`);
     console.log('[migration] agenda_eventos OK');
   } catch (e) {
     console.warn('[migration] agenda_eventos:', e.message);

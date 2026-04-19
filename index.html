@@ -553,25 +553,112 @@ body.sidebar-closed #map {
 
 /* ===== PIN POPUP ===== */
 .pin-popup {
-  width: 230px;
+  width: 270px;
   font-family: 'DM Sans', Arial, sans-serif;
 }
 
-.pin-popup h4 {
-  margin: 0 0 4px 0;
+/* Cabeçalho: tipo + estado */
+.pp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.pp-tipo-label {
   font-size: 14px;
   font-weight: 700;
   color: var(--slate-900);
 }
-
-.pin-popup small {
+.pp-estado-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  color: #fff;
+  white-space: nowrap;
+}
+.pp-cidade {
   font-size: 11px;
   color: var(--slate-500);
+  margin-bottom: 8px;
 }
 
+/* Barra de urgência */
+.pp-urgencia-wrap {
+  margin-bottom: 8px;
+}
+.pp-urgencia-label {
+  font-size: 10px;
+  color: var(--slate-500);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+.pp-urgencia-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--slate-100);
+  overflow: hidden;
+}
+.pp-urgencia-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .3s;
+}
+
+/* Linha de contadores */
+.pp-counters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.pp-counter {
+  flex: 1;
+  background: var(--slate-50);
+  border-radius: 7px;
+  padding: 5px 7px;
+  text-align: center;
+  border: 1px solid var(--slate-100);
+}
+.pp-counter-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--blue-main);
+}
+.pp-counter-lbl {
+  font-size: 9px;
+  color: var(--slate-500);
+  margin-top: 1px;
+}
+
+/* Próximo evento */
+.pp-proximo {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: #166534;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.pp-sem-evento {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: #9a3412;
+  margin-bottom: 8px;
+}
+
+/* Textarea de observações */
 .pin-popup textarea {
   width: 100%;
-  margin-top: 8px;
+  margin-top: 2px;
   padding: 7px 9px;
   border-radius: 8px;
   border: 1.5px solid var(--slate-200);
@@ -579,34 +666,108 @@ body.sidebar-closed #map {
   font-family: inherit;
   resize: vertical;
   outline: none;
+  min-height: 52px;
 }
+.pin-popup textarea:focus { border-color: var(--blue-main); }
 
-.pin-popup textarea:focus {
-  border-color: var(--blue-main);
-}
-
+/* Ações */
 .pin-popup-actions {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-top: 8px;
 }
-
 .pin-btn {
   flex: 1;
+  min-width: 60px;
   border: none;
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-radius: 7px;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   font-family: inherit;
   cursor: pointer;
   transition: opacity 0.15s;
+  white-space: nowrap;
 }
+.pin-btn:hover { opacity: 0.82; }
+.pin-btn.save    { background: var(--blue-main); color: #fff; }
+.pin-btn.delete  { background: var(--red);       color: #fff; }
+.pin-btn.agendar { background: #22c55e;           color: #fff; }
+.pin-btn.agenda  { background: #8b5cf6;           color: #fff; }
 
-.pin-btn:hover { opacity: 0.85; }
-.pin-btn.save { background: var(--blue-main); color: #fff; }
-.pin-btn.delete { background: var(--red); color: #fff; }
+/* ===== MODAL QUICK-AGENDA (agendar a partir do pin) ===== */
+#modal-pin-agenda {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,.45);
+  align-items: center;
+  justify-content: center;
+}
+#modal-pin-agenda.open { display: flex; }
+.pag-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  width: 380px;
+  max-width: 96vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  font-family: 'DM Sans', sans-serif;
+}
+.pag-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--slate-900);
+  margin-bottom: 4px;
+}
+.pag-sub {
+  font-size: 12px;
+  color: var(--slate-500);
+  margin-bottom: 16px;
+}
+.pag-field { margin-bottom: 12px; }
+.pag-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--slate-600);
+  margin-bottom: 4px;
+}
+.pag-field input,
+.pag-field select,
+.pag-field textarea {
+  width: 100%;
+  border: 1.5px solid var(--slate-200);
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--slate-900);
+  background: #fff;
+  -webkit-appearance: none;
+}
+.pag-field input:focus,
+.pag-field select:focus { outline: none; border-color: var(--blue-main); }
+.pag-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pag-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.pag-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.pag-btn.primary { background: var(--blue-main); color: #fff; }
+.pag-btn.cancel  { background: var(--slate-100); color: var(--slate-700); }
 
 /* ===== MAP TITLE ===== */
 .map-title-overlay {
@@ -2195,13 +2356,108 @@ function corDoPin(tipo) {
   }
 }
 
+// Labels e cores dos estados dos pins
+const ESTADO_LABEL = {
+  agendado:      '📅 Agendado',
+  ativo:         '✅ Ativo',
+  atencao:       '⚠️ Atenção',
+  inativo:       '😴 Inativo',
+  critico:       '🚨 Crítico',
+  nunca_ativado: '○ Novo',
+};
+
+// Formata data para exibição compacta
+function fmtPinData(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'short' })
+       + ' às ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+}
+
+// Gera HTML do popup enriquecido
+function pinPopupHtml(p) {
+  const label  = PIN_TYPES[p.tipo]?.label || p.tipo;
+  const score  = p.score_urgencia ?? 0;
+  const estado = p.estado || 'nunca_ativado';
+  const cor    = p.cor_estado || p.cor_tipo || '#555';
+
+  // Cor da barra de urgência
+  const barCor = score >= 70 ? '#ef4444' : score >= 45 ? '#f59e0b' : '#22c55e';
+
+  // Próximo / último evento
+  const proxEv = p.proximo_evento_em
+    ? `<div class="pp-proximo">📅 Próximo: ${fmtPinData(p.proximo_evento_em)}</div>`
+    : `<div class="pp-sem-evento">⚠️ Nenhum evento agendado</div>`;
+
+  return `
+  <div class="pin-popup">
+    <div class="pp-header">
+      <span class="pp-tipo-label">${label}</span>
+      <span class="pp-estado-badge" style="background:${cor}">${ESTADO_LABEL[estado] || estado}</span>
+    </div>
+    <div class="pp-cidade">${p.cidade || ''}${p.regiao ? ' · ' + p.regiao : ''}</div>
+
+    <div class="pp-urgencia-wrap">
+      <div class="pp-urgencia-label">
+        <span>Urgência</span><span>${score}/100</span>
+      </div>
+      <div class="pp-urgencia-bar">
+        <div class="pp-urgencia-fill" style="width:${score}%;background:${barCor}"></div>
+      </div>
+    </div>
+
+    <div class="pp-counters">
+      <div class="pp-counter">
+        <div class="pp-counter-val">${p.total_eventos ?? 0}</div>
+        <div class="pp-counter-lbl">Eventos</div>
+      </div>
+      <div class="pp-counter">
+        <div class="pp-counter-val">${p.eventos_futuros ?? 0}</div>
+        <div class="pp-counter-lbl">Futuros</div>
+      </div>
+      <div class="pp-counter">
+        <div class="pp-counter-val" style="font-size:11px;color:var(--slate-600)">
+          ${p.ultimo_evento_em ? fmtPinData(p.ultimo_evento_em) : '—'}
+        </div>
+        <div class="pp-counter-lbl">Última ação</div>
+      </div>
+    </div>
+
+    ${proxEv}
+
+    <textarea
+      class="pin-note-input"
+      data-pin-id="${p.id}"
+      placeholder="Observações do pin..."
+    >${p.descricao || ''}</textarea>
+
+    <div class="pin-popup-actions">
+      <button class="pin-btn agendar"
+        data-agendar-pin="${p.id}"
+        data-pin-cidade="${p.cidade || ''}"
+        data-pin-regiao="${p.regiao || ''}"
+        data-pin-label="${label}">
+        📅 Agendar
+      </button>
+      <button class="pin-btn agenda"
+        data-ver-agenda-pin="${p.id}"
+        data-pin-cidade="${p.cidade || ''}">
+        📋 Agenda
+      </button>
+      <button class="pin-btn save" data-save-pin="${p.id}">💾 Salvar</button>
+      <button class="pin-btn delete" data-delete-pin="${p.id}">🗑️</button>
+    </div>
+  </div>`;
+}
+
 async function carregarPins() {
   if (!map || !pinsLayer) return;
   pinsLayer.clearLayers();
 
   let pins = [];
   try {
-    const res = await apiFetch('/pins');
+    // Usa o endpoint enriquecido que retorna estado, score e contadores
+    const res = await apiFetch('/pins/com-status');
     if (!res.ok) { console.warn('[pins] status', res.status); return; }
     const data = await res.json();
     if (!Array.isArray(data)) { console.warn('[pins] resposta inesperada', data); return; }
@@ -2212,62 +2468,37 @@ async function carregarPins() {
   }
 
   pins.forEach(p => {
-  let marker;
+    let marker;
+    // Cor dinâmica: usa cor do estado (urgência) em vez de cor fixa do tipo
+    const cor = p.cor_estado || p.cor_tipo || corDoPin(p.tipo);
 
-  if (p.tipo === 'comite') {
-    marker = L.marker([p.lat, p.lng], {
-      icon: L.divIcon({
-        className: '',
-        html: '<div style="font-size:24px;">🏠</div>',
-        iconSize: [24, 24],
-        iconAnchor: [12, 12]
-      })
-    });
-  } else {
-    marker = L.circleMarker([p.lat, p.lng], {
-      radius: 8,
-      color: corDoPin(p.tipo),
-      fillOpacity: 0.9
-    });
-  }
+    if (p.tipo === 'comite') {
+      // Comitê usa emoji, mas com borda colorida pelo estado
+      marker = L.marker([p.lat, p.lng], {
+        icon: L.divIcon({
+          className: '',
+          html: `<div style="font-size:22px;filter:drop-shadow(0 0 3px ${cor});">🏠</div>`,
+          iconSize: [26, 26],
+          iconAnchor: [13, 13]
+        })
+      });
+    } else {
+      // Raio maior para pins críticos/urgentes
+      const radius = (p.score_urgencia ?? 0) >= 70 ? 11 : 8;
+      marker = L.circleMarker([p.lat, p.lng], {
+        radius,
+        color:       cor,
+        fillColor:   cor,
+        fillOpacity: 0.88,
+        weight: 2,
+      });
+    }
 
-  // 🔥 AQUI É A CORREÇÃO
-  marker.bindPopup(`
-  <div class="pin-popup">
-    <h4>${PIN_TYPES[p.tipo]?.label || 'Pin'}</h4>
-    <small>${p.cidade || ''}</small>
+    marker.bindPopup(pinPopupHtml(p), { maxWidth: 290 });
+    pinsLayer.addLayer(marker);
+  });
 
-    <textarea
-      class="pin-note-input"
-      data-pin-id="${p.id}"
-      placeholder="Observações do pin..."
-    >${p.descricao || ''}</textarea>
-
-    <div class="pin-popup-actions">
-      <button
-        class="pin-btn save"
-        data-save-pin="${p.id}">
-        Salvar
-      </button>
-
-      <button
-        class="pin-btn delete"
-        data-delete-pin="${p.id}">
-        Remover
-      </button>
-    </div>
-  </div>
-`);
-
-
-
-  pinsLayer.addLayer(marker);
-});
-
-
-  if (pinsVisiveis) {
-    pinsLayer.addTo(map);
-  }
+  if (pinsVisiveis) pinsLayer.addTo(map);
 }
 document.addEventListener('click', async (e) => {
 
@@ -2307,26 +2538,111 @@ document.addEventListener('click', async (e) => {
   // =====================
   const deleteBtn = e.target.closest('[data-delete-pin]');
   if (deleteBtn) {
-
     const pinId = deleteBtn.dataset.deletePin;
-
     if (!confirm('Remover este pin?')) return;
-
     try {
-      await apiFetch(`/pins/${pinId}`, {
-        method: 'DELETE'
-      });
-
+      await apiFetch(`/pins/${pinId}`, { method: 'DELETE' });
       await carregarPins();
-
     } catch (err) {
       console.error(err);
       alert('Erro ao remover');
     }
-
     return;
   }
 
+  // =====================
+  // AGENDAR A PARTIR DO PIN — abre mini-modal
+  // =====================
+  const agendarBtn = e.target.closest('[data-agendar-pin]');
+  if (agendarBtn) {
+    const pinId    = agendarBtn.dataset.agendarPin;
+    const cidade   = agendarBtn.dataset.pinCidade;
+    const regiao   = agendarBtn.dataset.pinRegiao;
+    const label    = agendarBtn.dataset.pinLabel;
+    abrirModalPinAgenda(pinId, cidade, regiao, label);
+    return;
+  }
+
+  // =====================
+  // VER NA AGENDA (filtra pelo pin)
+  // =====================
+  const agendaBtn = e.target.closest('[data-ver-agenda-pin]');
+  if (agendaBtn) {
+    const pinId  = agendaBtn.dataset.verAgendaPin;
+    const cidade = agendaBtn.dataset.pinCidade;
+    window.open(`./agenda.html?pin_id=${pinId}&cidade=${encodeURIComponent(cidade)}`, '_blank');
+    return;
+  }
+
+});
+
+/* ═══════════════ QUICK-AGENDA DO PIN ═══════════════ */
+let _pinAgendaPinId = null;
+
+function abrirModalPinAgenda(pinId, cidade, regiao, label) {
+  _pinAgendaPinId = pinId;
+  document.getElementById('pag-pin-ref').textContent =
+    `📍 ${label}${cidade ? ' — ' + cidade : ''}${regiao ? ' / ' + regiao : ''}`;
+  document.getElementById('pag-cidade').value   = cidade || '';
+  document.getElementById('pag-titulo').value   = '';
+  document.getElementById('pag-descricao').value = '';
+  document.getElementById('pag-tipo').value     = 'reuniao';
+  document.getElementById('pag-prioridade').value = '2';
+
+  // Data padrão: amanhã às 9h
+  const amanha = new Date();
+  amanha.setDate(amanha.getDate() + 1);
+  amanha.setHours(9, 0, 0, 0);
+  const iso = new Date(amanha - amanha.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  document.getElementById('pag-data').value = iso;
+
+  document.getElementById('modal-pin-agenda').classList.add('open');
+}
+
+function fecharModalPinAgenda() {
+  document.getElementById('modal-pin-agenda').classList.remove('open');
+  _pinAgendaPinId = null;
+}
+
+async function salvarEventoPin() {
+  const titulo = document.getElementById('pag-titulo').value.trim();
+  const data   = document.getElementById('pag-data').value;
+  if (!titulo) { alert('Preencha o título do evento.'); return; }
+  if (!data)   { alert('Preencha a data do evento.'); return; }
+
+  const btn = document.getElementById('pag-btn-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    const payload = {
+      titulo,
+      descricao:  document.getElementById('pag-descricao').value.trim() || null,
+      tipo:       document.getElementById('pag-tipo').value,
+      prioridade: parseInt(document.getElementById('pag-prioridade').value),
+      data_inicio: new Date(data).toISOString(),
+      cidade:     document.getElementById('pag-cidade').value.trim() || null,
+      pin_id:     _pinAgendaPinId,
+    };
+    const r = await apiFetch('/agenda/eventos', { method: 'POST', body: JSON.stringify(payload) });
+    if (!r.ok) {
+      const err = await r.json();
+      alert(err.error || 'Erro ao salvar evento');
+      return;
+    }
+    fecharModalPinAgenda();
+    // Recarrega pins para atualizar scores e estados no mapa
+    await carregarPins();
+    alert('✅ Evento criado! Veja na Agenda Inteligente.');
+  } catch (err) {
+    alert('Erro de conexão');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salvar evento';
+  }
+}
+
+// Fecha modal clicando fora
+document.getElementById('modal-pin-agenda')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-pin-agenda')) fecharModalPinAgenda();
 });
 
 
@@ -4312,6 +4628,62 @@ toggleSidebarBtn.addEventListener('click', () => {
   <div class="modal-card">
     <button class="modal-close" onclick="fecharModal()">✕</button>
     <div id="modal-conteudo"></div>
+  </div>
+</div>
+
+<!-- ===== MODAL QUICK-AGENDA (criar evento direto do pin) ===== -->
+<div id="modal-pin-agenda">
+  <div class="pag-card">
+    <div class="pag-title">📅 Novo Evento</div>
+    <div class="pag-sub" id="pag-pin-ref">— Pin selecionado —</div>
+
+    <div class="pag-field">
+      <label>Título *</label>
+      <input id="pag-titulo" type="text" placeholder="Ex: Reunião de mobilização" maxlength="120">
+    </div>
+
+    <div class="pag-row">
+      <div class="pag-field">
+        <label>Tipo</label>
+        <select id="pag-tipo">
+          <option value="reuniao">🤝 Reunião</option>
+          <option value="visita">🚗 Visita</option>
+          <option value="atendimento">📋 Atendimento</option>
+          <option value="evento_politico">🎙️ Evento político</option>
+          <option value="ligacao">📞 Ligação</option>
+          <option value="tarefa">✅ Tarefa</option>
+        </select>
+      </div>
+      <div class="pag-field">
+        <label>Prioridade</label>
+        <select id="pag-prioridade">
+          <option value="1">🔴 Alta</option>
+          <option value="2" selected>🟡 Média</option>
+          <option value="3">🟢 Baixa</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="pag-row">
+      <div class="pag-field">
+        <label>Data e hora *</label>
+        <input id="pag-data" type="datetime-local">
+      </div>
+      <div class="pag-field">
+        <label>Cidade</label>
+        <input id="pag-cidade" type="text" readonly style="background:#f8fafc">
+      </div>
+    </div>
+
+    <div class="pag-field">
+      <label>Observações</label>
+      <textarea id="pag-descricao" rows="2" placeholder="Contexto, objetivo..." style="resize:vertical"></textarea>
+    </div>
+
+    <div class="pag-actions">
+      <button class="pag-btn cancel" onclick="fecharModalPinAgenda()">Cancelar</button>
+      <button class="pag-btn primary" id="pag-btn-salvar" onclick="salvarEventoPin()">Salvar evento</button>
+    </div>
   </div>
 </div>
 

@@ -568,6 +568,7 @@ let prioriSelecionada = 2;
 let tipoSelecionado = 'reuniao';
 let sugestoesPendentes = [];
 let pessoaIdSelecionada = null;
+let filtroPinId = null;    // filtro ativo de pin (via URL ?pin_id=)
 
 const TIPO_ICON  = { reuniao:'🤝', visita:'🚗', atendimento:'📋', evento_politico:'🎙️', ligacao:'📞', tarefa:'✅' };
 const TIPO_LABEL = { reuniao:'Reunião', visita:'Visita', atendimento:'Atendimento', evento_politico:'Ev. Político', ligacao:'Ligação', tarefa:'Tarefa' };
@@ -589,6 +590,30 @@ window.iniciarAplicacao = async function() {
     if (r.ok) configSistema = await r.json();
   } catch {}
 
+  // Lê ?pin_id= da URL para filtro vindo do mapa
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('pin_id')) {
+    filtroPinId = parseInt(urlParams.get('pin_id'));
+    // Busca contexto do pin para mostrar label
+    try {
+      const rc = await apiFetch(`/pins/${filtroPinId}/contexto`);
+      if (rc.ok) {
+        const ctx = await rc.json();
+        const pinLabel = ctx.pin?.cidade || `Pin #${filtroPinId}`;
+        const badge = document.createElement('div');
+        badge.style.cssText = 'background:#1565c0;color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;margin-bottom:8px;cursor:pointer;';
+        badge.innerHTML = `📍 Filtrando: ${pinLabel} <span title="Remover filtro" style="opacity:.7">✕</span>`;
+        badge.onclick = () => {
+          filtroPinId = null;
+          badge.remove();
+          history.replaceState(null, '', window.location.pathname);
+          carregarMes();
+        };
+        document.getElementById('header-sub').insertAdjacentElement('afterend', badge);
+      }
+    } catch {}
+  }
+
   preencherSelectRegiao();
   irParaHoje();
   carregarSugestoes();
@@ -598,7 +623,7 @@ window.iniciarAplicacao = async function() {
   document.getElementById('header-sub').textContent =
     meNivel === 'lider_regiao' && meRegiao
       ? `Exibindo dados da região: ${meRegiao}`
-      : 'Visão geral do tenant';
+      : filtroPinId ? `Filtrando por pin #${filtroPinId}` : 'Visão geral do tenant';
 };
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
@@ -693,7 +718,10 @@ async function carregarMes() {
 
   const tipo = document.getElementById('filtro-tipo').value;
   try {
-    const r = await apiFetch(`/agenda/eventos?mes=${mesStr}${tipo ? '&tipo='+tipo : ''}`);
+    let url = `/agenda/eventos?mes=${mesStr}`;
+    if (tipo)       url += `&tipo=${tipo}`;
+    if (filtroPinId) url += `&pin_id=${filtroPinId}`;
+    const r = await apiFetch(url);
     eventosMes = r.ok ? await r.json() : [];
   } catch { eventosMes = []; }
 
@@ -786,6 +814,7 @@ function renderDia(date) {
         <div class="ev-badges">
           <span class="badge badge-tipo">${TIPO_LABEL[e.tipo]||e.tipo}</span>
           ${e.regiao ? `<span class="badge badge-regiao">${e.regiao}</span>` : ''}
+          ${e.pin_id  ? `<span class="badge" style="background:#e0e7ff;color:#3730a3;cursor:pointer" title="Ver pin no mapa" onclick="event.stopPropagation();window.open('./?pin_highlight=${e.pin_id}','_blank')">📍 Pin</span>` : ''}
           ${e.status === 'concluido' ? '<span class="badge badge-concluido">✓ Concluído</span>' : ''}
         </div>
       </div>
