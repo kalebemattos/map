@@ -1319,14 +1319,19 @@ app.get('/api/pins/com-status', auth, withTenant, async (req, res) => {
     let where = 'tenant_id = $1';
     const params = [t];
 
-    if (rf.sql && rf.params.length) {
-      where += rf.sql.replace('$__REG__', `$${params.length + 1}`).replace(/^ AND /, ' AND ');
-      params.push(...rf.params);
+    if (rf.sql) {
+      if (rf.params.length) {
+        // filtro por região: substitui placeholder pelo índice correto
+        where += rf.sql.replace('$__REG__', `$${params.length + 1}`);
+        params.push(...rf.params);
+      } else if (rf.sql.includes('1=0')) {
+        // usuário sem região vinculada — não vê nenhum pin
+        where += ' AND 1=0';
+      }
     }
 
     const rows = await dbAll(
-      `SELECT *, '${Object.entries(ESTADO_COR).map(([k,v]) => `'${k}':'${v}'`).join(',')}'::json AS _ignorar
-       FROM vw_pin_status WHERE ${where} ORDER BY score_urgencia DESC`,
+      `SELECT * FROM vw_pin_status WHERE ${where} ORDER BY score_urgencia DESC`,
       params
     );
 
