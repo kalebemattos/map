@@ -3001,22 +3001,31 @@ app.post('/api/agenda/eventos', auth, withTenant, allowAll(), async (req, res) =
       return res.status(403).json({ error: 'Você só pode criar eventos na sua região' });
     }
 
+    // meta precisa ser JSON string para o pg conseguir inferir o tipo JSONB
+    const metaJson = JSON.stringify(meta && typeof meta === 'object' ? meta : {});
+
+    // sugestao_origem: garante null quando vazio/undefined
+    const sugOrigemId = sugestao_origem && String(sugestao_origem).trim() !== ''
+      ? parseInt(sugestao_origem, 10) || null
+      : null;
+
     const row = await dbGet(`
       INSERT INTO agenda_eventos
         (tenant_id, titulo, descricao, tipo, prioridade, data_inicio, data_fim,
          regiao, cidade, pessoa_id, criado_por, meta, sugestao_origem)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13)
       RETURNING *
     `, [t, titulo.trim(), descricao ?? null, tipo, Number(prioridade),
         data_inicio, data_fim ?? null, regiao ?? null, cidade ?? null,
-        pessoa_id ?? null, req.user.id, meta, sugestao_origem ?? null]);
+        pessoa_id ? Number(pessoa_id) : null, req.user.id,
+        metaJson, sugOrigemId ? String(sugOrigemId) : null]);
 
     // Se o evento veio de uma sugestão, marca como aceita
-    if (sugestao_origem) {
+    if (sugOrigemId) {
       await pool.query(`
         UPDATE agenda_sugestoes SET aceita = TRUE, aceita_em = NOW(), evento_gerado = $1
         WHERE id = $2 AND tenant_id = $3
-      `, [row.id, parseInt(sugestao_origem), t]);
+      `, [row.id, sugOrigemId, t]);
     }
 
     // Configura recorrência se solicitado
