@@ -83,6 +83,15 @@ async function carregarConfig() {
     })
     if (!r.ok) return
     configSistema = await r.json()
+    // Aplicar cores de identidade visual como variáveis CSS
+    if (configSistema.cores) {
+      const c = typeof configSistema.cores === 'string'
+        ? JSON.parse(configSistema.cores)
+        : configSistema.cores
+      if (c.primaria)   document.documentElement.style.setProperty('--blue-main', c.primaria)
+      if (c.secundaria) document.documentElement.style.setProperty('--blue-deep', c.secundaria)
+      if (c.destaque)   document.documentElement.style.setProperty('--blue-mid',  c.destaque)
+    }
     injetarCandidatosAngra()
   } catch (e) { console.warn('[config] não carregada:', e) }
 }
@@ -155,6 +164,9 @@ function injetarCandidatosAngra() {
     Array.from(sel.options).filter(o => o.value !== 'ambos').forEach(o => o.remove())
     sel.insertAdjacentHTML('beforeend', optsCands)
   })
+
+  // Repintar mapa com as cores atualizadas do config
+  repaintMapa()
 }
 
 // ─────────────────────────────────────────────
