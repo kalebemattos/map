@@ -833,7 +833,7 @@ window.iniciarMapa = async function() {
   await carregarConfig()
 
   // Piraí fica na região do Médio Paraíba / Centro-Sul RJ
-  map = L.map('map').setView([-22.63, -43.90], 11)
+  map = L.map('map', { minZoom: 9, maxZoom: 18 }).setView([-22.63, -43.90], 11)
   window.map = map
   setTimeout(() => map.invalidateSize(), 200)
 
@@ -886,6 +886,8 @@ window.iniciarMapa = async function() {
       }).addTo(map)
 
       map.fitBounds(geoBairros.getBounds(), { padding: [20, 20] })
+      map.setMinZoom(Math.max(map.getZoom() - 1, 9))
+      map.setMaxBounds(geoBairros.getBounds().pad(0.5))
       return carregarTudo()
     })
     .then(() => {

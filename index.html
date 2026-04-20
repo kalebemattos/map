@@ -4095,8 +4095,9 @@ if (modoAdicionarPin) {
         }).addTo(map);
 
         const bounds = layerRJ.getBounds();
-        map.fitBounds(bounds);
-        map.setMaxBounds(bounds.pad(0.2));
+        map.fitBounds(bounds, { padding: [30, 30] });
+        map.setMinZoom(Math.max(map.getZoom() - 1, 7));
+        map.setMaxBounds(bounds.pad(0.3));
 initCitySearch();
 initLiderancaSearch();
 carregarPins();

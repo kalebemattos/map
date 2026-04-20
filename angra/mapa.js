@@ -885,7 +885,7 @@ function atualizarLegenda() {
 // ─────────────────────────────────────────────
 window.iniciarMapa = async function() {
   await carregarConfig()
-  map = L.map('map').setView([-23.01, -44.32], 11)
+  map = L.map('map', { minZoom: 9, maxZoom: 18 }).setView([-23.01, -44.32], 11)
   window.map = map   // expõe para index.html (pins, invalidateSize, etc.)
   setTimeout(() => map.invalidateSize(), 200)
 
@@ -907,7 +907,10 @@ window.iniciarMapa = async function() {
       const limite = L.geoJSON(data, {
         style: { color: "#0f5132", weight: 2.5, fillOpacity: 0, interactive: false }
       }).addTo(map)
-      map.fitBounds(limite.getBounds())
+      map.fitBounds(limite.getBounds(), { padding: [20, 20] })
+      // Trava zoom mínimo no nível do fitBounds (−1 para margem) e restringe panning
+      map.setMinZoom(Math.max(map.getZoom() - 1, 9))
+      map.setMaxBounds(limite.getBounds().pad(0.5))
     })
     .then(() => fetch("geo/angra_bairros.geojson"))
     .then(r => r.json())

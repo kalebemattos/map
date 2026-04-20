@@ -931,7 +931,7 @@ function atualizarLegenda() {
 // ─────────────────────────────────────────────
 window.iniciarMapa = async function() {
   await carregarConfig()
-  map = L.map('map').setView([-22.91, -43.17], 11)
+  map = L.map('map', { minZoom: 9, maxZoom: 18 }).setView([-22.91, -43.17], 11)
   window.map = map   // expõe para index.html (pins, invalidateSize, etc.)
   setTimeout(() => map.invalidateSize(), 200)
 
@@ -964,7 +964,7 @@ window.iniciarMapa = async function() {
             selecionarBairro(bairro, layer)
           })
 
-          // label do bairro
+          // label do bairro (não interativo — não deve interceptar cliques no polígono)
           const center = layer.getBounds().getCenter()
 
           L.marker(center,{
@@ -973,15 +973,19 @@ window.iniciarMapa = async function() {
               html: bairro,
               iconSize: [120,20],
               iconAnchor: [60,10]
-            })
+            }),
+            interactive: false,
+            keyboard: false
           }).addTo(map)
 
         }
 
       }).addTo(map)
 
-      // ajustar mapa aos bairros
-      map.fitBounds(geoBairros.getBounds())
+      // ajustar mapa aos bairros e travar zoom/panning
+      map.fitBounds(geoBairros.getBounds(), { padding: [20, 20] })
+      map.setMinZoom(Math.max(map.getZoom() - 1, 9))
+      map.setMaxBounds(geoBairros.getBounds().pad(0.5))
 
       // carregar dados do backend
       return carregarTudo()
