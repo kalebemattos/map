@@ -543,6 +543,26 @@ app.get('/api/expectativa-cidade', auth, withTenant, async (req, res) => {
   }
 });
 
+// ── Resolve a região de uma cidade consultando tenant_regioes ────────────────
+// Retorna a chave da região ou null se não encontrada.
+async function resolverRegiao(tenantId, cidadeNome) {
+  try {
+    const { rows } = await pool.query(
+      `SELECT chave, cidades FROM tenant_regioes WHERE tenant_id = $1`,
+      [tenantId]
+    );
+    const normCidade = (cidadeNome || '').toLowerCase().trim();
+    for (const row of rows) {
+      let lista = row.cidades;
+      if (typeof lista === 'string') { try { lista = JSON.parse(lista); } catch { lista = []; } }
+      if (Array.isArray(lista) && lista.some(c => (c || '').toLowerCase().trim() === normCidade)) {
+        return row.chave;
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
 // ── Normalização de nomes (dedup lideranças) ─────────────────────────────────
 function normalizarNome(str) {
   return (str || '')
@@ -762,6 +782,14 @@ app.post('/api/liderancas',
       );
     }
 
+    // Garante que a região sempre seja preenchida
+    const regiaoFinal = regiaoBody || req.user.regiao
+      || await resolverRegiao(req.tenantId, cidade);
+    if (!regiaoFinal) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Região não encontrada para esta cidade. Selecione a região manualmente.' });
+    }
+
     // Cria vínculo pessoa ↔ cidade
     await client.query(`
       INSERT INTO liderancas
@@ -775,7 +803,7 @@ app.post('/api/liderancas',
             regiao            = EXCLUDED.regiao,
             mapa              = EXCLUDED.mapa
     `, [pessoaId, req.tenantId, cidade,
-        regiaoBody || req.user.regiao || null,
+        regiaoFinal,
         mapa || null, Number(expectativa_votos) || 0,
         status || 'ativa', responsavel || null, vinculo_politico || null]);
 
@@ -869,6 +897,11 @@ app.put('/api/liderancas/:id', auth, withTenant, allowAll(), upload.single('foto
         atual.pessoa_id, req.tenantId,
         apelido || null, rede_social || null]);
 
+    // Garante que a região sempre seja preenchida na edição
+    const cidadeAlvo = cidade || atual.cidade;
+    const regiaoFinal = regiaoBody || req.user.regiao
+      || await resolverRegiao(req.tenantId, cidadeAlvo);
+
     // Atualiza vínculo em liderancas
     const result = await client.query(`
       UPDATE liderancas SET
@@ -884,7 +917,7 @@ app.put('/api/liderancas/:id', auth, withTenant, allowAll(), upload.single('foto
     `, [cidade || null,
         expectativa_votos ? Number(expectativa_votos) : null,
         status || null, responsavel || null, vinculo_politico || null,
-        regiaoBody || req.user.regiao, mapa || null,
+        regiaoFinal || req.user.regiao, mapa || null,
         id, req.tenantId, req.user.nivel]);
 
     if (result.rowCount === 0)

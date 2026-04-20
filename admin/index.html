@@ -1163,6 +1163,12 @@ document.addEventListener('DOMContentLoaded', () => {
   buscaCidade.addEventListener('input', filtrarCidades);
   regiao.addEventListener('change', carregarCidadesPorRegiao);
   cidade.addEventListener('change', () => {
+    // Garante que a região fique sempre preenchida, mesmo que a cidade
+    // tenha sido selecionada via busca livre (que zera o select de região)
+    if (!regiao.value && cidade.value) {
+      const regiaoDerivada = getRegiaoParaCidade(cidade.value);
+      if (regiaoDerivada) regiao.value = regiaoDerivada;
+    }
     atualizarSeletorBairro();
     carregarLiderancas();
   });
@@ -1260,6 +1266,16 @@ function filtrarCidades() {
     o.value = c; o.textContent = c;
     cidade.appendChild(o);
   });
+}
+
+// Retorna a chave de região correspondente a uma cidade, consultando o objeto regions
+function getRegiaoParaCidade(cidadeNome) {
+  if (!cidadeNome || typeof regions === 'undefined') return '';
+  for (const chave of Object.keys(regions)) {
+    const lista = regions[chave];
+    if (Array.isArray(lista) && lista.includes(cidadeNome)) return chave;
+  }
+  return '';
 }
 
 /* ===== HELPERS ===== */
@@ -1586,7 +1602,15 @@ async function salvar() {
                 : cidade.value === 'Rio de Janeiro' ? 'rjcapital'
                 : ''
   if (mapaVal) fd.append('mapa', mapaVal);
-  if (regiao.value) fd.append('regiao', regiao.value);
+  // Região é obrigatória — derivar da cidade se não estiver selecionada
+  const regiaoFinal = regiao.value || getRegiaoParaCidade(cidade.value);
+  if (!regiaoFinal) {
+    alert('Não foi possível determinar a região desta cidade. Selecione a região manualmente.');
+    btn.textContent = '💾 Salvar liderança';
+    btn.disabled = false;
+    return;
+  }
+  fd.append('regiao', regiaoFinal);
   if (acNomePessoaId && !editandoId) {
     fd.append('pessoa_id', acNomePessoaId);
   } else {
