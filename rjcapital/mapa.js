@@ -66,6 +66,63 @@ const VOTOS_VALIDOS = {
   "SÃO JORGE": 1249, "VILA MILITAR": 1045
 }
 
+// ─────────────────────────────────────────────
+// VOTOS DE REFERÊNCIA 2022 por bairro (Célia) — seções somadas
+// ─────────────────────────────────────────────
+const VOTOS_REFERENCIA_2022 = {
+  "ACARI": 2, "ÁGUA SANTA": 6, "ALTO DA BOA VISTA": 2, "ANCHIETA": 52,
+  "ANDARAÍ": 27, "ANIL": 18, "AUGUSTO VASCONCELOS": 1, "BAIRRO DE FÁTIMA": 4,
+  "BANCÁRIOS": 12, "BANGU": 67, "BARRA DA TIJUCA": 188, "BARRA DE GUARATIBA": 2,
+  "BARROS FILHO": 6, "BENFICA": 20, "BENTO RIBEIRO": 8, "BONSUCESSO": 26,
+  "BOTAFOGO": 72, "BRÁS DE PINA": 26, "CACHAMBI": 23, "CACUIA": 7,
+  "CAJU": 3, "CAMORIM": 7, "CAMPINHO": 3, "CAMPO GRANDE": 103,
+  "CASCADURA": 13, "CATETE": 31, "CATIRI": 4, "CAVALCANTI": 10,
+  "CENTRO": 25, "CIDADE DE DEUS": 17, "CIDADE NOVA": 2, "COCOTÁ": 12,
+  "COELHO NETO": 10, "COLÉGIO": 8, "COPACABANA": 20, "CORDOVIL": 35,
+  "COSME VELHO": 2, "COSMOS": 17, "COSTA BARROS": 5, "CURICICA": 28,
+  "DEL CASTILHO": 7, "DENDE": 0, "DEODORO": 26, "ENCANTADO": 3,
+  "ENGENHEIRO LEAL": 3, "ENGENHO DA RAINHA": 18, "ENGENHO DE DENTRO": 30, "ENGENHO NOVO": 15,
+  "ESTÁCIO": 6, "FLAMENGO": 40, "FREGUESIA (ILHA DO GOVERNADOR)": 8, "FREGUESIA JPA": 46,
+  "FUNDÃO": 0, "GALEÃO": 19, "GAMBOA": 1, "GARDENIA AZUL": 5,
+  "GÁVEA": 32, "GLÓRIA": 2, "GRAJAÚ": 28, "GUADALUPE": 14,
+  "GUARABU": 0, "GUARATIBA": 20, "HIGIENÓPOLIS": 5, "HONÓRIO GURGEL": 19,
+  "HUMAITA": 14, "ILHA DE GUARATIBA": 7, "INHAUMA": 14, "INHOAÍBA": 9,
+  "IPANEMA": 74, "IRAJÁ": 33, "ITANHANGÁ": 12, "JACARÉ": 12,
+  "JACAREPAGUÁ": 0, "JARDIM AMÉRICA": 15, "JARDIM BANGU": 6, "JARDIM BOTÂNICO": 19,
+  "JARDIM GUANABARA": 18, "JARDIM SULACAP": 11, "LAGOA": 24, "LAPA": 3,
+  "LARANJEIRAS": 39, "LEBLON": 95, "LEME": 9, "LINS DE VASCONCELOS": 7,
+  "MADUREIRA": 14, "MAGALHÃES BASTOS": 15, "MANGUEIRA": 7, "MANGUINHOS": 0,
+  "MARACANÃ": 23, "MARECHAL HERMES": 29, "MARIA DA GRAÇA": 7, "MEIER": 33,
+  "MONERÓ": 7, "OLARIA": 27, "OSWALDO CRUZ": 9, "PACIÊNCIA": 36,
+  "PADRE MIGUEL": 41, "PAQUETÁ": 1, "PARADA DE LUCAS": 18, "PARQUE ANCHIETA": 0,
+  "PARQUE COLÚMBIA": 6, "PAVUNA": 23, "PECHINCHA": 24, "PEDRA DE GUARATIBA": 10,
+  "PENHA": 29, "PENHA CIRCULAR": 29, "PIEDADE": 14, "PILARES": 10,
+  "PITANGUEIRAS": 1, "PORTUGUESA": 8, "PRAÇA DA BANDEIRA": 13, "PRAÇA SECA": 22,
+  "QUINTINO BOCAIUVA": 10, "RAMOS": 24, "REALENGO": 78, "RECREIO": 75,
+  "RIACHUELO": 6, "RIBEIRA": 1, "RICARDO DE ALBUQUERQUE": 5, "RIO COMPRIDO": 43,
+  "RIO DAS PEDRAS": 20, "ROCHA": 12, "ROCHA MIRANDA": 19, "ROCINHA": 1,
+  "SANTA CRUZ": 18, "SANTA TERESA": 13, "SANTÍSSIMO": 22, "SANTO CRISTO": 1,
+  "SÃO CONRADO": 40, "SÃO CRISTÓVÃO": 16, "SÃO FRANCISCO XAVIER": 0, "SÃO JORGE": 0,
+  "SAUDE": 2, "SENADOR CAMARÁ": 26, "SENADOR VASCONCELOS": 7, "SEPETIBA": 16,
+  "TANQUE": 24, "TAQUARA": 74, "TAUÁ": 5, "TIJUCA": 34,
+  "TODOS OS SANTOS": 14, "TOMAS COELHO": 2, "TOMÁS COELHO": 2, "TRIAGEM": 11,
+  "TUBIACANGA": 0, "TURIAÇÚ": 4, "URCA": 15, "VARGEM GRANDE": 8,
+  "VARGEM PEQUENA": 6, "VASCO DA GAMA": 5, "VAZ LOBO": 5, "VICENTE DE CARVALHO": 2,
+  "VIDIGAL": 8, "VIGÁRIO GERAL": 8, "VILA DA PENHA": 24, "VILA ISABEL": 34,
+  "VILA KENNEDY": 13, "VILA KOSMOS": 10, "VILA MILITAR": 1, "VILA VALQUEIRE": 11,
+  "VISTA ALEGRE": 5, "ZUMBI": 4
+}
+
+// helper: busca votos de referência normalizando o nome do bairro
+function getVotosRef2022(bairro) {
+  if (!bairro) return 0
+  const n = normalizar(bairro)
+  for (const k of Object.keys(VOTOS_REFERENCIA_2022)) {
+    if (normalizar(k) === n) return VOTOS_REFERENCIA_2022[k]
+  }
+  return 0
+}
+
 // Modo de visualização: 'expectativa' | 'votosValidos' | 'liderancas'
 let modoVisualizacao = 'expectativa'
 
@@ -213,6 +270,26 @@ function injetarCandidatosRJ() {
     Array.from(sel.options).filter(o => o.value !== 'ambos').forEach(o => o.remove())
     sel.insertAdjacentHTML('beforeend', optsCands)
   })
+
+  // 4. Card de votos históricos 2022 por candidato
+  const votosCardsEl = document.getElementById('bairro-votos-cards')
+  if (votosCardsEl) {
+    votosCardsEl.innerHTML = cands
+      .filter(c => c.tem_votos_2022)
+      .map(c => `
+        <div id="votos-card-bairro-${c.chave}" class="sidebar-block" style="display:none;background:${c.cor_fundo};border:1.5px solid ${c.cor_texto}33;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img src="../img/${c.chave}.jpg" onerror="this.style.display='none'"
+              style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ${c.cor_texto}44;flex-shrink:0;">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:${c.cor_texto};opacity:.75;margin-bottom:2px;">Votação 2022 – ${c.nome}</div>
+              <div id="votos-display-bairro-${c.chave}" style="font-family:'Sora',sans-serif;font-weight:800;color:${c.cor_texto};font-size:20px;">0 votos</div>
+              <div id="votos-pct-bairro-${c.chave}" style="font-size:12px;color:${c.cor_texto};opacity:.7;margin-top:2px;"></div>
+            </div>
+          </div>
+        </div>`
+      ).join('')
+  }
 
   // Repintar mapa com as cores atualizadas do config
   repaintMapa()
@@ -517,6 +594,21 @@ function renderLiderancas(bairro) {
   const isVisualizador = user.nivel === 'visualizador'
 
   lista.innerHTML = ""
+
+  // ── Atualiza card de votos históricos 2022 ──
+  ;(configSistema.candidatos || []).filter(c => c.tem_votos_2022).forEach(c => {
+    const card    = document.getElementById('votos-card-bairro-' + c.chave)
+    const display = document.getElementById('votos-display-bairro-' + c.chave)
+    const pct     = document.getElementById('votos-pct-bairro-' + c.chave)
+    if (!card) return
+    if (!bairro) { card.style.display = 'none'; return }
+    const votos = getVotosRef2022(bairro)
+    const n = normalizar(bairro)
+    const total = (() => { for (const k of Object.keys(VOTOS_VALIDOS)) { if (normalizar(k) === n) return VOTOS_VALIDOS[k] } return 0 })()
+    card.style.display = 'block'
+    if (display) display.textContent = votos.toLocaleString('pt-BR') + ' votos'
+    if (pct) pct.textContent = total > 0 ? (votos / total * 100).toFixed(1) + '% dos votos válidos' : ''
+  })
 
   if (!bairro) {
     totaisEl.style.display = "none"

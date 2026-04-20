@@ -17,6 +17,32 @@ const VOTOS_VALIDOS = {
   "CAPUTERA": 838, "ILHA DA GIPÓIA": 260
 }
 
+// ─────────────────────────────────────────────
+// VOTOS DE REFERÊNCIA 2022 por bairro (Célia)
+// ─────────────────────────────────────────────
+const VOTOS_REFERENCIA_2022 = {
+  "AREAL": 755, "ARIRÓ": 0, "BALNEÁRIO": 1307, "BANQUETA": 260,
+  "BONFIM": 287, "BRACUÍ": 1279, "CAMORIM": 1577, "CAMORIM PEQUENO": 0,
+  "CAMPO BELO": 933, "CAPUTERA": 94, "CENTRO": 5173, "ENSEADA": 599,
+  "FRADE": 2220, "GAMBOA DO BELÉM": 214, "GARATUCAIA": 550,
+  "ILHA DA GIPOIA": 50, "ILHA GRANDE": 688, "JACUECANGA": 2383,
+  "JAPUÍBA": 3863, "MARINAS": 242, "MONSUABA": 1116, "MORRO DA CRUZ": 203,
+  "PARQUE BELÉM": 1310, "PARQUE DAS PALMEIRAS": 674, "PARQUE MAMBUCABA": 2091,
+  "PONTAL": 231, "PORTO GALO": 109, "PRAIA BRAVA": 203, "SÃO BENTO": 879,
+  "SERRA D'ÁGUA": 321, "SERTÃO DO BRACUÍ": 0,
+  "VILA HISTÓRICA DE MAMBUCABA": 200, "VILA VELHA": 133
+}
+
+// helper: busca votos de referência normalizando o nome do bairro
+function getVotosRef2022(bairro) {
+  if (!bairro) return 0
+  const n = normalizar(bairro)
+  for (const k of Object.keys(VOTOS_REFERENCIA_2022)) {
+    if (normalizar(k) === n) return VOTOS_REFERENCIA_2022[k]
+  }
+  return 0
+}
+
 // Modo de visualização: 'expectativa' | 'votosValidos' | 'liderancas'
 let modoVisualizacao = 'expectativa'
 
@@ -164,6 +190,26 @@ function injetarCandidatosAngra() {
     Array.from(sel.options).filter(o => o.value !== 'ambos').forEach(o => o.remove())
     sel.insertAdjacentHTML('beforeend', optsCands)
   })
+
+  // 4. Card de votos históricos 2022 por candidato (mesmo padrão do mapa do estado)
+  const votosCardsEl = document.getElementById('bairro-votos-cards')
+  if (votosCardsEl) {
+    votosCardsEl.innerHTML = cands
+      .filter(c => c.tem_votos_2022)
+      .map(c => `
+        <div id="votos-card-bairro-${c.chave}" class="sidebar-block" style="display:none;background:${c.cor_fundo};border:1.5px solid ${c.cor_texto}33;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img src="../img/${c.chave}.jpg" onerror="this.style.display='none'"
+              style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ${c.cor_texto}44;flex-shrink:0;">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:${c.cor_texto};opacity:.75;margin-bottom:2px;">Votação 2022 – ${c.nome}</div>
+              <div id="votos-display-bairro-${c.chave}" style="font-family:'Sora',sans-serif;font-weight:800;color:${c.cor_texto};font-size:20px;">0 votos</div>
+              <div id="votos-pct-bairro-${c.chave}" style="font-size:12px;color:${c.cor_texto};opacity:.7;margin-top:2px;"></div>
+            </div>
+          </div>
+        </div>`
+      ).join('')
+  }
 
   // Repintar mapa com as cores atualizadas do config
   repaintMapa()
@@ -470,6 +516,20 @@ function renderLiderancas(bairro) {
   const isVisualizador = user.nivel === 'visualizador'
 
   lista.innerHTML = ""
+
+  // ── Atualiza card de votos históricos 2022 ──
+  ;(configSistema.candidatos || []).filter(c => c.tem_votos_2022).forEach(c => {
+    const card    = document.getElementById('votos-card-bairro-' + c.chave)
+    const display = document.getElementById('votos-display-bairro-' + c.chave)
+    const pct     = document.getElementById('votos-pct-bairro-' + c.chave)
+    if (!card) return
+    if (!bairro) { card.style.display = 'none'; return }
+    const votos = getVotosRef2022(bairro)
+    const total = (() => { const n = normalizar(bairro); for (const k of Object.keys(VOTOS_VALIDOS)) { if (normalizar(k) === n) return VOTOS_VALIDOS[k] } return 0 })()
+    card.style.display = 'block'
+    if (display) display.textContent = votos.toLocaleString('pt-BR') + ' votos'
+    if (pct) pct.textContent = total > 0 ? (votos / total * 100).toFixed(1) + '% dos votos válidos' : ''
+  })
 
   if (!bairro) {
     totaisEl.style.display = "none"
