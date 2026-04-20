@@ -101,8 +101,8 @@ html, body {
 /* modo-btn dentro do overlay sempre em tema claro */
 .ctrl-modos-col {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  gap: 5px;
 }
 .ctrl-modos-col .modo-btn {
   border-color: var(--slate-200);
@@ -128,16 +128,16 @@ html, body {
 
 .ctrl-pin-btn {
   flex: 1;
-  padding: 7px 8px;
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 8px;
+  padding: 7px 6px;
+  font-size: 13px;
+  font-weight: 800;
+  border-radius: 20px;
   border: 1.5px solid var(--slate-200);
   background: var(--slate-50);
-  color: var(--slate-600);
+  color: var(--slate-700);
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.2s;
+  transition: all 0.18s;
 }
 .ctrl-pin-btn.ctrl-pin-ativo {
   background: var(--blue-deep);
@@ -223,42 +223,22 @@ html, body {
 
 /* ===== SIDEBAR HEADER ===== */
 .sidebar-header {
-  padding: 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--slate-100);
-  background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
+  background: var(--white);
   flex-shrink: 0;
 }
 
-.sidebar-header-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+.sidebar-header-brand { display: none; }
+.sidebar-logo { display: none; }
+.sidebar-header h1 { display: none; }
+.sidebar-header p { display: none; }
 
-.sidebar-logo {
-  width: 36px;
-  height: 36px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-}
-
-.sidebar-header h1 {
-  font-family: 'Sora', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: white;
-  letter-spacing: -0.2px;
-}
-
-.sidebar-header p {
-  font-size: 11px;
-  color: rgba(255,255,255,0.6);
-  margin-top: 2px;
+/* ===== SIDEBAR SUBTITLE ===== */
+.subtitle {
+  font-size: 12px;
+  color: var(--slate-500);
+  line-height: 1.45;
 }
 
 /* ===== SIDEBAR BODY ===== */
@@ -275,20 +255,26 @@ html, body {
 
 /* ===== SIDEBAR BLOCK ===== */
 .sidebar-block {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--slate-100);
+  background: var(--white);
+  border-radius: 14px;
+  padding: 13px 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--slate-200);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: box-shadow 0.2s;
 }
 
-.sidebar-block:last-child { border-bottom: none; }
+.sidebar-block:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
 
 .block-label {
-  display: block;
-  font-size: 10px;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
   font-weight: 700;
+  color: var(--blue-deep);
+  margin: 0 0 8px 0;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--slate-500);
-  margin-bottom: 7px;
+  letter-spacing: 0.5px;
+  display: block;
 }
 
 /* ===== CAMPANHA SELETOR ===== */
@@ -509,16 +495,18 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-bottom: 8px;
   margin-bottom: 10px;
+  border-bottom: 1px solid var(--slate-100);
 }
 
 .collapsible-header h3 {
   font-family: 'Sora', sans-serif;
   font-size: 13px;
   font-weight: 700;
-  color: var(--slate-800, #1e293b);
+  color: var(--blue-deep);
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
 }
 
 .count-badge {
@@ -531,20 +519,16 @@ input:focus, select:focus, textarea:focus {
 }
 
 .collapse-btn {
-  width: 26px;
-  height: 26px;
+  background: var(--blue-light);
+  color: var(--blue-main);
   border: none;
-  border-radius: 50%;
-  background: var(--slate-100);
-  color: var(--slate-600);
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
   font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
 }
 
 .collapse-btn:hover { background: var(--blue-main); color: white; }
@@ -994,11 +978,11 @@ input:focus, select:focus, textarea:focus {
 
 .modo-btn {
   flex: 1;
-  padding: 7px 4px;
+  padding: 6px 6px;
   font-size: 11px;
   font-weight: 700;
   font-family: inherit;
-  border-radius: 8px;
+  border-radius: 20px;
   border: 1.5px solid var(--slate-200);
   background: var(--slate-50);
   color: var(--slate-600);
@@ -1015,17 +999,21 @@ input:focus, select:focus, textarea:focus {
 }
 
 .modo-btn.ativa {
-  background: var(--blue-deep);
+  background: var(--blue-main);
   color: white;
-  border-color: var(--blue-deep);
-  box-shadow: 0 3px 10px rgba(13,45,107,0.3);
+  border-color: var(--blue-main);
+  box-shadow: 0 3px 10px rgba(21,101,192,0.35);
 }
 
 /* ===== MOBILE ===== */
-@media (max-width: 700px) {
+@media (max-width: 768px) {
   #sidebar { width: 100%; }
-  #toggleSidebar { top: 12px; right: 12px; }
-  #toggleSidebar.sidebar-closed-btn { right: 12px; }
-  #map-left-controls { top: 12px; left: 12px; }
+  #toggleSidebar { top: 12px; right: 12px; z-index: 3000; padding: 11px 15px; font-size: 18px; }
+  body:not(.sidebar-closed) #toggleSidebar { display: none; }
+  #closeSidebarMobileBtn { display: flex !important; }
+  #map-left-controls { top: auto; bottom: 20px; left: 50%; transform: translateX(-50%); flex-direction: row; flex-wrap: wrap; gap: 8px; width: calc(100% - 90px); justify-content: center; }
+  .ctrl-card, #overlay-total { min-width: auto; padding: 10px 12px; flex: 1; }
+  .ctrl-titulo, .overlay-label { display: none; }
+  .modo-btn { font-size: 10px; padding: 5px 4px; }
   #legenda { display: none; }
 }
