@@ -680,7 +680,6 @@ async function excluirLideranca(l, bairro) {
 document.getElementById("add-lideranca").addEventListener("click", async () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   if (user.nivel === 'visualizador') { alert('Acesso Negado.'); return }
-  if (!bairroAtual) { alert('Selecione um bairro primeiro.'); return }
 
   const nome    = document.getElementById("lideranca-nome").value.trim()
   const contato = document.getElementById("lideranca-contato").value.trim()
@@ -689,10 +688,14 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
 
   if (!nome) { alert("Informe o nome da liderança."); return }
 
+  // Se bairro selecionado → vai ao submapa RJ Capital; caso contrário → mapa estadual (Rio de Janeiro)
+  const cidadeDestino = bairroAtual || 'Rio de Janeiro'
+  const mapaDestino   = bairroAtual ? 'rjcapital' : null
+
   try {
     const formData = new FormData()
-    formData.append('cidade',            bairroAtual)
-    formData.append('mapa',              'rjcapital')
+    formData.append('cidade',            cidadeDestino)
+    if (mapaDestino) formData.append('mapa', mapaDestino)
     formData.append('nome',              nome)
     formData.append('contato',           contato)
     formData.append('vinculo_politico',  vinculo)
@@ -710,7 +713,7 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
 
     await carregarTudo()
     repaintMapa()
-    renderLiderancas(bairroAtual)
+    if (bairroAtual) renderLiderancas(bairroAtual)
   } catch (err) {
     console.error(err)
     alert('Erro ao adicionar liderança')

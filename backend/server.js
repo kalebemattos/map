@@ -899,8 +899,10 @@ app.put('/api/liderancas/:id', auth, withTenant, allowAll(), upload.single('foto
 app.get('/api/liderancas', auth, withTenant, async (req, res) => {
   try {
     const mapaFiltro = req.query.mapa || null;
+    // Sem filtro de mapa → mapa estadual: retorna apenas lideranças sem submapa (mapa IS NULL)
+    // Com filtro de mapa → submapa específico: retorna lideranças daquele submapa
     const params = mapaFiltro ? [req.tenantId, mapaFiltro] : [req.tenantId];
-    const mapaClause = mapaFiltro ? 'AND l.mapa = $2' : '';
+    const mapaClause = mapaFiltro ? 'AND l.mapa = $2' : 'AND l.mapa IS NULL';
 
     const { rows } = await pool.query(`
       SELECT

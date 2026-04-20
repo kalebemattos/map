@@ -696,7 +696,6 @@ document.getElementById("buscar-lideranca").addEventListener("input", e => {
 document.getElementById("add-lideranca").addEventListener("click", async () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   if (user.nivel === 'visualizador') { alert('Acesso Negado.'); return }
-  if (!bairroAtual) { alert('Selecione um distrito primeiro.'); return }
 
   const nome    = document.getElementById("lideranca-nome").value.trim()
   const contato = document.getElementById("lideranca-contato").value.trim()
@@ -705,10 +704,14 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
 
   if (!nome) { alert("Informe o nome da liderança."); return }
 
+  // Se distrito selecionado → vai ao submapa de Piraí; caso contrário → mapa estadual (Piraí)
+  const cidadeDestino = bairroAtual || 'Piraí'
+  const mapaDestino   = bairroAtual ? 'pirai' : null
+
   try {
     const formData = new FormData()
-    formData.append('cidade',            bairroAtual)
-    formData.append('mapa',              'pirai')
+    formData.append('cidade',            cidadeDestino)
+    if (mapaDestino) formData.append('mapa', mapaDestino)
     formData.append('nome',              nome)
     formData.append('contato',           contato)
     formData.append('vinculo_politico',  vinculo)
@@ -725,7 +728,7 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
 
     await carregarTudo()
     repaintMapa()
-    renderLiderancas(bairroAtual)
+    if (bairroAtual) renderLiderancas(bairroAtual)
   } catch (err) {
     console.error(err)
     alert('Erro ao adicionar liderança')
