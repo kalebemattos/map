@@ -2469,28 +2469,30 @@ async function carregarPins() {
 
   pins.forEach(p => {
     let marker;
-    // Cor dinâmica: usa cor do estado (urgência) em vez de cor fixa do tipo
-    const cor = p.cor_estado || p.cor_tipo || corDoPin(p.tipo);
+    const corTipo   = p.cor_tipo || corDoPin(p.tipo);
+    const corEstado = p.cor_estado || corTipo;
+    const temAgenda = p.estado && p.estado !== 'nunca_ativado';
+    // Sem agenda: borda cinza, fill com cor do tipo
+    // Com agenda: borda e fill com cor do estado
+    const corBorda  = temAgenda ? corEstado : '#94a3b8';
 
     if (p.tipo === 'comite') {
-      // Comitê usa emoji, mas com borda colorida pelo estado
       marker = L.marker([p.lat, p.lng], {
         icon: L.divIcon({
           className: '',
-          html: `<div style="font-size:22px;filter:drop-shadow(0 0 3px ${cor});">🏠</div>`,
+          html: `<div style="font-size:22px;filter:drop-shadow(0 0 3px ${corBorda});">🏠</div>`,
           iconSize: [26, 26],
           iconAnchor: [13, 13]
         })
       });
     } else {
-      // Raio maior para pins críticos/urgentes
       const radius = (p.score_urgencia ?? 0) >= 70 ? 11 : 8;
       marker = L.circleMarker([p.lat, p.lng], {
         radius,
-        color:       cor,
-        fillColor:   cor,
+        color:       corBorda,
+        fillColor:   corTipo,
         fillOpacity: 0.88,
-        weight: 2,
+        weight: temAgenda ? 3 : 2,
       });
     }
 

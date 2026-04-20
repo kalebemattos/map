@@ -551,13 +551,16 @@ async function carregarPins() {
 
   pins.forEach(p => {
     let marker;
-    const cor = p.cor_estado || p.cor_tipo || corDoPin(p.tipo);
+    const corTipo   = p.cor_tipo || corDoPin(p.tipo);
+    const corEstado = p.cor_estado || corTipo;
+    const temAgenda = p.estado && p.estado !== 'nunca_ativado';
+    const corBorda  = temAgenda ? corEstado : '#94a3b8';
 
     if (p.tipo === 'comite') {
       marker = L.marker([p.lat, p.lng], {
         icon: L.divIcon({
           className: '',
-          html: `<div style="font-size:22px;filter:drop-shadow(0 0 3px ${cor});">🏠</div>`,
+          html: `<div style="font-size:22px;filter:drop-shadow(0 0 3px ${corBorda});">🏠</div>`,
           iconSize: [26, 26],
           iconAnchor: [13, 13]
         })
@@ -566,10 +569,10 @@ async function carregarPins() {
       const radius = (p.score_urgencia ?? 0) >= 70 ? 11 : 8;
       marker = L.circleMarker([p.lat, p.lng], {
         radius,
-        color: cor,
-        fillColor: cor,
+        color:       corBorda,
+        fillColor:   corTipo,
         fillOpacity: 0.88,
-        weight: 2,
+        weight: temAgenda ? 3 : 2,
       });
     }
 
