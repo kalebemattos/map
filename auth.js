@@ -229,3 +229,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 });
+
+// ─────────────────────────────────────────────
+// PAGESHOW — restauração via bfcache (botão voltar/avançar do browser)
+// DOMContentLoaded NÃO dispara no bfcache — este handler cobre esse caso.
+// ─────────────────────────────────────────────
+window.addEventListener('pageshow', async function (e) {
+  // e.persisted = true apenas quando a página vem do bfcache
+  if (!e.persisted) return;
+
+  // 1. Revalida o token silenciosamente (pode ter expirado enquanto estava em outra aba)
+  const token = getToken();
+  if (!token) {
+    const refreshOk = await tentarRefresh();
+    if (!refreshOk) { localStorage.clear(); location.reload(); return; }
+  }
+
+  // 2. Força o Leaflet a recalcular o tamanho do container
+  //    (os tiles ficam cinza/deslocados se não chamar isto após bfcache)
+  if (window.map && typeof window.map.invalidateSize === 'function') {
+    setTimeout(() => {
+      window.map.invalidateSize(false);
+    }, 100);
+  }
+});
