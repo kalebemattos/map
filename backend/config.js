@@ -95,7 +95,7 @@ module.exports = {
       chave:  'serrana',
       label:  'Serrana',
       cidades: [
-        'Petrópolis', 'Teresópolis', 'Nova Friburgo', 'Bom Jardim', 'Sumidouro', 'Cantagalo',
+        'Petrópolis', 'Teresópolis', 'Duas Barras', 'Nova Friburgo', 'Bom Jardim', 'Sumidouro', 'Cantagalo',
         'Cordeiro', 'Santa Maria Madalena', 'Trajano de Moraes', 'São Sebastião do Alto', 'Macuco',
         'Carmo', 'São José do Vale do Rio Preto',
       ],
