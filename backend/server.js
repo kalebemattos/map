@@ -703,7 +703,8 @@ app.post('/api/liderancas',
     const {
       pessoa_id: pessoaIdRaw, nome, cidade, contato, perfil,
       expectativa_votos, responsavel, status, release,
-      vinculo_politico, regiao: regiaoBody, data_nascimento, mapa
+      vinculo_politico, regiao: regiaoBody, data_nascimento, mapa,
+      apelido, rede_social
     } = req.body;
 
     if (!validarTexto(cidade, 120))
@@ -737,19 +738,22 @@ app.post('/api/liderancas',
     if (!pessoaId) {
       // Cria ou recupera pessoa pelo nome normalizado
       const upsert = await client.query(`
-        INSERT INTO pessoas (tenant_id, nome, nome_norm, contato, foto, perfil, data_nascimento, release)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        INSERT INTO pessoas (tenant_id, nome, nome_norm, contato, foto, perfil, data_nascimento, release, apelido, rede_social)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         ON CONFLICT (tenant_id, nome_norm) DO UPDATE
           SET contato         = COALESCE(EXCLUDED.contato,         pessoas.contato),
               foto            = COALESCE(EXCLUDED.foto,            pessoas.foto),
               perfil          = COALESCE(EXCLUDED.perfil,          pessoas.perfil),
               data_nascimento = COALESCE(EXCLUDED.data_nascimento, pessoas.data_nascimento),
               release         = COALESCE(EXCLUDED.release,         pessoas.release),
+              apelido         = COALESCE(EXCLUDED.apelido,         pessoas.apelido),
+              rede_social     = COALESCE(EXCLUDED.rede_social,     pessoas.rede_social),
               atualizado_em   = now()
         RETURNING id
       `, [req.tenantId, nome.trim(), normalizarNome(nome),
           contato || null, fotoUrl, perfil || null,
-          data_nascimento || null, release || null]);
+          data_nascimento || null, release || null,
+          apelido || null, rede_social || null]);
       pessoaId = upsert.rows[0].id;
     } else if (fotoUrl) {
       await client.query(
@@ -813,7 +817,8 @@ app.put('/api/liderancas/:id', auth, withTenant, allowAll(), upload.single('foto
     const { id } = req.params;
     const {
       nome, contato, cidade, expectativa_votos, perfil, responsavel,
-      status, release, vinculo_politico, regiao: regiaoBody, data_nascimento, mapa
+      status, release, vinculo_politico, regiao: regiaoBody, data_nascimento, mapa,
+      apelido, rede_social
     } = req.body;
 
     if (!validarTexto(cidade, 120)) return res.status(400).json({ error: 'Cidade inválida' });
@@ -854,12 +859,15 @@ app.put('/api/liderancas/:id', auth, withTenant, allowAll(), upload.single('foto
         perfil          = COALESCE($5, perfil),
         data_nascimento = COALESCE($6, data_nascimento),
         release         = COALESCE($7, release),
+        apelido         = COALESCE($10, apelido),
+        rede_social     = COALESCE($11, rede_social),
         atualizado_em   = now()
       WHERE id=$8 AND tenant_id=$9
     `, [nome ? nome.trim() : null, nome ? normalizarNome(nome) : null,
         contato || null, fotoUrl,
         perfil || null, data_nascimento || null, release || null,
-        atual.pessoa_id, req.tenantId]);
+        atual.pessoa_id, req.tenantId,
+        apelido || null, rede_social || null]);
 
     // Atualiza vínculo em liderancas
     const result = await client.query(`
@@ -919,6 +927,8 @@ app.get('/api/liderancas', auth, withTenant, async (req, res) => {
           'createdat',        l.createdat,
           'pessoa_id',        l.pessoa_id,
           'nome',             p.nome,
+          'apelido',          p.apelido,
+          'rede_social',      p.rede_social,
           'contato',          p.contato,
           'foto',             p.foto,
           'perfil',           p.perfil,

@@ -709,8 +709,19 @@ textarea {
         <div id="ac-nome-info" style="display:none;margin-top:4px;font-size:12px;color:#1565c0;font-weight:600;"></div>
       </div>
       <div class="form-group">
+        <label>Apelido</label>
+        <input id="apelido" placeholder="Como é conhecido(a)">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
         <label>Contato</label>
         <input id="contato" placeholder="(XX) XXXXX-XXXX">
+      </div>
+      <div class="form-group">
+        <label>Rede social</label>
+        <input id="rede_social" placeholder="@usuario ou link">
       </div>
     </div>
 
@@ -1378,7 +1389,7 @@ async function carregarLiderancas() {
 
     // Store data on element for edit
     div.querySelector('.btn-edit')?.addEventListener('click', () => {
-      editarLiderancaCompleta(l.id, l.nome, l.contato || '', l.expectativa_votos || 0, l.perfil || '', l.responsavel || '', l.status || 'ativa', l.release || '', l.vinculo_politico || 'ambos');
+      editarLiderancaCompleta(l.id, l.nome, l.contato || '', l.expectativa_votos || 0, l.perfil || '', l.responsavel || '', l.status || 'ativa', l.release || '', l.vinculo_politico || 'ambos', l.apelido || '', l.rede_social || '');
     });
     div.querySelector('.btn-excluir')?.addEventListener('click', () => excluir(l.id));
 
@@ -1387,7 +1398,7 @@ async function carregarLiderancas() {
 }
 
 /* ===== EDITAR ===== */
-function editarLiderancaCompleta(id, nomeVal, contatoVal, votosVal, perfilVal, respVal, statusVal, releaseVal, vinculoVal) {
+function editarLiderancaCompleta(id, nomeVal, contatoVal, votosVal, perfilVal, respVal, statusVal, releaseVal, vinculoVal, apelidoVal, redeSocialVal) {
   const user = JSON.parse(localStorage.getItem('user'));
   if (user.nivel === 'visualizador') return;
 
@@ -1402,6 +1413,8 @@ function editarLiderancaCompleta(id, nomeVal, contatoVal, votosVal, perfilVal, r
   statusInput.value = statusVal;
   releaseInput.value = releaseVal;
   document.getElementById('vinculo_politico').value = vinculoVal || 'ambos';
+  document.getElementById('apelido').value = apelidoVal || '';
+  document.getElementById('rede_social').value = redeSocialVal || '';
 
   formTitle.textContent = 'Editar liderança';
   document.getElementById('form-icon').textContent = '✏️';
@@ -1424,6 +1437,8 @@ function cancelarEdicao() {
   statusInput.value = 'ativa';
   releaseInput.value = '';
   fotoInput.value = '';
+  document.getElementById('apelido').value = '';
+  document.getElementById('rede_social').value = '';
   const cands = configSistema.candidatos || [];
   document.getElementById('vinculo_politico').value = cands.length === 1 ? cands[0].chave : (cands[0]?.chave || 'ambos');
   formTitle.textContent = 'Nova Liderança';
@@ -1462,6 +1477,8 @@ function acSelecionarPessoa(p) {
   document.getElementById('contato').value = p.contato || '';
   perfilInput.value       = p.perfil  || '';
   releaseInput.value      = p.release || '';
+  document.getElementById('apelido').value    = p.apelido    || '';
+  document.getElementById('rede_social').value = p.rede_social || '';
   if (dataNascimentoInput) dataNascimentoInput.value = p.data_nascimento
     ? String(p.data_nascimento).substring(0, 10) : '';
   const cidades = Array.isArray(p.cidades) && p.cidades.length
@@ -1576,6 +1593,8 @@ async function salvar() {
     fd.append('nome', nome.value.trim());
   }
   fd.append('contato', contato.value.trim());
+  fd.append('apelido', document.getElementById('apelido').value.trim());
+  fd.append('rede_social', document.getElementById('rede_social').value.trim());
   fd.append('expectativa_votos', Number(expectativaVotosInput.value) || 0);
   fd.append('perfil', perfilInput.value);
   fd.append('responsavel', responsavelInput.value);
