@@ -101,25 +101,32 @@ async function apiFetch(endpoint, options = {}) {
 // ─────────────────────────────────────────────
 let configSistema = { candidatos: [], cores: {}, mapas: [] }
 
-async function carregarConfig() {
-  try {
-    const token = localStorage.getItem('token')
-    const r = await fetch(window.API_URL + '/config', {
-      headers: token ? { Authorization: 'Bearer ' + token } : {}
-    })
-    if (!r.ok) return
-    configSistema = await r.json()
-    // Aplicar cores de identidade visual como variáveis CSS
-    if (configSistema.cores) {
-      const c = typeof configSistema.cores === 'string'
-        ? JSON.parse(configSistema.cores)
-        : configSistema.cores
-      if (c.primaria)   document.documentElement.style.setProperty('--blue-main', c.primaria)
-      if (c.secundaria) document.documentElement.style.setProperty('--blue-deep', c.secundaria)
-      if (c.destaque)   document.documentElement.style.setProperty('--blue-mid',  c.destaque)
-    }
-    injetarCandidatosAngra()
-  } catch (e) { console.warn('[config] não carregada:', e) }
+async function carregarConfig(tentativas = 3) {
+  for (let i = 0; i < tentativas; i++) {
+    try {
+      if (i > 0) {
+        await new Promise(r => setTimeout(r, 800 * i))
+        await tentarRefresh()
+      }
+      const token = localStorage.getItem('token')
+      const r = await fetch(window.API_URL + '/config', {
+        headers: token ? { Authorization: 'Bearer ' + token } : {}
+      })
+      if (!r.ok) continue
+      configSistema = await r.json()
+      if (configSistema.cores) {
+        const c = typeof configSistema.cores === 'string'
+          ? JSON.parse(configSistema.cores)
+          : configSistema.cores
+        if (c.primaria)   document.documentElement.style.setProperty('--blue-main', c.primaria)
+        if (c.secundaria) document.documentElement.style.setProperty('--blue-deep', c.secundaria)
+        if (c.destaque)   document.documentElement.style.setProperty('--blue-mid',  c.destaque)
+      }
+      injetarCandidatosAngra()
+      return
+    } catch (e) { console.warn(`[config] tentativa ${i + 1} falhou:`, e) }
+  }
+  console.warn('[config] não foi possível carregar após', tentativas, 'tentativas')
 }
 
 // Helper: dado vinculo_politico, retorna { cls, style, label }

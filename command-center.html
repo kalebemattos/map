@@ -1021,7 +1021,7 @@ function renderExpRegioes(regioes) {
     return `
       <div class="exp-item" style="animation-delay:${i*0.05}s">
         <div class="exp-top">
-          <span class="exp-name">${r.regiao}</span>
+          <span class="exp-name">${r.label || getLabelRegiao(r.regiao)}</span>
           <div class="exp-nums">
             <span class="exp-num-mapped">${fmt(r.votos_mapeados)} lideranças</span>
             <span class="exp-num-meta">/ meta ${fmt(r.meta_total)}</span>
@@ -1061,7 +1061,7 @@ function renderExpRegioes(regioes) {
   charts['exp-regioes'] = new Chart(document.getElementById('chart-exp-regioes').getContext('2d'), {
     type:'bar',
     data:{
-      labels: regioes.map(r => r.regiao.length > 16 ? r.regiao.slice(0,14)+'…' : r.regiao),
+      labels: regioes.map(r => { const lbl = r.label || getLabelRegiao(r.regiao); return lbl.length > 16 ? lbl.slice(0,14)+'…' : lbl; }),
       datasets:[
         {
           label:'Exp. Lideranças',
@@ -1101,8 +1101,7 @@ function renderExpRegioes(regioes) {
 function renderRadar(regioes) {
   if (!regioes.length) return;
 
-  // Ordena pelo label do config para alinhar com votosValidos
-  const labels = regioes.map(r=>r.regiao);
+  const labels = regioes.map(r=>r.label || getLabelRegiao(r.regiao));
   const mapeado = regioes.map(r=>r.votos_mapeados);
   const meta    = regioes.map(r=>r.meta_total);
   const maxV    = Math.max(...mapeado,...meta,1);
@@ -1152,62 +1151,102 @@ function renderRadar(regioes) {
 }
 
 /* ══════════════════════════════════════════
-   VOTOS VÁLIDOS REAIS: calcula eleitorado por região
-   usando data.js (votosValidos) + mapeamento do config
+   HELPERS DE REGIÃO — usam data.js (regions) + config
 ══════════════════════════════════════════ */
-// Mapeamento local (espelho do config.js) — independente de auth
-const REGIAO_CIDADES = {
-  'Metropolitana':      ['Rio de Janeiro','Niterói','São Gonçalo','Itaboraí','Maricá','Tanguá','Rio Bonito','Cachoeiras de Macacu','Guapimirim','Magé','Duque de Caxias','Nova Iguaçu','Belford Roxo','São João de Meriti','Nilópolis','Mesquita','Queimados','Japeri','Seropédica','Itaguaí','Paracambi'],
-  'Baixadas Litorâneas':['Araruama','Arraial do Cabo','Cabo Frio','Iguaba Grande','São Pedro da Aldeia','Saquarema','Silva Jardim','Casimiro de Abreu','Rio das Ostras','Armação dos Búzios'],
-  'Norte Fluminense':   ['Campos dos Goytacazes','São João da Barra','São Francisco de Itabapoana','Macaé','Carapebus','Quissamã','Conceição de Macabu'],
-  'Noroeste Fluminense':['Itaperuna','Bom Jesus do Itabapoana','Natividade','Porciúncula','Varre-Sai','Miracema','Cambuci','Italva','Cardoso Moreira','Laje do Muriaé','Aperibé','Santo Antônio de Pádua','São José de Ubá','Itaocara'],
-  'Serrana':            ['Petrópolis','Teresópolis','Nova Friburgo','Bom Jardim','Sumidouro','Cantagalo','Cordeiro','Santa Maria Madalena','Trajano de Moraes','São Sebastião do Alto','Macuco','Carmo','São José do Vale do Rio Preto'],
-  'Centro-Sul Fluminense':['Paraíba do Sul','Três Rios','Sapucaia','Comendador Levy Gasparian','Areal','Paty do Alferes','Miguel Pereira','Vassouras','Engenheiro Paulo de Frontin','Mendes','Piraí'],
-  'Médio Paraíba':      ['Barra Mansa','Volta Redonda','Resende','Quatis','Porto Real','Pinheiral','Valença','Rio das Flores','Barra do Piraí','Rio Claro'],
-  'Costa Verde':        ['Angra dos Reis','Paraty','Mangaratiba'],
-};
 
+// Retorna o label legível de uma chave de região
+function getLabelRegiao(chave) {
+  const cfg = ((window._configSistema || {}).regioes || []);
+  const r = cfg.find(r => r.chave === chave);
+  return r ? (r.label || chave) : chave;
+}
+
+// Retorna array de cidades de uma chave usando data.js regions
+function getCidadesRegiao(chave) {
+  if (typeof regions === 'undefined') return [];
+  return regions[chave] || [];
+}
+
+// Votos válidos (eleitorado) totais por região, usando data.js
 function calcVotosValidosPorRegiao() {
-  // votosValidos vem do data.js carregado globalmente
-  if (typeof votosValidos === 'undefined') return [];
-  return Object.entries(REGIAO_CIDADES).map(([regiao, cidades]) => {
-    const total = cidades.reduce((sum, c) => sum + (votosValidos[c] || 0), 0);
-    return { regiao, total, cidades: cidades.length };
-  }).sort((a, b) => b.total - a.total);
+  if (typeof votosValidos === 'undefined' || typeof regions === 'undefined') return [];
+  return Object.entries(regions)
+    .filter(([chave]) => chave !== 'all')
+    .map(([chave, cidades]) => {
+      const total = cidades.reduce((sum, c) => sum + (votosValidos[c] || 0), 0);
+      return { regiao: chave, label: getLabelRegiao(chave), total, cidades: cidades.length };
+    })
+    .sort((a, b) => b.total - a.total);
+}
+
+// Votos da Célia em 2022 por região, usando deputadosByCity de data.js
+function calcCeliaVotosPorRegiao() {
+  if (typeof deputadosByCity === 'undefined' || typeof regions === 'undefined') return {};
+  const result = {};
+  Object.entries(regions).filter(([k]) => k !== 'all').forEach(([chave, cidades]) => {
+    let total = 0;
+    cidades.forEach(cidade => {
+      const deps = deputadosByCity[cidade] || [];
+      const celia = deps.find(d => /c[eé]lia|jord[aã]o/i.test(d.name));
+      if (celia) total += celia.votes;
+    });
+    result[chave] = total;
+  });
+  return result;
 }
 
 function renderVotosReg(expRegioes) {
   const dados = calcVotosValidosPorRegiao();
   if (!dados.length) return;
 
-  const total = dados.reduce((s,d)=>s+d.total,0);
+  const total    = dados.reduce((s,d)=>s+d.total,0);
+  const celiaMap = calcCeliaVotosPorRegiao();
+  const celiaTotal = Object.values(celiaMap).reduce((s,v)=>s+v,0);
+
   const el = document.getElementById('votos-validos-total');
-  if (el) el.textContent = `Total RJ: ${fmt(total)} eleitores`;
+  if (el) el.textContent = `Total RJ: ${fmt(total)} eleitores · Célia 2022: ${fmt(celiaTotal)} votos`;
 
   kill('votos-reg');
   charts['votos-reg'] = new Chart(document.getElementById('chart-votos-reg').getContext('2d'), {
     type:'bar',
     data:{
-      labels: dados.map(d=>d.regiao),
-      datasets:[{
-        label:'Eleitorado Real',
-        data: dados.map(d=>d.total),
-        backgroundColor: PAL.slice(0,dados.length).map(c=>c+'99'),
-        borderColor:     PAL.slice(0,dados.length),
-        borderWidth:1.5, borderRadius:6, borderSkipped:false
-      }]
+      labels: dados.map(d=>d.label||d.regiao),
+      datasets:[
+        {
+          label:'Eleitorado Real',
+          data: dados.map(d=>d.total),
+          backgroundColor: PAL.slice(0,dados.length).map(c=>c+'55'),
+          borderColor:     PAL.slice(0,dados.length),
+          borderWidth:1.5, borderRadius:4, borderSkipped:false
+        },
+        {
+          label:'Votos Célia 2022',
+          data: dados.map(d=>celiaMap[d.regiao]||0),
+          backgroundColor: 'rgba(167,139,250,0.75)',
+          borderColor:     '#a78bfa',
+          borderWidth:1.5, borderRadius:4, borderSkipped:false
+        }
+      ]
     },
     options:{
       indexAxis:'y',
       responsive:true, maintainAspectRatio:false,
       plugins:{
-        legend:{display:false},
+        legend:{ display:true, labels:{ color:'#a8b8d0', boxWidth:10, boxHeight:10, padding:12, font:{size:11} } },
         tooltip:{ callbacks:{
-          label: ctx => ` ${fmt(ctx.parsed.x)} eleitores`,
+          label: ctx => {
+            if (ctx.datasetIndex===0) return ` ${fmt(ctx.parsed.x)} eleitores`;
+            return ` ${fmt(ctx.parsed.x)} votos Célia`;
+          },
           afterLabel: ctx => {
             const d = dados[ctx.dataIndex];
-            const pct = Math.round((d.total/total)*100);
-            return ` ${pct}% do estado · ${d.cidades} cidades`;
+            if (ctx.datasetIndex===0) {
+              const pct = Math.round((d.total/total)*100);
+              return ` ${pct}% do estado · ${d.cidades} cidades`;
+            }
+            const celiaV = celiaMap[d.regiao]||0;
+            const pctE = d.total>0 ? ((celiaV/d.total)*100).toFixed(1) : '0';
+            return ` ${pctE}% do eleitorado`;
           }
         }}
       },
@@ -1359,37 +1398,48 @@ function renderResumoRegioes(expRegioes) {
   const grid = document.getElementById('regiao-grid');
   if (!grid) return;
 
-  // Eleitorado real por região (data.js)
+  // Eleitorado real por região (data.js: regions + votosValidos)
   const votosReg = {};
-  if (typeof votosValidos !== 'undefined') {
-    Object.entries(REGIAO_CIDADES).forEach(([reg, cidades]) => {
-      votosReg[reg] = cidades.reduce((s, c) => s + (votosValidos[c] || 0), 0);
+  if (typeof votosValidos !== 'undefined' && typeof regions !== 'undefined') {
+    Object.entries(regions).filter(([k]) => k !== 'all').forEach(([chave, cidades]) => {
+      votosReg[chave] = cidades.reduce((s, c) => s + (votosValidos[c] || 0), 0);
     });
   }
 
-  // Indexa dados do backend por região
+  // Votos da Célia 2022 por região (data.js: deputadosByCity)
+  const celiaReg = calcCeliaVotosPorRegiao();
+
+  // Indexa dados do backend por chave de região
   const apiMap = {};
   (expRegioes || []).forEach(r => { apiMap[r.regiao] = r; });
 
-  const regioes = Object.keys(REGIAO_CIDADES);
+  // Usa a lista vinda do backend (já ordenada por tenant_regioes.ordem)
+  // Fallback: usa as chaves de regions de data.js
+  let regioes = (expRegioes || []).map(r => r.regiao);
+  if (!regioes.length && typeof regions !== 'undefined') {
+    regioes = Object.keys(regions).filter(k => k !== 'all');
+  }
 
-  grid.innerHTML = regioes.map((reg, i) => {
-    const api      = apiMap[reg] || {};
-    const eleitor  = votosReg[reg] || 0;
-    const meta     = api.meta_total      || 0;
-    const expLid   = api.votos_mapeados  || 0;
-    const nLideres = api.total_lideres   || 0;
-    const cidades  = REGIAO_CIDADES[reg].length;
+  grid.innerHTML = regioes.map((chave, i) => {
+    const api      = apiMap[chave] || {};
+    const label    = api.label || getLabelRegiao(chave);
+    const cidades  = getCidadesRegiao(chave);
+    const eleitor  = votosReg[chave] || 0;
+    const meta     = api.meta_total     || 0;
+    const expLid   = api.votos_mapeados || 0;
+    const nLideres = api.total_lideres  || 0;
+    const celiaV   = celiaReg[chave]    || 0;
 
-    const cob       = meta > 0 ? Math.min(Math.round((expLid / meta) * 100), 100) : 0;
-    const cobColor  = cob >= 80 ? '#10b981' : cob >= 50 ? '#f59e0b' : cob > 0 ? '#ef4444' : '#4d6480';
-    const pctMeta   = eleitor > 0 ? ((meta / eleitor) * 100).toFixed(1) : '—';
+    const cob      = meta > 0 ? Math.min(Math.round((expLid / meta) * 100), 100) : 0;
+    const cobColor = cob >= 80 ? '#10b981' : cob >= 50 ? '#f59e0b' : cob > 0 ? '#ef4444' : '#4d6480';
+    const pctMeta  = eleitor > 0 ? ((meta / eleitor) * 100).toFixed(1) : '—';
+    const pctCelia = eleitor > 0 ? ((celiaV / eleitor) * 100).toFixed(1) : '—';
 
     return `
     <div class="regiao-card" style="animation-delay:${i*0.05}s">
       <div class="regiao-card-title">
-        <span>${reg}</span>
-        <span class="regiao-card-badge">${cidades} cidades</span>
+        <span>${label}</span>
+        <span class="regiao-card-badge">${cidades.length} cidades</span>
       </div>
 
       <div class="regiao-metric-row">
@@ -1397,7 +1447,11 @@ function renderResumoRegioes(expRegioes) {
         <span class="regiao-metric-val" style="color:var(--text2)">${fmt(eleitor)}</span>
       </div>
       <div class="regiao-metric-row">
-        <span class="regiao-metric-label">🏙️ Meta (cidades)</span>
+        <span class="regiao-metric-label">📌 Votos Célia 2022</span>
+        <span class="regiao-metric-val" style="color:#a78bfa">${fmt(celiaV)} <small style="font-size:10px;color:var(--muted);font-weight:400">${pctCelia !== '—' ? pctCelia+'%' : ''}</small></span>
+      </div>
+      <div class="regiao-metric-row">
+        <span class="regiao-metric-label">🏙️ Meta</span>
         <span class="regiao-metric-val" style="color:var(--accent)">${fmt(meta)} <small style="font-size:10px;color:var(--muted);font-weight:400">${pctMeta !== '—' ? pctMeta+'%' : ''}</small></span>
       </div>
       <div class="regiao-metric-row">
@@ -1422,9 +1476,8 @@ function renderResumoRegioes(expRegioes) {
   }).join('');
 
   // Anima as barras de cobertura
-  regioes.forEach((_, i) => {
-    const reg    = regioes[i];
-    const api    = apiMap[reg] || {};
+  regioes.forEach((chave, i) => {
+    const api    = apiMap[chave] || {};
     const meta   = api.meta_total     || 0;
     const expLid = api.votos_mapeados || 0;
     const cob    = meta > 0 ? Math.min(Math.round((expLid / meta) * 100), 100) : 0;

@@ -1759,7 +1759,7 @@ app.get('/api/dashboard/expectativa-regioes', auth, withTenant, allow('dono', 'a
       SELECT regiao,
         COALESCE(SUM(expectativa_votos), 0) AS votos_mapeados,
         COUNT(*) AS total_lideres,
-        COUNT(*) FILTER (WHERE status = 'ativo') AS lideres_ativos
+        COUNT(*) FILTER (WHERE status = 'ativa') AS lideres_ativos
       FROM liderancas
       WHERE regiao IS NOT NULL AND regiao <> '' AND tenant_id = $1
       GROUP BY regiao
@@ -1767,7 +1767,16 @@ app.get('/api/dashboard/expectativa-regioes', auth, withTenant, allow('dono', 'a
     const mapaMap = {};
     mapeados.forEach(m => { mapaMap[m.regiao] = m; });
 
+    // Busca labels e ordem das regiões configuradas
+    const regioesCfg = await dbAll(
+      'SELECT chave, label, ordem FROM tenant_regioes WHERE tenant_id = $1 ORDER BY ordem ASC', [t]
+    );
+    const labelMap = {};
+    regioesCfg.forEach(r => { labelMap[r.chave] = r.label || r.chave; });
+
+    // Une todas as regiões encontradas nos dados
     const allRegioes = new Set([
+      ...regioesCfg.map(r => r.chave),
       ...Object.keys(metasByRegiao),
       ...mapeados.map(m => m.regiao)
     ]);
@@ -1777,8 +1786,9 @@ app.get('/api/dashboard/expectativa-regioes', auth, withTenant, allow('dono', 'a
       const map  = mapaMap[regiao] || {};
       return {
         regiao,
-        meta_total:    meta.meta_total,
-        metas:         meta.metas,          // { chave: valor, ... }
+        label:          labelMap[regiao] || regiao,
+        meta_total:     meta.meta_total,
+        metas:          meta.metas,
         votos_mapeados: parseInt(map.votos_mapeados || 0),
         total_lideres:  parseInt(map.total_lideres  || 0),
         lideres_ativos: parseInt(map.lideres_ativos || 0),
@@ -1786,7 +1796,13 @@ app.get('/api/dashboard/expectativa-regioes', auth, withTenant, allow('dono', 'a
           ? Math.round((parseInt(map.votos_mapeados || 0) / meta.meta_total) * 100)
           : 0
       };
-    }).sort((a, b) => b.meta_total - a.meta_total);
+    }).sort((a, b) => {
+      // Ordena pela ordem configurada, depois pelo meta_total
+      const oa = regioesCfg.findIndex(r => r.chave === a.regiao);
+      const ob = regioesCfg.findIndex(r => r.chave === b.regiao);
+      if (oa !== -1 && ob !== -1) return oa - ob;
+      return b.meta_total - a.meta_total;
+    });
 
     res.json(resultado);
   } catch (err) {

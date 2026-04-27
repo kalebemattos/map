@@ -252,4 +252,14 @@ window.addEventListener('pageshow', async function (e) {
       window.map.invalidateSize(false);
     }, 100);
   }
+
+  // 3. Re-injeta o indicador de campanha se o seletor estiver vazio
+  //    (pode acontecer quando a página foi congelada antes do config carregar,
+  //    ou quando o token estava sendo renovado no momento do freeze)
+  const seletor = document.getElementById('seletor-campanha');
+  if (seletor && !seletor.children.length) {
+    if (typeof carregarConfig === 'function') {
+      await carregarConfig();
+    }
+  }
 });
