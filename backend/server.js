@@ -2450,7 +2450,9 @@ app.delete('/api/admin/config/regioes/:chave', auth, withTenant, allow('dono'), 
 // POST /api/admin/cadastro-token  — gera token de convite (admin/dono)
 app.post('/api/admin/cadastro-token', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
   try {
-    const { regiao, cidade, horas = 48 } = req.body;
+    await ensureCadastroTokensTable();
+
+    const { regiao, horas = 48 } = req.body;
     const token      = crypto.randomBytes(24).toString('hex');
     const expires_at = new Date(Date.now() + Number(horas) * 3600 * 1000);
 
@@ -2463,14 +2465,32 @@ app.post('/api/admin/cadastro-token', auth, withTenant, allow('dono', 'admin'), 
     // Retorna apenas o token — o frontend monta a URL com window.location.origin
     res.json({ ok: true, token, expires_at });
   } catch (err) {
-    console.error('[POST /api/admin/cadastro-token]', err);
-    res.status(500).json({ erro: 'Erro ao gerar token' });
+    console.error('[POST /api/admin/cadastro-token]', err.message, err.stack);
+    res.status(500).json({ erro: 'Erro ao gerar token: ' + err.message });
   }
 });
+
+// Garante tabela cadastro_tokens (chamada compartilhada pelas rotas públicas)
+async function ensureCadastroTokensTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS cadastro_tokens (
+      id          SERIAL PRIMARY KEY,
+      token       TEXT NOT NULL UNIQUE,
+      tenant_id   INTEGER NOT NULL,
+      regiao      TEXT,
+      cidade      TEXT,
+      used_at     TIMESTAMPTZ,
+      expires_at  TIMESTAMPTZ NOT NULL,
+      created_by  INTEGER,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+}
 
 // GET /api/public/cadastro/:token  — valida token e retorna metadados do tenant
 app.get('/api/public/cadastro/:token', async (req, res) => {
   try {
+    await ensureCadastroTokensTable();
     const { token } = req.params;
     // Busca direto na tabela de tokens — sem JOIN com tenants (não existe tabela tenants)
     const row = await dbGet(
@@ -2516,6 +2536,7 @@ const cadastroPublicLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, sta
 app.post('/api/public/cadastro/:token', cadastroPublicLimiter, async (req, res) => {
   const client = await pool.connect();
   try {
+    await ensureCadastroTokensTable();
     const { token } = req.params;
 
     // Valida token dentro de transação
