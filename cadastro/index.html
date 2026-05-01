@@ -222,7 +222,7 @@ input[readonly] {
     <h1 id="nome-sistema">Cadastro de Liderança</h1>
     <p class="subtitle">Preencha seus dados para se cadastrar na nossa rede.</p>
 
-    <div id="badge-local" style="text-align:center;"></div>
+    <div id="badge-local" style="text-align:center;margin-bottom:16px;"></div>
 
     <div id="form-erro"></div>
 
@@ -234,6 +234,14 @@ input[readonly] {
       <div class="form-group">
         <label for="f-telefone">WhatsApp / Telefone <span class="req">*</span></label>
         <input type="tel" id="f-telefone" placeholder="(21) 99999-9999" autocomplete="tel" required maxlength="20">
+      </div>
+      <!-- Cidade — select com cidades da região do token (se houver) ou input livre -->
+      <div class="form-group" id="f-cidade-group">
+        <label for="f-cidade">Cidade <span class="req">*</span></label>
+        <select id="f-cidade-select" style="display:none;">
+          <option value="">— Selecione sua cidade —</option>
+        </select>
+        <input type="text" id="f-cidade-input" placeholder="Sua cidade" maxlength="80">
       </div>
       <div class="form-group">
         <label for="f-bairro">Bairro</label>
@@ -312,14 +320,26 @@ async function init() {
       document.title = 'Cadastro — ' + data.nome_sistema;
     }
 
-    // Badge de região/cidade
+    // Badge de região
     const badgeWrap = document.getElementById('badge-local');
-    const partes = [data.regiao, data.cidade].filter(Boolean);
-    if (partes.length) {
-      badgeWrap.innerHTML = partes.map(p =>
-        `<span class="badge-info">📍 ${p}</span>`
-      ).join(' ');
+    if (data.regiao_label || data.regiao) {
+      badgeWrap.innerHTML = `<span class="badge-info">📍 ${data.regiao_label || data.regiao}</span>`;
     }
+
+    // Cidade: select com cidades da região (se disponível), ou input livre
+    const cidadeSelect = document.getElementById('f-cidade-select');
+    const cidadeInput  = document.getElementById('f-cidade-input');
+    if (data.cidades && data.cidades.length > 0) {
+      cidadeSelect.innerHTML = '<option value="">— Selecione sua cidade —</option>';
+      data.cidades.sort().forEach(c => {
+        const o = document.createElement('option');
+        o.value = c; o.textContent = c;
+        cidadeSelect.appendChild(o);
+      });
+      cidadeSelect.style.display = 'block';
+      cidadeInput.style.display  = 'none';
+    }
+    // Se não há cidades pré-definidas, mostra input de texto livre (já visível por padrão)
 
     // Candidatos no select de vínculo
     if (data.candidatos && data.candidatos.length) {
@@ -363,8 +383,16 @@ async function submeterCadastro(e) {
   const bairro   = document.getElementById('f-bairro').value.trim();
   const vinculo  = document.getElementById('f-vinculo').value;
 
+  // Cidade: pega do select (se visível) ou do input livre
+  const cidadeSelect = document.getElementById('f-cidade-select');
+  const cidadeInput  = document.getElementById('f-cidade-input');
+  const cidade = (cidadeSelect.style.display !== 'none')
+    ? cidadeSelect.value.trim()
+    : cidadeInput.value.trim();
+
   if (!nome)     { mostrarErro('Por favor, informe seu nome completo.'); return; }
   if (telefone.replace(/\D/g,'').length < 10) { mostrarErro('Por favor, informe um telefone válido com DDD.'); return; }
+  if (!cidade)   { mostrarErro('Por favor, selecione ou informe sua cidade.'); return; }
 
   btn.disabled = true;
   btn.textContent = 'Enviando…';
@@ -373,7 +401,7 @@ async function submeterCadastro(e) {
     const r = await fetch(`${API}/api/public/cadastro/${encodeURIComponent(tokenAtual)}`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ nome, telefone, bairro: bairro || undefined, vinculo_politico: vinculo || undefined })
+      body:    JSON.stringify({ nome, telefone, cidade, bairro: bairro || undefined, vinculo_politico: vinculo || undefined })
     });
 
     const data = await r.json();

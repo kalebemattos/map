@@ -796,10 +796,7 @@ textarea {
         <select id="mc-regiao" style="width:100%;padding:8px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.9rem;">
           <option value="">— Nenhuma —</option>
         </select>
-      </div>
-      <div style="margin-bottom:12px;">
-        <label style="font-size:.82rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Cidade (opcional)</label>
-        <input id="mc-cidade" type="text" placeholder="Ex: Angra dos Reis" style="width:100%;padding:8px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.9rem;box-sizing:border-box;">
+        <p style="margin:4px 0 0;font-size:.75rem;color:#64748b;">A pessoa que receber o link poderá escolher a cidade dentro dessa região.</p>
       </div>
       <div style="margin-bottom:20px;">
         <label style="font-size:.82rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Validade</label>
@@ -822,7 +819,11 @@ textarea {
           </div>
           <p id="mc-expira" style="margin:8px 0 0;font-size:.75rem;color:#64748b;"></p>
         </div>
-        <div id="mc-qrcode" style="text-align:center;"></div>
+        <!-- QR Code via API — sem dependência de lib JS -->
+        <div style="text-align:center;padding:8px 0 4px;">
+          <p style="font-size:.75rem;color:#64748b;margin:0 0 8px;">📱 QR Code para compartilhar</p>
+          <img id="mc-qrcode-img" src="" alt="QR Code" style="width:180px;height:180px;border-radius:10px;border:1.5px solid #e2e8f0;">
+        </div>
       </div>
 
       <div id="mc-erro" style="display:none;background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:10px 12px;font-size:.82rem;color:#dc2626;"></div>
@@ -905,7 +906,6 @@ textarea {
 
 <script src="./data.js"></script>
 <script src="../tenant.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
 /* ===== CONFIG ===== */
@@ -1798,8 +1798,7 @@ function abrirModalCadastro() {
   // Limpa estado anterior
   document.getElementById('mc-resultado').style.display = 'none';
   document.getElementById('mc-erro').style.display = 'none';
-  document.getElementById('mc-qrcode').innerHTML = '';
-  document.getElementById('mc-cidade').value = '';
+  document.getElementById('mc-qrcode-img').src = '';
   document.getElementById('mc-gerar-btn').disabled = false;
   document.getElementById('mc-gerar-btn').textContent = 'Gerar link';
 
@@ -1824,14 +1823,13 @@ async function gerarLinkCadastro() {
   resEl.style.display  = 'none';
 
   const regiao = document.getElementById('mc-regiao').value;
-  const cidade = document.getElementById('mc-cidade').value.trim();
   const horas  = Number(document.getElementById('mc-horas').value);
 
   btn.disabled = true;
   btn.textContent = 'Gerando…';
 
   try {
-    const token = localStorage.getItem('token');
+    const jwtToken = localStorage.getItem('token');
     const tenantParam = (window.TENANT_ID && window.TENANT_ID !== 'default')
       ? '?tenant=' + encodeURIComponent(window.TENANT_ID) : '';
 
@@ -1839,36 +1837,30 @@ async function gerarLinkCadastro() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: 'Bearer ' + token } : {})
+        ...(jwtToken ? { Authorization: 'Bearer ' + jwtToken } : {})
       },
-      body: JSON.stringify({ regiao: regiao || undefined, cidade: cidade || undefined, horas })
+      body: JSON.stringify({ regiao: regiao || undefined, horas })
     });
 
     const data = await r.json();
     if (!r.ok) throw new Error(data.erro || 'Erro desconhecido');
 
+    // Monta URL no frontend (domínio correto)
+    const url = window.location.origin + '/cadastro/?t=' + data.token;
+
     // Exibe link
-    document.getElementById('mc-link-input').value = data.url;
+    document.getElementById('mc-link-input').value = url;
     const exp = new Date(data.expires_at);
     document.getElementById('mc-expira').textContent =
       `⏰ Expira em: ${exp.toLocaleDateString('pt-BR')} às ${exp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 
-    // QR Code
-    const qrDiv = document.getElementById('mc-qrcode');
-    qrDiv.innerHTML = '';
-    if (window.QRCode) {
-      new QRCode(qrDiv, {
-        text:          data.url,
-        width:         180,
-        height:        180,
-        colorDark:     '#1e293b',
-        colorLight:    '#ffffff',
-        correctLevel:  QRCode.CorrectLevel.M
-      });
-    }
+    // QR Code via API de imagem (sem lib JS)
+    const qrImg = document.getElementById('mc-qrcode-img');
+    qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=' + encodeURIComponent(url);
 
     resEl.style.display = 'block';
-    btn.textContent = '✅ Gerado!';
+    btn.disabled = false;
+    btn.textContent = '+ Gerar outro';
   } catch (err) {
     erroEl.textContent = '❌ ' + err.message;
     erroEl.style.display = 'block';

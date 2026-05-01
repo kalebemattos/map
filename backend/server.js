@@ -2455,16 +2455,13 @@ app.post('/api/admin/cadastro-token', auth, withTenant, allow('dono', 'admin'), 
     const expires_at = new Date(Date.now() + Number(horas) * 3600 * 1000);
 
     await pool.query(
-      `INSERT INTO cadastro_tokens (token, tenant_id, regiao, cidade, expires_at, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [token, req.tenantId, regiao || null, cidade || null, expires_at, req.user?.id || null]
+      `INSERT INTO cadastro_tokens (token, tenant_id, regiao, expires_at, created_by)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [token, req.tenantId, regiao || null, expires_at, req.user?.id || null]
     );
 
-    // Monta URL pública
-    const baseUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
-    const url = `${baseUrl}/cadastro/?t=${token}`;
-
-    res.json({ ok: true, token, url, expires_at });
+    // Retorna apenas o token — o frontend monta a URL com window.location.origin
+    res.json({ ok: true, token, expires_at });
   } catch (err) {
     console.error('[POST /api/admin/cadastro-token]', err);
     res.status(500).json({ erro: 'Erro ao gerar token' });
@@ -2475,28 +2472,38 @@ app.post('/api/admin/cadastro-token', auth, withTenant, allow('dono', 'admin'), 
 app.get('/api/public/cadastro/:token', async (req, res) => {
   try {
     const { token } = req.params;
+    // Busca direto na tabela de tokens — sem JOIN com tenants (não existe tabela tenants)
     const row = await dbGet(
-      `SELECT ct.*, t.tenant_id AS tid
-         FROM cadastro_tokens ct
-         JOIN tenants t ON t.id = ct.tenant_id
-        WHERE ct.token = $1`,
+      `SELECT * FROM cadastro_tokens WHERE token = $1`,
       [token]
     );
 
-    if (!row)                         return res.status(404).json({ erro: 'Link inválido' });
-    if (row.used_at)                  return res.status(410).json({ erro: 'Este link já foi utilizado' });
-    if (new Date(row.expires_at) < new Date()) return res.status(410).json({ erro: 'Este link expirou' });
+    if (!row)                                          return res.status(404).json({ erro: 'Link inválido' });
+    if (row.used_at)                                   return res.status(410).json({ erro: 'Este link já foi utilizado' });
+    if (new Date(row.expires_at) < new Date())         return res.status(410).json({ erro: 'Este link expirou' });
 
-    // Retorna configuração visual do tenant (nome, logo, cores)
+    // Retorna configuração visual do tenant (nome, logo, cores, regioes para o form público)
     const cfg = await getConfigTenant(row.tenant_id);
+
+    // Cidades da região pré-definida (para o select de cidade no form público)
+    let cidadesRegiao = [];
+    if (row.regiao && cfg.regioes) {
+      const reg = cfg.regioes.find(r => r.chave === row.regiao);
+      if (reg && reg.cidades) {
+        cidadesRegiao = Array.isArray(reg.cidades) ? reg.cidades
+          : (typeof reg.cidades === 'string' ? JSON.parse(reg.cidades) : []);
+      }
+    }
+
     res.json({
-      ok: true,
-      regiao: row.regiao,
-      cidade: row.cidade,
-      nome_sistema: cfg.nome_sistema,
-      logo_url:     cfg.logo_url,
-      cores:        cfg.cores,
-      candidatos:   cfg.candidatos,
+      ok:            true,
+      regiao:        row.regiao,
+      regiao_label:  cfg.regioes?.find(r => r.chave === row.regiao)?.label || row.regiao,
+      cidades:       cidadesRegiao,
+      nome_sistema:  cfg.nome_sistema,
+      logo_url:      cfg.logo_url,
+      cores:         cfg.cores,
+      candidatos:    cfg.candidatos,
     });
   } catch (err) {
     console.error('[GET /api/public/cadastro/:token]', err);
@@ -2523,7 +2530,7 @@ app.post('/api/public/cadastro/:token', cadastroPublicLimiter, async (req, res) 
     if (tk.used_at)                     { await client.query('ROLLBACK'); return res.status(410).json({ erro: 'Este link já foi utilizado' }); }
     if (new Date(tk.expires_at) < new Date()) { await client.query('ROLLBACK'); return res.status(410).json({ erro: 'Link expirado' }); }
 
-    const { nome, telefone, bairro, vinculo_politico } = req.body;
+    const { nome, telefone, cidade, bairro, vinculo_politico } = req.body;
 
     // Validações básicas
     if (!nome || !telefone) {
@@ -2548,9 +2555,10 @@ app.post('/api/public/cadastro/:token', cadastroPublicLimiter, async (req, res) 
       return res.status(409).json({ erro: 'Este telefone já está cadastrado no sistema' });
     }
 
-    // Sanitize nome
-    const nomeLimpo = String(nome).trim().slice(0, 120);
-    const bairroLimpo = bairro ? String(bairro).trim().slice(0, 80) : null;
+    // Sanitize
+    const nomeLimpo    = String(nome).trim().slice(0, 120);
+    const cidadeLimpa  = cidade         ? String(cidade).trim().slice(0, 80)          : null;
+    const bairroLimpo  = bairro         ? String(bairro).trim().slice(0, 80)          : null;
     const vinculoLimpo = vinculo_politico ? String(vinculo_politico).trim().slice(0, 80) : null;
 
     // Insere liderança
@@ -2558,7 +2566,7 @@ app.post('/api/public/cadastro/:token', cadastroPublicLimiter, async (req, res) 
       `INSERT INTO liderancas (nome, telefone, bairro, cidade, regiao, vinculo_politico, tenant_id, origem)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'auto_cadastro')
        RETURNING id`,
-      [nomeLimpo, telLimpo, bairroLimpo, tk.cidade || null, tk.regiao || null, vinculoLimpo, tk.tenant_id]
+      [nomeLimpo, telLimpo, bairroLimpo, cidadeLimpa, tk.regiao || null, vinculoLimpo, tk.tenant_id]
     );
 
     // Marca token como usado
