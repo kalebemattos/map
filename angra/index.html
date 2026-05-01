@@ -1133,6 +1133,7 @@ document.addEventListener("keydown", e => {
 <!-- ===== SISTEMA DE PINS ===== -->
 <script>
 // ---------- estado ----------
+const MAPA_ID    = 'angra';    // identificador deste mapa — isola pins por mapa
 let pinsLayer    = null;
 let pinsVisiveis = true;
 var modoAdicionarPin = false;   // var → window.modoAdicionarPin acessível em mapa.js
@@ -1228,7 +1229,7 @@ async function carregarPins() {
 
   let pins = [];
   try {
-    const res = await apiFetch('/pins/com-status');
+    const res = await apiFetch('/pins/com-status?mapa_id=' + encodeURIComponent(MAPA_ID));
     if (!res.ok) { console.warn('[pins] status', res.status); return; }
     const data = await res.json();
     if (!Array.isArray(data)) { console.warn('[pins] resposta inesperada', data); return; }
@@ -1440,7 +1441,8 @@ function abrirModalPin() {
             tipo: key,
             lat: novoPinLatLng.lat,
             lng: novoPinLatLng.lng,
-            cidade: (window.novoPinCidade || '')
+            cidade: (window.novoPinCidade || ''),
+            mapa_id: MAPA_ID
           })
         });
         await carregarPins();

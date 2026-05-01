@@ -17,6 +17,7 @@ const helmet = require('helmet');
 const http = require('http');
 const { Server: SocketServer } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const config = require('./config');
 
 // ── Cache de config por tenant (TTL 5 min) ───────────────────────────────────
@@ -1189,36 +1190,23 @@ app.post('/api/pins',
   allowAll(),
   async (req, res) => {
 
-  const { cidade, tipo, lat, lng, descricao } = req.body;
+  const { cidade, tipo, lat, lng, descricao, mapa_id } = req.body;
 
-  // 🔎 Validação básica
+  // Validação básica
   if (!cidade || !tipo || lat == null || lng == null) {
-    return res.status(400).json({
-      error: 'Cidade, tipo, latitude e longitude são obrigatórios'
-    });
+    return res.status(400).json({ error: 'Cidade, tipo, latitude e longitude são obrigatórios' });
+  }
+  if (isNaN(Number(lat)) || isNaN(Number(lng))) {
+    return res.status(400).json({ error: 'Latitude e longitude inválidas' });
   }
 
-  // 🔎 Validação numérica
-  if (isNaN(Number(lat)) || isNaN(Number(lng))) {
-    return res.status(400).json({
-      error: 'Latitude e longitude inválidas'
-    });
-  }
+  const mapaIdFinal = (mapa_id && typeof mapa_id === 'string') ? mapa_id.trim() : 'rj';
 
   await pool.query(
-    `
-    INSERT INTO pins (cidade, tipo, lat, lng, descricao, regiao, tenant_id)
-VALUES ($1,$2,$3,$4,$5,$6,$7)
-    `,
-    [
-  cidade,
-  tipo,
-  Number(lat),
-  Number(lng),
-  descricao || null,
-  req.user.regiao,
-  req.tenantId   
-]
+    `INSERT INTO pins (cidade, tipo, lat, lng, descricao, regiao, tenant_id, mapa_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    [cidade, tipo, Number(lat), Number(lng), descricao || null,
+     req.user.regiao, req.tenantId, mapaIdFinal]
   );
 
   res.json({ ok: true });
@@ -1227,22 +1215,28 @@ VALUES ($1,$2,$3,$4,$5,$6,$7)
 
 app.get('/api/pins', auth, withTenant, async (req, res) => {
   try {
-    let query, params;
+    const mapaId = req.query.mapa_id || null;
+    let where  = 'tenant_id = $1';
+    const params = [req.tenantId];
 
-    if (isPrivileged(req.user.nivel)) {
-      query  = `SELECT * FROM pins WHERE tenant_id = $1 ORDER BY id DESC`;
-      params = [req.tenantId];
-    } else {
-      query  = `
-        SELECT * FROM pins 
-        WHERE LOWER(regiao) = LOWER($1)
-        AND tenant_id = $2
-        ORDER BY id DESC
-      `;
-      params = [req.user.regiao, req.tenantId];
+    // Filtra pelo mapa específico se informado
+    if (mapaId) {
+      where += ` AND mapa_id = $${params.length + 1}`;
+      params.push(mapaId);
     }
 
-    const r = await pool.query(query, params);
+    // Usuários não-privilegiados: restringe à própria região
+    if (!isPrivileged(req.user.nivel)) {
+      if (!req.user.regiao) {
+        return res.json([]); // sem região = sem acesso
+      }
+      where += ` AND LOWER(regiao) = LOWER($${params.length + 1})`;
+      params.push(req.user.regiao);
+    }
+
+    const r = await pool.query(
+      `SELECT * FROM pins WHERE ${where} ORDER BY id DESC`, params
+    );
     res.json(r.rows);
 
   } catch (err) {
@@ -1358,11 +1352,18 @@ const TIPO_COR_BASE = {
 // calculados via vw_pin_status (VIEW no Postgres).
 app.get('/api/pins/com-status', auth, withTenant, async (req, res) => {
   try {
-    const t  = req.tenantId;
-    const rf = regiaoFilter(req);
+    const t      = req.tenantId;
+    const rf     = regiaoFilter(req);
+    const mapaId = req.query.mapa_id || null;
 
     let where = 'tenant_id = $1';
     const params = [t];
+
+    // Filtra pelo mapa específico se informado
+    if (mapaId) {
+      where += ` AND mapa_id = $${params.length + 1}`;
+      params.push(mapaId);
+    }
 
     if (rf.sql) {
       if (rf.params.length) {
@@ -2443,6 +2444,139 @@ app.delete('/api/admin/config/regioes/:chave', auth, withTenant, allow('dono'), 
   res.json({ ok: true });
 });
 
+
+/* ================= AUTO-CADASTRO ================= */
+
+// POST /api/admin/cadastro-token  — gera token de convite (admin/dono)
+app.post('/api/admin/cadastro-token', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
+  try {
+    const { regiao, cidade, horas = 48 } = req.body;
+    const token      = crypto.randomBytes(24).toString('hex');
+    const expires_at = new Date(Date.now() + Number(horas) * 3600 * 1000);
+
+    await pool.query(
+      `INSERT INTO cadastro_tokens (token, tenant_id, regiao, cidade, expires_at, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [token, req.tenantId, regiao || null, cidade || null, expires_at, req.user?.id || null]
+    );
+
+    // Monta URL pública
+    const baseUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
+    const url = `${baseUrl}/cadastro/?t=${token}`;
+
+    res.json({ ok: true, token, url, expires_at });
+  } catch (err) {
+    console.error('[POST /api/admin/cadastro-token]', err);
+    res.status(500).json({ erro: 'Erro ao gerar token' });
+  }
+});
+
+// GET /api/public/cadastro/:token  — valida token e retorna metadados do tenant
+app.get('/api/public/cadastro/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const row = await dbGet(
+      `SELECT ct.*, t.tenant_id AS tid
+         FROM cadastro_tokens ct
+         JOIN tenants t ON t.id = ct.tenant_id
+        WHERE ct.token = $1`,
+      [token]
+    );
+
+    if (!row)                         return res.status(404).json({ erro: 'Link inválido' });
+    if (row.used_at)                  return res.status(410).json({ erro: 'Este link já foi utilizado' });
+    if (new Date(row.expires_at) < new Date()) return res.status(410).json({ erro: 'Este link expirou' });
+
+    // Retorna configuração visual do tenant (nome, logo, cores)
+    const cfg = await getConfigTenant(row.tenant_id);
+    res.json({
+      ok: true,
+      regiao: row.regiao,
+      cidade: row.cidade,
+      nome_sistema: cfg.nome_sistema,
+      logo_url:     cfg.logo_url,
+      cores:        cfg.cores,
+      candidatos:   cfg.candidatos,
+    });
+  } catch (err) {
+    console.error('[GET /api/public/cadastro/:token]', err);
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
+// POST /api/public/cadastro/:token  — registra nova liderança via formulário público
+const cadastroPublicLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false });
+app.post('/api/public/cadastro/:token', cadastroPublicLimiter, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { token } = req.params;
+
+    // Valida token dentro de transação
+    await client.query('BEGIN');
+    const row = await client.query(
+      `SELECT * FROM cadastro_tokens WHERE token = $1 FOR UPDATE`,
+      [token]
+    );
+    const tk = row.rows[0];
+
+    if (!tk)                            { await client.query('ROLLBACK'); return res.status(404).json({ erro: 'Link inválido' }); }
+    if (tk.used_at)                     { await client.query('ROLLBACK'); return res.status(410).json({ erro: 'Este link já foi utilizado' }); }
+    if (new Date(tk.expires_at) < new Date()) { await client.query('ROLLBACK'); return res.status(410).json({ erro: 'Link expirado' }); }
+
+    const { nome, telefone, bairro, vinculo_politico } = req.body;
+
+    // Validações básicas
+    if (!nome || !telefone) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ erro: 'Nome e telefone são obrigatórios' });
+    }
+
+    // Normaliza telefone (só dígitos)
+    const telLimpo = String(telefone).replace(/\D/g, '').slice(0, 20);
+    if (telLimpo.length < 10) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ erro: 'Telefone inválido' });
+    }
+
+    // Verifica duplicata por telefone dentro do tenant
+    const dupCheck = await client.query(
+      `SELECT id FROM liderancas WHERE tenant_id = $1 AND telefone = $2 LIMIT 1`,
+      [tk.tenant_id, telLimpo]
+    );
+    if (dupCheck.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ erro: 'Este telefone já está cadastrado no sistema' });
+    }
+
+    // Sanitize nome
+    const nomeLimpo = String(nome).trim().slice(0, 120);
+    const bairroLimpo = bairro ? String(bairro).trim().slice(0, 80) : null;
+    const vinculoLimpo = vinculo_politico ? String(vinculo_politico).trim().slice(0, 80) : null;
+
+    // Insere liderança
+    const ins = await client.query(
+      `INSERT INTO liderancas (nome, telefone, bairro, cidade, regiao, vinculo_politico, tenant_id, origem)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'auto_cadastro')
+       RETURNING id`,
+      [nomeLimpo, telLimpo, bairroLimpo, tk.cidade || null, tk.regiao || null, vinculoLimpo, tk.tenant_id]
+    );
+
+    // Marca token como usado
+    await client.query(
+      `UPDATE cadastro_tokens SET used_at = NOW() WHERE id = $1`,
+      [tk.id]
+    );
+
+    await client.query('COMMIT');
+    res.json({ ok: true, id: ins.rows[0].id });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[POST /api/public/cadastro/:token]', err);
+    res.status(500).json({ erro: 'Erro ao registrar. Tente novamente.' });
+  } finally {
+    client.release();
+  }
+});
 
 /* ================= BIGQUERY – ELEIÇÕES ================= */
 
@@ -3697,5 +3831,35 @@ server.listen(PORT, async () => {
     console.log('[migration] agenda_sugestoes OK');
   } catch (e) {
     console.warn('[migration] agenda_sugestoes:', e.message);
+  }
+
+  // ── COLUNA origem EM liderancas ───────────────────────────────────────────
+  try {
+    await pool.query(`ALTER TABLE liderancas ADD COLUMN IF NOT EXISTS origem TEXT DEFAULT 'manual'`);
+    console.log('[migration] liderancas.origem OK');
+  } catch (e) {
+    console.warn('[migration] liderancas.origem:', e.message);
+  }
+
+  // ── AUTO-CADASTRO TOKENS ──────────────────────────────────────────────────
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS cadastro_tokens (
+        id          SERIAL PRIMARY KEY,
+        token       TEXT NOT NULL UNIQUE,
+        tenant_id   INTEGER NOT NULL,
+        regiao      TEXT,
+        cidade      TEXT,
+        used_at     TIMESTAMPTZ,
+        expires_at  TIMESTAMPTZ NOT NULL,
+        created_by  INTEGER,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_cadastro_tokens_tenant ON cadastro_tokens(tenant_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_cadastro_tokens_token  ON cadastro_tokens(token)`);
+    console.log('[migration] cadastro_tokens OK');
+  } catch (e) {
+    console.warn('[migration] cadastro_tokens:', e.message);
   }
 });

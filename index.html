@@ -2069,6 +2069,7 @@ let deputadosVisible = true;
 let cidadeSelecionada = null;
 let layerSelecionada = null;
 let layerRJ = null;
+const MAPA_ID = 'rj';          // identificador deste mapa — isola pins por mapa
 let pinsLayer = null;
 let pinsVisiveis = true;
 let modoAdicionarPin = false;
@@ -2476,7 +2477,7 @@ async function carregarPins() {
   let pins = [];
   try {
     // Usa o endpoint enriquecido que retorna estado, score e contadores
-    const res = await apiFetch('/pins/com-status');
+    const res = await apiFetch('/pins/com-status?mapa_id=' + encodeURIComponent(MAPA_ID));
     if (!res.ok) { console.warn('[pins] status', res.status); return; }
     const data = await res.json();
     if (!Array.isArray(data)) { console.warn('[pins] resposta inesperada', data); return; }
@@ -4793,7 +4794,8 @@ function abrirModalPin() {
             tipo: key,
             lat: novoPinLatLng.lat,
             lng: novoPinLatLng.lng,
-            cidade: cidadeSelecionada || ''
+            cidade: cidadeSelecionada || '',
+            mapa_id: MAPA_ID
           })
         });
 

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadastro de Liderança</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue-deep: #0d2d6b;
+  --blue-main: #1565c0;
+  --blue-light: #e8f0fe;
+  --green:      #16a34a;
+  --red:        #dc2626;
+  --slate-50:   #f8fafc;
+  --slate-100:  #f1f5f9;
+  --slate-200:  #e2e8f0;
+  --slate-400:  #94a3b8;
+  --slate-600:  #475569;
+  --slate-700:  #334155;
+  --slate-900:  #0f172a;
+  --radius:     12px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: linear-gradient(160deg, #e8f0fe 0%, #f8fafc 60%);
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 16px 48px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 32px rgba(21,101,192,.12);
+  padding: 28px 24px 32px;
+  width: 100%;
+  max-width: 440px;
+}
+
+/* Header */
+.logo-wrap {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.logo-wrap img {
+  height: 52px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.logo-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: var(--blue-light);
+  border-radius: 12px;
+  font-size: 28px;
+}
+h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--slate-900);
+  text-align: center;
+  margin-bottom: 4px;
+}
+.subtitle {
+  font-size: .85rem;
+  color: var(--slate-600);
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+/* Form */
+.form-group {
+  margin-bottom: 14px;
+}
+label {
+  display: block;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--slate-700);
+  margin-bottom: 5px;
+}
+label .req { color: var(--red); margin-left: 2px; }
+input[type=text], input[type=tel], select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--slate-200);
+  border-radius: var(--radius);
+  font-size: .95rem;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--slate-900);
+  background: #fff;
+  transition: border-color .15s;
+  appearance: none;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--blue-main);
+  box-shadow: 0 0 0 3px rgba(21,101,192,.1);
+}
+input[readonly] {
+  background: var(--slate-100);
+  color: var(--slate-600);
+}
+
+/* Regiao/Cidade pre-filled badge */
+.badge-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--blue-light);
+  color: var(--blue-deep);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: .8rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+/* Button */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+}
+.btn:active { transform: scale(.98); }
+.btn:disabled { opacity: .6; cursor: not-allowed; }
+.btn-primary {
+  background: var(--blue-main);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) { opacity: .9; }
+
+/* States */
+#estado-loading, #estado-invalido, #estado-expirado, #estado-usado, #estado-sucesso {
+  display: none;
+  text-align: center;
+  padding: 16px 0 8px;
+}
+#estado-loading .spinner {
+  width: 40px; height: 40px;
+  border: 4px solid var(--blue-light);
+  border-top-color: var(--blue-main);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  margin: 0 auto 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.state-icon { font-size: 3rem; margin-bottom: 12px; }
+.state-title { font-family: 'Sora', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--slate-900); margin-bottom: 6px; }
+.state-desc  { font-size: .88rem; color: var(--slate-600); line-height: 1.5; }
+
+/* Error message inside form */
+#form-erro {
+  display: none;
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: .82rem;
+  color: var(--red);
+  margin-bottom: 12px;
+}
+
+/* Success */
+#estado-sucesso .confetti { font-size: 3rem; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+
+  <!-- Loading -->
+  <div id="estado-loading">
+    <div class="spinner"></div>
+    <p style="color:var(--slate-600);font-size:.9rem;">Verificando link…</p>
+  </div>
+
+  <!-- Link inválido -->
+  <div id="estado-invalido">
+    <div class="state-icon">🔗</div>
+    <div class="state-title">Link inválido</div>
+    <div class="state-desc">Este link não foi reconhecido.<br>Solicite um novo link ao responsável.</div>
+  </div>
+
+  <!-- Link expirado -->
+  <div id="estado-expirado">
+    <div class="state-icon">⏰</div>
+    <div class="state-title">Link expirado</div>
+    <div class="state-desc">Este link de cadastro expirou ou já foi utilizado.<br>Solicite um novo link ao responsável.</div>
+  </div>
+
+  <!-- Já usado -->
+  <div id="estado-usado">
+    <div class="state-icon">✅</div>
+    <div class="state-title">Link já utilizado</div>
+    <div class="state-desc">Este link já foi usado para um cadastro.<br>Cada link é de uso único.</div>
+  </div>
+
+  <!-- Formulário -->
+  <div id="estado-form" style="display:none;">
+    <div class="logo-wrap" id="logo-wrap">
+      <div class="logo-placeholder">🗺️</div>
+    </div>
+    <h1 id="nome-sistema">Cadastro de Liderança</h1>
+    <p class="subtitle">Preencha seus dados para se cadastrar na nossa rede.</p>
+
+    <div id="badge-local" style="text-align:center;"></div>
+
+    <div id="form-erro"></div>
+
+    <form id="form-cadastro" onsubmit="submeterCadastro(event)" novalidate>
+      <div class="form-group">
+        <label for="f-nome">Nome completo <span class="req">*</span></label>
+        <input type="text" id="f-nome" placeholder="Seu nome completo" autocomplete="name" required maxlength="120">
+      </div>
+      <div class="form-group">
+        <label for="f-telefone">WhatsApp / Telefone <span class="req">*</span></label>
+        <input type="tel" id="f-telefone" placeholder="(21) 99999-9999" autocomplete="tel" required maxlength="20">
+      </div>
+      <div class="form-group">
+        <label for="f-bairro">Bairro</label>
+        <input type="text" id="f-bairro" placeholder="Seu bairro" maxlength="80">
+      </div>
+      <div class="form-group" id="f-vinculo-group">
+        <label for="f-vinculo">Candidato que apoia</label>
+        <select id="f-vinculo">
+          <option value="">— Selecione —</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" id="submit-btn" style="margin-top:8px;">
+        Confirmar cadastro
+      </button>
+    </form>
+  </div>
+
+  <!-- Sucesso -->
+  <div id="estado-sucesso">
+    <div class="confetti">🎉</div>
+    <div class="state-title">Cadastro realizado!</div>
+    <div class="state-desc" id="sucesso-desc">Você foi cadastrado com sucesso.<br>Obrigado por fazer parte da nossa rede!</div>
+  </div>
+
+</div><!-- /card -->
+
+<script>
+const API = 'https://map-backend-j88s.onrender.com';
+
+let tokenAtual = null;
+
+/* ── Utilidades de estado ── */
+function mostrar(id) {
+  ['estado-loading','estado-invalido','estado-expirado','estado-usado','estado-form','estado-sucesso']
+    .forEach(s => document.getElementById(s).style.display = (s === id ? (id === 'estado-form' ? 'block' : 'block') : 'none'));
+}
+
+/* ── Inicialização ── */
+async function init() {
+  mostrar('estado-loading');
+
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('t');
+
+  if (!token) { mostrar('estado-invalido'); return; }
+  tokenAtual = token;
+
+  try {
+    const r = await fetch(`${API}/api/public/cadastro/${encodeURIComponent(token)}`);
+    const data = await r.json();
+
+    if (r.status === 404)              { mostrar('estado-invalido');  return; }
+    if (r.status === 410) {
+      if ((data.erro || '').toLowerCase().includes('utilizado')) { mostrar('estado-usado'); return; }
+      mostrar('estado-expirado'); return;
+    }
+    if (!r.ok)                         { mostrar('estado-invalido');  return; }
+
+    // Aplica identidade visual
+    if (data.cores) {
+      const c = typeof data.cores === 'string' ? JSON.parse(data.cores) : data.cores;
+      if (c.primaria)   document.documentElement.style.setProperty('--blue-main',  c.primaria);
+      if (c.secundaria) document.documentElement.style.setProperty('--blue-deep',  c.secundaria);
+      if (c.destaque)   document.documentElement.style.setProperty('--blue-light', c.destaque + '22');
+    }
+
+    // Logo
+    if (data.logo_url) {
+      document.getElementById('logo-wrap').innerHTML =
+        `<img src="${data.logo_url}" alt="${data.nome_sistema || ''}">`;
+    }
+
+    // Nome do sistema
+    if (data.nome_sistema) {
+      document.getElementById('nome-sistema').textContent = 'Cadastro — ' + data.nome_sistema;
+      document.title = 'Cadastro — ' + data.nome_sistema;
+    }
+
+    // Badge de região/cidade
+    const badgeWrap = document.getElementById('badge-local');
+    const partes = [data.regiao, data.cidade].filter(Boolean);
+    if (partes.length) {
+      badgeWrap.innerHTML = partes.map(p =>
+        `<span class="badge-info">📍 ${p}</span>`
+      ).join(' ');
+    }
+
+    // Candidatos no select de vínculo
+    if (data.candidatos && data.candidatos.length) {
+      const sel = document.getElementById('f-vinculo');
+      sel.innerHTML = '<option value="">— Selecione —</option>';
+      data.candidatos.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.chave; o.textContent = c.nome;
+        sel.appendChild(o);
+      });
+      if (data.candidatos.length === 1) {
+        sel.value = data.candidatos[0].chave;
+        document.getElementById('f-vinculo-group').style.display = 'none';
+      }
+    }
+
+    mostrar('estado-form');
+  } catch (err) {
+    console.error(err);
+    mostrar('estado-invalido');
+  }
+}
+
+/* ── Formatação de telefone ao digitar ── */
+document.getElementById('f-telefone').addEventListener('input', function() {
+  let v = this.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length > 2) v = '(' + v.slice(0,2) + ') ' + v.slice(2);
+  if (v.length > 10) v = v.slice(0, 10) + '-' + v.slice(10);
+  this.value = v;
+});
+
+/* ── Submissão ── */
+async function submeterCadastro(e) {
+  e.preventDefault();
+  const erroEl = document.getElementById('form-erro');
+  const btn    = document.getElementById('submit-btn');
+  erroEl.style.display = 'none';
+
+  const nome     = document.getElementById('f-nome').value.trim();
+  const telefone = document.getElementById('f-telefone').value.trim();
+  const bairro   = document.getElementById('f-bairro').value.trim();
+  const vinculo  = document.getElementById('f-vinculo').value;
+
+  if (!nome)     { mostrarErro('Por favor, informe seu nome completo.'); return; }
+  if (telefone.replace(/\D/g,'').length < 10) { mostrarErro('Por favor, informe um telefone válido com DDD.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+
+  try {
+    const r = await fetch(`${API}/api/public/cadastro/${encodeURIComponent(tokenAtual)}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ nome, telefone, bairro: bairro || undefined, vinculo_politico: vinculo || undefined })
+    });
+
+    const data = await r.json();
+
+    if (r.status === 409) { mostrarErro(data.erro || 'Telefone já cadastrado.'); btn.disabled=false; btn.textContent='Confirmar cadastro'; return; }
+    if (r.status === 410) { mostrar('estado-expirado'); return; }
+    if (!r.ok)            { mostrarErro(data.erro || 'Erro ao cadastrar. Tente novamente.'); btn.disabled=false; btn.textContent='Confirmar cadastro'; return; }
+
+    // Sucesso
+    const nomeSistema = document.getElementById('nome-sistema').textContent.replace('Cadastro — ','');
+    document.getElementById('sucesso-desc').innerHTML =
+      `Olá, <strong>${nome}</strong>! Você foi cadastrado com sucesso.<br>Obrigado por fazer parte da nossa rede!`;
+    mostrar('estado-sucesso');
+  } catch (err) {
+    mostrarErro('Erro de conexão. Verifique sua internet e tente novamente.');
+    btn.disabled = false;
+    btn.textContent = 'Confirmar cadastro';
+  }
+}
+
+function mostrarErro(msg) {
+  const el = document.getElementById('form-erro');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Start
+init();
+</script>
+</body>
+</html>

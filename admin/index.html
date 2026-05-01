@@ -781,6 +781,52 @@ textarea {
     </div>
 
     <button id="salvar-btn" class="btn btn-primary btn-full">💾 Salvar liderança</button>
+    <button id="btn-gerar-link" class="btn btn-full" style="margin-top:8px;background:#f0fdf4;color:#166534;border:1.5px solid #bbf7d0;font-weight:600;" onclick="abrirModalCadastro()">🔗 Gerar link de auto-cadastro</button>
+  </div>
+
+  <!-- ===== MODAL AUTO-CADASTRO ===== -->
+  <div id="modal-cadastro" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;padding:28px 24px 24px;max-width:420px;width:calc(100% - 32px);box-shadow:0 8px 40px rgba(0,0,0,.22);position:relative;">
+      <button onclick="fecharModalCadastro()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#64748b;">✕</button>
+      <h3 style="margin:0 0 4px;font-size:1.1rem;color:#1e293b;">🔗 Gerar link de cadastro</h3>
+      <p style="margin:0 0 18px;font-size:.85rem;color:#64748b;">A pessoa receberá um link de uso único para se cadastrar sozinha.</p>
+
+      <div style="margin-bottom:12px;">
+        <label style="font-size:.82rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Região (opcional)</label>
+        <select id="mc-regiao" style="width:100%;padding:8px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.9rem;">
+          <option value="">— Nenhuma —</option>
+        </select>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:.82rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Cidade (opcional)</label>
+        <input id="mc-cidade" type="text" placeholder="Ex: Angra dos Reis" style="width:100%;padding:8px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.9rem;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:.82rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Validade</label>
+        <select id="mc-horas" style="width:100%;padding:8px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.9rem;">
+          <option value="24">24 horas</option>
+          <option value="48" selected>48 horas</option>
+          <option value="168">7 dias</option>
+        </select>
+      </div>
+
+      <button id="mc-gerar-btn" class="btn btn-primary btn-full" onclick="gerarLinkCadastro()" style="margin-bottom:14px;">Gerar link</button>
+
+      <!-- Resultado -->
+      <div id="mc-resultado" style="display:none;">
+        <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:14px 12px;margin-bottom:12px;">
+          <p style="margin:0 0 8px;font-size:.8rem;color:#166534;font-weight:600;">✅ Link gerado com sucesso!</p>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="mc-link-input" type="text" readonly style="flex:1;padding:7px 10px;border:1.5px solid #86efac;border-radius:7px;font-size:.78rem;background:#fff;color:#1e293b;">
+            <button onclick="copiarLinkCadastro()" style="background:#16a34a;color:#fff;border:none;border-radius:7px;padding:7px 12px;cursor:pointer;font-size:.82rem;white-space:nowrap;">📋 Copiar</button>
+          </div>
+          <p id="mc-expira" style="margin:8px 0 0;font-size:.75rem;color:#64748b;"></p>
+        </div>
+        <div id="mc-qrcode" style="text-align:center;"></div>
+      </div>
+
+      <div id="mc-erro" style="display:none;background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:10px 12px;font-size:.82rem;color:#dc2626;"></div>
+    </div>
   </div>
 
   <!-- GASTOS CARD -->
@@ -859,6 +905,7 @@ textarea {
 
 <script src="./data.js"></script>
 <script src="../tenant.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
 /* ===== CONFIG ===== */
@@ -1731,6 +1778,115 @@ async function salvarGasto() {
   btn.disabled = false;
 
   carregarGastos(liderancaSelecionadaId);
+}
+
+
+/* ===== AUTO-CADASTRO ===== */
+
+function abrirModalCadastro() {
+  // Popula regiões no select
+  const sel = document.getElementById('mc-regiao');
+  if (sel && configSistema.regioes) {
+    sel.innerHTML = '<option value="">— Nenhuma —</option>';
+    configSistema.regioes.forEach(r => {
+      const o = document.createElement('option');
+      o.value = r.chave;
+      o.textContent = r.label || r.chave;
+      sel.appendChild(o);
+    });
+  }
+  // Limpa estado anterior
+  document.getElementById('mc-resultado').style.display = 'none';
+  document.getElementById('mc-erro').style.display = 'none';
+  document.getElementById('mc-qrcode').innerHTML = '';
+  document.getElementById('mc-cidade').value = '';
+  document.getElementById('mc-gerar-btn').disabled = false;
+  document.getElementById('mc-gerar-btn').textContent = 'Gerar link';
+
+  const modal = document.getElementById('modal-cadastro');
+  modal.style.display = 'flex';
+}
+
+function fecharModalCadastro() {
+  document.getElementById('modal-cadastro').style.display = 'none';
+}
+
+// Fecha ao clicar fora do card
+document.getElementById('modal-cadastro').addEventListener('click', function(e) {
+  if (e.target === this) fecharModalCadastro();
+});
+
+async function gerarLinkCadastro() {
+  const btn    = document.getElementById('mc-gerar-btn');
+  const erroEl = document.getElementById('mc-erro');
+  const resEl  = document.getElementById('mc-resultado');
+  erroEl.style.display = 'none';
+  resEl.style.display  = 'none';
+
+  const regiao = document.getElementById('mc-regiao').value;
+  const cidade = document.getElementById('mc-cidade').value.trim();
+  const horas  = Number(document.getElementById('mc-horas').value);
+
+  btn.disabled = true;
+  btn.textContent = 'Gerando…';
+
+  try {
+    const token = localStorage.getItem('token');
+    const tenantParam = (window.TENANT_ID && window.TENANT_ID !== 'default')
+      ? '?tenant=' + encodeURIComponent(window.TENANT_ID) : '';
+
+    const r = await fetch(API + '/api/admin/cadastro-token' + tenantParam, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: 'Bearer ' + token } : {})
+      },
+      body: JSON.stringify({ regiao: regiao || undefined, cidade: cidade || undefined, horas })
+    });
+
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.erro || 'Erro desconhecido');
+
+    // Exibe link
+    document.getElementById('mc-link-input').value = data.url;
+    const exp = new Date(data.expires_at);
+    document.getElementById('mc-expira').textContent =
+      `⏰ Expira em: ${exp.toLocaleDateString('pt-BR')} às ${exp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+
+    // QR Code
+    const qrDiv = document.getElementById('mc-qrcode');
+    qrDiv.innerHTML = '';
+    if (window.QRCode) {
+      new QRCode(qrDiv, {
+        text:          data.url,
+        width:         180,
+        height:        180,
+        colorDark:     '#1e293b',
+        colorLight:    '#ffffff',
+        correctLevel:  QRCode.CorrectLevel.M
+      });
+    }
+
+    resEl.style.display = 'block';
+    btn.textContent = '✅ Gerado!';
+  } catch (err) {
+    erroEl.textContent = '❌ ' + err.message;
+    erroEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Gerar link';
+  }
+}
+
+function copiarLinkCadastro() {
+  const input = document.getElementById('mc-link-input');
+  navigator.clipboard.writeText(input.value).then(() => {
+    const btn = input.nextElementSibling;
+    btn.textContent = '✅ Copiado!';
+    setTimeout(() => btn.textContent = '📋 Copiar', 2000);
+  }).catch(() => {
+    input.select();
+    document.execCommand('copy');
+  });
 }
 </script>
 </body>
