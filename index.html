@@ -2129,8 +2129,8 @@ const citySearchResults = document.getElementById('city-search-results');
 // =================================================================
 // ── Retorna apenas a expectativa de CIDADES para uma cidade (usada para cor do mapa)
 function getTotalExpectativa(city) {
-  const c = dataCache[city];
-  if (!c) return 0;
+  const c = getDataCache(city);
+  if (!c || !Object.keys(c).length) return 0;
   if (filtroCampanha === 'ambos') {
     return Object.values(c.expectativaCidade || {}).reduce((s, v) => s + Number(v || 0), 0);
   }
@@ -2139,8 +2139,8 @@ function getTotalExpectativa(city) {
 
 // ── Retorna apenas a expectativa de LIDERANÇAS para uma cidade
 function getExpLiderancas(city) {
-  const c = dataCache[city];
-  if (!c) return 0;
+  const c = getDataCache(city);
+  if (!c || !Object.keys(c).length) return 0;
   return (c.liderancas || []).reduce((s, l) => {
     if (filtroCampanha !== 'ambos' && l.vinculo_politico !== filtroCampanha && l.vinculo_politico !== 'ambos') return s;
     return s + Number(l.expectativa_votos || 0);
@@ -2673,10 +2673,20 @@ document.getElementById('modal-pin-agenda')?.addEventListener('click', e => {
 // =================================================================
 
 let dataCache = {}; // Cache dos dados carregados para acesso rápido
+let _dataCacheNorm = {}; // índice normalizado (sem acento, maiúsculo) → mesma referência
+
+// Lookup tolerante a diferenças de grafia entre GeoJSON e banco (ex: Parati vs Paraty)
+function getDataCache(nome) {
+  if (!nome) return {};
+  return dataCache[nome]
+    || _dataCacheNorm[normalizeCityName(nome)]
+    || {};
+}
 
 // Função para buscar todos os dados (Lideranças e Observações) do servidor
 async function carregarTudo() {
   dataCache = {};
+  _dataCacheNorm = {};
 
   // =====================
   // LIDERANÇAS
@@ -2699,6 +2709,8 @@ async function carregarTudo() {
           };
         }
         dataCache[c.cidade].liderancas = c.liderancas || [];
+        // Índice normalizado para tolerar divergências de nome entre GeoJSON e banco
+        _dataCacheNorm[normalizeCityName(c.cidade)] = dataCache[c.cidade];
       });
     }
   } catch (e) {
@@ -2992,7 +3004,7 @@ async function renderLiderancas(city) {
   
   if (!city) return;
 
-  const cidadeData = dataCache[city] || {};
+  const cidadeData = getDataCache(city);
   // preenche inputs de expectativa por candidato
   (configSistema.candidatos || []).forEach(c => {
     const input = document.getElementById('expectativa-cidade-' + c.chave);
@@ -3265,7 +3277,7 @@ function renderObservacoes(city) {
         }
     }
 
-    const observacoes = dataCache[city]?.observacoes || [];
+    const observacoes = getDataCache(city).observacoes || [];
 
     if (observacoes.length === 0) {
         listEl.innerHTML = '<p style="font-size:13px;color:#666;">Nenhuma observação cadastrada para ' + city + '.</p>';
@@ -3965,7 +3977,7 @@ function initializeMapAndApp() {
   fillOpacity: 0.85,
   fillColor: getCityColor({
     validVotes: votos,
-    leadersCount: (dataCache[nome]?.liderancas || []).length,
+    leadersCount: (getDataCache(nome).liderancas || []).length,
     expectedVotes: getTotalExpectativa(nome)
   })
 };
@@ -4109,6 +4121,10 @@ if (modoAdicionarPin) {
         map.fitBounds(bounds, { padding: [30, 30] });
         map.setMinZoom(Math.max(map.getZoom() - 1, 7));
         map.setMaxBounds(bounds.pad(0.3));
+
+        // Repinta com os dados mais recentes (dataCache já populado antes do GeoJSON carregar)
+        repaintMap();
+
 initCitySearch();
 initLiderancaSearch();
 carregarPins();
@@ -4339,6 +4355,24 @@ window.iniciarAplicacao = async function () {
 
 };
 
+// ── Atualização automática ao voltar para a aba (ex: após submeter auto-cadastro em outra aba)
+let _lastVisibleAt = Date.now();
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible') {
+    _lastVisibleAt = Date.now();
+    return;
+  }
+  // Só recarrega se a aba ficou oculta por pelo menos 30 segundos
+  const hiddenFor = Date.now() - _lastVisibleAt;
+  if (hiddenFor < 30_000) return;
+  if (typeof carregarTudo === 'function') {
+    await carregarTudo();
+    repaintMap();
+    atualizarTotalGeralOverlay();
+    if (cidadeSelecionada) renderLiderancas(cidadeSelecionada);
+  }
+});
+
 function limparSelecaoMapa() {
   Object.values(layersPorCidade).forEach(layer => {
     layer.setStyle({
@@ -4378,7 +4412,7 @@ function repaintMap() {
 
     const cityData = {
       validVotes: votosValidos[nome] || 0,
-      leadersCount: (dataCache[nome]?.liderancas || []).length,
+      leadersCount: (getDataCache(nome).liderancas || []).length,
       expectedVotes: getTotalExpectativa(nome),
       leaderVotes: getExpLiderancas(nome)
     };
