@@ -111,7 +111,7 @@ function iniciarLogin() {
   btn.onclick = async () => {
     error.style.display = 'none';
 
-    const usuario = document.getElementById('login-user').value.trim();
+    const usuario = document.getElementById('login-user').value.trim().toLowerCase();
     // ⚠️ NÃO usar .trim() na senha — espaços podem ser parte da senha
     const senha   = document.getElementById('login-pass').value;
 

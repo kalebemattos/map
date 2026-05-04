@@ -349,7 +349,9 @@ app.get('/api/config', async (req, res) => {
 
 /* ================= LOGIN ================= */
 app.post('/api/login', loginLimiter, async (req, res) => {
-  const { usuario, senha, tenantId } = req.body;
+  const { senha, tenantId } = req.body;
+  // Normaliza username para lowercase (criação já faz isso — garante consistência)
+  const usuario = (req.body.usuario || '').trim().toLowerCase();
 
   if (!usuario || !senha) {
     return res.status(400).json({ error: 'Dados incompletos' });
@@ -364,12 +366,12 @@ app.post('/api/login', loginLimiter, async (req, res) => {
       // Filtro preciso por tenant — evita ambiguidade quando o mesmo username
       // existe em tenants diferentes com senhas distintas.
       users = await dbAll(
-        'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE usuario = $1 AND tenant_id = $2',
+        'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE LOWER(usuario) = $1 AND tenant_id = $2',
         [usuario, tenantId]
       );
     } else {
       users = await dbAll(
-        'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE usuario = $1 ORDER BY tenant_id ASC',
+        'SELECT id, usuario, senha_hash, nome, nivel, regiao_vinculada, tenant_id FROM usuarios WHERE LOWER(usuario) = $1 ORDER BY tenant_id ASC',
         [usuario]
       );
     }
@@ -1477,15 +1479,16 @@ app.post('/api/usuarios',
   try {
     const { usuario, senha, nome, nivel, regiao_vinculada } = req.body;
     // 🔎 Validação básica
-const precisaRegiao = nivel !== 'admin' && nivel !== 'dono';
-if (!usuario || !senha || !nivel || (precisaRegiao && !regiao_vinculada)) {
-  return res.status(400).json({
-    error: precisaRegiao
-      ? 'Usuario, senha, nivel e regiao_vinculada são obrigatórios'
-      : 'Usuario, senha e nivel são obrigatórios'
-  });
-}
-const niveisPermitidos = NIVEIS_TODOS;
+    // Região obrigatória apenas para lider_regiao e niveis de mapa (não para admin/dono/visualizador)
+    const niveisPermitidos = NIVEIS_TODOS;
+    const precisaRegiao = nivel === 'lider_regiao' || (niveisPermitidos.includes(nivel) && nivel !== 'admin' && nivel !== 'dono' && nivel !== 'visualizador');
+    if (!usuario || !senha || !nivel || (precisaRegiao && !regiao_vinculada)) {
+      return res.status(400).json({
+        error: precisaRegiao
+          ? 'Usuario, senha, nivel e regiao_vinculada são obrigatórios'
+          : 'Usuario, senha e nivel são obrigatórios'
+      });
+    }
 
 if (!niveisPermitidos.includes(nivel)) {
   return res.status(400).json({

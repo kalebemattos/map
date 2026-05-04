@@ -1147,7 +1147,7 @@ async function login() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        usuario: loginUser.value.trim(),
+        usuario: loginUser.value.trim().toLowerCase(),
         senha: loginPass.value   // ⚠️ não aplicar .trim() — espaços podem ser parte da senha
       })
     });
