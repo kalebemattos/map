@@ -2481,10 +2481,14 @@ async function ensureCadastroTokensTable() {
       cidade      TEXT,
       used_at     TIMESTAMPTZ,
       expires_at  TIMESTAMPTZ NOT NULL,
-      created_by  INTEGER,
+      created_by  TEXT,
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  // Corrige tipo caso a tabela já exista com created_by INTEGER
+  try {
+    await pool.query(`ALTER TABLE cadastro_tokens ALTER COLUMN created_by TYPE TEXT USING created_by::TEXT`);
+  } catch (_) { /* já é TEXT ou coluna não existe — ignora */ }
 }
 
 // GET /api/public/cadastro/:token  — valida token e retorna metadados do tenant
@@ -3881,7 +3885,7 @@ server.listen(PORT, async () => {
         cidade      TEXT,
         used_at     TIMESTAMPTZ,
         expires_at  TIMESTAMPTZ NOT NULL,
-        created_by  INTEGER,
+        created_by  TEXT,
         created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
