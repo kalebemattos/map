@@ -2540,7 +2540,7 @@ app.get('/api/public/cadastro/:token', async (req, res) => {
 
 // POST /api/public/cadastro/:token  — registra nova liderança via formulário público
 const cadastroPublicLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false });
-app.post('/api/public/cadastro/:token', cadastroPublicLimiter, async (req, res) => {
+app.post('/api/public/cadastro/:token', cadastroPublicLimiter, upload.single('foto'), async (req, res) => {
   const client = await pool.connect();
   try {
     await ensureCadastroTokensTable();
@@ -2558,7 +2558,11 @@ app.post('/api/public/cadastro/:token', cadastroPublicLimiter, async (req, res) 
     if (tk.used_at)                     { await client.query('ROLLBACK'); return res.status(410).json({ erro: 'Este link já foi utilizado' }); }
     if (new Date(tk.expires_at) < new Date()) { await client.query('ROLLBACK'); return res.status(410).json({ erro: 'Link expirado' }); }
 
-    const { nome, telefone, cidade, bairro, vinculo_politico } = req.body;
+    const {
+      nome, telefone, cidade,
+      apelido, rede_social, data_nascimento,
+      responsavel, vinculo_politico
+    } = req.body;
 
     // Validações básicas
     if (!nome || !telefone) {
@@ -2566,7 +2570,7 @@ app.post('/api/public/cadastro/:token', cadastroPublicLimiter, async (req, res) 
       return res.status(400).json({ erro: 'Nome e telefone são obrigatórios' });
     }
 
-    // Normaliza telefone (só dígitos)
+    // Normaliza telefone (só dígitos) — armazenado em pessoas.contato
     const telLimpo = String(telefone).replace(/\D/g, '').slice(0, 20);
     if (telLimpo.length < 10) {
       await client.query('ROLLBACK');
@@ -2575,7 +2579,9 @@ app.post('/api/public/cadastro/:token', cadastroPublicLimiter, async (req, res) 
 
     // Verifica duplicata por telefone dentro do tenant
     const dupCheck = await client.query(
-      `SELECT id FROM liderancas WHERE tenant_id = $1 AND telefone = $2 LIMIT 1`,
+      `SELECT p.id FROM pessoas p
+         JOIN liderancas l ON l.pessoa_id = p.id AND l.tenant_id = p.tenant_id
+        WHERE p.tenant_id = $1 AND p.contato = $2 LIMIT 1`,
       [tk.tenant_id, telLimpo]
     );
     if (dupCheck.rows.length > 0) {
@@ -2584,18 +2590,57 @@ app.post('/api/public/cadastro/:token', cadastroPublicLimiter, async (req, res) 
     }
 
     // Sanitize
-    const nomeLimpo    = String(nome).trim().slice(0, 120);
-    const cidadeLimpa  = cidade         ? String(cidade).trim().slice(0, 80)          : null;
-    const bairroLimpo  = bairro         ? String(bairro).trim().slice(0, 80)          : null;
-    const vinculoLimpo = vinculo_politico ? String(vinculo_politico).trim().slice(0, 80) : null;
+    const nomeLimpo       = String(nome).trim().slice(0, 120);
+    const cidadeLimpa     = cidade           ? String(cidade).trim().slice(0, 80)           : null;
+    const vinculoLimpo    = vinculo_politico ? String(vinculo_politico).trim().slice(0, 80) : null;
+    const apelidoLimpo    = apelido          ? String(apelido).trim().slice(0, 80)          : null;
+    const redeSocialLimpo = rede_social      ? String(rede_social).trim().slice(0, 120)     : null;
+    const responsavelLimpo= responsavel      ? String(responsavel).trim().slice(0, 120)     : null;
+    const nascimento      = data_nascimento  || null;
 
-    // Insere liderança
-    const ins = await client.query(
-      `INSERT INTO liderancas (nome, telefone, bairro, cidade, regiao, vinculo_politico, tenant_id, origem)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'auto_cadastro')
-       RETURNING id`,
-      [nomeLimpo, telLimpo, bairroLimpo, cidadeLimpa, tk.regiao || null, vinculoLimpo, tk.tenant_id]
-    );
+    // Upload de foto (mesmo fluxo do admin: multer → sharp → Supabase storage)
+    let fotoUrl = null;
+    if (req.file) {
+      try {
+        const caminhoOtimizado = await otimizarImagem(req.file.path);
+        const fileBuffer = fs.readFileSync(caminhoOtimizado);
+        const fileName = `${Date.now()}.webp`;
+        const { error: uploadErr } = await supabase.storage
+          .from('liderancas').upload(fileName, fileBuffer, { contentType: 'image/webp', upsert: false });
+        if (uploadErr) throw uploadErr;
+        fotoUrl = supabase.storage.from('liderancas').getPublicUrl(fileName).data.publicUrl;
+        try { fs.unlinkSync(caminhoOtimizado); } catch (_) {}
+      } catch (fotoErr) {
+        console.warn('[cadastro público] erro no upload de foto:', fotoErr.message);
+        // Não aborta o cadastro por causa da foto
+      }
+    }
+
+    // Resolve a região a partir da cidade (ou usa a do token)
+    const regiaoFinal = tk.regiao || (cidadeLimpa ? await resolverRegiao(tk.tenant_id, cidadeLimpa) : null);
+
+    // 1) Cria ou recupera pessoa (upsert por nome normalizado) — mesmas tabelas do painel
+    const upsert = await client.query(`
+      INSERT INTO pessoas (tenant_id, nome, nome_norm, contato, foto, apelido, rede_social, data_nascimento)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ON CONFLICT (tenant_id, nome_norm) DO UPDATE
+        SET contato         = COALESCE(EXCLUDED.contato,         pessoas.contato),
+            foto            = COALESCE(EXCLUDED.foto,            pessoas.foto),
+            apelido         = COALESCE(EXCLUDED.apelido,         pessoas.apelido),
+            rede_social     = COALESCE(EXCLUDED.rede_social,     pessoas.rede_social),
+            data_nascimento = COALESCE(EXCLUDED.data_nascimento, pessoas.data_nascimento),
+            atualizado_em   = now()
+      RETURNING id
+    `, [tk.tenant_id, nomeLimpo, normalizarNome(nomeLimpo),
+        telLimpo, fotoUrl, apelidoLimpo, redeSocialLimpo, nascimento]);
+    const pessoaId = upsert.rows[0].id;
+
+    // 2) Cria vínculo pessoa ↔ cidade em liderancas (mesmas colunas do painel)
+    await client.query(`
+      INSERT INTO liderancas (pessoa_id, tenant_id, cidade, regiao, vinculo_politico, responsavel, status)
+      VALUES ($1, $2, $3, $4, $5, $6, 'ativa')
+      ON CONFLICT (pessoa_id, cidade, tenant_id) DO NOTHING
+    `, [pessoaId, tk.tenant_id, cidadeLimpa, regiaoFinal, vinculoLimpo, responsavelLimpo]);
 
     // Marca token como usado
     await client.query(
@@ -2604,11 +2649,11 @@ app.post('/api/public/cadastro/:token', cadastroPublicLimiter, async (req, res) 
     );
 
     await client.query('COMMIT');
-    res.json({ ok: true, id: ins.rows[0].id });
+    res.json({ ok: true, id: pessoaId });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('[POST /api/public/cadastro/:token]', err);
-    res.status(500).json({ erro: 'Erro ao registrar. Tente novamente.' });
+    console.error('[POST /api/public/cadastro/:token]', err.message);
+    res.status(500).json({ erro: 'Erro ao registrar: ' + err.message });
   } finally {
     client.release();
   }
