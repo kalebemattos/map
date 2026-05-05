@@ -66,6 +66,10 @@ let filtroCampanha   = "ambos"
 // Cache local: { "CENTRO": { liderancas:[], expectativaCidade:{ [chave]: 0, ... } }, ... }
 const dataCache = {}
 
+// Líderes de distrito vindos da Gestão de Acessos
+// { "1º DISTRITO": [{nome, contato, foto_url}, ...], ... }
+let lideresDistrito = {}
+
 // ─────────────────────────────────────────────
 // API
 // ─────────────────────────────────────────────
@@ -94,6 +98,33 @@ async function apiFetch(endpoint, options = {}) {
   }
 
   return res
+}
+
+// ─────────────────────────────────────────────
+// LÍDERES DE DISTRITO (Gestão de Acessos)
+// Carrega usuários com lider_principal = TRUE e agrupa por regiao_vinculada.
+// Funciona exatamente como carregarLideresRegiao() no mapa estadual.
+// ─────────────────────────────────────────────
+async function carregarLideresDistrito() {
+  try {
+    const res = await apiFetch('/lideres-regiao')
+    if (!res.ok) return
+    const lista = await res.json()
+    // Zera entradas anteriores
+    lideresDistrito = {}
+    lista.forEach(u => {
+      if (!u.regiao_vinculada) return
+      const chave = u.regiao_vinculada.trim().toUpperCase()
+      if (!lideresDistrito[chave]) lideresDistrito[chave] = []
+      lideresDistrito[chave].push({
+        nome:     u.nome     || u.usuario || '—',
+        contato:  u.contato  || '',
+        foto_url: u.foto_url || null
+      })
+    })
+  } catch (e) {
+    console.warn('[lideres-distrito] Não carregado:', e)
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -497,16 +528,42 @@ function filtrarDistrito(distrito) {
 function mostrarLiderDistrito(distrito) {
   const card  = document.getElementById("lider-distrito-card")
   const lista = document.getElementById("lista-lideres-distrito")
-  if (!distrito || !distritos[distrito]) { card.style.display = "none"; return }
-  const lideres = distritos[distrito].lideres || []
+  if (!distrito) { card.style.display = "none"; return }
+
+  // Normaliza a chave para comparar (ex: "1º DISTRITO" ou "1º distrito")
+  const chave = distrito.trim().toUpperCase()
+
+  // Prioridade 1: dados vivos da Gestão de Acessos
+  // Prioridade 2: dados hardcoded de distritos.js (fallback)
+  const lideres =
+    (lideresDistrito[chave] && lideresDistrito[chave].length > 0)
+      ? lideresDistrito[chave]
+      : (distritos[distrito]?.lideres || []).map(l => ({
+          nome:     l.nome,
+          contato:  l.telefone || '',
+          foto_url: l.foto || null
+        }))
+
   card.style.display = lideres.length ? "block" : "none"
   lista.innerHTML = ""
+
+  const API_BASE = (window.API_URL || '').replace(/\/api$/, '')
+
   lideres.forEach(lider => {
+    // Aceita foto_url absoluta (Supabase) ou relativa (servidor local)
+    const fotoRaw = lider.foto_url || null
+    const fotoSrc = fotoRaw
+      ? (fotoRaw.startsWith('http') ? fotoRaw : API_BASE + fotoRaw)
+      : 'img/lideres/semfoto.jpg'
+
     const div = document.createElement("div")
     div.className = "lider-card"
     div.innerHTML = `
-      <img src="${lider.foto}" onerror="this.src='img/lideres/default.jpg'" alt="">
-      <div class="lider-info"><b>${lider.nome}</b><br><span>${lider.telefone || ""}</span></div>
+      <img src="${fotoSrc}" onerror="this.src='img/lideres/semfoto.jpg'" alt="">
+      <div class="lider-info">
+        <b>${lider.nome}</b><br>
+        <span>${lider.contato || ''}</span>
+      </div>
     `
     lista.appendChild(div)
   })
@@ -952,6 +1009,7 @@ function atualizarLegenda() {
 // ─────────────────────────────────────────────
 window.iniciarMapa = async function() {
   await carregarConfig()
+  await carregarLideresDistrito()   // carrega líderes da Gestão de Acessos antes do mapa
   map = L.map('map', { minZoom: 9, maxZoom: 18 }).setView([-23.01, -44.32], 11)
   window.map = map   // expõe para index.html (pins, invalidateSize, etc.)
   setTimeout(() => map.invalidateSize(), 200)

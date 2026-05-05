@@ -1017,6 +1017,12 @@ app.post('/api/observacoes',
     const { cidade, text } = req.body;
     if (!cidade || !text) return res.status(400).json({ error: 'Dados incompletos' });
 
+    // Limites: 400 caracteres e 5 parágrafos
+    if (text.length > 400)
+      return res.status(400).json({ error: 'Observação muito longa (máx. 400 caracteres)' });
+    if ((text.match(/\n/g) || []).length >= 5)
+      return res.status(400).json({ error: 'Máximo de 5 parágrafos por observação' });
+
     await pool.query(
       'INSERT INTO observacoes (cidade, text, regiao, tenant_id) VALUES ($1, $2, $3, $4)',
       [cidade, text, req.user.regiao, req.tenantId]
@@ -2275,6 +2281,46 @@ app.put('/api/admin/config/geral', auth, withTenant, allow('dono'), async (req, 
   );
   invalidateTenantCache(req.tenantId);
   res.json({ ok: true });
+});
+
+// POST upload de logo do tenant (multipart/form-data, campo 'logo')
+app.post('/api/admin/config/logo', auth, withTenant, allow('dono'), upload.single('logo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+
+    // Otimiza: redimensiona para largura máxima 400px mantendo proporção, converte para WebP
+    const tempPath = req.file.path;
+    const outPath  = tempPath + '.webp';
+    await sharp(tempPath)
+      .resize({ width: 400, withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toFile(outPath);
+    try { fs.unlinkSync(tempPath); } catch {}
+
+    const fileBuffer = fs.readFileSync(outPath);
+    const fileName   = `${req.tenantId}/logo_${Date.now()}.webp`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from('logos')
+      .upload(fileName, fileBuffer, { contentType: 'image/webp', upsert: true });
+    try { fs.unlinkSync(outPath); } catch {}
+    if (uploadErr) throw uploadErr;
+
+    const { data } = supabase.storage.from('logos').getPublicUrl(fileName);
+    const logo_url = data.publicUrl;
+
+    await pool.query(
+      `INSERT INTO tenant_config (tenant_id, logo_url)
+       VALUES ($1, $2)
+       ON CONFLICT (tenant_id) DO UPDATE SET logo_url = $2`,
+      [req.tenantId, logo_url]
+    );
+    invalidateTenantCache(req.tenantId);
+    res.json({ ok: true, logo_url });
+  } catch (err) {
+    console.error('[POST /api/admin/config/logo]', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── Candidatos ───────────────────────────────────────────────────────────────

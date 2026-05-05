@@ -1759,7 +1759,10 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
         <div id="observacoes-list" style="margin-bottom:10px;">
           <p style="font-size:13px;color:#94a3b8;">Selecione um município para ver as observações.</p>
         </div>
-        <textarea id="new-observacao-text" placeholder="Adicionar nova observação..." style="min-height:60px;margin-bottom:8px;"></textarea>
+        <textarea id="new-observacao-text" placeholder="Adicionar nova observação..."
+          maxlength="400"
+          style="min-height:60px;margin-bottom:4px;resize:vertical;word-break:break-word;overflow-wrap:break-word;"></textarea>
+        <div id="obs-counter" style="font-size:11px;color:#94a3b8;text-align:right;margin-bottom:8px;">0 / 400 caracteres · 1 / 5 parágrafos</div>
         <button id="add-observacao" style="width:100%;background:#16a34a;color:white;box-shadow:0 4px 12px rgba(22,163,74,0.3);">
           + Adicionar Observação
         </button>
@@ -3294,10 +3297,15 @@ function renderObservacoes(city) {
         div.style.display = 'flex';
         div.style.justifyContent = 'space-between';
         div.style.alignItems = 'flex-start';
+        div.style.minWidth = '0';
+        div.style.overflow = 'hidden';
 
         const textSpan = document.createElement('span');
         textSpan.style.whiteSpace = 'pre-wrap';
+        textSpan.style.wordBreak = 'break-word';
+        textSpan.style.overflowWrap = 'break-word';
         textSpan.style.flexGrow = 1;
+        textSpan.style.minWidth = '0';
         textSpan.style.marginRight = '10px';
         textSpan.textContent = obs.text;
 
@@ -3702,6 +3710,36 @@ document.getElementById('add-lideranca').onclick = async function () {
 };
 
 
+// ── Contador de caracteres / parágrafos do textarea de observações ──
+(function () {
+  const OBS_MAX_CHARS = 400;
+  const OBS_MAX_PARAS = 5;
+
+  const ta      = document.getElementById('new-observacao-text');
+  const counter = document.getElementById('obs-counter');
+
+  function atualizarContador() {
+    if (!ta || !counter) return;
+    const chars = ta.value.length;
+    const paras = (ta.value.match(/\n/g) || []).length + 1;
+    const cWarn = chars > OBS_MAX_CHARS * 0.85;
+    const pWarn = paras >= OBS_MAX_PARAS;
+    counter.style.color = (cWarn || pWarn) ? '#ef4444' : '#94a3b8';
+    counter.textContent = `${chars} / ${OBS_MAX_CHARS} caracteres · ${paras} / ${OBS_MAX_PARAS} parágrafos`;
+  }
+
+  if (ta) {
+    ta.addEventListener('input', atualizarContador);
+    // Bloqueia Enter quando já atingiu 5 parágrafos
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const paras = (ta.value.match(/\n/g) || []).length + 1;
+        if (paras >= OBS_MAX_PARAS) e.preventDefault();
+      }
+    });
+  }
+})();
+
 document.getElementById('add-observacao').addEventListener('click', async () => {
 
   const text = document.getElementById('new-observacao-text').value.trim();
@@ -3709,6 +3747,16 @@ document.getElementById('add-observacao').addEventListener('click', async () => 
 
   if (!text || !city) {
     alert('Selecione uma cidade e preencha a observação.');
+    return;
+  }
+
+  // Validação local antes de enviar
+  if (text.length > 400) {
+    alert('Observação muito longa. Máximo de 400 caracteres.');
+    return;
+  }
+  if ((text.match(/\n/g) || []).length >= 5) {
+    alert('Máximo de 5 parágrafos por observação.');
     return;
   }
 
@@ -3723,13 +3771,14 @@ document.getElementById('add-observacao').addEventListener('click', async () => 
     });
 
     if (!response.ok) {
-      const erro = await response.text();
-      console.error('Erro backend:', erro);
-      alert('Erro ao salvar observação no servidor.');
+      const d = await response.json().catch(() => ({}));
+      alert(d.error || 'Erro ao salvar observação no servidor.');
       return;
     }
 
     document.getElementById('new-observacao-text').value = '';
+    document.getElementById('obs-counter').textContent = '0 / 400 caracteres · 1 / 5 parágrafos';
+    document.getElementById('obs-counter').style.color = '#94a3b8';
 
     await carregarTudo();
     renderObservacoes(city);

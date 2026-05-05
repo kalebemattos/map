@@ -665,14 +665,23 @@
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>URL da logo</label>
+        <div class="form-row" style="align-items:flex-end;gap:12px;flex-wrap:wrap;">
+          <div class="form-group" style="flex:1;min-width:200px;">
+            <label>Upload da logo</label>
+            <input type="file" id="i-logo-file" accept="image/jpeg,image/png,image/webp,image/svg+xml">
+            <span class="hint">JPEG, PNG, WEBP ou SVG — máx 400 px de largura após envio</span>
+            <button type="button" id="i-logo-upload-btn" class="btn-primary" style="margin-top:8px;padding:8px 16px;font-size:13px;" onclick="uploadLogo()">
+              ⬆️ Enviar logo
+            </button>
+            <div id="i-logo-upload-status" style="font-size:12px;font-weight:600;margin-top:6px;display:none;"></div>
+          </div>
+          <div class="form-group" style="flex:1;min-width:200px;">
+            <label>Ou cole a URL da logo</label>
             <input type="url" id="i-logo" placeholder="https://...">
             <span class="hint">Imagem pública — recomendado 200×60 px PNG ou SVG</span>
           </div>
-          <div class="form-group" style="flex:0 0 auto;align-items:center;justify-content:flex-end;display:flex;">
-            <img id="i-logo-preview" style="max-height:52px;max-width:160px;border-radius:8px;border:1.5px solid #e2e8f0;display:none;object-fit:contain;" alt="preview logo">
+          <div class="form-group" style="flex:0 0 auto;display:flex;align-items:flex-end;padding-bottom:4px;">
+            <img id="i-logo-preview" style="max-height:56px;max-width:180px;border-radius:8px;border:1.5px solid #e2e8f0;display:none;object-fit:contain;" alt="preview logo">
           </div>
         </div>
 
@@ -1490,6 +1499,49 @@ async function carregarIdentidade() {
   } catch(e) { console.warn('[identidade]', e); }
 }
 
+async function uploadLogo() {
+  const fileInput  = document.getElementById('i-logo-file');
+  const statusEl   = document.getElementById('i-logo-upload-status');
+  const btn        = document.getElementById('i-logo-upload-btn');
+  const file       = fileInput.files[0];
+
+  if (!file) {
+    statusEl.textContent = '⚠️ Selecione um arquivo primeiro.';
+    statusEl.style.color = '#dc2626';
+    statusEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Enviando...'; btn.disabled = true;
+  statusEl.style.display = 'none';
+
+  try {
+    const fd = new FormData();
+    fd.append('logo', file);
+
+    const res = await apiFetch('/admin/config/logo', { method: 'POST', body: fd });
+    const d   = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Erro ao enviar');
+
+    // Preenche o campo URL com a URL gerada e atualiza o preview
+    document.getElementById('i-logo').value = d.logo_url;
+    const img = document.getElementById('i-logo-preview');
+    img.src = d.logo_url; img.style.display = 'block';
+
+    statusEl.textContent = '✅ Logo enviada com sucesso!';
+    statusEl.style.color = '#16a34a';
+    statusEl.style.display = 'block';
+    fileInput.value = '';
+    setTimeout(() => statusEl.style.display = 'none', 4000);
+  } catch (e) {
+    statusEl.textContent = '❌ ' + e.message;
+    statusEl.style.color = '#dc2626';
+    statusEl.style.display = 'block';
+  } finally {
+    btn.textContent = '⬆️ Enviar logo'; btn.disabled = false;
+  }
+}
+
 async function salvarIdentidade() {
   const errEl = document.getElementById('i-alert-error');
   const okEl  = document.getElementById('i-alert-success');
@@ -1536,12 +1588,19 @@ document.addEventListener('DOMContentLoaded', () => {
     else prev.style.display = 'none';
   });
 
-  /* Logo identidade — preview */
+  /* Logo identidade — preview via URL */
   document.getElementById('i-logo').addEventListener('input', () => {
     const url = document.getElementById('i-logo').value.trim();
     const img = document.getElementById('i-logo-preview');
     if (url) { img.src = url; img.style.display = 'block'; }
     else img.style.display = 'none';
+  });
+
+  /* Logo identidade — preview via arquivo local selecionado */
+  document.getElementById('i-logo-file').addEventListener('change', () => {
+    const file = document.getElementById('i-logo-file').files[0];
+    const img  = document.getElementById('i-logo-preview');
+    if (file) { img.src = URL.createObjectURL(file); img.style.display = 'block'; }
   });
 
   /* Tags sub-regiões mapa */

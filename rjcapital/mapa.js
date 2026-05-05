@@ -570,21 +570,73 @@ function filtrarDistrito(distrito) {
 }
 
 // ─────────────────────────────────────────────
+// LÍDERES DE ZONA — carregados da Gestão de Acessos
+// ─────────────────────────────────────────────
+let lideresZona = {}
+
+async function carregarLideresZona() {
+  try {
+    const res = await apiFetch('/lideres-regiao')
+    if (!res.ok) return
+    const lista = await res.json()
+    lideresZona = {}
+    lista.forEach(u => {
+      if (!u.regiao_vinculada) return
+      const chave = u.regiao_vinculada.trim().toUpperCase()
+      if (!lideresZona[chave]) lideresZona[chave] = []
+      lideresZona[chave].push({
+        nome:     u.nome || u.usuario || '—',
+        contato:  u.contato || '',
+        foto_url: u.foto_url || null
+      })
+    })
+  } catch (e) { console.warn('[lideres-zona] Não carregado:', e) }
+}
+
+// ─────────────────────────────────────────────
 // LÍDER DO DISTRITO
 // ─────────────────────────────────────────────
 function mostrarLiderDistrito(distrito) {
   const card  = document.getElementById("lider-distrito-card")
   const lista = document.getElementById("lista-lideres-distrito")
-  if (!distrito || !distritos[distrito]) { card.style.display = "none"; return }
-  const lideres = distritos[distrito].lideres || []
-  card.style.display = lideres.length ? "block" : "none"
+  if (!distrito) { card.style.display = "none"; return }
+
+  const chave = distrito.trim().toUpperCase()
+
+  // Prioridade 1: dados ao vivo da Gestão de Acessos
+  let lideres = lideresZona[chave] || null
+
+  // Prioridade 2: fallback no distritos.js
+  if (!lideres || lideres.length === 0) {
+    const entry = distritos[distrito] || distritos[chave]
+    if (entry && entry.lideres && entry.lideres.length) {
+      lideres = entry.lideres.map(l => ({
+        nome:     l.nome,
+        contato:  l.telefone || '',
+        foto_url: l.foto || null
+      }))
+    }
+  }
+
+  if (!lideres || lideres.length === 0) { card.style.display = "none"; return }
+
+  card.style.display = "block"
   lista.innerHTML = ""
+
   lideres.forEach(lider => {
     const div = document.createElement("div")
     div.className = "lider-card"
+
+    let fotoSrc = 'img/lideres/semfoto.jpg'
+    if (lider.foto_url) {
+      fotoSrc = lider.foto_url.startsWith('http')
+        ? lider.foto_url
+        : (window.API_URL ? window.API_URL.replace(/\/api$/, '') : '') + lider.foto_url
+    }
+
     div.innerHTML = `
-      <img src="${lider.foto}" onerror="this.src='img/lideres/default.jpg'" alt="">
-      <div class="lider-info"><b>${lider.nome}</b><br><span>${lider.telefone || ""}</span></div>
+      <img src="${fotoSrc}" onerror="this.src='img/lideres/semfoto.jpg'" alt="">
+      <div class="lider-info"><b>${lider.nome}</b><br><span>${lider.contato || ""}</span></div>
     `
     lista.appendChild(div)
   })
@@ -1029,6 +1081,7 @@ function atualizarLegenda() {
 // GEOJSON — chamado pelo iniciarAplicacao() após login
 // ─────────────────────────────────────────────
 window.iniciarMapa = async function() {
+  await carregarLideresZona()
   await carregarConfig()
   map = L.map('map', { minZoom: 9, maxZoom: 18 }).setView([-22.91, -43.17], 11)
   window.map = map   // expõe para index.html (pins, invalidateSize, etc.)
