@@ -830,6 +830,20 @@ async function excluirLideranca(l, bairro) {
 }
 
 // ─────────────────────────────────────────────
+// HELPER — resolve a chave de região para uma cidade-mãe
+// ─────────────────────────────────────────────
+function getRegiaoParaCidade(cidadeMae) {
+  for (const r of (configSistema.regioes || [])) {
+    let cidades = r.cidades
+    if (typeof cidades === 'string') { try { cidades = JSON.parse(cidades) } catch { cidades = [] } }
+    if (Array.isArray(cidades) &&
+        cidades.some(c => (c || '').toLowerCase().trim() === (cidadeMae || '').toLowerCase().trim()))
+      return r.chave
+  }
+  return null
+}
+
+// ─────────────────────────────────────────────
 // ADICIONAR LIDERANÇA
 // ─────────────────────────────────────────────
 document.getElementById("add-lideranca").addEventListener("click", async () => {
@@ -856,11 +870,20 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
     formData.append('vinculo_politico',  vinculo)
     formData.append('expectativa_votos', votos)
 
-    await apiFetch('/liderancas', {
+    // Resolve a região com base na cidade-mãe do submapa (necessário para o backend aceitar o POST)
+    // "Rio de Janeiro" → chave da região no tenant (ex: "metropolitana")
+    const regiao = getRegiaoParaCidade('Rio de Janeiro')
+    if (regiao) formData.append('regiao', regiao)
+
+    const resp = await apiFetch('/liderancas', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') },
       body: formData
     })
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}))
+      alert('Erro ao salvar: ' + (err.error || resp.status))
+      return
+    }
 
     document.getElementById("lideranca-nome").value    = ""
     document.getElementById("lideranca-contato").value = ""

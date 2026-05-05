@@ -785,9 +785,12 @@ app.post('/api/liderancas',
       );
     }
 
-    // Garante que a região sempre seja preenchida
+    // Garante que a região sempre seja preenchida.
+    // Para submapas (mapa != null), usa o mapa como fallback de região — evita rejeitar
+    // lideranças de bairros cujos nomes não constam em tenant_regioes.cidades.
     const regiaoFinal = regiaoBody || req.user.regiao
-      || await resolverRegiao(req.tenantId, cidade);
+      || await resolverRegiao(req.tenantId, cidade)
+      || mapa;  // fallback: submapa como região (ex: 'angra', 'rjcapital')
     if (!regiaoFinal) {
       await client.query('ROLLBACK');
       return res.status(400).json({ error: 'Região não encontrada para esta cidade. Selecione a região manualmente.' });
