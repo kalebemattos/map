@@ -777,13 +777,13 @@ function renderLiderancas(bairro) {
 }
 
 // ─────────────────────────────────────────────
-// MODAL DETALHE
+// MODAL DETALHE (mesmo layout do mapa estadual)
 // ─────────────────────────────────────────────
 function abrirModalLideranca(l, bairro) {
-  const conteudo   = document.getElementById("modal-lideranca-conteudo")
-  const bairroRef  = bairro || bairroAtual || '—'
-  const distrito   = getDistritoDoBairro(bairroRef)
-  const _badge     = getBadge(l.vinculo_politico)
+  const div      = document.getElementById('modal-lideranca-conteudo')
+  const bairroRef = bairro || bairroAtual || '—'
+  const distrito  = getDistritoDoBairro(bairroRef)
+  const _badge    = getBadge(l.vinculo_politico)
   const badgeClass = _badge.cls
   const badgeStyle = _badge.style
   const badgeLabel = (configSistema.candidatos || []).find(c => c.chave === l.vinculo_politico)?.nome || _badge.label
@@ -792,32 +792,46 @@ function abrirModalLideranca(l, bairro) {
 
   window._modalLiderancaData = { l, bairro: bairroRef }
 
-  const fotoHtml = l.foto
-    ? `<img src="${l.foto}" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='👤'">`
-    : '👤'
-
-  conteudo.innerHTML = `
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
-      <div style="width:72px;height:72px;border-radius:50%;overflow:hidden;background:var(--slate-100);border:2px solid var(--slate-200);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;">
-        ${fotoHtml}
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-family:'Sora',sans-serif;font-size:17px;font-weight:700;color:var(--slate-900);margin-bottom:3px;word-break:break-word;">${l.nome}</div>
-        <div style="font-size:12px;color:var(--slate-500);margin-bottom:7px;">${bairroRef} · ${distrito}</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span style="font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--blue-main);">${(l.expectativa_votos||0).toLocaleString('pt-BR')} votos</span>
-          <span class="lideranca-vinculo-badge ${badgeClass}" style="${badgeStyle}">${badgeLabel}</span>
-        </div>
+  div.innerHTML = `
+    <div class="modal-conteudo-header">
+      ${l.foto
+        ? `<div class="modal-foto"><img src="${l.foto}" alt="Foto da liderança" onerror="this.parentElement.classList.add('sem-foto');this.remove()"></div>`
+        : `<div class="modal-foto sem-foto">👤</div>`}
+      <div>
+        <h2 class="modal-nome">${l.nome || '—'}</h2>
+        <div class="modal-sub">${bairroRef} · ${distrito}</div>
       </div>
     </div>
-    ${l.contato ? `
-    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--slate-50);border-radius:9px;border:1px solid var(--slate-200);font-size:13px;color:var(--slate-700);margin-bottom:12px;">
-      <span style="font-size:16px;">📞</span><span>${l.contato}</span>
+
+    <div class="modal-grid">
+      <div>
+        <strong>Contato</strong><br>
+        ${l.contato || '—'}
+      </div>
+      <div>
+        <strong>Expectativa de votos</strong><br>
+        ${(l.expectativa_votos ?? 0).toLocaleString('pt-BR')}
+      </div>
+      <div>
+        <strong>Campanha</strong><br>
+        <span class="lideranca-vinculo-badge ${badgeClass}" style="${badgeStyle}">${badgeLabel}</span>
+      </div>
+      <div>
+        <strong>Status</strong><br>
+        ${l.status || 'ativa'}
+      </div>
+    </div>
+
+    ${l.release ? `
+    <div class="modal-release">
+      <strong>Release / Observações</strong><br><br>
+      ${l.release}
     </div>` : ''}
+
     ${podeEditar ? `
-    <div style="display:flex;gap:8px;">
-      <button id="modal-btn-editar" style="flex:1;padding:9px;border:1.5px solid var(--slate-200);border-radius:9px;background:white;font-size:13px;font-family:inherit;cursor:pointer;color:var(--slate-700);font-weight:600;">✏️ Editar</button>
-      <button id="modal-btn-excluir" style="flex:1;padding:9px;border:1.5px solid #fee2e2;border-radius:9px;background:#fee2e2;font-size:13px;font-family:inherit;cursor:pointer;color:#dc2626;font-weight:600;">🗑️ Excluir</button>
+    <div class="modal-actions">
+      <button id="modal-btn-editar" style="border:1.5px solid var(--slate-200);background:white;color:var(--slate-700);">✏️ Editar</button>
+      <button id="modal-btn-excluir" style="border:1.5px solid #fee2e2;background:#fee2e2;color:#dc2626;">🗑️ Excluir</button>
     </div>` : ''}
   `
 
@@ -834,7 +848,7 @@ function abrirModalLideranca(l, bairro) {
     })
   }
 
-  document.getElementById("modal-lideranca").style.display = "flex"
+  document.getElementById('modal-lideranca').style.display = 'flex'
 }
 
 // ─────────────────────────────────────────────
