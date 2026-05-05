@@ -780,29 +780,60 @@ function renderLiderancas(bairro) {
 // MODAL DETALHE
 // ─────────────────────────────────────────────
 function abrirModalLideranca(l, bairro) {
-  const conteudo  = document.getElementById("modal-lideranca-conteudo")
-  const distrito  = getDistritoDoBairro(bairro || bairroAtual)
+  const conteudo   = document.getElementById("modal-lideranca-conteudo")
+  const bairroRef  = bairro || bairroAtual || '—'
+  const distrito   = getDistritoDoBairro(bairroRef)
   const _badge     = getBadge(l.vinculo_politico)
   const badgeClass = _badge.cls
   const badgeStyle = _badge.style
   const badgeLabel = (configSistema.candidatos || []).find(c => c.chave === l.vinculo_politico)?.nome || _badge.label
-  const fotoHtml   = l.foto ? `<img src="${l.foto}" alt="" onerror="this.parentElement.innerHTML='👤'">` : `👤`
+  const user       = JSON.parse(localStorage.getItem('user') || '{}')
+  const podeEditar = user.nivel !== 'visualizador'
+
+  window._modalLiderancaData = { l, bairro: bairroRef }
+
+  const fotoHtml = l.foto
+    ? `<img src="${l.foto}" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='👤'">`
+    : '👤'
 
   conteudo.innerHTML = `
-    <div class="modal-lider-header">
-      <div class="modal-lider-foto">${fotoHtml}</div>
-      <div>
-        <div class="modal-lider-nome">${l.nome}</div>
-        <div class="modal-lider-sub">${bairro || bairroAtual} · ${distrito}</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <div style="width:72px;height:72px;border-radius:50%;overflow:hidden;background:var(--slate-100);border:2px solid var(--slate-200);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;">
+        ${fotoHtml}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:'Sora',sans-serif;font-size:17px;font-weight:700;color:var(--slate-900);margin-bottom:3px;word-break:break-word;">${l.nome}</div>
+        <div style="font-size:12px;color:var(--slate-500);margin-bottom:7px;">${bairroRef} · ${distrito}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--blue-main);">${(l.expectativa_votos||0).toLocaleString('pt-BR')} votos</span>
+          <span class="lideranca-vinculo-badge ${badgeClass}" style="${badgeStyle}">${badgeLabel}</span>
+        </div>
       </div>
     </div>
-    <div class="modal-grid">
-      <div class="modal-field"><div class="modal-field-label">Contato</div><div class="modal-field-value">${l.contato || "—"}</div></div>
-      <div class="modal-field"><div class="modal-field-label">Expectativa</div><div class="modal-field-value" style="color:var(--blue-main);font-family:'Sora',sans-serif;">${(l.expectativa_votos||0).toLocaleString("pt-BR")} votos</div></div>
-      <div class="modal-field"><div class="modal-field-label">Campanha</div><div class="modal-field-value"><span class="lideranca-vinculo-badge ${badgeClass}" style="${badgeStyle}">${badgeLabel}</span></div></div>
-      <div class="modal-field"><div class="modal-field-label">Bairro</div><div class="modal-field-value">${bairro || bairroAtual || "—"}</div></div>
-    </div>
+    ${l.contato ? `
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--slate-50);border-radius:9px;border:1px solid var(--slate-200);font-size:13px;color:var(--slate-700);margin-bottom:12px;">
+      <span style="font-size:16px;">📞</span><span>${l.contato}</span>
+    </div>` : ''}
+    ${podeEditar ? `
+    <div style="display:flex;gap:8px;">
+      <button id="modal-btn-editar" style="flex:1;padding:9px;border:1.5px solid var(--slate-200);border-radius:9px;background:white;font-size:13px;font-family:inherit;cursor:pointer;color:var(--slate-700);font-weight:600;">✏️ Editar</button>
+      <button id="modal-btn-excluir" style="flex:1;padding:9px;border:1.5px solid #fee2e2;border-radius:9px;background:#fee2e2;font-size:13px;font-family:inherit;cursor:pointer;color:#dc2626;font-weight:600;">🗑️ Excluir</button>
+    </div>` : ''}
   `
+
+  if (podeEditar) {
+    document.getElementById('modal-btn-editar').addEventListener('click', () => {
+      fecharModalLideranca()
+      const d = window._modalLiderancaData
+      editarLideranca(d.l, d.bairro)
+    })
+    document.getElementById('modal-btn-excluir').addEventListener('click', () => {
+      fecharModalLideranca()
+      const d = window._modalLiderancaData
+      excluirLideranca(d.l, d.bairro)
+    })
+  }
+
   document.getElementById("modal-lideranca").style.display = "flex"
 }
 
@@ -875,6 +906,10 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
     const regiao = getRegiaoParaCidade('Rio de Janeiro')
     if (regiao) formData.append('regiao', regiao)
 
+    // Foto opcional
+    const fotoFile = document.getElementById('lideranca-foto-input')?.files[0]
+    if (fotoFile) formData.append('foto', fotoFile)
+
     const resp = await apiFetch('/liderancas', {
       method: 'POST',
       body: formData
@@ -888,6 +923,11 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
     document.getElementById("lideranca-nome").value    = ""
     document.getElementById("lideranca-contato").value = ""
     document.getElementById("lideranca-votos").value   = "0"
+    // Limpa preview da foto
+    const fotoInput  = document.getElementById('lideranca-foto-input')
+    const fotoCircle = document.getElementById('foto-picker-circle')
+    if (fotoInput)  fotoInput.value = ''
+    if (fotoCircle) fotoCircle.innerHTML = '👤'
 
     await carregarTudo()
     repaintMapa()
