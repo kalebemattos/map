@@ -158,10 +158,14 @@ async function apiFetch(endpoint, options = {}) {
     throw new Error('Sem token')
   }
 
+  // Se body for FormData, não definir Content-Type — o browser define
+  // automaticamente com o boundary correto (multipart/form-data; boundary=...)
+  const isFormData = options.body instanceof FormData
+
   const res = await fetch(`${window.API_URL}${endpoint}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       'Authorization': 'Bearer ' + token,
       ...(options.headers || {})
     }
