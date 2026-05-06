@@ -3425,6 +3425,7 @@ function selecionarCidade(nome, layer) {
   layerSelecionada = layer;
 
   const munNames = regions[regiaoAtiva];
+  const munNamesNorm = munNames ? munNames.map(n => normalizeCityName(n)) : null;
 
   layerRJ.eachLayer(l => {
 
@@ -3435,7 +3436,7 @@ function selecionarCidade(nome, layer) {
     const votos = votosValidos[n] || 0;
 
     // 🔒 Se existe região ativa e cidade NÃO pertence
-    if (regiaoAtiva !== 'all' && munNames && !munNames.includes(n)) {
+    if (regiaoAtiva !== 'all' && munNamesNorm && !munNamesNorm.includes(normalizeCityName(n))) {
 
       l.setStyle({
         fillOpacity: 0.12,
@@ -4016,7 +4017,22 @@ function initializeMapAndApp() {
     fetch("https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-33-mun.json")
       .then(r => r.json())
       .then(data => {
-        
+
+        // ── Normaliza NM_MUN (IBGE all-caps) para o nome canônico em proper-case
+        // O GeoJSON do tbrugz usa NM_MUN em MAIÚSCULAS (ex: "ANGRA DOS REIS") mas
+        // votosValidos e config.js usam proper-case ("Angra dos Reis").
+        // Este passo unifica os nomes antes de qualquer uso downstream.
+        const _normToProper = {};
+        Object.keys(votosValidos).forEach(nome => {
+          _normToProper[normalizeCityName(nome)] = nome;
+        });
+        data.features.forEach(f => {
+          const raw = f.properties.NM_MUN || f.properties.name || '';
+          const proper = _normToProper[normalizeCityName(raw)] || raw;
+          f.properties.NM_MUN = proper;   // sobrescreve com proper-case
+          f.properties.name   = proper;   // garante fallback também
+        });
+
         layerRJ = L.geoJSON(data, {
           style: feature => {
             const nome = feature.properties.NM_MUN || feature.properties.name;
@@ -4077,9 +4093,10 @@ layersPorCidade[nomeCidade] = layer;
                e.target.feature.properties.name;
 
   const munNames = regions[regiaoAtiva];
+  const munNamesNorm = munNames ? munNames.map(n => normalizeCityName(n)) : null;
 
   // Se região ativa e cidade não pertence → ignora hover
-  if (regiaoAtiva !== 'all' && munNames && !munNames.includes(nome)) {
+  if (regiaoAtiva !== 'all' && munNamesNorm && !munNamesNorm.includes(normalizeCityName(nome))) {
     return;
   }
 
@@ -4102,8 +4119,8 @@ layersPorCidade[nomeCidade] = layer;
   const munNames = regions[regiaoAtiva];
 
   if (regiaoAtiva !== 'all') {
-
-    if (munNames && munNames.includes(nome)) {
+    const _munNorm = munNames ? munNames.map(n => normalizeCityName(n)) : null;
+    if (_munNorm && _munNorm.includes(normalizeCityName(nome))) {
       e.target.setStyle({
         weight: 0.8,
         color: "#1e3a8a",
@@ -4184,10 +4201,11 @@ carregarPins();
         // aplica o zoom e o limite de zoom-out agora que os layers estão prontos
         if (regiaoAtiva && regiaoAtiva !== 'all') {
           const munNamesAtiva = regions[regiaoAtiva];
+          const munNamesAtivaNorm = munNamesAtiva ? munNamesAtiva.map(n => normalizeCityName(n)) : null;
           let regionBounds = null;
           layerRJ.eachLayer(layer => {
             const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name;
-            if (munNamesAtiva && munNamesAtiva.includes(nome)) {
+            if (munNamesAtivaNorm && munNamesAtivaNorm.includes(normalizeCityName(nome))) {
               const b = layer.getBounds();
               regionBounds = regionBounds ? regionBounds.extend(b) : b;
             }
@@ -4316,13 +4334,16 @@ if (key !== 'all') {
 }
 
         // ATENÇÃO: Se regions for undefined, o data.js não carregou
-        const munNames = regions[key]; 
+        const munNames = regions[key];
+        // Conjunto normalizado para comparação robusta (case-insensitive, sem acento)
+        const munNamesNorm = munNames ? munNames.map(n => normalizeCityName(n)) : null;
         if (!layerRJ) return;
 
         layerRJ.eachLayer(layer => {
             const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name;
             const el = layer.getElement && layer.getElement();
-            if (!munNames || munNames.includes(nome)) {
+            const pertence = !munNamesNorm || munNamesNorm.includes(normalizeCityName(nome));
+            if (pertence) {
                 layer.setStyle({ fillOpacity: 0.8, opacity: 1 });
                 if (el) el.style.pointerEvents = 'auto';
             } else {
@@ -4332,8 +4353,8 @@ if (key !== 'all') {
         });
         document.querySelectorAll('.city-label').forEach(el => {
             const name = el.innerText && el.innerText.trim();
-            if (!munNames || munNames.includes(name)) el.style.opacity = 0.5;
-            else el.style.opacity = 0.15;
+            const pertence = !munNamesNorm || munNamesNorm.includes(normalizeCityName(name));
+            el.style.opacity = pertence ? 0.5 : 0.15;
         });
 
         if (key === 'all') {
@@ -4352,7 +4373,7 @@ if (key !== 'all') {
             let regionBounds = null;
             layerRJ.eachLayer(layer => {
                 const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name;
-                if (munNames && munNames.includes(nome)) {
+                if (munNamesNorm && munNamesNorm.includes(normalizeCityName(nome))) {
                     const b = layer.getBounds();
                     regionBounds = regionBounds ? regionBounds.extend(b) : b;
                 }

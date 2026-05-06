@@ -119,7 +119,7 @@ module.exports = {
       chave:  'medioParaiba',
       label:  'Médio Paraíba',
       cidades: [
-        'Barra Mansa', 'Volta Redonda', 'Resende', 'Quatis', 'Porto Real', 'Pinheiral',
+        'Barra Mansa', 'Volta Redonda', 'Resende', 'Itatiaia', 'Quatis', 'Porto Real', 'Pinheiral',
         'Valença', 'Rio das Flores', 'Barra do Piraí', 'Rio Claro',
       ],
       lideres: [
