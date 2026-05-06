@@ -4729,12 +4729,11 @@ async function exportarMapaPDF() {
   try {
     // 1. Coletar features filtradas pela região ativa
     const features = [];
+    const _munNamesAtivos = regiaoAtiva !== 'all' ? regions[regiaoAtiva] : null;
+    const _munNormAtivos  = _munNamesAtivos ? _munNamesAtivos.map(n => normalizeCityName(n)) : null;
     layerRJ.eachLayer(layer => {
       const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name;
-      if (regiaoAtiva !== 'all') {
-        const munNames = regions[regiaoAtiva];
-        if (!munNames || !munNames.includes(nome)) return;
-      }
+      if (_munNormAtivos && !_munNormAtivos.includes(normalizeCityName(nome))) return;
       features.push({ layer, nome });
     });
 
@@ -4783,32 +4782,30 @@ async function exportarMapaPDF() {
     }
 
     // 5. Desenhar polígonos
+    // drawGeometry: para cada sub-polígono abre UM ctx.beginPath() com todos os rings,
+    // depois faz fill (evenodd) + stroke — isso garante que holes e MultiPolygon renderizam
     function drawGeometry(geometry, fillColor) {
-      const drawRing = (ring) => {
+      function drawPolygon(rings) {
         ctx.beginPath();
-        ring.forEach(([lng, lat], i) => {
-          const { x, y } = project(lat, lng);
-          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        rings.forEach(ring => {
+          ring.forEach(([lng, lat], i) => {
+            const { x, y } = project(lat, lng);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          });
+          ctx.closePath(); // fecha cada anel dentro do mesmo path
         });
-        ctx.closePath();
-      };
-
-      if (geometry.type === 'Polygon') {
-        geometry.coordinates.forEach(ring => drawRing(ring));
         ctx.fillStyle = fillColor;
-        ctx.fill('evenodd');
+        ctx.fill('evenodd');     // evenodd lida corretamente com holes e winding
         ctx.strokeStyle = '#1e3a8a';
         ctx.lineWidth = 0.7;
         ctx.stroke();
+      }
+
+      if (geometry.type === 'Polygon') {
+        drawPolygon(geometry.coordinates);
       } else if (geometry.type === 'MultiPolygon') {
-        geometry.coordinates.forEach(poly => {
-          poly.forEach(ring => drawRing(ring));
-          ctx.fillStyle = fillColor;
-          ctx.fill('evenodd');
-          ctx.strokeStyle = '#1e3a8a';
-          ctx.lineWidth = 0.7;
-          ctx.stroke();
-        });
+        // Angra dos Reis, Rio de Janeiro etc. têm MultiPolygon (Ilha Grande, ilhas menores…)
+        geometry.coordinates.forEach(rings => drawPolygon(rings));
       }
     }
 
@@ -4827,11 +4824,43 @@ async function exportarMapaPDF() {
       const geom = layer.feature.geometry;
       drawGeometry(geom, fillColor);
 
-      // Calcular centróide para rótulo
-      const b = layer.getBounds();
-      const clat = (b.getSouth() + b.getNorth()) / 2;
-      const clng = (b.getWest()  + b.getEast())  / 2;
-      const { x, y } = project(clat, clng);
+      // Calcular centróide para rótulo — usa o maior sub-polígono para evitar
+      // que o label caia em ilhas ou no mar (ex: Angra dos Reis, Rio de Janeiro)
+      function ringArea(ring) {
+        // Shoelace formula — área aproximada em coordenadas geográficas
+        let a = 0;
+        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+          a += (ring[j][0] + ring[i][0]) * (ring[j][1] - ring[i][1]);
+        }
+        return Math.abs(a) / 2;
+      }
+      function ringCentroid(ring) {
+        // Centróide pela média das vértices do anel exterior
+        let sumLng = 0, sumLat = 0;
+        ring.forEach(([lng, lat]) => { sumLng += lng; sumLat += lat; });
+        return { lat: sumLat / ring.length, lng: sumLng / ring.length };
+      }
+
+      let labelLat, labelLng;
+      if (geom.type === 'Polygon') {
+        const c = ringCentroid(geom.coordinates[0]);
+        labelLat = c.lat; labelLng = c.lng;
+      } else if (geom.type === 'MultiPolygon') {
+        // Usa o centróide do sub-polígono com maior área (o corpo principal, não ilhas)
+        let maxA = -1, bestRing = null;
+        geom.coordinates.forEach(poly => {
+          const a = ringArea(poly[0]);
+          if (a > maxA) { maxA = a; bestRing = poly[0]; }
+        });
+        const c = ringCentroid(bestRing || geom.coordinates[0][0]);
+        labelLat = c.lat; labelLng = c.lng;
+      } else {
+        const b = layer.getBounds();
+        labelLat = (b.getSouth() + b.getNorth()) / 2;
+        labelLng = (b.getWest()  + b.getEast())  / 2;
+      }
+
+      const { x, y } = project(labelLat, labelLng);
       labelPositions.push({ nome, x, y });
     });
 
