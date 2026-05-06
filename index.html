@@ -6,6 +6,7 @@
 <title>Mapa de Lideranças RJ</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -1693,6 +1694,7 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
         <!-- opções preenchidas dinamicamente por injetarRegioes() -->
         <option value="all">Mapa completo</option>
       </select>
+      <button id="btn-exportar-pdf" onclick="exportarMapaPDF()" style="width:100%;margin-top:8px;padding:8px 12px;border:none;border-radius:9px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 10px rgba(21,101,192,0.3);transition:opacity .15s;">📥 Baixar mapa em PDF</button>
 
       <div id="regiao-totais-card">
         <div class="regiao-totais-title" id="regiao-totais-nome">—</div>
@@ -4694,6 +4696,174 @@ function abrirModal(l) {
 
 function fecharModal() {
   document.querySelector('.modal-overlay').style.display = 'none';
+}
+
+// ===== EXPORTAR MAPA EM PDF =====
+async function exportarMapaPDF() {
+  if (!layerRJ) { alert('Mapa ainda não carregado.'); return; }
+
+  const btn = document.getElementById('btn-exportar-pdf');
+  if (btn) { btn.textContent = '⏳ Gerando PDF...'; btn.disabled = true; }
+
+  try {
+    // 1. Coletar features filtradas pela região ativa
+    const features = [];
+    layerRJ.eachLayer(layer => {
+      const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name;
+      if (regiaoAtiva !== 'all') {
+        const munNames = regions[regiaoAtiva];
+        if (!munNames || !munNames.includes(nome)) return;
+      }
+      features.push({ layer, nome });
+    });
+
+    if (features.length === 0) { alert('Nenhuma cidade para exportar.'); return; }
+
+    // 2. Calcular bounding box geográfico
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+    features.forEach(({ layer }) => {
+      const b = layer.getBounds();
+      minLat = Math.min(minLat, b.getSouth());
+      maxLat = Math.max(maxLat, b.getNorth());
+      minLng = Math.min(minLng, b.getWest());
+      maxLng = Math.max(maxLng, b.getEast());
+    });
+
+    // 3. Configurar canvas (A4 landscape em 150 dpi → 1754×1240 px)
+    const PW = 1754, PH = 1240;
+    const MARGIN = 60;
+    const drawW = PW - MARGIN * 2;
+    const drawH = PH - MARGIN * 2 - 60; // 60px para título
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = PW;
+    canvas.height = PH;
+    const ctx = canvas.getContext('2d');
+
+    // Fundo branco
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, PW, PH);
+
+    // 4. Funções de projeção lat/lng → canvas px (preserva proporção)
+    const latRange = maxLat - minLat;
+    const lngRange = maxLng - minLng;
+    const scaleX = drawW / lngRange;
+    const scaleY = drawH / latRange;
+    const scale  = Math.min(scaleX, scaleY);
+
+    // centralizar no espaço de desenho
+    const offsetX = MARGIN + (drawW - lngRange * scale) / 2;
+    const offsetY = MARGIN + 60 + (drawH - latRange * scale) / 2;
+
+    function project(lat, lng) {
+      const x = offsetX + (lng - minLng) * scale;
+      const y = offsetY + (maxLat - lat) * scale; // y invertido
+      return { x, y };
+    }
+
+    // 5. Desenhar polígonos
+    function drawGeometry(geometry, fillColor) {
+      const drawRing = (ring) => {
+        ctx.beginPath();
+        ring.forEach(([lng, lat], i) => {
+          const { x, y } = project(lat, lng);
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+      };
+
+      if (geometry.type === 'Polygon') {
+        geometry.coordinates.forEach(ring => drawRing(ring));
+        ctx.fillStyle = fillColor;
+        ctx.fill('evenodd');
+        ctx.strokeStyle = '#1e3a8a';
+        ctx.lineWidth = 0.7;
+        ctx.stroke();
+      } else if (geometry.type === 'MultiPolygon') {
+        geometry.coordinates.forEach(poly => {
+          poly.forEach(ring => drawRing(ring));
+          ctx.fillStyle = fillColor;
+          ctx.fill('evenodd');
+          ctx.strokeStyle = '#1e3a8a';
+          ctx.lineWidth = 0.7;
+          ctx.stroke();
+        });
+      }
+    }
+
+    // Calcular cor de cada cidade e desenhar
+    const labelPositions = [];
+    features.forEach(({ layer, nome }) => {
+      const votos = (typeof votosValidos !== 'undefined' ? votosValidos[nome] || 0 : 0);
+      const cache = getDataCache(nome);
+      const fillColor = getCityColor({
+        validVotes: votos,
+        leadersCount: (cache.liderancas || []).length,
+        expectedVotes: getTotalExpectativa(nome),
+        leaderVotes: getExpLiderancas(nome)
+      });
+
+      const geom = layer.feature.geometry;
+      drawGeometry(geom, fillColor);
+
+      // Calcular centróide para rótulo
+      const b = layer.getBounds();
+      const clat = (b.getSouth() + b.getNorth()) / 2;
+      const clng = (b.getWest()  + b.getEast())  / 2;
+      const { x, y } = project(clat, clng);
+      labelPositions.push({ nome, x, y });
+    });
+
+    // 6. Desenhar rótulos (nomes das cidades)
+    const fontSize = Math.max(7, Math.min(13, scale * 0.18));
+    ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    labelPositions.forEach(({ nome, x, y }) => {
+      // sombra branca para legibilidade
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(nome, x, y);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(nome, x, y);
+    });
+
+    // 7. Título
+    const titulo = regiaoAtiva !== 'all'
+      ? `Mapa de Lideranças RJ — ${regiaoAtiva.charAt(0).toUpperCase() + regiaoAtiva.slice(1)}`
+      : 'Mapa de Lideranças — Estado do Rio de Janeiro';
+
+    ctx.font = 'bold 26px Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#0d2d6b';
+    ctx.fillText(titulo, MARGIN, 20);
+
+    // Data de geração
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    ctx.font = '14px Arial, sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.textAlign = 'right';
+    ctx.fillText(`Gerado em ${hoje}`, PW - MARGIN, 24);
+
+    // 8. Exportar com jsPDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const imgData = canvas.toDataURL('image/png');
+    doc.addImage(imgData, 'PNG', 0, 0, 297, 210);
+    const fileName = regiaoAtiva !== 'all'
+      ? `mapa_${regiaoAtiva}.pdf`
+      : 'mapa_estado_rj.pdf';
+    doc.save(fileName);
+
+  } catch (e) {
+    console.error('Erro ao gerar PDF:', e);
+    alert('Erro ao gerar PDF: ' + e.message);
+  } finally {
+    if (btn) { btn.innerHTML = '📥 Baixar mapa em PDF'; btn.disabled = false; }
+  }
 }
 
 document
