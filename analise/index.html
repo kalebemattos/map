@@ -1346,9 +1346,6 @@ function _renderCidadesCards(dados, totalVotos, maxVotos) {
     return;
   }
 
-  const ehMunicipal = candidatoAtual && CARGOS_MUNICIPAIS.has(candidatoAtual.cargo);
-  const btnLabel    = ehMunicipal ? '🏘️ Bairros' : '🗺️ Zonas';
-
   dados.forEach((r, i) => {
     const pctTotal = totalVotos > 0 ? ((r.votos / totalVotos) * 100).toFixed(2) : '0.00';
     const barW     = (r.votos / maxVotos * 100).toFixed(1);
@@ -1372,7 +1369,7 @@ function _renderCidadesCards(dados, totalVotos, maxVotos) {
         <span style="font-size:11px;color:#94a3b8;">${(r.votos_validos||0).toLocaleString('pt-BR')} válidos</span>
         <button class="crc-btn"
           onclick="event.stopPropagation();abrirModalDetalhe('${municipioEsc}','${r.id_municipio}')">
-          ${btnLabel}
+          🏘️ Bairros
         </button>
       </div>`;
     grid.appendChild(card);
@@ -1553,8 +1550,6 @@ function renderTabela() {
       const pctTotal    = totalVotos > 0 ? ((r.votos / totalVotos) * 100).toFixed(2) : '0.00';
       const barW        = (r.votos / maxVotos * 100).toFixed(1);
       const cidEsc      = r.municipio.replace(/'/g, "\\'");
-      const ehMunicipal = candidatoAtual && CARGOS_MUNICIPAIS.has(candidatoAtual.cargo);
-      const btnLabel    = ehMunicipal ? '🏘️ Bairros' : '🗺️ Zonas';
       const tr          = document.createElement('tr');
       tr.className      = 'cidade-clicavel';
       tr.addEventListener('click', () => abrirModalDetalhe(r.municipio, r.id_municipio));
@@ -1572,7 +1567,7 @@ function renderTabela() {
         <td data-label="">
           <button class="btn-perfil"
             onclick="event.stopPropagation();abrirModalDetalhe('${cidEsc}','${r.id_municipio}')">
-            ${btnLabel}
+            🏘️ Bairros
           </button>
         </td>`;
       tbody.appendChild(tr);
@@ -1596,10 +1591,9 @@ function renderTabela() {
   _renderContextHeader();
 }
 
-// ── Modal de Detalhe (Bairros para municipal, Zonas para estadual/federal) ────
+// ── Modal de Detalhe — sempre mostra votos por bairro (com fallback para zona) ──
 async function abrirModalDetalhe(municipio, idMunicipio) {
   if (!candidatoAtual) return;
-  const ehMunicipal = CARGOS_MUNICIPAIS.has(candidatoAtual.cargo);
   const mb       = document.getElementById('modal-bairros');
   const conteudo = document.getElementById('mb-conteudo');
   const turno    = document.getElementById('turnoSelect').value;
@@ -1608,12 +1602,9 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
   document.getElementById('mb-sub').textContent =
     candidatoAtual.nome + ' · ' + candidatoAtual.cargo + ' · ' + candidatoAtual.ano;
 
-  const msgEspera = ehMunicipal
-    ? '⏳ Consultando votos por bairro...'
-    : '⏳ Consultando zonas eleitorais...';
-  conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;">${msgEspera}</div>`;
+  conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">⏳ Consultando votos por bairro...</div>';
   mb.classList.add('aberto');
-  document.body.classList.add('modal-aberto'); // [MOBILE] trava scroll do fundo
+  document.body.classList.add('modal-aberto');
 
   const params = new URLSearchParams({
     sequencial:   candidatoAtual.sequencial,
@@ -1624,91 +1615,49 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
   });
 
   try {
-    if (ehMunicipal) {
-      // ── Eleição MUNICIPAL → votos por bairro ──────────────────────────────
-      const res  = await fetch(`${API_BASE}/api/eleicoes/bairros?${params}`);
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.error);
+    // Usa sempre /api/eleicoes/bairros — funciona para qualquer tipo de eleição.
+    // O endpoint tenta JOIN com tabela de locais de votação (bairro real) e,
+    // se não houver dado, cai para zona como fallback (campo por_bairro=false).
+    const res  = await fetch(`${API_BASE}/api/eleicoes/bairros?${params}`);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
 
-      const lista = json.data;
-      if (!lista.length) {
-        conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de bairros para esta cidade.</div>';
-        return;
-      }
-
-      const maxV   = Math.max(...lista.map(b => b.votos), 1);
-      const totalV = lista.reduce((s, b) => s + b.votos, 0);
-      // fonte='bigquery' = JOIN perfeito; 'secao_csv'+por_bairro = CSV; 'zona' = fallback
-      const temBairro = json.por_bairro === true;
-      const rotulo = temBairro ? 'Bairro' : 'Zona';
-
-      const rows = lista.map(b => {
-        const barW = (b.votos / maxV * 100).toFixed(1);
-        return `<tr>
-          <td><span class="b-nome">${b.bairro}</span></td>
-          <td><span class="b-votos">${b.votos.toLocaleString('pt-BR')}</span></td>
-          <td>
-            <div class="pct-bar-wrap">
-              <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
-              <span class="pct-label">${b.percentual !== null ? b.percentual + '%' : '—'}</span>
-            </div>
-          </td>
-        </tr>`;
-      }).join('');
-
-      conteudo.innerHTML =
-        '<table class="tb"><thead><tr>' +
-          `<th>${rotulo}</th><th>Votos</th><th>% Nominais</th>` +
-        '</tr></thead><tbody>' + rows + '</tbody></table>' +
-        '<div class="tb-footer">' +
-          `<span>${lista.length} ${rotulo.toLowerCase()}s</span>` +
-          '<span>Total: <strong>' + totalV.toLocaleString('pt-BR') + '</strong> votos</span>' +
-        '</div>';
-
-    } else {
-      // ── Eleição ESTADUAL/FEDERAL → votos por zona ─────────────────────────
-      const res  = await fetch(`${API_BASE}/api/eleicoes/zonas?${params}`);
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.error);
-
-      const lista = json.data;
-      if (!lista.length) {
-        conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de zonas para esta cidade.</div>';
-        return;
-      }
-
-      const maxV   = Math.max(...lista.map(b => b.votos), 1);
-      const totalV = lista.reduce((s, b) => s + b.votos, 0);
-
-      const rows = lista.map(b => {
-        const barW = (b.votos / maxV * 100).toFixed(1);
-        return `<tr>
-          <td><span class="b-nome">Zona ${b.zona}</span></td>
-          <td><span class="b-votos">${b.votos.toLocaleString('pt-BR')}</span></td>
-          <td>
-            <div class="pct-bar-wrap">
-              <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
-              <span class="pct-label">${b.percentual !== null ? b.percentual + '%' : '—'}</span>
-            </div>
-          </td>
-          <td style="font-size:12px;color:#64748b;">
-            ${b.comparecimento ? b.comparecimento.toLocaleString('pt-BR') : '—'}
-          </td>
-        </tr>`;
-      }).join('');
-
-      conteudo.innerHTML =
-        '<table class="tb"><thead><tr>' +
-          '<th>Zona Eleitoral</th><th>Votos</th><th>% Nominais</th><th>Comparecimento</th>' +
-        '</tr></thead><tbody>' + rows + '</tbody></table>' +
-        '<div class="tb-footer">' +
-          '<span>' + lista.length + ' zonas</span>' +
-          '<span>Total: <strong>' + totalV.toLocaleString('pt-BR') + '</strong> votos</span>' +
-        '</div>';
+    const lista = json.data;
+    if (!lista.length) {
+      conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de bairros para esta cidade.</div>';
+      return;
     }
 
+    const maxV    = Math.max(...lista.map(b => b.votos), 1);
+    const totalV  = lista.reduce((s, b) => s + b.votos, 0);
+    // por_bairro=true → nomes reais de bairro; false → fallback com zona
+    const rotulo  = json.por_bairro === true ? 'Bairro' : 'Zona';
+
+    const rows = lista.map(b => {
+      const barW = (b.votos / maxV * 100).toFixed(1);
+      return `<tr>
+        <td><span class="b-nome">${b.bairro}</span></td>
+        <td><span class="b-votos">${b.votos.toLocaleString('pt-BR')}</span></td>
+        <td>
+          <div class="pct-bar-wrap">
+            <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
+            <span class="pct-label">${b.percentual !== null ? b.percentual + '%' : '—'}</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    conteudo.innerHTML =
+      '<table class="tb"><thead><tr>' +
+        `<th>${rotulo}</th><th>Votos</th><th>% Nominais</th>` +
+      '</tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="tb-footer">' +
+        `<span>${lista.length} ${rotulo.toLowerCase()}s</span>` +
+        '<span>Total: <strong>' + totalV.toLocaleString('pt-BR') + '</strong> votos</span>' +
+      '</div>';
+
   } catch (e) {
-    conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;">❌ ${e.message}</div>`;
+    conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de bairros para esta cidade.</div>`;
     console.error('[abrirModalDetalhe]', e);
   }
 }

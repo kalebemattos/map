@@ -3042,7 +3042,7 @@ async function tryTables(sqlTemplate, placeholder, tableNames, params) {
 
 /**
  * GET /api/eleicoes/bairros
- * Retorna votos por bairro para eleições municipais.
+ * Retorna votos por bairro para qualquer tipo de eleição (municipal, estadual ou federal).
  *
  * Estratégia 1 (ideal): JOIN BigQuery resultados_secao + perfil_eleitorado_local_votacao
  *   → bairro real para qualquer município do Brasil.
