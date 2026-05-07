@@ -4732,181 +4732,151 @@ async function exportarMapaPDF() {
     const _munNamesAtivos = regiaoAtiva !== 'all' ? regions[regiaoAtiva] : null;
     const _munNormAtivos  = _munNamesAtivos ? _munNamesAtivos.map(n => normalizeCityName(n)) : null;
     layerRJ.eachLayer(layer => {
-      const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name;
+      if (!layer.feature) return;
+      const nome = layer.feature.properties.NM_MUN || layer.feature.properties.name || '';
       if (_munNormAtivos && !_munNormAtivos.includes(normalizeCityName(nome))) return;
       features.push({ layer, nome });
     });
 
+    console.log('[PDF] região:', regiaoAtiva, '| cidades coletadas:', features.map(f => f.nome));
+
     if (features.length === 0) { alert('Nenhuma cidade para exportar.'); return; }
 
-    // 2. Calcular bounding box geográfico
+    // 2. Bounding box — para MultiPolygon usa só o maior sub-polígono (evita escala distorcida por ilhas)
+    function getPrincipalBounds(layer) {
+      const geomType = layer.feature.geometry.type;
+      if (geomType !== 'MultiPolygon') return layer.getBounds();
+      const latlngs = layer.getLatLngs(); // [ [ring,...], [ring,...] ] para cada polígono
+      // Maior polígono = mais vértices no anel exterior
+      let best = latlngs[0];
+      latlngs.forEach(poly => { if ((poly[0]||[]).length > (best[0]||[]).length) best = poly; });
+      const pts = [];
+      best.forEach(ring => ring.forEach(p => pts.push(p)));
+      if (!pts.length) return layer.getBounds();
+      let s=pts[0].lat, n=pts[0].lat, w=pts[0].lng, e=pts[0].lng;
+      pts.forEach(p => { s=Math.min(s,p.lat); n=Math.max(n,p.lat); w=Math.min(w,p.lng); e=Math.max(e,p.lng); });
+      return L.latLngBounds([[s,w],[n,e]]);
+    }
+
     let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
     features.forEach(({ layer }) => {
-      const b = layer.getBounds();
-      minLat = Math.min(minLat, b.getSouth());
-      maxLat = Math.max(maxLat, b.getNorth());
-      minLng = Math.min(minLng, b.getWest());
-      maxLng = Math.max(maxLng, b.getEast());
+      const b = getPrincipalBounds(layer);
+      minLat = Math.min(minLat, b.getSouth()); maxLat = Math.max(maxLat, b.getNorth());
+      minLng = Math.min(minLng, b.getWest());  maxLng = Math.max(maxLng, b.getEast());
     });
 
-    // 3. Configurar canvas (A4 landscape em 150 dpi → 1754×1240 px)
-    const PW = 1754, PH = 1240;
-    const MARGIN = 60;
+    // 3. Canvas A4 landscape 150 dpi → 1754×1240 px
+    const PW = 1754, PH = 1240, MARGIN = 60;
     const drawW = PW - MARGIN * 2;
-    const drawH = PH - MARGIN * 2 - 60; // 60px para título
+    const drawH = PH - MARGIN * 2 - 60;
 
     const canvas = document.createElement('canvas');
-    canvas.width  = PW;
-    canvas.height = PH;
+    canvas.width = PW; canvas.height = PH;
     const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, PW, PH);
 
-    // Fundo branco
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, PW, PH);
-
-    // 4. Funções de projeção lat/lng → canvas px (preserva proporção)
-    const latRange = maxLat - minLat;
-    const lngRange = maxLng - minLng;
-    const scaleX = drawW / lngRange;
-    const scaleY = drawH / latRange;
-    const scale  = Math.min(scaleX, scaleY);
-
-    // centralizar no espaço de desenho
-    const offsetX = MARGIN + (drawW - lngRange * scale) / 2;
-    const offsetY = MARGIN + 60 + (drawH - latRange * scale) / 2;
-
+    // 4. Projeção
+    const scale   = Math.min(drawW / (maxLng - minLng), drawH / (maxLat - minLat));
+    const offsetX = MARGIN + (drawW - (maxLng - minLng) * scale) / 2;
+    const offsetY = MARGIN + 60 + (drawH - (maxLat - minLat) * scale) / 2;
     function project(lat, lng) {
-      const x = offsetX + (lng - minLng) * scale;
-      const y = offsetY + (maxLat - lat) * scale; // y invertido
-      return { x, y };
+      return { x: offsetX + (lng - minLng) * scale, y: offsetY + (maxLat - lat) * scale };
     }
 
-    // 5. Desenhar polígonos
-    // drawGeometry: para cada sub-polígono abre UM ctx.beginPath() com todos os rings,
-    // depois faz fill (evenodd) + stroke — isso garante que holes e MultiPolygon renderizam
-    function drawGeometry(geometry, fillColor) {
-      function drawPolygon(rings) {
-        ctx.beginPath();
-        rings.forEach(ring => {
-          ring.forEach(([lng, lat], i) => {
-            const { x, y } = project(lat, lng);
-            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-          });
-          ctx.closePath(); // fecha cada anel dentro do mesmo path
+    // 5. Desenhar polígonos com layer.getLatLngs() — evita ambiguidade do raw GeoJSON
+    //    Polygon:      getLatLngs() → [ ring, ring, ... ]            (array de rings)
+    //    MultiPolygon: getLatLngs() → [ [ring,...], [ring,...] ]     (array de polígonos)
+    function drawRings(rings, fillColor) {
+      ctx.beginPath();
+      rings.forEach(ring => {
+        ring.forEach((pt, i) => {
+          const { x, y } = project(pt.lat, pt.lng);
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         });
-        ctx.fillStyle = fillColor;
-        ctx.fill('evenodd');     // evenodd lida corretamente com holes e winding
-        ctx.strokeStyle = '#1e3a8a';
-        ctx.lineWidth = 0.7;
-        ctx.stroke();
-      }
+        ctx.closePath();
+      });
+      ctx.fillStyle   = fillColor;
+      ctx.fill('evenodd');
+      ctx.strokeStyle = '#1e3a8a';
+      ctx.lineWidth   = 0.7;
+      ctx.stroke();
+    }
 
-      if (geometry.type === 'Polygon') {
-        drawPolygon(geometry.coordinates);
-      } else if (geometry.type === 'MultiPolygon') {
-        // Angra dos Reis, Rio de Janeiro etc. têm MultiPolygon (Ilha Grande, ilhas menores…)
-        geometry.coordinates.forEach(rings => drawPolygon(rings));
+    function drawLayer(layer, fillColor) {
+      try {
+        const geomType = layer.feature.geometry.type;
+        const latlngs  = layer.getLatLngs();
+        if (geomType === 'Polygon') {
+          drawRings(latlngs, fillColor);           // latlngs = [outerRing, hole?, ...]
+        } else if (geomType === 'MultiPolygon') {
+          latlngs.forEach(polyRings => drawRings(polyRings, fillColor)); // polyRings = [ring,...]
+        }
+      } catch (err) {
+        console.warn('[PDF] erro ao desenhar', layer.feature.properties.NM_MUN, err);
       }
     }
 
-    // Calcular cor de cada cidade e desenhar
+    // 6. Centróide para rótulo (maior sub-polígono)
+    function getCentroid(layer) {
+      const geomType = layer.feature.geometry.type;
+      const latlngs  = layer.getLatLngs();
+      function rArea(ring)  { let a=0; for(let i=0,j=ring.length-1;i<ring.length;j=i++){a+=(ring[j].lng+ring[i].lng)*(ring[j].lat-ring[i].lat);} return Math.abs(a)/2; }
+      function rCenter(ring){ let sl=0,sg=0; ring.forEach(p=>{sl+=p.lat;sg+=p.lng;}); return {lat:sl/ring.length,lng:sg/ring.length}; }
+      if (geomType === 'Polygon') return rCenter(latlngs[0]);
+      if (geomType === 'MultiPolygon') {
+        let maxA=-1, best=null;
+        latlngs.forEach(poly => { const a=rArea(poly[0]); if(a>maxA){maxA=a;best=poly[0];} });
+        return rCenter(best || latlngs[0][0]);
+      }
+      const b = layer.getBounds();
+      return { lat:(b.getSouth()+b.getNorth())/2, lng:(b.getWest()+b.getEast())/2 };
+    }
+
+    // 7. Desenhar cidades
     const labelPositions = [];
     features.forEach(({ layer, nome }) => {
       const votos = (typeof votosValidos !== 'undefined' ? votosValidos[nome] || 0 : 0);
-      const cache = getDataCache(nome);
+      const cache  = getDataCache(nome);
       const fillColor = getCityColor({
-        validVotes: votos,
-        leadersCount: (cache.liderancas || []).length,
+        validVotes:    votos,
+        leadersCount:  (cache.liderancas || []).length,
         expectedVotes: getTotalExpectativa(nome),
-        leaderVotes: getExpLiderancas(nome)
+        leaderVotes:   getExpLiderancas(nome)
       });
-
-      const geom = layer.feature.geometry;
-      drawGeometry(geom, fillColor);
-
-      // Calcular centróide para rótulo — usa o maior sub-polígono para evitar
-      // que o label caia em ilhas ou no mar (ex: Angra dos Reis, Rio de Janeiro)
-      function ringArea(ring) {
-        // Shoelace formula — área aproximada em coordenadas geográficas
-        let a = 0;
-        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-          a += (ring[j][0] + ring[i][0]) * (ring[j][1] - ring[i][1]);
-        }
-        return Math.abs(a) / 2;
-      }
-      function ringCentroid(ring) {
-        // Centróide pela média das vértices do anel exterior
-        let sumLng = 0, sumLat = 0;
-        ring.forEach(([lng, lat]) => { sumLng += lng; sumLat += lat; });
-        return { lat: sumLat / ring.length, lng: sumLng / ring.length };
-      }
-
-      let labelLat, labelLng;
-      if (geom.type === 'Polygon') {
-        const c = ringCentroid(geom.coordinates[0]);
-        labelLat = c.lat; labelLng = c.lng;
-      } else if (geom.type === 'MultiPolygon') {
-        // Usa o centróide do sub-polígono com maior área (o corpo principal, não ilhas)
-        let maxA = -1, bestRing = null;
-        geom.coordinates.forEach(poly => {
-          const a = ringArea(poly[0]);
-          if (a > maxA) { maxA = a; bestRing = poly[0]; }
-        });
-        const c = ringCentroid(bestRing || geom.coordinates[0][0]);
-        labelLat = c.lat; labelLng = c.lng;
-      } else {
-        const b = layer.getBounds();
-        labelLat = (b.getSouth() + b.getNorth()) / 2;
-        labelLng = (b.getWest()  + b.getEast())  / 2;
-      }
-
-      const { x, y } = project(labelLat, labelLng);
+      drawLayer(layer, fillColor);
+      const c = getCentroid(layer);
+      const { x, y } = project(c.lat, c.lng);
       labelPositions.push({ nome, x, y });
     });
 
-    // 6. Desenhar rótulos (nomes das cidades)
+    // 8. Rótulos
     const fontSize = Math.max(7, Math.min(13, scale * 0.18));
     ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     labelPositions.forEach(({ nome, x, y }) => {
-      // sombra branca para legibilidade
-      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-      ctx.lineWidth = 3;
-      ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
       ctx.strokeText(nome, x, y);
-      ctx.fillStyle = '#0f172a';
-      ctx.fillText(nome, x, y);
+      ctx.fillStyle = '#0f172a'; ctx.fillText(nome, x, y);
     });
 
-    // 7. Título
-    const titulo = regiaoAtiva !== 'all'
-      ? `Mapa de Lideranças RJ — ${regiaoAtiva.charAt(0).toUpperCase() + regiaoAtiva.slice(1)}`
+    // 9. Título e data
+    const regiaoLabel = regiaoAtiva !== 'all'
+      ? ((configSistema.regioes || []).find(r => r.chave === regiaoAtiva) || {}).label || regiaoAtiva
+      : null;
+    const titulo = regiaoLabel
+      ? `Mapa de Lideranças RJ — ${regiaoLabel}`
       : 'Mapa de Lideranças — Estado do Rio de Janeiro';
-
-    ctx.font = 'bold 26px Arial, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = '#0d2d6b';
-    ctx.fillText(titulo, MARGIN, 20);
-
-    // Data de geração
+    ctx.font='bold 26px Arial, sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top';
+    ctx.fillStyle='#0d2d6b'; ctx.fillText(titulo, MARGIN, 20);
     const hoje = new Date().toLocaleDateString('pt-BR');
-    ctx.font = '14px Arial, sans-serif';
-    ctx.fillStyle = '#64748b';
-    ctx.textAlign = 'right';
+    ctx.font='14px Arial, sans-serif'; ctx.fillStyle='#64748b'; ctx.textAlign='right';
     ctx.fillText(`Gerado em ${hoje}`, PW - MARGIN, 24);
 
-    // 8. Exportar com jsPDF
+    // 10. Exportar PDF
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const imgData = canvas.toDataURL('image/png');
-    doc.addImage(imgData, 'PNG', 0, 0, 297, 210);
-    const fileName = regiaoAtiva !== 'all'
-      ? `mapa_${regiaoAtiva}.pdf`
-      : 'mapa_estado_rj.pdf';
-    doc.save(fileName);
+    doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 297, 210);
+    doc.save(regiaoAtiva !== 'all' ? `mapa_${regiaoAtiva}.pdf` : 'mapa_estado_rj.pdf');
 
   } catch (e) {
     console.error('Erro ao gerar PDF:', e);
