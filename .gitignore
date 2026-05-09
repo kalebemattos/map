@@ -1,2 +1,35 @@
-node_modules
-backend/node_modules
+node_modules/
+backend/node_modules/
+
+# Credenciais e chaves
+chave.json
+*.key
+*.pem
+.env
+.env.*
+!.env.example
+
+# Banco de dados local (legado — produção usa PostgreSQL)
+*.sqlite
+*.db
+backend/database.sqlite
+
+# Uploads de usuários (dados pessoais)
+backend/uploads/
+
+# Usuários legados (produção usa PostgreSQL)
+backend/users.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
