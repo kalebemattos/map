@@ -1434,7 +1434,7 @@ async function buscarCandidatos() {
   if (cargo) params.set('cargo', cargo);
 
   try {
-    const res  = await fetch(`${API_BASE}/api/eleicoes/candidatos?${params}`);
+    const res  = await fetch(`${API_BASE}/api/eleicoes/candidatos?${params}`, { headers: { Authorization: 'Bearer ' + (localStorage.getItem('token') || '') } });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
 
@@ -1503,7 +1503,7 @@ async function carregarResultados() {
   });
 
   try {
-    const res  = await fetch(`${API_BASE}/api/eleicoes/resultados?${params}`);
+    const res  = await fetch(`${API_BASE}/api/eleicoes/resultados?${params}`, { headers: { Authorization: 'Bearer ' + (localStorage.getItem('token') || '') } });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
 
@@ -1618,7 +1618,7 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
     // Usa sempre /api/eleicoes/bairros — funciona para qualquer tipo de eleição.
     // O endpoint tenta JOIN com tabela de locais de votação (bairro real) e,
     // se não houver dado, cai para zona como fallback (campo por_bairro=false).
-    const res  = await fetch(`${API_BASE}/api/eleicoes/bairros?${params}`);
+    const res  = await fetch(`${API_BASE}/api/eleicoes/bairros?${params}`, { headers: { Authorization: 'Bearer ' + (localStorage.getItem('token') || '') } });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
 
