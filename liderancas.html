@@ -1725,7 +1725,7 @@
 
     // ===== EXPORTAR =====
     function exportarTodas() {
-      gerarCSV(todasLiderancas, 'liderancas_todas');
+      gerarXLSX(todasLiderancas, 'liderancas_todas');
     }
 
     function exportarFiltradas() {
@@ -1733,34 +1733,156 @@
         alert('Nenhuma liderança para exportar com os filtros atuais.');
         return;
       }
-      gerarCSV(listaFiltrada, 'liderancas_filtradas');
+      gerarXLSX(listaFiltrada, 'liderancas_filtradas');
     }
 
-    function gerarCSV(dados, nome) {
+    // Carrega ExcelJS sob demanda (CDN carregado só quando o usuário exporta)
+    async function _carregarExcelJS() {
+      if (window.ExcelJS) return;
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    async function gerarXLSX(dados, nome) {
       if (!dados.length) { alert('Nenhuma liderança para exportar.'); return; }
-      const cabecalho = ['ID','Nome','Contato','Cidade','Bairro','Região','Expectativa de votos','Perfil','Responsável','Campanha','Aniversário','Release'];
-      const linhas = dados.map(l => [
-        l.id ?? '',
-        l.nome ?? '',
-        l.contato ?? '',
-        l.cidade ?? '',
-        l.bairro ?? '',
-        l.regiao ?? '',
-        l.expectativa_votos ?? 0,
-        l.perfil ?? '',
-        l.responsavel ?? '',
-        l.vinculo_politico ?? '',
-        formatarAniversario(l.data_nascimento || l.aniversario),
-        (l.release ?? '').replace(/\n/g, ' ')
-      ]);
-      const csv = [cabecalho.join(';'), ...linhas.map(l => l.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';'))].join('\n');
-      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${nome || 'liderancas'}.csv`;
-      link.click();
-      URL.revokeObjectURL(url);
+
+      // Feedback visual no botão clicado
+      const btn = document.activeElement;
+      const txtOrig = btn?.textContent;
+      if (btn?.tagName === 'BUTTON') { btn.textContent = '⏳ Gerando...'; btn.disabled = true; }
+
+      try {
+        await _carregarExcelJS();
+
+        const wb = new ExcelJS.Workbook();
+        wb.creator = 'Paralax Gestão Política';
+        wb.created = new Date();
+
+        // ── Planilha principal ──────────────────────────────────────────────
+        const ws = wb.addWorksheet('Lideranças', {
+          views: [{ state: 'frozen', ySplit: 1 }]  // congela cabeçalho ao rolar
+        });
+
+        ws.columns = [
+          { header: 'ID',           key: 'id',               width: 8  },
+          { header: 'Nome',         key: 'nome',             width: 30 },
+          { header: 'Contato',      key: 'contato',          width: 18 },
+          { header: 'Cidade',       key: 'cidade',           width: 22 },
+          { header: 'Bairro',       key: 'bairro',           width: 20 },
+          { header: 'Região',       key: 'regiao',           width: 20 },
+          { header: 'Exp. Votos',   key: 'expectativa_votos',width: 14 },
+          { header: 'Perfil',       key: 'perfil',           width: 16 },
+          { header: 'Responsável',  key: 'responsavel',      width: 22 },
+          { header: 'Campanha',     key: 'vinculo_politico', width: 18 },
+          { header: 'Aniversário',  key: 'aniversario',      width: 14 },
+          { header: 'Release',      key: 'release',          width: 45 },
+        ];
+
+        // ── Cabeçalho: azul escuro + texto branco + negrito ─────────────────
+        const cabRow = ws.getRow(1);
+        cabRow.height = 24;
+        cabRow.eachCell(cell => {
+          cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D2D6B' } };
+          cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Arial' };
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          cell.border    = {
+            bottom: { style: 'medium', color: { argb: 'FF1A56DB' } },
+            left:   { style: 'thin',   color: { argb: 'FF4A7FD4' } },
+            right:  { style: 'thin',   color: { argb: 'FF4A7FD4' } },
+          };
+        });
+
+        // ── Linhas de dados com zebra (azul claro / branco) ─────────────────
+        dados.forEach((l, idx) => {
+          const row = ws.addRow({
+            id:               l.id ?? '',
+            nome:             l.nome ?? '',
+            contato:          l.contato ?? '',
+            cidade:           l.cidade ?? '',
+            bairro:           l.bairro ?? '',
+            regiao:           l.regiao ?? '',
+            expectativa_votos: Number(l.expectativa_votos) || 0,
+            perfil:           l.perfil ?? '',
+            responsavel:      l.responsavel ?? '',
+            vinculo_politico: l.vinculo_politico ?? '',
+            aniversario:      formatarAniversario(l.data_nascimento || l.aniversario),
+            release:          (l.release ?? '').replace(/\n/g, ' '),
+          });
+          row.height = 18;
+
+          const bgArgb = idx % 2 === 0 ? 'FFEFF4FF' : 'FFFFFFFF';
+          row.eachCell({ includeEmpty: true }, (cell, colNum) => {
+            cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgArgb } };
+            cell.font      = { size: 10, name: 'Arial', color: { argb: 'FF1E293B' } };
+            cell.alignment = { vertical: 'middle', wrapText: false };
+            cell.border    = {
+              top:    { style: 'thin', color: { argb: 'FFE2E8F0' } },
+              bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+              left:   { style: 'thin', color: { argb: 'FFE2E8F0' } },
+              right:  { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            };
+            if (colNum === 7) {   // Exp. Votos → separador de milhar, alinhado à direita
+              cell.numFmt    = '#,##0';
+              cell.alignment = { horizontal: 'right', vertical: 'middle' };
+            }
+          });
+        });
+
+        // ── Linha de totais ─────────────────────────────────────────────────
+        const ultimaDado = dados.length + 1;
+        const totRow = ws.addRow({
+          id:               '',
+          nome:             `Total: ${dados.length} lideranças`,
+          contato:          '', cidade: '', bairro: '', regiao: '',
+          expectativa_votos: { formula: `SUM(G2:G${ultimaDado})` },
+          perfil:           '', responsavel: '', vinculo_politico: '',
+          aniversario:      `Gerado em ${new Date().toLocaleDateString('pt-BR')}`,
+          release:          '',
+        });
+        totRow.height = 20;
+        totRow.eachCell({ includeEmpty: true }, (cell, colNum) => {
+          cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDDE8FF' } };
+          cell.font   = { bold: true, size: 10, name: 'Arial', color: { argb: 'FF0D2D6B' } };
+          cell.border = {
+            top:    { style: 'medium', color: { argb: 'FF1A56DB' } },
+            bottom: { style: 'thin',   color: { argb: 'FFE2E8F0' } },
+            left:   { style: 'thin',   color: { argb: 'FFE2E8F0' } },
+            right:  { style: 'thin',   color: { argb: 'FFE2E8F0' } },
+          };
+          if (colNum === 7) {
+            cell.numFmt    = '#,##0';
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+          }
+        });
+
+        // ── Auto-filtro em todas as colunas do cabeçalho ────────────────────
+        ws.autoFilter = {
+          from: { row: 1, column: 1 },
+          to:   { row: 1, column: ws.columns.length }
+        };
+
+        // ── Gerar e baixar ───────────────────────────────────────────────────
+        const buffer = await wb.xlsx.writeBuffer();
+        const blob   = new Blob([buffer], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href     = url;
+        link.download = `${nome || 'liderancas'}.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
+
+      } catch (e) {
+        console.error('[gerarXLSX]', e);
+        alert('Erro ao gerar Excel: ' + e.message);
+      } finally {
+        if (btn?.tagName === 'BUTTON') { btn.textContent = txtOrig; btn.disabled = false; }
+      }
     }
 
     verificarLogin();
