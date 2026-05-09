@@ -4872,6 +4872,194 @@ async function exportarMapaPDF() {
     ctx.font='14px Arial, sans-serif'; ctx.fillStyle='#64748b'; ctx.textAlign='right';
     ctx.fillText(`Gerado em ${hoje}`, PW - MARGIN, 24);
 
+    // ── 9b. ESCALA DE CORES (canto superior esquerdo) ──────────────────────────
+    {
+      const mode = mapModes[currentMapModeIndex];
+      const modeLabels = {
+        validVotes:    'Votos Válidos (eleitorado)',
+        leaders:       'Quantidade de Lideranças',
+        expectedVotes: 'Expectativa de Votos (meta)',
+        leaderVotes:   'Exp. Votos das Lideranças',
+      };
+
+      // Paleta de cores para "expectedVotes" precisa do _paletaMeta
+      let pal6 = [];
+      if (mode === 'expectedVotes') {
+        const cand = (configSistema.candidatos||[]).find(c => c.chave === filtroCampanha);
+        const base = (cand && cand.cor_mapa) ? cand.cor_mapa : '#cb181d';
+        pal6 = _paletaMeta(base);
+      }
+
+      const legendEntries = mode === 'validVotes' ? [
+        { color: '#d73027', label: '> 500.000 votos' },
+        { color: '#fc8d59', label: '200.001 – 500.000' },
+        { color: '#fee08b', label: '100.001 – 200.000' },
+        { color: '#91cf60', label:  '50.001 – 100.000' },
+        { color: '#4575b4', label:  '10.001 – 50.000'  },
+        { color: '#cce5ff', label:  'até 10.000'        },
+      ] : mode === 'leaders' ? [
+        { color: '#00441b', label: '≥ 20 lideranças' },
+        { color: '#1b7837', label: '10 – 19' },
+        { color: '#5aae61', label: '5 – 9' },
+        { color: '#a6dba0', label: '1 – 4' },
+        { color: '#e5f5e0', label: 'sem lideranças' },
+      ] : mode === 'expectedVotes' ? [
+        { color: pal6[5]||'#67000d', label: '≥ 5.000 votos' },
+        { color: pal6[4]||'#a50026', label: '2.000 – 4.999' },
+        { color: pal6[3]||'#d73027', label: '1.000 – 1.999' },
+        { color: pal6[2]||'#f46d43', label: '300 – 999' },
+        { color: pal6[1]||'#fdae61', label: '1 – 299' },
+        { color: pal6[0]||'#fee8c8', label: 'sem meta' },
+      ] : [
+        { color: '#004529', label: '≥ 5.000 votos exp.' },
+        { color: '#1b7837', label: '2.000 – 4.999' },
+        { color: '#31a354', label: '1.000 – 1.999' },
+        { color: '#74c476', label: '300 – 999' },
+        { color: '#bae4b3', label: '1 – 299' },
+        { color: '#edf8e9', label: 'sem exp. lideranças' },
+      ];
+
+      const sw = 16, sh = 16, gap = 6, padX = 12, padY = 10;
+      const rowH = sh + gap;
+      const cardW = 210, cardH = padY * 2 + 20 + rowH * legendEntries.length;
+      const cx = MARGIN, cy = 55;
+
+      // Fundo do card
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.12)'; ctx.shadowBlur = 8;
+      ctx.fillStyle = 'rgba(255,255,255,0.94)';
+      ctx.beginPath();
+      ctx.roundRect(cx, cy, cardW, cardH, 8);
+      ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(cx, cy, cardW, cardH, 8); ctx.stroke();
+
+      // Título da escala
+      ctx.font = 'bold 11px Arial, sans-serif';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      ctx.fillStyle = '#0d2d6b';
+      ctx.fillText(modeLabels[mode] || mode, cx + padX, cy + padY);
+
+      // Entradas
+      legendEntries.forEach((entry, i) => {
+        const ey = cy + padY + 20 + i * rowH;
+        // Swatch
+        ctx.fillStyle = entry.color;
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.roundRect(cx + padX, ey, sw, sh, 3); ctx.fill(); ctx.stroke();
+        // Label
+        ctx.fillStyle = '#334155';
+        ctx.font = '10px Arial, sans-serif';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(entry.label, cx + padX + sw + 8, ey + sh / 2);
+      });
+    }
+
+    // ── 9c. CARD DE INFORMAÇÕES (canto inferior direito) ────────────────────────
+    {
+      const fmtN = n => n.toLocaleString('pt-BR');
+      const cidadesRegiao = (regiaoAtiva !== 'all' && regions[regiaoAtiva])
+        ? regions[regiaoAtiva]
+        : features.map(f => f.nome);
+
+      // Votos válidos da região
+      const totalVotosRegiao = cidadesRegiao.reduce((s, c) =>
+        s + ((typeof votosValidos !== 'undefined' ? votosValidos[c] : 0) || 0), 0);
+
+      // Meta da região (filtrada pela campanha ativa)
+      const totalMetaRegiao = cidadesRegiao.reduce((s, c) => s + getTotalExpectativa(c), 0);
+
+      // Campanha ativa
+      const candAtivo = (configSistema.candidatos || []).find(c => c.chave === filtroCampanha);
+      const campanhaNome = filtroCampanha === 'ambos'
+        ? 'Todas as campanhas'
+        : (candAtivo?.nome || filtroCampanha);
+      const campanhaColor = candAtivo?.cor_texto || '#0d2d6b';
+      const campanhaBg    = candAtivo?.cor_fundo || '#e0e7ff';
+
+      // Votos 2022 da Célia (somente se tem_votos_2022 && campanha selecionada = chave dela)
+      const candCelia = (configSistema.candidatos || []).find(c => c.tem_votos_2022 === true);
+      const mostrar2022 = candCelia && filtroCampanha === candCelia.chave;
+      const votos2022 = mostrar2022 ? cidadesRegiao.reduce((s, c) => {
+        const norm = normalizeCityName(c);
+        return s + (((window.votosHistoricos || {})[candCelia.chave] || {})[norm] || 0);
+      }, 0) : 0;
+
+      // Dimensões do card
+      const linhas = [
+        { icon: '🗳️', label: 'Votos válidos na região', value: fmtN(totalVotosRegiao), bold: false },
+        { icon: '🎯', label: 'Meta da região',           value: fmtN(totalMetaRegiao),  bold: false },
+        ...(mostrar2022 ? [{ icon: '📊', label: `Votos ${candCelia.nome} (2022)`, value: fmtN(votos2022), bold: false }] : []),
+      ];
+
+      const cardW = 370, padX = 18, padY = 14, lineH = 38;
+      const headerH = 46;
+      const cardH = headerH + padY + linhas.length * lineH + padY;
+      const cx = PW - MARGIN - cardW;
+      const cy = PH - MARGIN - cardH;
+
+      // Sombra + fundo
+      ctx.save();
+      ctx.shadowColor = 'rgba(13,45,107,0.18)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.roundRect(cx, cy, cardW, cardH, 12); ctx.fill();
+      ctx.restore();
+
+      // Borda
+      ctx.strokeStyle = '#bfdbfe'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.roundRect(cx, cy, cardW, cardH, 12); ctx.stroke();
+
+      // Header (fundo azul escuro)
+      ctx.save();
+      ctx.beginPath(); ctx.roundRect(cx, cy, cardW, headerH, [12, 12, 0, 0]); ctx.clip();
+      ctx.fillStyle = '#0d2d6b'; ctx.fillRect(cx, cy, cardW, headerH);
+      ctx.restore();
+
+      // Título do card
+      ctx.font = 'bold 13px Arial, sans-serif';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+      const titleY = cy + headerH / 2;
+      ctx.fillText('📌  ' + (regiaoLabel || 'Estado do Rio de Janeiro'), cx + padX, titleY);
+
+      // Badge da campanha (alinhado à direita no header)
+      ctx.font = 'bold 10px Arial, sans-serif';
+      const badgeText = campanhaNome;
+      const badgeW = ctx.measureText(badgeText).width + 16;
+      const bx = cx + cardW - padX - badgeW;
+      const by = cy + (headerH - 20) / 2;
+      ctx.fillStyle = campanhaBg;
+      ctx.beginPath(); ctx.roundRect(bx, by, badgeW, 20, 10); ctx.fill();
+      ctx.fillStyle = campanhaColor;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(badgeText, bx + badgeW / 2, by + 10);
+
+      // Linhas de dados
+      linhas.forEach((l, i) => {
+        const ly = cy + headerH + padY + i * lineH;
+        const isLast = i === linhas.length - 1;
+
+        // Separador suave
+        if (i > 0) {
+          ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 0.8;
+          ctx.beginPath(); ctx.moveTo(cx + padX, ly); ctx.lineTo(cx + cardW - padX, ly); ctx.stroke();
+        }
+
+        // Label
+        ctx.font = '10px Arial, sans-serif';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(l.icon + '  ' + l.label, cx + padX, ly + lineH / 2);
+
+        // Valor (alinhado à direita, destaque)
+        ctx.font = 'bold 13px Arial, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillStyle = isLast && mostrar2022 ? '#7c3aed' : '#0d2d6b';
+        ctx.fillText(l.value, cx + cardW - padX, ly + lineH / 2);
+      });
+    }
+
     // 10. Exportar PDF
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
