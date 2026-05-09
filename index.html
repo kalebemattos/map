@@ -4866,13 +4866,13 @@ async function exportarMapaPDF() {
     const titulo = regiaoLabel
       ? `Mapa de Lideranças RJ — ${regiaoLabel}`
       : 'Mapa de Lideranças — Estado do Rio de Janeiro';
-    ctx.font='bold 26px Arial, sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top';
-    ctx.fillStyle='#0d2d6b'; ctx.fillText(titulo, MARGIN, 20);
+    ctx.font='bold 26px Arial, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='#0d2d6b'; ctx.fillText(titulo, PW / 2, 32);
     const hoje = new Date().toLocaleDateString('pt-BR');
-    ctx.font='14px Arial, sans-serif'; ctx.fillStyle='#64748b'; ctx.textAlign='right';
-    ctx.fillText(`Gerado em ${hoje}`, PW - MARGIN, 24);
+    ctx.font='13px Arial, sans-serif'; ctx.fillStyle='#94a3b8'; ctx.textAlign='right';
+    ctx.fillText(`Gerado em ${hoje}`, PW - MARGIN, 32);
 
-    // ── 9b. ESCALA DE CORES (canto superior esquerdo) ──────────────────────────
+    // ── 9b. ESCALA DE CORES (canto inferior esquerdo) ──────────────────────────
     {
       const mode = mapModes[currentMapModeIndex];
       const modeLabels = {
@@ -4922,7 +4922,8 @@ async function exportarMapaPDF() {
       const sw = 16, sh = 16, gap = 6, padX = 12, padY = 10;
       const rowH = sh + gap;
       const cardW = 210, cardH = padY * 2 + 20 + rowH * legendEntries.length;
-      const cx = MARGIN, cy = 55;
+      const cx = MARGIN;
+      const cy = PH - MARGIN - cardH; // canto inferior esquerdo
 
       // Fundo do card
       ctx.save();
