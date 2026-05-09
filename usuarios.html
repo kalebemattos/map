@@ -238,6 +238,7 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
 .nivel-distrito    { background: #fef9c3; color: #713f12; }
 .nivel-zona        { background: #fce7f3; color: #9d174d; }
 .nivel-visualizador{ background: var(--slate-100); color: var(--slate-500); }
+.nivel-suporte     { background: #ede9fe; color: #5b21b6; }
 
 .user-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .btn-icon {
@@ -578,6 +579,9 @@ const NIVEL_LABEL = {
   visualizador: 'Visualizador',
 }
 
+// Usuários que exibem "Suporte" no badge (apenas visual — permissões reais não mudam)
+const SUPORTE_USUARIOS = new Set(['kalebe', 'kalebe2'])
+
 // ── Auth ──────────────────────────────────────────────────
 let meuNivel = null  // nivel do usuário logado — usado em todo o script
 
@@ -827,9 +831,11 @@ async function carregarUsuarios() {
     usuarios.forEach(u => {
       const initials = (u.nome || u.usuario || '?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase()
       const _nivelBase = { dono:'nivel-dono', admin:'nivel-admin', lider_regiao:'nivel-lider', visualizador:'nivel-visualizador' }
-      const nivelClass = _nivelBase[u.nivel] || 'nivel-mapa'
-      const mapaNivel  = configSistema.mapas.find(m => m.nivel_usuario === u.nivel)
+      const ehSuporte  = SUPORTE_USUARIOS.has(u.usuario)
+      const nivelClass = ehSuporte ? 'nivel-suporte' : (_nivelBase[u.nivel] || 'nivel-mapa')
+      const mapaNivel  = !ehSuporte && configSistema.mapas.find(m => m.nivel_usuario === u.nivel)
       const badgeStyle = mapaNivel ? `style="background:${mapaNivel.badge_fundo};color:${mapaNivel.badge_texto}"` : ''
+      const badgeLabel = ehSuporte ? 'Suporte' : (NIVEL_LABEL[u.nivel] || u.nivel)
       const regiaoLabel = u.regiao_vinculada ? (REGIOES_LABEL[u.regiao_vinculada] || u.regiao_vinculada) : ''
       const isSelf = String(u.id) === String(meId)
       // Admin não pode tocar em usuários dono
@@ -851,7 +857,7 @@ async function carregarUsuarios() {
           <div class="user-nome">${u.nome || '—'}${isSelf ? ' <span style="font-size:11px;color:var(--slate-400);font-weight:500;">(você)</span>' : ''}${liderAtivo ? ' <span style="font-size:11px;color:#d97706;font-weight:600;">⭐ líder</span>' : ''}</div>
           <div class="user-sub">
             <span>@${u.usuario}</span>
-            <span class="nivel-badge ${nivelClass}" ${badgeStyle}>${NIVEL_LABEL[u.nivel] || u.nivel}</span>
+            <span class="nivel-badge ${nivelClass}" ${badgeStyle}>${badgeLabel}</span>
             ${regiaoLabel ? `<span>· ${regiaoLabel}</span>` : ''}
           </div>
         </div>
