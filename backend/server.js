@@ -2790,7 +2790,7 @@ async function runBQ(sql, params) {
  * Busca candidatos por nome (parcial), com filtros opcionais de ano, cargo e UF.
  * Query params: nome, ano, cargo, uf, turno (padrão 1)
  */
-app.get('/api/eleicoes/candidatos', async (req, res) => {
+app.get('/api/eleicoes/candidatos', auth, withTenant, allowAll(), async (req, res) => {
   try {
     const { nome = '', ano, cargo, uf } = req.query;
 
@@ -2851,7 +2851,7 @@ app.get('/api/eleicoes/candidatos', async (req, res) => {
  * Retorna votos por município para um candidato específico.
  * Query params: sequencial (obrigatório), ano (obrigatório), uf (obrigatório), turno (padrão 1)
  */
-app.get('/api/eleicoes/resultados', async (req, res) => {
+app.get('/api/eleicoes/resultados', auth, withTenant, allowAll(), async (req, res) => {
   try {
     const { sequencial, ano, uf, turno = '1' } = req.query;
     if (!sequencial || !ano || !uf) {
@@ -2933,7 +2933,7 @@ app.get('/api/eleicoes/resultados', async (req, res) => {
  * Retorna votos por zona eleitoral para um candidato em um município.
  * Query params: sequencial (obrigatório), ano (obrigatório), uf (obrigatório), id_municipio (obrigatório), turno (padrão 1)
  */
-app.get('/api/eleicoes/zonas', async (req, res) => {
+app.get('/api/eleicoes/zonas', auth, withTenant, allowAll(), async (req, res) => {
   try {
     const { sequencial, ano, uf, id_municipio, turno = '1' } = req.query;
     if (!sequencial || !ano || !uf || !id_municipio) {
@@ -3050,7 +3050,7 @@ async function tryTables(sqlTemplate, placeholder, tableNames, params) {
  * Estratégia 3 (último recurso): votos por zona (sempre funciona).
  * Query params: sequencial, ano, uf, id_municipio, turno (padrão 1)
  */
-app.get('/api/eleicoes/bairros', async (req, res) => {
+app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) => {
   try {
     const { sequencial, ano, uf, id_municipio, turno = '1' } = req.query;
     if (!sequencial || !ano || !uf || !id_municipio) {
