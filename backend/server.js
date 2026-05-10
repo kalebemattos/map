@@ -3260,7 +3260,7 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
 
 // ── GET /api/eleicoes/historico ──────────────────────────────────────────────
 // Retorna evolução de votos do candidato por ano eleitoral no mesmo município.
-// Usa JOIN com tabela candidatos para filtrar por nome_urna (evita coluna inexistente em resultados).
+// Usa numero_candidato + cargo direto em resultados_candidato_municipio.
 app.get('/api/eleicoes/historico', auth, withTenant, allowAll(), async (req, res) => {
   try {
     const { nome_urna, numero, cargo, uf, id_municipio } = req.query;
@@ -3272,19 +3272,15 @@ app.get('/api/eleicoes/historico', auth, withTenant, allowAll(), async (req, res
       uf:           uf.trim().toUpperCase(),
       id_municipio: String(id_municipio).trim(),
     };
-    const cargoCond  = cargo  ? 'AND UPPER(c.cargo)  = @cargo'  : '';
-    const numeroCond = numero ? 'AND CAST(c.numero AS STRING) = @numero' : '';
+    const cargoCond  = cargo  ? 'AND UPPER(r.cargo) = @cargo'                        : '';
+    const numeroCond = numero ? 'AND CAST(r.numero_candidato AS STRING) = @numero'   : '';
     if (cargo)  params.cargo  = cargo.trim().toUpperCase();
     if (numero) params.numero = String(numero).trim();
 
     const sql = `
       SELECT r.ano, SUM(r.votos) AS votos
       FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
-      JOIN \`basedosdados.br_tse_eleicoes.candidatos\` c
-        ON  CAST(c.sequencial AS STRING) = CAST(r.sequencial_candidato AS STRING)
-        AND c.ano       = r.ano
-        AND c.sigla_uf  = r.sigla_uf
-      WHERE UPPER(c.nome_urna) = @nome_urna
+      WHERE UPPER(r.nome_urna) = @nome_urna
         AND r.sigla_uf         = @uf
         AND r.id_municipio     = @id_municipio
         ${cargoCond}
@@ -3303,6 +3299,7 @@ app.get('/api/eleicoes/historico', auth, withTenant, allowAll(), async (req, res
 
 // ── GET /api/eleicoes/abstencao ──────────────────────────────────────────────
 // Retorna abstenção por zona para um município/ano/turno.
+// Coluna correta na tabela TSE: "aptos" (não eleitores_aptos). Abstencoes = aptos - comparecimento.
 app.get('/api/eleicoes/abstencao', auth, withTenant, allowAll(), async (req, res) => {
   try {
     const { ano, turno = '1', uf, id_municipio } = req.query;
@@ -3315,40 +3312,32 @@ app.get('/api/eleicoes/abstencao', auth, withTenant, allowAll(), async (req, res
       uf:           uf.trim().toUpperCase(),
       id_municipio: String(id_municipio).trim(),
     };
-    const tables = ['detalhes_votacao_municipio_zona', 'detalhes_votacao_zona'];
-    for (const tbl of tables) {
-      try {
-        const sql = `
-          SELECT
-            d.zona,
-            SUM(d.eleitores_aptos)  AS eleitores_aptos,
-            SUM(d.comparecimento)   AS comparecimento,
-            SUM(d.abstencoes)       AS abstencoes
-          FROM \`basedosdados.br_tse_eleicoes.${tbl}\` d
-          WHERE d.ano = @ano AND d.turno = @turno
-            AND d.sigla_uf = @uf AND d.id_municipio = @id_municipio
-          GROUP BY d.zona
-          ORDER BY d.zona ASC
-        `;
-        const rows = await runBQ(sql, params);
-        const data = rows.map(r => {
-          const aptos = Number(r.eleitores_aptos) || 0;
-          const abst  = Number(r.abstencoes)      || 0;
-          return {
-            zona:            Number(r.zona),
-            eleitores_aptos: aptos,
-            comparecimento:  Number(r.comparecimento) || 0,
-            abstencoes:      abst,
-            pct_abstencao:   aptos > 0 ? ((abst / aptos) * 100).toFixed(1) : null,
-          };
-        });
-        return res.json({ ok: true, data });
-      } catch (e) {
-        if (isBQTableError(e)) continue;
-        throw e;
-      }
-    }
-    res.json({ ok: true, data: [] });
+    const sql = `
+      SELECT
+        d.zona,
+        SUM(d.aptos)          AS aptos,
+        SUM(d.comparecimento) AS comparecimento,
+        SUM(d.votos_nominais) AS votos_nominais
+      FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio_zona\` d
+      WHERE d.ano = @ano AND d.turno = @turno
+        AND d.sigla_uf = @uf AND d.id_municipio = @id_municipio
+      GROUP BY d.zona
+      ORDER BY d.zona ASC
+    `;
+    const rows = await runBQ(sql, params);
+    const data = rows.map(r => {
+      const aptos = Number(r.aptos)          || 0;
+      const comp  = Number(r.comparecimento) || 0;
+      const abst  = aptos - comp;
+      return {
+        zona:           Number(r.zona),
+        aptos,
+        comparecimento: comp,
+        abstencoes:     abst,
+        pct_abstencao:  aptos > 0 ? ((abst / aptos) * 100).toFixed(1) : null,
+      };
+    });
+    return res.json({ ok: true, data });
   } catch (e) {
     console.error('[/api/eleicoes/abstencao]', e.message);
     res.status(500).json({ ok: false, error: e.message });
@@ -3373,13 +3362,13 @@ app.get('/api/eleicoes/perfil-eleitorado', auth, withTenant, allowAll(), async (
       try {
         const sql = `
           SELECT
-            p.faixa_etaria,
-            p.genero,
-            SUM(p.qtde_eleitores_perfil) AS eleitores
+            COALESCE(p.faixa_etaria, p.faixa_etaria_descricao, 'Não informado') AS faixa_etaria,
+            COALESCE(p.genero, p.descricao_genero, 'Não informado')             AS genero,
+            SUM(COALESCE(p.qtde_eleitores_perfil, p.quantidade_eleitores, p.eleitores, 0)) AS eleitores
           FROM \`basedosdados.br_tse_eleicoes.${tbl}\` p
           WHERE p.ano = @ano AND p.sigla_uf = @uf AND p.id_municipio = @id_municipio
-          GROUP BY p.faixa_etaria, p.genero
-          ORDER BY p.faixa_etaria, p.genero
+          GROUP BY faixa_etaria, genero
+          ORDER BY faixa_etaria, genero
         `;
         const rows = await runBQ(sql, params);
         const data = rows.map(r => ({
