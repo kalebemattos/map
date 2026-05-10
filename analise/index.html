@@ -384,6 +384,102 @@ tbody tr:last-child td { border-bottom: none; }
   letter-spacing: 0.2px;
 }
 .btn-perfil:hover { background: var(--blue-main); color: white; }
+.btn-perfil-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 7px;
+  background: #ede9fe;
+  color: #5b21b6;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+  letter-spacing: 0.2px;
+}
+.btn-perfil-info:hover { background: #7c3aed; color: white; }
+.crc-btn-info {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border: none; border-radius: 8px;
+  background: #ede9fe; color: #5b21b6;
+  font-size: 11px; font-weight: 700; font-family: inherit;
+  cursor: pointer; transition: background 0.2s;
+}
+.crc-btn-info:hover { background: #7c3aed; color: white; }
+
+/* === MODAL PERFIL === */
+#modal-perfil {
+  display: none; position: fixed; inset: 0;
+  background: rgba(8,18,48,0.72);
+  backdrop-filter: blur(8px);
+  justify-content: center; align-items: center;
+  z-index: 1002; padding: 16px;
+}
+#modal-perfil.aberto { display: flex; }
+.modal-perfil-card {
+  background: white; border-radius: 22px;
+  width: 100%; max-width: 700px; max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.35);
+  animation: fadeUp 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.modal-perfil-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 20px 22px 0; position: sticky; top: 0; background: white; z-index: 1;
+}
+.modal-perfil-titulo {
+  font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700;
+  color: var(--slate-900); line-height: 1.3;
+}
+.modal-perfil-sub { font-size: 12px; color: var(--slate-500); margin-top: 3px; font-weight: 500; }
+.perfil-tabs {
+  display: flex; gap: 4px; padding: 14px 22px 0;
+  border-bottom: 2px solid var(--slate-100);
+  position: sticky; top: 56px; background: white; z-index: 1;
+}
+.perfil-tab {
+  padding: 7px 14px; border: none; background: none; cursor: pointer;
+  font-size: 12px; font-weight: 600; font-family: inherit;
+  color: var(--slate-500); border-bottom: 2px solid transparent;
+  margin-bottom: -2px; border-radius: 6px 6px 0 0; transition: all 0.15s;
+}
+.perfil-tab:hover { color: var(--blue-main); background: var(--slate-50); }
+.perfil-tab.ativa { color: var(--blue-main); border-bottom-color: var(--blue-main); }
+.perfil-tab-body { padding: 20px 22px 24px; }
+.hist-bar-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.hist-ano { font-size: 12px; font-weight: 700; color: var(--slate-600); width: 42px; flex-shrink: 0; }
+.hist-bar-wrap { flex: 1; background: var(--slate-100); border-radius: 6px; height: 22px; overflow: hidden; }
+.hist-bar-fill { height: 100%; background: linear-gradient(90deg, var(--blue-main), #42a5f5); border-radius: 6px; transition: width 0.6s ease; }
+.hist-votos { font-size: 12px; font-weight: 700; color: var(--blue-main); width: 80px; text-align: right; flex-shrink: 0; }
+.abst-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 9px;
+}
+.abst-zona { font-size: 12px; font-weight: 700; color: var(--slate-600); width: 56px; flex-shrink: 0; }
+.abst-bar-wrap { flex: 1; background: var(--slate-100); border-radius: 6px; height: 20px; overflow: hidden; }
+.abst-bar-fill { height: 100%; border-radius: 6px; }
+.abst-pct { font-size: 12px; font-weight: 700; width: 48px; text-align: right; flex-shrink: 0; }
+.perfil-genero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.perfil-genero-card {
+  background: var(--slate-50); border-radius: 14px; padding: 16px;
+  border: 1px solid var(--slate-200);
+}
+.perfil-genero-titulo { font-size: 12px; font-weight: 700; color: var(--slate-600); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.perfil-faixa-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.perfil-faixa-nome { font-size: 11px; color: var(--slate-600); width: 100px; flex-shrink: 0; }
+.perfil-faixa-bar-wrap { flex: 1; background: var(--slate-200); border-radius: 4px; height: 14px; overflow: hidden; }
+.perfil-faixa-bar-fill { height: 100%; border-radius: 4px; }
+.perfil-faixa-pct { font-size: 11px; font-weight: 700; width: 36px; text-align: right; flex-shrink: 0; }
+@media (max-width: 600px) {
+  .modal-perfil-card { max-height: 92vh; border-radius: 20px 20px 0 0; }
+  #modal-perfil { align-items: flex-end; padding: 0; }
+  .perfil-genero-grid { grid-template-columns: 1fr; }
+}
+
 
 .empty-state {
   text-align: center;
@@ -1371,6 +1467,10 @@ function _renderCidadesCards(dados, totalVotos, maxVotos) {
           onclick="event.stopPropagation();abrirModalDetalhe('${municipioEsc}','${r.id_municipio}')">
           🏘️ Bairros
         </button>
+        <button class="crc-btn-info"
+          onclick="event.stopPropagation();abrirModalPerfil('${municipioEsc}','${r.id_municipio}')">
+          👥 Perfil
+        </button>
       </div>`;
     grid.appendChild(card);
   });
@@ -1569,6 +1669,10 @@ function renderTabela() {
             onclick="event.stopPropagation();abrirModalDetalhe('${cidEsc}','${r.id_municipio}')">
             🏘️ Bairros
           </button>
+          <button class="btn-perfil-info"
+            onclick="event.stopPropagation();abrirModalPerfil('${cidEsc}','${r.id_municipio}')">
+            👥 Perfil
+          </button>
         </td>`;
       tbody.appendChild(tr);
     });
@@ -1665,6 +1769,192 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
 // Mantém alias para compatibilidade com qualquer referência antiga
 function abrirModalZonas(municipio, idMunicipio) { return abrirModalDetalhe(municipio, idMunicipio); }
 
+
+// ── Modal Perfil do Eleitorado ────────────────────────────────────────────────
+let _perfilMunicipio = null;
+let _perfilIdMunicipio = null;
+let _perfilAbaAtiva = 'historico';
+
+async function abrirModalPerfil(municipio, idMunicipio) {
+  if (!candidatoAtual) return;
+  _perfilMunicipio   = municipio;
+  _perfilIdMunicipio = idMunicipio;
+  _perfilAbaAtiva    = 'historico';
+
+  document.getElementById('mp-titulo').textContent = municipio;
+  document.getElementById('mp-sub').textContent =
+    candidatoAtual.nome + ' · ' + candidatoAtual.cargo + ' · ' + candidatoAtual.ano;
+
+  ['historico','abstencao','perfil'].forEach(a => {
+    document.getElementById('tab-' + a).classList.toggle('ativa', a === 'historico');
+  });
+
+  document.getElementById('modal-perfil').classList.add('aberto');
+  document.body.classList.add('modal-aberto');
+  await carregarAba('historico');
+}
+
+function fecharModalPerfil() {
+  document.getElementById('modal-perfil').classList.remove('aberto');
+  document.body.classList.remove('modal-aberto');
+}
+
+async function mudarAba(aba) {
+  _perfilAbaAtiva = aba;
+  ['historico','abstencao','perfil'].forEach(a => {
+    document.getElementById('tab-' + a).classList.toggle('ativa', a === aba);
+  });
+  await carregarAba(aba);
+}
+
+async function carregarAba(aba) {
+  const conteudo = document.getElementById('mp-conteudo');
+  conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">⏳ Carregando...</div>';
+  const token   = localStorage.getItem('token') || '';
+  const headers = { Authorization: 'Bearer ' + token };
+  const turno   = document.getElementById('turnoSelect').value;
+
+  try {
+    if (aba === 'historico') {
+      const params = new URLSearchParams({
+        nome_urna: candidatoAtual.nome_urna || candidatoAtual.nome,
+        numero:    candidatoAtual.numero    || '',
+        cargo:     candidatoAtual.cargo,
+        uf:        candidatoAtual.uf,
+        id_municipio: _perfilIdMunicipio,
+      });
+      const res  = await fetch(`${API_BASE}/api/eleicoes/historico?${params}`, { headers });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      renderHistorico(json.data);
+
+    } else if (aba === 'abstencao') {
+      const params = new URLSearchParams({
+        ano: candidatoAtual.ano, turno, uf: candidatoAtual.uf, id_municipio: _perfilIdMunicipio,
+      });
+      const res  = await fetch(`${API_BASE}/api/eleicoes/abstencao?${params}`, { headers });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      renderAbstencao(json.data);
+
+    } else if (aba === 'perfil') {
+      const params = new URLSearchParams({
+        ano: candidatoAtual.ano, uf: candidatoAtual.uf, id_municipio: _perfilIdMunicipio,
+      });
+      const res  = await fetch(`${API_BASE}/api/eleicoes/perfil-eleitorado?${params}`, { headers });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      renderPerfilEleitorado(json.data);
+    }
+  } catch (e) {
+    conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;">❌ Erro ao carregar dados: ${e.message}</div>`;
+  }
+}
+
+function renderHistorico(data) {
+  const conteudo = document.getElementById('mp-conteudo');
+  if (!data.length) {
+    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados históricos disponíveis.</div>';
+    return;
+  }
+  const maxV = Math.max(...data.map(d => d.votos), 1);
+  const anoAtual = candidatoAtual.ano;
+  let html = '<div style="margin-bottom:8px;font-size:12px;color:#64748b;font-weight:600;">Votos por eleição neste município</div>';
+  data.forEach(d => {
+    const w = (d.votos / maxV * 100).toFixed(1);
+    const isAtual = d.ano === anoAtual;
+    html += `<div class="hist-bar-row">
+      <div class="hist-ano" style="${isAtual ? 'color:var(--blue-main)' : ''}">${d.ano}</div>
+      <div class="hist-bar-wrap">
+        <div class="hist-bar-fill" style="width:${w}%;${isAtual ? 'background:linear-gradient(90deg,#1565c0,#1e88e5)' : 'background:linear-gradient(90deg,#94a3b8,#cbd5e1)'}"></div>
+      </div>
+      <div class="hist-votos" style="${isAtual ? '' : 'color:#64748b'}">${d.votos.toLocaleString('pt-BR')}</div>
+    </div>`;
+  });
+  conteudo.innerHTML = html;
+}
+
+function renderAbstencao(data) {
+  const conteudo = document.getElementById('mp-conteudo');
+  if (!data.length) {
+    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de abstenção disponíveis.</div>';
+    return;
+  }
+  const maxAbst = Math.max(...data.map(d => parseFloat(d.pct_abstencao) || 0), 1);
+  const totalAptos = data.reduce((s, d) => s + d.eleitores_aptos, 0);
+  const totalAbst  = data.reduce((s, d) => s + d.abstencoes, 0);
+  const pctGeral   = totalAptos > 0 ? ((totalAbst / totalAptos) * 100).toFixed(1) : '—';
+
+  let html = `<div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:120px;background:#fef3c7;border-radius:12px;padding:12px 16px;">
+      <div style="font-size:11px;color:#92400e;font-weight:700;text-transform:uppercase;">Abstenção Geral</div>
+      <div style="font-size:22px;font-weight:800;color:#b45309;font-family:'Sora',sans-serif;">${pctGeral}%</div>
+      <div style="font-size:11px;color:#92400e;">${totalAbst.toLocaleString('pt-BR')} eleitores</div>
+    </div>
+    <div style="flex:1;min-width:120px;background:#f0fdf4;border-radius:12px;padding:12px 16px;">
+      <div style="font-size:11px;color:#166534;font-weight:700;text-transform:uppercase;">Comparecimento</div>
+      <div style="font-size:22px;font-weight:800;color:#16a34a;font-family:'Sora',sans-serif;">${(100 - parseFloat(pctGeral)).toFixed(1)}%</div>
+      <div style="font-size:11px;color:#166534;">${(totalAptos - totalAbst).toLocaleString('pt-BR')} eleitores</div>
+    </div>
+  </div>
+  <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:10px;">Abstenção por zona</div>`;
+
+  data.forEach(d => {
+    const pct = parseFloat(d.pct_abstencao) || 0;
+    const w   = (pct / maxAbst * 100).toFixed(1);
+    const cor = pct > 30 ? '#ef4444' : pct > 20 ? '#f59e0b' : '#22c55e';
+    html += `<div class="abst-row">
+      <div class="abst-zona">Zona ${d.zona}</div>
+      <div class="abst-bar-wrap"><div class="abst-bar-fill" style="width:${w}%;background:${cor};"></div></div>
+      <div class="abst-pct" style="color:${cor}">${pct}%</div>
+    </div>`;
+  });
+  conteudo.innerHTML = html;
+}
+
+function renderPerfilEleitorado(data) {
+  const conteudo = document.getElementById('mp-conteudo');
+  if (!data.length) {
+    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de perfil disponíveis.</div>';
+    return;
+  }
+
+  // Agrupa por gênero
+  const generos = {};
+  data.forEach(d => {
+    if (!generos[d.genero]) generos[d.genero] = {};
+    generos[d.genero][d.faixa_etaria] = (generos[d.genero][d.faixa_etaria] || 0) + d.eleitores;
+  });
+
+  const cores = { 'FEMININO': '#ec4899', 'MASCULINO': '#3b82f6', 'NÃO INFORMADO': '#94a3b8' };
+  let html = '<div class="perfil-genero-grid">';
+
+  Object.entries(generos).forEach(([genero, faixas]) => {
+    const total = Object.values(faixas).reduce((s, v) => s + v, 0);
+    const cor   = cores[genero.toUpperCase()] || '#6366f1';
+    const maxF  = Math.max(...Object.values(faixas), 1);
+    html += `<div class="perfil-genero-card">
+      <div class="perfil-genero-titulo" style="color:${cor}">${genero} · ${total.toLocaleString('pt-BR')}</div>`;
+    Object.entries(faixas).sort((a, b) => a[0].localeCompare(b[0])).forEach(([faixa, qtd]) => {
+      const pct = (qtd / total * 100).toFixed(1);
+      const w   = (qtd / maxF * 100).toFixed(1);
+      html += `<div class="perfil-faixa-row">
+        <div class="perfil-faixa-nome">${faixa}</div>
+        <div class="perfil-faixa-bar-wrap"><div class="perfil-faixa-bar-fill" style="width:${w}%;background:${cor};opacity:0.7;"></div></div>
+        <div class="perfil-faixa-pct" style="color:${cor}">${pct}%</div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  conteudo.innerHTML = html;
+}
+
+// Fechar modal perfil com Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') fecharModalPerfil();
+});
+
 function fecharModalBairros() {
   document.getElementById('modal-bairros').classList.remove('aberto');
   document.body.classList.remove('modal-aberto'); // [MOBILE] libera scroll do fundo
@@ -1741,6 +2031,24 @@ document.addEventListener('keydown', e => {
       <button class="modal-close" onclick="fecharModalBairros()">✕</button>
     </div>
     <div id="mb-conteudo"></div>
+  </div>
+</div>
+
+<div id="modal-perfil" onclick="if(event.target===this)fecharModalPerfil()">
+  <div class="modal-perfil-card">
+    <div class="modal-perfil-header">
+      <div>
+        <div class="modal-perfil-titulo" id="mp-titulo"></div>
+        <div class="modal-perfil-sub" id="mp-sub"></div>
+      </div>
+      <button class="modal-close" onclick="fecharModalPerfil()">✕</button>
+    </div>
+    <div class="perfil-tabs">
+      <button class="perfil-tab ativa" onclick="mudarAba('historico')" id="tab-historico">📈 Histórico</button>
+      <button class="perfil-tab" onclick="mudarAba('abstencao')" id="tab-abstencao">📊 Abstenção</button>
+      <button class="perfil-tab" onclick="mudarAba('perfil')" id="tab-perfil">👥 Perfil do Eleitorado</button>
+    </div>
+    <div class="perfil-tab-body" id="mp-conteudo"></div>
   </div>
 </div>
 </body>

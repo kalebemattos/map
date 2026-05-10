@@ -3258,6 +3258,141 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
   }
 });
 
+// ── GET /api/eleicoes/historico ──────────────────────────────────────────────
+// Retorna evolução de votos do candidato por ano eleitoral no mesmo município.
+app.get('/api/eleicoes/historico', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const { nome_urna, numero, cargo, uf, id_municipio } = req.query;
+    if (!nome_urna || !cargo || !uf || !id_municipio) {
+      return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: nome_urna, cargo, uf, id_municipio' });
+    }
+    const params = {
+      nome_urna:    nome_urna.trim().toUpperCase(),
+      cargo:        cargo.trim().toUpperCase(),
+      uf:           uf.trim().toUpperCase(),
+      id_municipio: String(id_municipio).trim(),
+    };
+    if (numero) params.numero = String(numero).trim();
+    const numCond = numero ? 'AND CAST(r.numero_candidato AS STRING) = @numero' : '';
+    const sql = `
+      SELECT r.ano, SUM(r.votos) AS votos
+      FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
+      WHERE UPPER(r.nome_urna) = @nome_urna
+        AND UPPER(r.cargo)     = @cargo
+        AND r.sigla_uf         = @uf
+        AND r.id_municipio     = @id_municipio
+        ${numCond}
+      GROUP BY r.ano
+      ORDER BY r.ano ASC
+    `;
+    const rows = await runBQ(sql, params);
+    const data = rows.map(r => ({ ano: Number(r.ano), votos: Number(r.votos) || 0 }));
+    return res.json({ ok: true, data });
+  } catch (e) {
+    console.error('[/api/eleicoes/historico]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── GET /api/eleicoes/abstencao ──────────────────────────────────────────────
+// Retorna abstenção por zona para um município/ano/turno.
+app.get('/api/eleicoes/abstencao', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const { ano, turno = '1', uf, id_municipio } = req.query;
+    if (!ano || !uf || !id_municipio) {
+      return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: ano, uf, id_municipio' });
+    }
+    const params = {
+      ano:          parseInt(ano),
+      turno:        parseInt(turno),
+      uf:           uf.trim().toUpperCase(),
+      id_municipio: String(id_municipio).trim(),
+    };
+    const tables = ['detalhes_votacao_municipio_zona', 'detalhes_votacao_zona'];
+    for (const tbl of tables) {
+      try {
+        const sql = `
+          SELECT
+            d.zona,
+            SUM(d.eleitores_aptos)  AS eleitores_aptos,
+            SUM(d.comparecimento)   AS comparecimento,
+            SUM(d.abstencoes)       AS abstencoes
+          FROM \`basedosdados.br_tse_eleicoes.${tbl}\` d
+          WHERE d.ano = @ano AND d.turno = @turno
+            AND d.sigla_uf = @uf AND d.id_municipio = @id_municipio
+          GROUP BY d.zona
+          ORDER BY d.zona ASC
+        `;
+        const rows = await runBQ(sql, params);
+        const data = rows.map(r => {
+          const aptos = Number(r.eleitores_aptos) || 0;
+          const abst  = Number(r.abstencoes)      || 0;
+          return {
+            zona:            Number(r.zona),
+            eleitores_aptos: aptos,
+            comparecimento:  Number(r.comparecimento) || 0,
+            abstencoes:      abst,
+            pct_abstencao:   aptos > 0 ? ((abst / aptos) * 100).toFixed(1) : null,
+          };
+        });
+        return res.json({ ok: true, data });
+      } catch (e) {
+        if (isBQTableError(e)) continue;
+        throw e;
+      }
+    }
+    res.json({ ok: true, data: [] });
+  } catch (e) {
+    console.error('[/api/eleicoes/abstencao]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── GET /api/eleicoes/perfil-eleitorado ──────────────────────────────────────
+// Retorna perfil demográfico do eleitorado (faixa etária + gênero) por município.
+app.get('/api/eleicoes/perfil-eleitorado', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const { ano, uf, id_municipio } = req.query;
+    if (!ano || !uf || !id_municipio) {
+      return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: ano, uf, id_municipio' });
+    }
+    const params = {
+      ano:          parseInt(ano),
+      uf:           uf.trim().toUpperCase(),
+      id_municipio: String(id_municipio).trim(),
+    };
+    const tables = ['perfil_eleitorado_municipio', 'perfil_eleitorado_local_votacao'];
+    for (const tbl of tables) {
+      try {
+        const sql = `
+          SELECT
+            p.faixa_etaria,
+            p.genero,
+            SUM(p.qtde_eleitores_perfil) AS eleitores
+          FROM \`basedosdados.br_tse_eleicoes.${tbl}\` p
+          WHERE p.ano = @ano AND p.sigla_uf = @uf AND p.id_municipio = @id_municipio
+          GROUP BY p.faixa_etaria, p.genero
+          ORDER BY p.faixa_etaria, p.genero
+        `;
+        const rows = await runBQ(sql, params);
+        const data = rows.map(r => ({
+          faixa_etaria: String(r.faixa_etaria),
+          genero:       String(r.genero),
+          eleitores:    Number(r.eleitores) || 0,
+        }));
+        return res.json({ ok: true, data });
+      } catch (e) {
+        if (isBQTableError(e)) continue;
+        throw e;
+      }
+    }
+    res.json({ ok: true, data: [] });
+  } catch (e) {
+    console.error('[/api/eleicoes/perfil-eleitorado]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 /* ================= KEEP ALIVE (RENDER) ================= */
 /* ╔══════════════════════════════════════════════════════════════════════╗
    ║                    AGENDA INTELIGENTE                                ║
