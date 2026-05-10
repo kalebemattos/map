@@ -3258,6 +3258,37 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
   }
 });
 
+// ── GET /api/eleicoes/schema-debug ───────────────────────────────────────────
+// Retorna colunas reais de tabelas do BigQuery via INFORMATION_SCHEMA.
+app.get('/api/eleicoes/schema-debug', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
+  try {
+    const tables = [
+      'resultados_candidato_municipio',
+      'detalhes_votacao_municipio_zona',
+      'perfil_eleitorado_municipio',
+      'candidatos',
+    ];
+    const result = {};
+    for (const tbl of tables) {
+      try {
+        const sql = `
+          SELECT column_name, data_type
+          FROM \`basedosdados.br_tse_eleicoes.INFORMATION_SCHEMA.COLUMNS\`
+          WHERE table_name = '${tbl}'
+          ORDER BY ordinal_position
+        `;
+        const rows = await runBQ(sql, {});
+        result[tbl] = rows.map(r => `${r.column_name} (${r.data_type})`);
+      } catch (e) {
+        result[tbl] = `ERRO: ${e.message.split('\n')[0]}`;
+      }
+    }
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── GET /api/eleicoes/historico ──────────────────────────────────────────────
 // Retorna evolução de votos do candidato por ano eleitoral no mesmo município.
 // Usa numero_candidato + cargo direto em resultados_candidato_municipio.
