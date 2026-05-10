@@ -3087,19 +3087,37 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
         SUM(r.votos)          AS votos,
         SUM(d.votos_nominais) AS votos_nominais
       FROM \`basedosdados.br_tse_eleicoes.${resultTbl}\` r
-      LEFT JOIN \`${PERFIL_TABLE}\` loc
+      LEFT JOIN (
+        SELECT
+          ano, sigla_uf, id_municipio,
+          CAST(zona  AS STRING) AS zona,
+          CAST(secao AS STRING) AS secao,
+          ANY_VALUE(bairro)     AS bairro
+        FROM \`${PERFIL_TABLE}\`
+        WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
+        GROUP BY ano, sigla_uf, id_municipio, zona, secao
+      ) loc
         ON  loc.ano          = r.ano
         AND loc.sigla_uf     = r.sigla_uf
         AND loc.id_municipio = r.id_municipio
-        AND CAST(loc.zona  AS STRING) = CAST(r.zona  AS STRING)
-        AND CAST(loc.secao AS STRING) = CAST(r.secao AS STRING)
-      LEFT JOIN \`basedosdados.br_tse_eleicoes.${detalheTbl}\` d
+        AND loc.zona         = CAST(r.zona  AS STRING)
+        AND loc.secao        = CAST(r.secao AS STRING)
+      LEFT JOIN (
+        SELECT
+          ano, turno, sigla_uf, id_municipio,
+          CAST(zona  AS STRING) AS zona,
+          CAST(secao AS STRING) AS secao,
+          SUM(votos_nominais)   AS votos_nominais
+        FROM \`basedosdados.br_tse_eleicoes.${detalheTbl}\`
+        WHERE ano = @ano AND turno = @turno AND sigla_uf = @uf AND id_municipio = @id_municipio
+        GROUP BY ano, turno, sigla_uf, id_municipio, zona, secao
+      ) d
         ON  d.ano          = r.ano
         AND d.turno        = r.turno
         AND d.sigla_uf     = r.sigla_uf
         AND d.id_municipio = r.id_municipio
-        AND CAST(d.zona  AS STRING) = CAST(r.zona  AS STRING)
-        AND CAST(d.secao AS STRING) = CAST(r.secao AS STRING)
+        AND d.zona         = CAST(r.zona  AS STRING)
+        AND d.secao        = CAST(r.secao AS STRING)
       WHERE r.ano    = @ano
         AND r.turno  = @turno
         AND r.sigla_uf = @uf
