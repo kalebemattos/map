@@ -3260,28 +3260,35 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
 
 // ── GET /api/eleicoes/historico ──────────────────────────────────────────────
 // Retorna evolução de votos do candidato por ano eleitoral no mesmo município.
+// Usa JOIN com tabela candidatos para filtrar por nome_urna (evita coluna inexistente em resultados).
 app.get('/api/eleicoes/historico', auth, withTenant, allowAll(), async (req, res) => {
   try {
     const { nome_urna, numero, cargo, uf, id_municipio } = req.query;
-    if (!nome_urna || !cargo || !uf || !id_municipio) {
-      return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: nome_urna, cargo, uf, id_municipio' });
+    if (!nome_urna || !uf || !id_municipio) {
+      return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: nome_urna, uf, id_municipio' });
     }
     const params = {
       nome_urna:    nome_urna.trim().toUpperCase(),
-      cargo:        cargo.trim().toUpperCase(),
       uf:           uf.trim().toUpperCase(),
       id_municipio: String(id_municipio).trim(),
     };
+    const cargoCond  = cargo  ? 'AND UPPER(c.cargo)  = @cargo'  : '';
+    const numeroCond = numero ? 'AND CAST(c.numero AS STRING) = @numero' : '';
+    if (cargo)  params.cargo  = cargo.trim().toUpperCase();
     if (numero) params.numero = String(numero).trim();
-    const numCond = numero ? 'AND CAST(r.numero_candidato AS STRING) = @numero' : '';
+
     const sql = `
       SELECT r.ano, SUM(r.votos) AS votos
       FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
-      WHERE UPPER(r.nome_urna) = @nome_urna
-        AND UPPER(r.cargo)     = @cargo
+      JOIN \`basedosdados.br_tse_eleicoes.candidatos\` c
+        ON  CAST(c.sequencial AS STRING) = CAST(r.sequencial_candidato AS STRING)
+        AND c.ano       = r.ano
+        AND c.sigla_uf  = r.sigla_uf
+      WHERE UPPER(c.nome_urna) = @nome_urna
         AND r.sigla_uf         = @uf
         AND r.id_municipio     = @id_municipio
-        ${numCond}
+        ${cargoCond}
+        ${numeroCond}
       GROUP BY r.ano
       ORDER BY r.ano ASC
     `;

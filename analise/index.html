@@ -1555,6 +1555,7 @@ async function buscarCandidatos() {
         opt.dataset.cargo   = c.cargo;
         opt.dataset.uf      = c.uf;
         opt.dataset.ano     = c.ano;
+        opt.dataset.numero  = c.numero || '';
         select.appendChild(opt);
       });
     }
@@ -1577,7 +1578,8 @@ function onCandidatoChange() {
     nome:       opt.dataset.nome,
     cargo:      opt.dataset.cargo,
     uf:         opt.dataset.uf,
-    ano:        opt.dataset.ano
+    ano:        opt.dataset.ano,
+    numero:     opt.dataset.numero || 
   };
 
   document.getElementById('nomeCandidatoDisplay').textContent = candidatoAtual.nome;
