@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Histórico de Eventos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue-deep: #0d2d6b;
+  --blue-main: #1565c0;
+  --blue-mid:  #1976d2;
+  --blue-light:#e8f0fe;
+  --green:     #16a34a;
+  --green-lt:  #dcfce7;
+  --amber:     #d97706;
+  --amber-lt:  #fef3c7;
+  --red:       #dc2626;
+  --red-lt:    #fee2e2;
+  --purple:    #7c3aed;
+  --purple-lt: #ede9fe;
+  --teal:      #0d9488;
+  --teal-lt:   #ccfbf1;
+  --indigo:    #4f46e5;
+  --indigo-lt: #e0e7ff;
+  --slate-900: #0f172a;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748b;
+  --slate-400: #94a3b8;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --white:     #ffffff;
+  --radius:    12px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.10);
+  --shadow-lg: 0 10px 28px rgba(0,0,0,.13);
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family:'DM Sans',sans-serif;
+  background:#eef2f8;
+  background-image:
+    radial-gradient(circle at 20% 8%, rgba(21,101,192,.07) 0%, transparent 50%),
+    radial-gradient(circle at 80% 92%, rgba(13,45,107,.05) 0%, transparent 50%);
+  min-height:100vh;
+  color:var(--slate-700);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+
+/* ── HEADER ── */
+.page-header {
+  background:linear-gradient(135deg,#0d2d6b 0%,#1565c0 100%);
+  color:#fff;
+  padding:16px 24px 20px;
+  display:flex; align-items:center; gap:12px;
+  box-shadow:0 2px 12px rgba(13,45,107,.3);
+  position:sticky; top:0; z-index:100;
+}
+.header-back {
+  background:rgba(255,255,255,.15); border:none; color:#fff;
+  border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px;
+  display:flex; align-items:center; gap:5px; transition:background .2s;
+  flex-shrink:0;
+}
+.header-back:hover { background:rgba(255,255,255,.25); }
+.header-info { flex:1; min-width:0; }
+.header-info h1 { font-family:'Sora',sans-serif; font-size:19px; font-weight:700; line-height:1.2; }
+.header-info p  { font-size:12px; opacity:.75; margin-top:2px; }
+.header-actions { display:flex; gap:8px; flex-shrink:0; }
+.btn-novo {
+  background:#fff; color:var(--blue-deep); border:none;
+  border-radius:9px; padding:8px 16px; font-weight:700; font-size:13px;
+  cursor:pointer; display:flex; align-items:center; gap:6px;
+  box-shadow:0 2px 8px rgba(0,0,0,.15); transition:all .2s;
+}
+.btn-novo:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.2); }
+
+/* ── PAGE BODY ── */
+.page { max-width:1100px; margin:0 auto; padding:20px 16px; display:flex; flex-direction:column; gap:18px; }
+
+/* ── KPI CARDS ── */
+.kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+.kpi-card {
+  background:var(--white); border-radius:var(--radius);
+  padding:14px 16px; box-shadow:var(--shadow-sm);
+  border-left:4px solid transparent; transition:box-shadow .2s;
+  cursor:default;
+}
+.kpi-card:hover { box-shadow:var(--shadow-md); }
+.kpi-card.blue   { border-color:var(--blue-main); }
+.kpi-card.green  { border-color:var(--green); }
+.kpi-card.amber  { border-color:var(--amber); }
+.kpi-card.red    { border-color:var(--red); }
+.kpi-card.purple { border-color:var(--purple); }
+.kpi-label { font-size:11px; font-weight:600; color:var(--slate-500); text-transform:uppercase; letter-spacing:.5px; }
+.kpi-val   { font-size:26px; font-weight:700; font-family:'Sora',sans-serif; color:var(--slate-900); line-height:1.1; margin:5px 0 1px; }
+.kpi-sub   { font-size:11px; color:var(--slate-500); }
+
+/* ── TOOLBAR ── */
+.toolbar {
+  background:var(--white); border-radius:var(--radius);
+  padding:14px 16px; box-shadow:var(--shadow-sm);
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+}
+.search-box {
+  flex:1; min-width:180px;
+  display:flex; align-items:center; gap:8px;
+  background:var(--slate-100); border-radius:9px;
+  padding:8px 12px; border:1px solid transparent; transition:border .2s;
+}
+.search-box:focus-within { border-color:var(--blue-main); background:#fff; }
+.search-box input {
+  flex:1; border:none; background:transparent;
+  font-size:13px; color:var(--slate-700); outline:none; font-family:inherit;
+}
+.search-box span { color:var(--slate-400); font-size:15px; }
+
+.filter-select {
+  padding:8px 12px; border:1px solid var(--slate-200); border-radius:9px;
+  font-size:13px; color:var(--slate-700); background:var(--white);
+  font-family:inherit; cursor:pointer; outline:none; transition:border .2s;
+}
+.filter-select:focus { border-color:var(--blue-main); }
+
+.view-tabs {
+  display:flex; gap:4px;
+  background:var(--slate-100); border-radius:9px; padding:3px;
+}
+.view-tab {
+  padding:6px 12px; border:none; background:transparent;
+  border-radius:7px; font-size:12px; font-weight:600; color:var(--slate-500);
+  cursor:pointer; transition:all .15s;
+}
+.view-tab.active { background:var(--white); color:var(--blue-main); box-shadow:var(--shadow-sm); }
+
+/* ── LIST VIEW ── */
+.events-list { display:flex; flex-direction:column; gap:10px; }
+
+.event-card {
+  background:var(--white); border-radius:var(--radius);
+  box-shadow:var(--shadow-sm); overflow:hidden;
+  transition:box-shadow .2s, transform .15s; cursor:pointer;
+  border:1px solid var(--slate-200);
+}
+.event-card:hover {
+  box-shadow:var(--shadow-md); transform:translateY(-1px);
+  border-color:var(--slate-300);
+}
+.event-card-inner {
+  display:grid;
+  grid-template-columns:5px 64px 1fr auto;
+  align-items:stretch;
+}
+.event-accent { border-radius:2px 0 0 2px; }
+.event-date-col {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:14px 8px; border-right:1px solid var(--slate-100); text-align:center;
+  flex-shrink:0;
+}
+.event-date-day  { font-family:'Sora',sans-serif; font-size:22px; font-weight:800; color:var(--slate-900); line-height:1; }
+.event-date-mon  { font-size:10px; font-weight:700; color:var(--slate-500); text-transform:uppercase; letter-spacing:.5px; }
+.event-date-year { font-size:10px; color:var(--slate-400); }
+.event-body  { padding:14px 16px; min-width:0; }
+.event-meta  { display:flex; align-items:center; gap:6px; margin-bottom:4px; flex-wrap:wrap; }
+.event-title { font-family:'Sora',sans-serif; font-size:14px; font-weight:700; color:var(--slate-900); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.event-detail { font-size:12px; color:var(--slate-500); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.event-detail span { display:flex; align-items:center; gap:3px; }
+.event-actions {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:12px 16px; gap:6px; border-left:1px solid var(--slate-100);
+}
+.btn-action {
+  border:none; background:var(--slate-100); border-radius:8px;
+  padding:5px 10px; font-size:11px; font-weight:600; color:var(--slate-600);
+  cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.btn-action:hover { background:var(--blue-light); color:var(--blue-main); }
+.btn-action.danger:hover { background:var(--red-lt); color:var(--red); }
+
+/* Status badges */
+.badge {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:10px; font-weight:700; letter-spacing:.4px; text-transform:uppercase;
+  padding:3px 8px; border-radius:20px;
+}
+.badge-planejado  { background:var(--indigo-lt); color:var(--indigo); }
+.badge-confirmado { background:var(--blue-light); color:var(--blue-main); }
+.badge-em_andamento { background:var(--amber-lt); color:var(--amber); }
+.badge-concluido  { background:var(--green-lt); color:var(--green); }
+.badge-cancelado  { background:#fee2e2; color:var(--red); }
+
+/* Tipo badges */
+.tipo-badge {
+  font-size:10px; font-weight:600; color:var(--slate-500);
+  background:var(--slate-100); padding:2px 7px; border-radius:6px;
+}
+
+/* Prioridade */
+.prio-1 { color:#dc2626; }
+.prio-2 { color:#d97706; }
+.prio-3 { color:#64748b; }
+.prio-4 { color:#94a3b8; }
+.prio-5 { color:#cbd5e1; }
+
+/* ── TIMELINE VIEW ── */
+.timeline { display:flex; flex-direction:column; position:relative; }
+.timeline::before {
+  content:''; position:absolute; left:28px; top:0; bottom:0;
+  width:2px; background:var(--slate-200);
+}
+.tl-item {
+  display:flex; gap:16px; padding:0 0 20px 0;
+  position:relative;
+}
+.tl-icon {
+  width:40px; height:40px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; flex-shrink:0; position:relative; z-index:1;
+  border:3px solid var(--white); box-shadow:var(--shadow-sm);
+}
+.tl-icon.criado    { background:var(--indigo-lt); }
+.tl-icon.editado   { background:var(--blue-light); }
+.tl-icon.status    { background:var(--amber-lt); }
+.tl-icon.concluido { background:var(--green-lt); }
+.tl-icon.cancelado { background:#fee2e2; }
+.tl-icon.midia     { background:var(--purple-lt); }
+.tl-icon.nota      { background:var(--teal-lt); }
+
+.tl-body {
+  flex:1; background:var(--white); border-radius:var(--radius);
+  padding:12px 14px; box-shadow:var(--shadow-sm);
+  border:1px solid var(--slate-200);
+}
+.tl-header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px; }
+.tl-user   { font-size:12px; font-weight:700; color:var(--slate-900); }
+.tl-time   { font-size:11px; color:var(--slate-400); flex-shrink:0; }
+.tl-text   { font-size:12px; color:var(--slate-600); line-height:1.5; }
+.tl-diff   { display:flex; gap:6px; align-items:center; margin-top:6px; font-size:11px; }
+.tl-before { background:#fee2e2; color:var(--red); padding:2px 7px; border-radius:5px; text-decoration:line-through; }
+.tl-after  { background:var(--green-lt); color:var(--green); padding:2px 7px; border-radius:5px; }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align:center; padding:52px 24px; color:var(--slate-400);
+  background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow-sm);
+}
+.empty-state .es-icon { font-size:48px; margin-bottom:12px; }
+.empty-state h3 { font-family:'Sora',sans-serif; font-size:16px; font-weight:700; color:var(--slate-600); margin-bottom:6px; }
+.empty-state p  { font-size:13px; max-width:340px; margin:0 auto; }
+
+/* ── LOADING ── */
+.loading-row {
+  display:flex; align-items:center; justify-content:center;
+  gap:8px; padding:32px; color:var(--slate-400); font-size:13px;
+}
+.dot-loader { display:flex; gap:5px; }
+.dot-loader span {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--slate-300); animation:dotBounce 1.2s infinite;
+}
+.dot-loader span:nth-child(2) { animation-delay:.2s; }
+.dot-loader span:nth-child(3) { animation-delay:.4s; }
+@keyframes dotBounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
+
+/* ── MODAL ── */
+.modal-bg {
+  position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200;
+  display:flex; align-items:center; justify-content:center; padding:16px;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.modal-bg.open { opacity:1; pointer-events:all; }
+.modal {
+  background:var(--white); border-radius:18px; width:100%; max-width:580px;
+  max-height:92vh; overflow-y:auto; box-shadow:0 24px 64px rgba(0,0,0,.25);
+  transform:translateY(20px) scale(.97); transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.modal-bg.open .modal { transform:none; }
+.modal-header {
+  padding:20px 24px 16px; display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--slate-200); position:sticky; top:0;
+  background:var(--white); z-index:1; border-radius:18px 18px 0 0;
+}
+.modal-header h2 { font-family:'Sora',sans-serif; font-size:16px; font-weight:700; }
+.modal-close {
+  width:30px; height:30px; border:none; background:var(--slate-100);
+  border-radius:8px; font-size:16px; cursor:pointer; display:flex;
+  align-items:center; justify-content:center; color:var(--slate-500);
+  transition:all .15s;
+}
+.modal-close:hover { background:var(--slate-200); color:var(--slate-700); }
+.modal-body { padding:20px 24px 24px; display:flex; flex-direction:column; gap:14px; }
+
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-group label { font-size:12px; font-weight:700; color:var(--slate-600); text-transform:uppercase; letter-spacing:.4px; }
+.form-group input, .form-group select, .form-group textarea {
+  padding:9px 12px; border:1px solid var(--slate-200); border-radius:9px;
+  font-size:13px; color:var(--slate-700); background:var(--white);
+  font-family:inherit; outline:none; transition:border .2s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--blue-main); }
+.form-group textarea { min-height:80px; resize:vertical; }
+.form-group .full { grid-column:1/-1; }
+
+.modal-footer {
+  padding:16px 24px; border-top:1px solid var(--slate-200);
+  display:flex; justify-content:flex-end; gap:10px;
+  position:sticky; bottom:0; background:var(--white); border-radius:0 0 18px 18px;
+}
+.btn-cancel {
+  padding:9px 18px; border:1px solid var(--slate-200); border-radius:9px;
+  background:var(--white); color:var(--slate-600); font-size:13px; font-weight:600;
+  cursor:pointer; transition:all .15s; font-family:inherit;
+}
+.btn-cancel:hover { background:var(--slate-100); }
+.btn-save {
+  padding:9px 22px; border:none; border-radius:9px;
+  background:var(--blue-main); color:#fff; font-size:13px; font-weight:700;
+  cursor:pointer; transition:all .15s; font-family:inherit;
+}
+.btn-save:hover { background:var(--blue-deep); transform:translateY(-1px); }
+.btn-save:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+
+/* ── DETALHE MODAL ── */
+.detail-grid { display:grid; grid-template-columns:1fr 260px; gap:20px; }
+@media(max-width:600px){ .detail-grid { grid-template-columns:1fr; } }
+.detail-main .dm-header { display:flex; align-items:flex-start; gap:10px; margin-bottom:14px; }
+.detail-main h2 { font-family:'Sora',sans-serif; font-size:18px; font-weight:800; color:var(--slate-900); }
+.detail-desc { font-size:13px; color:var(--slate-600); line-height:1.6; margin-bottom:16px; }
+
+.detail-section { margin-bottom:18px; }
+.detail-section h3 { font-size:11px; font-weight:700; color:var(--slate-500); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.detail-section h3::after { content:''; flex:1; height:1px; background:var(--slate-200); }
+
+.participantes-list { display:flex; flex-direction:column; gap:6px; }
+.part-item {
+  display:flex; align-items:center; gap:8px; padding:7px 10px;
+  background:var(--slate-100); border-radius:8px; font-size:12px;
+}
+.part-avatar {
+  width:28px; height:28px; border-radius:50%;
+  background:var(--blue-light); color:var(--blue-main);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; flex-shrink:0;
+}
+.part-name { font-weight:600; color:var(--slate-800); flex:1; }
+.part-papel { font-size:10px; color:var(--slate-500); background:var(--white); border-radius:5px; padding:2px 6px; }
+.part-check { margin-left:auto; }
+.check-btn {
+  border:none; background:none; cursor:pointer; font-size:16px;
+  opacity:.5; transition:opacity .15s;
+}
+.check-btn.present { opacity:1; }
+
+.sidebar-info-card {
+  background:var(--slate-100); border-radius:var(--radius);
+  padding:14px; display:flex; flex-direction:column; gap:10px;
+}
+.info-row { display:flex; flex-direction:column; gap:2px; }
+.info-row .ir-label { font-size:10px; font-weight:700; color:var(--slate-500); text-transform:uppercase; letter-spacing:.4px; }
+.info-row .ir-val   { font-size:13px; font-weight:600; color:var(--slate-800); }
+
+.workflow-btns { display:flex; flex-direction:column; gap:7px; margin-top:12px; }
+.wf-btn {
+  width:100%; padding:9px 14px; border:1px solid var(--slate-200);
+  border-radius:9px; background:var(--white); font-size:12px; font-weight:700;
+  cursor:pointer; transition:all .15s; font-family:inherit;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.wf-btn:hover { transform:translateY(-1px); box-shadow:var(--shadow-sm); }
+.wf-btn.confirmar { color:var(--blue-main); border-color:var(--blue-main); }
+.wf-btn.confirmar:hover { background:var(--blue-light); }
+.wf-btn.concluir  { color:var(--green); border-color:var(--green); }
+.wf-btn.concluir:hover  { background:var(--green-lt); }
+.wf-btn.cancelar  { color:var(--red); border-color:var(--red); }
+.wf-btn.cancelar:hover  { background:var(--red-lt); }
+
+/* ── TABS NO DETALHE ── */
+.detail-tabs { display:flex; gap:4px; border-bottom:2px solid var(--slate-200); margin-bottom:14px; }
+.detail-tab {
+  padding:8px 14px; border:none; background:none; font-size:12px; font-weight:600;
+  color:var(--slate-500); cursor:pointer; border-bottom:2px solid transparent;
+  margin-bottom:-2px; transition:all .15s; font-family:inherit;
+}
+.detail-tab.active { color:var(--blue-main); border-bottom-color:var(--blue-main); }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed; bottom:24px; right:24px; z-index:500;
+  padding:12px 18px; border-radius:12px; font-size:13px; font-weight:600;
+  box-shadow:var(--shadow-lg); transform:translateY(20px); opacity:0;
+  transition:all .3s cubic-bezier(.34,1.56,.64,1); pointer-events:none;
+  display:flex; align-items:center; gap:8px;
+}
+.toast.show { transform:none; opacity:1; }
+.toast.success { background:#16a34a; color:#fff; }
+.toast.error   { background:#dc2626; color:#fff; }
+.toast.info    { background:var(--blue-main); color:#fff; }
+
+@media(max-width:640px){
+  .page-header { padding:12px 16px 14px; gap:8px; }
+  .header-info h1 { font-size:16px; }
+  .form-row { grid-template-columns:1fr; }
+  .kpi-row { grid-template-columns:repeat(2,1fr); }
+  .event-card-inner { grid-template-columns:4px 52px 1fr; }
+  .event-actions { display:none; }
+  .modal { max-height:100vh; border-radius:16px 16px 0 0; align-self:flex-end; margin-bottom:0; }
+  .modal-bg { align-items:flex-end; padding:0; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="page-header">
+  <button class="header-back" onclick="history.back()">← Voltar</button>
+  <div class="header-info">
+    <h1>🗂️ Histórico de Eventos</h1>
+    <p id="header-sub">Central de registro e acompanhamento de eventos</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn-novo" onclick="abrirModalCriar()">+ Novo Evento</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- KPIs -->
+  <div class="kpi-row" id="kpi-row">
+    <div class="kpi-card blue">
+      <div class="kpi-label">Total</div>
+      <div class="kpi-val" id="kpi-total">—</div>
+      <div class="kpi-sub">eventos registrados</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-label">Hoje</div>
+      <div class="kpi-val" id="kpi-hoje">—</div>
+      <div class="kpi-sub">eventos hoje</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Próx. 7 dias</div>
+      <div class="kpi-val" id="kpi-semana">—</div>
+      <div class="kpi-sub">eventos agendados</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Em andamento</div>
+      <div class="kpi-val" id="kpi-andamento">—</div>
+      <div class="kpi-sub">acontecendo agora</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Pendentes</div>
+      <div class="kpi-val" id="kpi-pendentes">—</div>
+      <div class="kpi-sub">planejados + confirmados</div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="search-box">
+      <span>🔍</span>
+      <input type="text" id="search-input" placeholder="Buscar evento, local, líder…" oninput="debounceBusca()">
+    </div>
+    <select class="filter-select" id="filter-status" onchange="aplicarFiltros()">
+      <option value="">Todos os status</option>
+      <option value="planejado">Planejado</option>
+      <option value="confirmado">Confirmado</option>
+      <option value="em_andamento">Em andamento</option>
+      <option value="concluido">Concluído</option>
+      <option value="cancelado">Cancelado</option>
+    </select>
+    <select class="filter-select" id="filter-tipo" onchange="aplicarFiltros()">
+      <option value="">Todos os tipos</option>
+      <option value="comicio">Comício</option>
+      <option value="reuniao">Reunião</option>
+      <option value="visita">Visita</option>
+      <option value="acao">Ação</option>
+      <option value="crise">Crise</option>
+      <option value="obra">Obra</option>
+      <option value="outro">Outro</option>
+    </select>
+    <input type="date" class="filter-select" id="filter-data" onchange="aplicarFiltros()" style="max-width:150px">
+    <div class="view-tabs">
+      <button class="view-tab active" onclick="mudarView('lista', this)">☰ Lista</button>
+      <button class="view-tab" onclick="mudarView('timeline', this)">↕ Timeline</button>
+    </div>
+  </div>
+
+  <!-- LISTA DE EVENTOS -->
+  <div id="view-lista">
+    <div class="events-list" id="events-list">
+      <div class="loading-row">
+        <div class="dot-loader"><span></span><span></span><span></span></div>
+        Carregando eventos…
+      </div>
+    </div>
+  </div>
+
+  <!-- TIMELINE GLOBAL -->
+  <div id="view-timeline" style="display:none">
+    <div style="background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px 20px 20px 24px;">
+      <h2 style="font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--slate-900);margin-bottom:20px;">
+        📋 Histórico de atividades
+      </h2>
+      <div class="timeline" id="timeline-global">
+        <div class="loading-row"><div class="dot-loader"><span></span><span></span><span></span></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── MODAL CRIAR/EDITAR ── -->
+<div class="modal-bg" id="modal-criar">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-criar-title">Novo Evento</h2>
+      <button class="modal-close" onclick="fecharModalCriar()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+      <div class="form-group">
+        <label>Título *</label>
+        <input type="text" id="f-titulo" placeholder="Ex: Caminhada no Centro" maxlength="140">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo</label>
+          <select id="f-tipo">
+            <option value="reuniao">Reunião</option>
+            <option value="comicio">Comício</option>
+            <option value="visita">Visita</option>
+            <option value="acao">Ação</option>
+            <option value="crise">Crise</option>
+            <option value="obra">Obra</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Prioridade</label>
+          <select id="f-prioridade">
+            <option value="1">🔴 Crítica</option>
+            <option value="2" selected>🟠 Alta</option>
+            <option value="3">🟡 Média</option>
+            <option value="4">🔵 Baixa</option>
+            <option value="5">⚪ Rotina</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data/Hora início *</label>
+          <input type="datetime-local" id="f-inicio">
+        </div>
+        <div class="form-group">
+          <label>Data/Hora fim</label>
+          <input type="datetime-local" id="f-fim">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cidade</label>
+          <input type="text" id="f-cidade" placeholder="Ex: Angra dos Reis">
+        </div>
+        <div class="form-group">
+          <label>Bairro/Local</label>
+          <input type="text" id="f-bairro" placeholder="Ex: Centro">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Endereço</label>
+        <input type="text" id="f-endereco" placeholder="Ex: Rua XV de Novembro, 200">
+      </div>
+      <div class="form-group">
+        <label>Público estimado</label>
+        <input type="number" id="f-publico" placeholder="Ex: 200" min="0">
+      </div>
+      <div class="form-group">
+        <label>Descrição / Observações</label>
+        <textarea id="f-desc" placeholder="Detalhes, pauta, objetivos…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="fecharModalCriar()">Cancelar</button>
+      <button class="btn-save" id="btn-salvar" onclick="salvarEvento()">Salvar Evento</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL DETALHE ── -->
+<div class="modal-bg" id="modal-detalhe">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="det-tipo-icon" style="font-size:20px"></span>
+        <div>
+          <h2 id="det-titulo" style="font-size:16px;margin:0"></h2>
+          <div id="det-badges" style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap"></div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="fecharModalDetalhe()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-grid">
+        <!-- MAIN -->
+        <div class="detail-main">
+          <div class="detail-tabs">
+            <button class="detail-tab active" onclick="mudarAbaDetalhe('info',this)">ℹ️ Info</button>
+            <button class="detail-tab" onclick="mudarAbaDetalhe('participantes',this)">👥 Pessoas</button>
+            <button class="detail-tab" onclick="mudarAbaDetalhe('historico',this)">📋 Histórico</button>
+          </div>
+
+          <!-- ABA INFO -->
+          <div id="aba-info">
+            <p id="det-desc" class="detail-desc"></p>
+            <div class="detail-section">
+              <h3>Local &amp; Data</h3>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="info-row"><div class="ir-label">Início</div><div class="ir-val" id="det-inicio">—</div></div>
+                <div class="info-row"><div class="ir-label">Término</div><div class="ir-val" id="det-fim">—</div></div>
+                <div class="info-row"><div class="ir-label">Local</div><div class="ir-val" id="det-local">—</div></div>
+                <div class="info-row"><div class="ir-label">Público Estimado</div><div class="ir-val" id="det-publico">—</div></div>
+              </div>
+            </div>
+            <div class="detail-section" id="obs-section">
+              <h3>Observações registradas</h3>
+              <div id="obs-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+              <div style="display:flex;gap:8px;margin-top:10px;">
+                <input type="text" id="obs-nova" class="filter-select" style="flex:1;padding:8px 12px;"
+                       placeholder="Adicionar observação…" onkeydown="if(event.key==='Enter')adicionarObs()">
+                <button class="btn-save" style="padding:8px 14px;font-size:12px;" onclick="adicionarObs()">Registrar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ABA PARTICIPANTES -->
+          <div id="aba-participantes" style="display:none">
+            <div class="participantes-list" id="part-list">
+              <div class="loading-row"><div class="dot-loader"><span></span><span></span><span></span></div></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <input type="text" id="part-nova" class="filter-select" style="flex:1;padding:8px 12px;"
+                     placeholder="Nome do participante…" onkeydown="if(event.key==='Enter')adicionarParticipante()">
+              <button class="btn-save" style="padding:8px 14px;font-size:12px;" onclick="adicionarParticipante()">+ Adicionar</button>
+            </div>
+          </div>
+
+          <!-- ABA HISTÓRICO -->
+          <div id="aba-historico" style="display:none">
+            <div class="timeline" id="det-timeline">
+              <div class="loading-row"><div class="dot-loader"><span></span><span></span><span></span></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div>
+          <div class="sidebar-info-card">
+            <div class="info-row"><div class="ir-label">Status</div><div class="ir-val" id="det-status-val">—</div></div>
+            <div class="info-row"><div class="ir-label">Prioridade</div><div class="ir-val" id="det-prio-val">—</div></div>
+            <div class="info-row"><div class="ir-label">Criado por</div><div class="ir-val" id="det-criador">—</div></div>
+            <div class="info-row"><div class="ir-label">Criado em</div><div class="ir-val" id="det-criado-em">—</div></div>
+          </div>
+          <div class="workflow-btns" id="workflow-btns"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const API_URL = (()=>{
+  const h = location.hostname
+  if (h==='localhost'||h==='127.0.0.1') return 'http://localhost:3000'
+  return 'https://map-backend-j88s.onrender.com'
+})()
+
+const token = () => localStorage.getItem('token') || ''
+const headers = () => ({ 'Content-Type':'application/json', Authorization:'Bearer '+token() })
+
+// Estado local
+let todosEventos = []
+let eventoAtual  = null
+let viewAtual    = 'lista'
+let busca_timer  = null
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (!token()) { location.href = './index.html'; return }
+  carregarEventos()
+  const d = new Date()
+  document.getElementById('filter-data').value = ''
+})
+
+// ── API CALLS ───────────────────────────────────────────────────────────────
+async function api(method, path, body=null) {
+  const opts = { method, headers:headers() }
+  if (body) opts.body = JSON.stringify(body)
+  const r = await fetch(API_URL + path, opts)
+  const j = await r.json().catch(()=>({ ok:false, error:'Resposta inválida' }))
+  if (!r.ok) throw new Error(j.error || j.message || 'Erro '+r.status)
+  return j
+}
+
+// ── CARREGAR EVENTOS ─────────────────────────────────────────────────────────
+async function carregarEventos() {
+  const list = document.getElementById('events-list')
+  list.innerHTML = `<div class="loading-row"><div class="dot-loader"><span></span><span></span><span></span></div> Carregando…</div>`
+
+  try {
+    const r = await api('GET', '/api/eventos?per_page=200&order=data_inicio:desc')
+    todosEventos = r.data || []
+    atualizarKPIs(todosEventos)
+    renderLista(todosEventos)
+    if (viewAtual === 'timeline') renderTimelineGlobal(todosEventos)
+  } catch(e) {
+    // Se API não existe ainda, mostra demo
+    todosEventos = demoEventos()
+    atualizarKPIs(todosEventos)
+    renderLista(todosEventos)
+    document.getElementById('header-sub').textContent = 'Modo demonstração — backend em implantação'
+  }
+}
+
+// ── DEMO DATA (enquanto backend não tem a rota) ──────────────────────────────
+function demoEventos() {
+  const hoje = new Date()
+  const fmt = (d) => d.toISOString()
+  const add = (days, h=10) => { const d=new Date(hoje); d.setDate(d.getDate()+days); d.setHours(h,0,0,0); return fmt(d) }
+  return [
+    { id:'1', titulo:'Caminhada no Centro Histórico', tipo:'comicio', status:'confirmado', prioridade:2,
+      data_inicio:add(2,9), data_fim:add(2,12), cidade:'Angra dos Reis', bairro:'Centro',
+      descricao:'Caminhada pelas principais ruas do centro histórico com distribuição de material.', publico_estimado:500 },
+    { id:'2', titulo:'Reunião com Lideranças do Bracuí', tipo:'reuniao', status:'planejado', prioridade:2,
+      data_inicio:add(4,19), cidade:'Angra dos Reis', bairro:'Bracuí',
+      descricao:'Alinhamento de estratégia com líderes da região norte.' },
+    { id:'3', titulo:'Visita ao Condomínio Monsuaba', tipo:'visita', status:'concluido', prioridade:3,
+      data_inicio:add(-3,15), data_fim:add(-3,17), cidade:'Angra dos Reis', bairro:'Monsuaba',
+      descricao:'Visita de apresentação e escuta ativa com moradores.', publico_real:80 },
+    { id:'4', titulo:'Ação Social na Ilha Grande', tipo:'acao', status:'planejado', prioridade:1,
+      data_inicio:add(7,8), cidade:'Angra dos Reis', bairro:'Ilha Grande',
+      descricao:'Distribuição de cestas básicas e atendimento médico voluntário.', publico_estimado:300 },
+    { id:'5', titulo:'Reunião de Coordenação Regional', tipo:'reuniao', status:'em_andamento', prioridade:2,
+      data_inicio:add(0,14), cidade:'Angra dos Reis', bairro:'Vila Velha',
+      descricao:'Revisão de metas semanais e distribuição de tarefas.' },
+    { id:'6', titulo:'Comício de Encerramento da Campanha', tipo:'comicio', status:'planejado', prioridade:1,
+      data_inicio:add(14,18), cidade:'Angra dos Reis', bairro:'Praia do Anil',
+      descricao:'Grande comício de encerramento com artistas convidados.', publico_estimado:3000 },
+  ]
+}
+
+// ── KPIs ─────────────────────────────────────────────────────────────────────
+function atualizarKPIs(eventos) {
+  const hoje = new Date(); hoje.setHours(0,0,0,0)
+  const amanha = new Date(hoje); amanha.setDate(amanha.getDate()+1)
+  const semana  = new Date(hoje); semana.setDate(semana.getDate()+7)
+
+  document.getElementById('kpi-total').textContent = eventos.length
+  document.getElementById('kpi-hoje').textContent  = eventos.filter(e=>{
+    const d=new Date(e.data_inicio); d.setHours(0,0,0,0); return +d===+hoje
+  }).length
+  document.getElementById('kpi-semana').textContent = eventos.filter(e=>{
+    const d=new Date(e.data_inicio); return d>=amanha && d<=semana
+  }).length
+  document.getElementById('kpi-andamento').textContent = eventos.filter(e=>e.status==='em_andamento').length
+  document.getElementById('kpi-pendentes').textContent  = eventos.filter(e=>['planejado','confirmado'].includes(e.status)).length
+}
+
+// ── RENDERIZAR LISTA ─────────────────────────────────────────────────────────
+function renderLista(eventos) {
+  const list = document.getElementById('events-list')
+  if (!eventos.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="es-icon">🗂️</div>
+      <h3>Nenhum evento encontrado</h3>
+      <p>Ajuste os filtros ou crie o primeiro evento clicando em "+ Novo Evento".</p>
+    </div>`; return
+  }
+  list.innerHTML = eventos.map(e => {
+    const d = new Date(e.data_inicio)
+    const dia = d.getDate().toString().padStart(2,'0')
+    const mes = d.toLocaleString('pt-BR',{month:'short'}).replace('.','')
+    const ano = d.getFullYear()
+    const hora = d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})
+    const cor = accentColor(e.tipo)
+    const prioIcon = ['','🔴','🟠','🟡','🔵','⚪'][e.prioridade||3]
+    return `<div class="event-card" onclick="abrirDetalhe('${e.id}')">
+      <div class="event-card-inner">
+        <div class="event-accent" style="background:${cor}"></div>
+        <div class="event-date-col">
+          <div class="event-date-day">${dia}</div>
+          <div class="event-date-mon">${mes}</div>
+          <div class="event-date-year">${ano}</div>
+        </div>
+        <div class="event-body">
+          <div class="event-meta">
+            <span class="badge badge-${e.status}">${statusLabel(e.status)}</span>
+            <span class="tipo-badge">${tipoLabel(e.tipo)}</span>
+            <span style="font-size:12px">${prioIcon}</span>
+          </div>
+          <div class="event-title">${e.titulo}</div>
+          <div class="event-detail">
+            <span>🕐 ${hora}</span>
+            ${e.cidade ? `<span>📍 ${e.bairro ? e.bairro+', '+e.cidade : e.cidade}</span>` : ''}
+            ${e.publico_estimado ? `<span>👥 ~${e.publico_estimado.toLocaleString()} pessoas</span>` : ''}
+            ${e.publico_real     ? `<span>✅ ${e.publico_real.toLocaleString()} presentes</span>` : ''}
+          </div>
+        </div>
+        <div class="event-actions" onclick="event.stopPropagation()">
+          <button class="btn-action" onclick="abrirDetalhe('${e.id}')">Ver</button>
+          <button class="btn-action" onclick="abrirEditar('${e.id}')">Editar</button>
+        </div>
+      </div>
+    </div>`
+  }).join('')
+}
+
+// ── TIMELINE GLOBAL ──────────────────────────────────────────────────────────
+function renderTimelineGlobal(eventos) {
+  const tl = document.getElementById('timeline-global')
+  if (!eventos.length) { tl.innerHTML = '<p style="color:var(--slate-400);text-align:center;padding:20px">Nenhuma atividade</p>'; return }
+
+  // Simula histórico a partir da lista de eventos
+  const items = []
+  eventos.forEach(e=>{
+    items.push({ ts:new Date(e.criado_em||e.data_inicio), acao:'criado', evento:e })
+    if (e.status==='concluido' && e.data_conclusao)
+      items.push({ ts:new Date(e.data_conclusao), acao:'concluido', evento:e })
+    if (e.status==='cancelado')
+      items.push({ ts:new Date(e.atualizado_em||e.data_inicio), acao:'cancelado', evento:e })
+  })
+  items.sort((a,b)=>b.ts-a.ts)
+
+  tl.innerHTML = items.slice(0,30).map(it=>{
+    const cls = it.acao
+    const ico = {criado:'🆕',editado:'✏️',concluido:'✅',cancelado:'❌',status:'🔄',midia:'📸',nota:'💬'}[cls]||'📌'
+    const msg = {
+      criado:   `Evento <strong>"${it.evento.titulo}"</strong> foi criado`,
+      concluido:`Evento <strong>"${it.evento.titulo}"</strong> foi concluído`,
+      cancelado:`Evento <strong>"${it.evento.titulo}"</strong> foi cancelado`,
+    }[cls] || `Atividade em <strong>"${it.evento.titulo}"</strong>`
+    return `<div class="tl-item">
+      <div class="tl-icon ${cls}">${ico}</div>
+      <div class="tl-body">
+        <div class="tl-header">
+          <span class="tl-user">Sistema</span>
+          <span class="tl-time">${tempoRelativo(it.ts)}</span>
+        </div>
+        <div class="tl-text">${msg}</div>
+      </div>
+    </div>`
+  }).join('')
+}
+
+// ── ABRIR DETALHE ────────────────────────────────────────────────────────────
+async function abrirDetalhe(id) {
+  eventoAtual = todosEventos.find(e=>e.id==id) || null
+  if (!eventoAtual) return
+
+  const e = eventoAtual
+  document.getElementById('det-titulo').textContent = e.titulo
+  document.getElementById('det-tipo-icon').textContent = tipoIcon(e.tipo)
+  document.getElementById('det-desc').textContent = e.descricao || 'Nenhuma descrição cadastrada.'
+  document.getElementById('det-status-val').innerHTML = `<span class="badge badge-${e.status}">${statusLabel(e.status)}</span>`
+  document.getElementById('det-prio-val').textContent = prioLabel(e.prioridade)
+  document.getElementById('det-criador').textContent = e.criado_por_nome || 'Sistema'
+  document.getElementById('det-criado-em').textContent = e.criado_em ? formatDate(new Date(e.criado_em)) : '—'
+
+  const d = new Date(e.data_inicio)
+  document.getElementById('det-inicio').textContent = formatDate(d)
+  document.getElementById('det-fim').textContent = e.data_fim ? formatDate(new Date(e.data_fim)) : '—'
+  document.getElementById('det-local').textContent = [e.bairro, e.cidade].filter(Boolean).join(', ') || '—'
+  document.getElementById('det-publico').textContent = e.publico_real
+    ? e.publico_real.toLocaleString()+' presentes'
+    : e.publico_estimado ? '~'+e.publico_estimado.toLocaleString()+' estimado' : '—'
+
+  document.getElementById('det-badges').innerHTML =
+    `<span class="badge badge-${e.status}">${statusLabel(e.status)}</span>
+     <span class="tipo-badge">${tipoLabel(e.tipo)}</span>`
+
+  renderWorkflowBtns(e.status)
+  renderObservacoes([])
+  mudarAbaDetalhe('info', document.querySelector('.detail-tab'))
+
+  document.getElementById('modal-detalhe').classList.add('open')
+}
+
+function fecharModalDetalhe() {
+  document.getElementById('modal-detalhe').classList.remove('open')
+  eventoAtual = null
+}
+
+// ── WORKFLOW BUTTONS ──────────────────────────────────────────────────────────
+function renderWorkflowBtns(status) {
+  const div = document.getElementById('workflow-btns')
+  const btns = []
+  if (status==='planejado')    btns.push(`<button class="wf-btn confirmar" onclick="mudarStatus('confirmado')">✅ Confirmar</button>`)
+  if (status==='confirmado')   btns.push(`<button class="wf-btn confirmar" onclick="mudarStatus('em_andamento')">▶️ Iniciar</button>`)
+  if (status==='em_andamento') btns.push(`<button class="wf-btn concluir" onclick="mudarStatus('concluido')">🏁 Concluir</button>`)
+  if (['planejado','confirmado','em_andamento'].includes(status))
+    btns.push(`<button class="wf-btn cancelar" onclick="mudarStatus('cancelado')">✕ Cancelar</button>`)
+  btns.push(`<button class="wf-btn" style="color:var(--blue-main);border-color:var(--blue-main)" onclick="fecharModalDetalhe();abrirEditar('${eventoAtual?.id}')">✏️ Editar evento</button>`)
+  div.innerHTML = btns.join('')
+}
+
+async function mudarStatus(novoStatus) {
+  if (!eventoAtual) return
+  try {
+    await api('PATCH', `/api/eventos/${eventoAtual.id}`, { status: novoStatus })
+    eventoAtual.status = novoStatus
+    document.getElementById('det-status-val').innerHTML = `<span class="badge badge-${novoStatus}">${statusLabel(novoStatus)}</span>`
+    document.getElementById('det-badges').innerHTML =
+      `<span class="badge badge-${novoStatus}">${statusLabel(novoStatus)}</span>
+       <span class="tipo-badge">${tipoLabel(eventoAtual.tipo)}</span>`
+    renderWorkflowBtns(novoStatus)
+    const idx = todosEventos.findIndex(e=>e.id===eventoAtual.id)
+    if (idx>=0) todosEventos[idx].status = novoStatus
+    aplicarFiltros()
+    toast('Status atualizado com sucesso', 'success')
+  } catch(e) {
+    toast('Erro: '+e.message, 'error')
+  }
+}
+
+// ── ABAS DO DETALHE ──────────────────────────────────────────────────────────
+function mudarAbaDetalhe(aba, btn) {
+  document.querySelectorAll('.detail-tab').forEach(b=>b.classList.remove('active'))
+  if(btn) btn.classList.add('active')
+  document.getElementById('aba-info').style.display         = aba==='info' ? '' : 'none'
+  document.getElementById('aba-participantes').style.display= aba==='participantes' ? '' : 'none'
+  document.getElementById('aba-historico').style.display    = aba==='historico' ? '' : 'none'
+
+  if (aba==='participantes') carregarParticipantes()
+  if (aba==='historico')     carregarHistoricoEvento()
+}
+
+async function carregarParticipantes() {
+  if (!eventoAtual) return
+  const list = document.getElementById('part-list')
+  try {
+    const r = await api('GET', `/api/eventos/${eventoAtual.id}/participantes`)
+    const participantes = r.data || []
+    if (!participantes.length) {
+      list.innerHTML = '<p style="color:var(--slate-400);font-size:13px;padding:8px">Nenhum participante cadastrado.</p>'
+      return
+    }
+    list.innerHTML = participantes.map(p=>`
+      <div class="part-item">
+        <div class="part-avatar">${(p.nome||'?').charAt(0).toUpperCase()}</div>
+        <span class="part-name">${p.nome||'—'}</span>
+        <span class="part-papel">${p.papel||'participante'}</span>
+        <button class="check-btn part-check ${p.presente?'present':''}"
+                onclick="togglePresenca('${p.id}',${!p.presente})" title="Marcar presença">
+          ${p.presente ? '✅' : '⬜'}
+        </button>
+      </div>`).join('')
+  } catch(e) {
+    list.innerHTML = '<p style="color:var(--slate-400);font-size:13px;padding:8px">Funcionalidade disponível após deploy do backend.</p>'
+  }
+}
+
+async function adicionarParticipante() {
+  const nome = document.getElementById('part-nova').value.trim()
+  if (!nome || !eventoAtual) return
+  try {
+    await api('POST', `/api/eventos/${eventoAtual.id}/participantes`, { nome, papel:'participante' })
+    document.getElementById('part-nova').value = ''
+    carregarParticipantes()
+    toast('Participante adicionado', 'success')
+  } catch(e) {
+    toast('Erro: '+e.message, 'error')
+  }
+}
+
+async function togglePresenca(pid, presente) {
+  if (!eventoAtual) return
+  try {
+    await api('PATCH', `/api/eventos/${eventoAtual.id}/participantes/${pid}`, { presente })
+    carregarParticipantes()
+  } catch(e) {
+    toast('Erro ao registrar presença', 'error')
+  }
+}
+
+async function carregarHistoricoEvento() {
+  if (!eventoAtual) return
+  const tl = document.getElementById('det-timeline')
+  tl.innerHTML = `<div class="loading-row"><div class="dot-loader"><span></span><span></span><span></span></div></div>`
+  try {
+    const r = await api('GET', `/api/eventos/${eventoAtual.id}/historico`)
+    const items = r.data || []
+    if (!items.length) { tl.innerHTML = '<p style="color:var(--slate-400);font-size:13px;padding:8px">Nenhum histórico registrado.</p>'; return }
+    tl.innerHTML = items.map(it=>{
+      const acao = it.acao || 'editado'
+      const ico = {criado:'🆕',editado:'✏️',status_alterado:'🔄',concluido:'✅',cancelado:'❌',participante_adicionado:'👤',midia_anexada:'📸'}[acao]||'📌'
+      return `<div class="tl-item">
+        <div class="tl-icon ${acao}">${ico}</div>
+        <div class="tl-body">
+          <div class="tl-header">
+            <span class="tl-user">${it.usuario_nome||'Sistema'}</span>
+            <span class="tl-time">${tempoRelativo(new Date(it.criado_em))}</span>
+          </div>
+          <div class="tl-text">${descHistorico(it)}</div>
+          ${it.valor_anterior && it.valor_novo ? `<div class="tl-diff">
+            <span class="tl-before">${JSON.stringify(it.valor_anterior)}</span>
+            <span>→</span>
+            <span class="tl-after">${JSON.stringify(it.valor_novo)}</span>
+          </div>` : ''}
+        </div>
+      </div>`
+    }).join('')
+  } catch(e) {
+    tl.innerHTML = '<p style="color:var(--slate-400);font-size:13px;padding:8px">Histórico disponível após deploy.</p>'
+  }
+}
+
+function descHistorico(it) {
+  const m = {
+    criado:'Evento criado',
+    editado:`Campo <strong>${it.campo_alterado||''}</strong> alterado`,
+    status_alterado:'Status alterado',
+    concluido:'Evento concluído',
+    cancelado:'Evento cancelado: '+(it.motivo||''),
+    participante_adicionado:'Novo participante adicionado',
+    midia_anexada:'Mídia anexada ao evento',
+  }
+  return m[it.acao] || it.acao
+}
+
+// ── OBSERVAÇÕES ──────────────────────────────────────────────────────────────
+function renderObservacoes(obs) {
+  const list = document.getElementById('obs-list')
+  if (!obs.length) { list.innerHTML = '<p style="color:var(--slate-400);font-size:12px">Nenhuma observação ainda.</p>'; return }
+  list.innerHTML = obs.map(o=>`
+    <div style="background:var(--slate-100);border-radius:8px;padding:10px 12px;font-size:12px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <strong style="color:var(--slate-800)">${o.autor_nome||'Sistema'}</strong>
+        <span style="color:var(--slate-400)">${tempoRelativo(new Date(o.criado_em))}</span>
+      </div>
+      <p style="color:var(--slate-700);line-height:1.5">${o.texto}</p>
+    </div>`).join('')
+}
+
+async function adicionarObs() {
+  const texto = document.getElementById('obs-nova').value.trim()
+  if (!texto || !eventoAtual) return
+  try {
+    await api('POST', `/api/eventos/${eventoAtual.id}/observacoes`, { texto, tipo:'nota' })
+    document.getElementById('obs-nova').value = ''
+    toast('Observação registrada', 'success')
+  } catch(e) {
+    toast('Funcionalidade disponível após deploy', 'info')
+  }
+}
+
+// ── CRIAR / EDITAR ────────────────────────────────────────────────────────────
+function abrirModalCriar() {
+  document.getElementById('modal-criar-title').textContent = 'Novo Evento'
+  document.getElementById('edit-id').value = ''
+  document.getElementById('f-titulo').value    = ''
+  document.getElementById('f-tipo').value      = 'reuniao'
+  document.getElementById('f-prioridade').value= '2'
+  document.getElementById('f-inicio').value    = ''
+  document.getElementById('f-fim').value       = ''
+  document.getElementById('f-cidade').value    = ''
+  document.getElementById('f-bairro').value    = ''
+  document.getElementById('f-endereco').value  = ''
+  document.getElementById('f-publico').value   = ''
+  document.getElementById('f-desc').value      = ''
+  document.getElementById('modal-criar').classList.add('open')
+  setTimeout(()=>document.getElementById('f-titulo').focus(), 200)
+}
+
+function abrirEditar(id) {
+  const e = todosEventos.find(x=>x.id==id)
+  if (!e) return
+  document.getElementById('modal-criar-title').textContent = 'Editar Evento'
+  document.getElementById('edit-id').value     = e.id
+  document.getElementById('f-titulo').value    = e.titulo||''
+  document.getElementById('f-tipo').value      = e.tipo||'outro'
+  document.getElementById('f-prioridade').value= String(e.prioridade||2)
+  document.getElementById('f-inicio').value    = e.data_inicio ? e.data_inicio.slice(0,16) : ''
+  document.getElementById('f-fim').value       = e.data_fim    ? e.data_fim.slice(0,16)    : ''
+  document.getElementById('f-cidade').value    = e.cidade||''
+  document.getElementById('f-bairro').value    = e.bairro||''
+  document.getElementById('f-endereco').value  = e.endereco||''
+  document.getElementById('f-publico').value   = e.publico_estimado||''
+  document.getElementById('f-desc').value      = e.descricao||''
+  document.getElementById('modal-criar').classList.add('open')
+}
+
+function fecharModalCriar() {
+  document.getElementById('modal-criar').classList.remove('open')
+}
+
+async function salvarEvento() {
+  const titulo = document.getElementById('f-titulo').value.trim()
+  const inicio = document.getElementById('f-inicio').value
+  if (!titulo) { toast('Título é obrigatório', 'error'); return }
+  if (!inicio) { toast('Data de início é obrigatória', 'error'); return }
+
+  const body = {
+    titulo,
+    tipo:             document.getElementById('f-tipo').value,
+    prioridade:       parseInt(document.getElementById('f-prioridade').value),
+    data_inicio:      inicio,
+    data_fim:         document.getElementById('f-fim').value || null,
+    cidade:           document.getElementById('f-cidade').value.trim() || null,
+    bairro:           document.getElementById('f-bairro').value.trim() || null,
+    endereco:         document.getElementById('f-endereco').value.trim() || null,
+    publico_estimado: parseInt(document.getElementById('f-publico').value) || null,
+    descricao:        document.getElementById('f-desc').value.trim() || null,
+  }
+
+  const btn = document.getElementById('btn-salvar')
+  btn.disabled = true; btn.textContent = 'Salvando…'
+
+  try {
+    const id = document.getElementById('edit-id').value
+    if (id) {
+      await api('PATCH', `/api/eventos/${id}`, body)
+      const idx = todosEventos.findIndex(e=>e.id==id)
+      if (idx>=0) todosEventos[idx] = { ...todosEventos[idx], ...body }
+      toast('Evento atualizado com sucesso!', 'success')
+    } else {
+      const r = await api('POST', '/api/eventos', body)
+      todosEventos.unshift({ ...body, id: r.id||r.data?.id||Date.now(), status:'planejado', criado_em:new Date().toISOString() })
+      toast('Evento criado com sucesso!', 'success')
+    }
+    fecharModalCriar()
+    atualizarKPIs(todosEventos)
+    aplicarFiltros()
+  } catch(e) {
+    // Se backend não tem rota ainda, simula localmente
+    const id = document.getElementById('edit-id').value
+    if (!id) {
+      todosEventos.unshift({ ...body, id:String(Date.now()), status:'planejado', criado_em:new Date().toISOString() })
+      fecharModalCriar()
+      atualizarKPIs(todosEventos)
+      aplicarFiltros()
+      toast('Evento salvo localmente (modo demo)', 'info')
+    } else {
+      toast('Erro: '+e.message, 'error')
+    }
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salvar Evento'
+  }
+}
+
+// ── FILTROS ──────────────────────────────────────────────────────────────────
+function debounceBusca() {
+  clearTimeout(busca_timer)
+  busca_timer = setTimeout(aplicarFiltros, 280)
+}
+
+function aplicarFiltros() {
+  const q      = document.getElementById('search-input').value.toLowerCase().trim()
+  const status = document.getElementById('filter-status').value
+  const tipo   = document.getElementById('filter-tipo').value
+  const data   = document.getElementById('filter-data').value   // YYYY-MM-DD
+
+  const filtrados = todosEventos.filter(e => {
+    if (q && !((e.titulo||'').toLowerCase().includes(q) ||
+               (e.descricao||'').toLowerCase().includes(q) ||
+               (e.cidade||'').toLowerCase().includes(q) ||
+               (e.bairro||'').toLowerCase().includes(q))) return false
+    if (status && e.status !== status) return false
+    if (tipo   && e.tipo   !== tipo)   return false
+    if (data) {
+      const d = new Date(e.data_inicio)
+      const dd = d.toISOString().slice(0,10)
+      if (dd !== data) return false
+    }
+    return true
+  })
+
+  if (viewAtual==='lista') renderLista(filtrados)
+  else renderTimelineGlobal(filtrados)
+}
+
+// ── VIEWS ────────────────────────────────────────────────────────────────────
+function mudarView(view, btn) {
+  viewAtual = view
+  document.querySelectorAll('.view-tab').forEach(b=>b.classList.remove('active'))
+  btn.classList.add('active')
+  document.getElementById('view-lista').style.display    = view==='lista' ? '' : 'none'
+  document.getElementById('view-timeline').style.display = view==='timeline' ? '' : 'none'
+  if (view==='timeline') renderTimelineGlobal(todosEventos)
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function statusLabel(s) {
+  return {planejado:'Planejado',confirmado:'Confirmado',em_andamento:'Em andamento',concluido:'Concluído',cancelado:'Cancelado'}[s]||s
+}
+function tipoLabel(t) {
+  return {comicio:'Comício',reuniao:'Reunião',visita:'Visita',acao:'Ação',crise:'Crise',obra:'Obra',outro:'Outro'}[t]||t
+}
+function tipoIcon(t) {
+  return {comicio:'📢',reuniao:'🤝',visita:'🚶',acao:'⚡',crise:'🚨',obra:'🏗️',outro:'📌'}[t]||'📌'
+}
+function prioLabel(p) {
+  return ['','🔴 Crítica','🟠 Alta','🟡 Média','🔵 Baixa','⚪ Rotina'][p||3]||'—'
+}
+function accentColor(t) {
+  return {comicio:'#1565c0',reuniao:'#0d9488',visita:'#16a34a',acao:'#7c3aed',crise:'#dc2626',obra:'#d97706',outro:'#64748b'}[t]||'#64748b'
+}
+function formatDate(d) {
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+}
+function tempoRelativo(d) {
+  const s = Math.floor((Date.now()-d)/1000)
+  if (s<60)  return 'agora'
+  if (s<3600) return Math.floor(s/60)+'min atrás'
+  if (s<86400) return Math.floor(s/3600)+'h atrás'
+  return Math.floor(s/86400)+'d atrás'
+}
+
+function toast(msg, type='info') {
+  const t = document.getElementById('toast')
+  t.textContent = ({success:'✅ ',error:'❌ ',info:'ℹ️ '}[type]||'')+msg
+  t.className = 'toast show '+type
+  clearTimeout(t._timer)
+  t._timer = setTimeout(()=>t.classList.remove('show'), 3200)
+}
+
+// Fecha modais ao clicar fora
+document.getElementById('modal-criar').addEventListener('click', e=>{ if(e.target===e.currentTarget) fecharModalCriar() })
+document.getElementById('modal-detalhe').addEventListener('click', e=>{ if(e.target===e.currentTarget) fecharModalDetalhe() })
+
+// Fecha com Escape
+document.addEventListener('keydown', e=>{
+  if (e.key==='Escape') { fecharModalCriar(); fecharModalDetalhe() }
+})
+</script>
+</body>
+</html>

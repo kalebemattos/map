@@ -1255,6 +1255,12 @@ const CATALOGO_CARDS = [
     cta: 'Abrir agenda',
   },
   {
+    id: 'card-eventos', href: './eventos.html', cor: 'card-indigo',
+    icon: '🗂️', titulo: 'Histórico de Eventos',
+    desc: 'Registre, acompanhe e analise eventos estratégicos — comícios, reuniões, visitas e ações de campo com timeline completa.',
+    cta: 'Ver eventos',
+  },
+  {
     id: 'card-reunioes', href: './reunioes.html', cor: 'card-cyan',
     icon: '🎥', titulo: 'Videoconferência',
     desc: 'Reuniões por vídeo com as lideranças — salas por região, agenda, convites e chat em tempo real.',
@@ -1295,6 +1301,7 @@ const CARDS_NIVEL_PADRAO = {
   'card-command-center':  ['dono', 'admin'],
   'card-organograma':     null,
   'card-agenda':          null,   // visível para todos os níveis
+  'card-eventos':         null,   // visível para todos os níveis
 }
 
 async function renderizarCards() {
