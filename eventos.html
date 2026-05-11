@@ -70,13 +70,6 @@ body {
 .header-info h1 { font-family:'Sora',sans-serif; font-size:19px; font-weight:700; line-height:1.2; }
 .header-info p  { font-size:12px; opacity:.75; margin-top:2px; }
 .header-actions { display:flex; gap:8px; flex-shrink:0; }
-.btn-novo {
-  background:#fff; color:var(--blue-deep); border:none;
-  border-radius:9px; padding:8px 16px; font-weight:700; font-size:13px;
-  cursor:pointer; display:flex; align-items:center; gap:6px;
-  box-shadow:0 2px 8px rgba(0,0,0,.15); transition:all .2s;
-}
-.btn-novo:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.2); }
 
 /* ── PAGE BODY ── */
 .page { max-width:1100px; margin:0 auto; padding:20px 16px; display:flex; flex-direction:column; gap:18px; }
@@ -363,20 +356,6 @@ body {
 .info-row .ir-label { font-size:10px; font-weight:700; color:var(--slate-500); text-transform:uppercase; letter-spacing:.4px; }
 .info-row .ir-val   { font-size:13px; font-weight:600; color:var(--slate-800); }
 
-.workflow-btns { display:flex; flex-direction:column; gap:7px; margin-top:12px; }
-.wf-btn {
-  width:100%; padding:9px 14px; border:1px solid var(--slate-200);
-  border-radius:9px; background:var(--white); font-size:12px; font-weight:700;
-  cursor:pointer; transition:all .15s; font-family:inherit;
-  display:flex; align-items:center; justify-content:center; gap:6px;
-}
-.wf-btn:hover { transform:translateY(-1px); box-shadow:var(--shadow-sm); }
-.wf-btn.confirmar { color:var(--blue-main); border-color:var(--blue-main); }
-.wf-btn.confirmar:hover { background:var(--blue-light); }
-.wf-btn.concluir  { color:var(--green); border-color:var(--green); }
-.wf-btn.concluir:hover  { background:var(--green-lt); }
-.wf-btn.cancelar  { color:var(--red); border-color:var(--red); }
-.wf-btn.cancelar:hover  { background:var(--red-lt); }
 
 /* ── TABS NO DETALHE ── */
 .detail-tabs { display:flex; gap:4px; border-bottom:2px solid var(--slate-200); margin-bottom:14px; }
@@ -420,9 +399,6 @@ body {
   <div class="header-info">
     <h1>🗂️ Histórico de Eventos</h1>
     <p id="header-sub">Central de registro e acompanhamento de eventos</p>
-  </div>
-  <div class="header-actions">
-    <button class="btn-novo" onclick="abrirModalCriar()">+ Novo Evento</button>
   </div>
 </div>
 
@@ -512,83 +488,6 @@ body {
 
 </div>
 
-<!-- ── MODAL CRIAR/EDITAR ── -->
-<div class="modal-bg" id="modal-criar">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="modal-criar-title">Novo Evento</h2>
-      <button class="modal-close" onclick="fecharModalCriar()">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="edit-id">
-      <div class="form-group">
-        <label>Título *</label>
-        <input type="text" id="f-titulo" placeholder="Ex: Caminhada no Centro" maxlength="140">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Tipo</label>
-          <select id="f-tipo">
-            <option value="reuniao">Reunião</option>
-            <option value="comicio">Comício</option>
-            <option value="visita">Visita</option>
-            <option value="acao">Ação</option>
-            <option value="crise">Crise</option>
-            <option value="obra">Obra</option>
-            <option value="outro">Outro</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Prioridade</label>
-          <select id="f-prioridade">
-            <option value="1">🔴 Crítica</option>
-            <option value="2" selected>🟠 Alta</option>
-            <option value="3">🟡 Média</option>
-            <option value="4">🔵 Baixa</option>
-            <option value="5">⚪ Rotina</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Data/Hora início *</label>
-          <input type="datetime-local" id="f-inicio">
-        </div>
-        <div class="form-group">
-          <label>Data/Hora fim</label>
-          <input type="datetime-local" id="f-fim">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Cidade</label>
-          <input type="text" id="f-cidade" placeholder="Ex: Angra dos Reis">
-        </div>
-        <div class="form-group">
-          <label>Bairro/Local</label>
-          <input type="text" id="f-bairro" placeholder="Ex: Centro">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Endereço</label>
-        <input type="text" id="f-endereco" placeholder="Ex: Rua XV de Novembro, 200">
-      </div>
-      <div class="form-group">
-        <label>Público estimado</label>
-        <input type="number" id="f-publico" placeholder="Ex: 200" min="0">
-      </div>
-      <div class="form-group">
-        <label>Descrição / Observações</label>
-        <textarea id="f-desc" placeholder="Detalhes, pauta, objetivos…"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="fecharModalCriar()">Cancelar</button>
-      <button class="btn-save" id="btn-salvar" onclick="salvarEvento()">Salvar Evento</button>
-    </div>
-  </div>
-</div>
-
 <!-- ── MODAL DETALHE ── -->
 <div class="modal-bg" id="modal-detalhe">
   <div class="modal" style="max-width:720px">
@@ -663,7 +562,6 @@ body {
             <div class="info-row"><div class="ir-label">Criado por</div><div class="ir-val" id="det-criador">—</div></div>
             <div class="info-row"><div class="ir-label">Criado em</div><div class="ir-val" id="det-criado-em">—</div></div>
           </div>
-          <div class="workflow-btns" id="workflow-btns"></div>
         </div>
       </div>
     </div>
@@ -720,39 +618,15 @@ async function carregarEventos() {
     renderLista(todosEventos)
     if (viewAtual === 'timeline') renderTimelineGlobal(todosEventos)
   } catch(e) {
-    // Se API não existe ainda, mostra demo
-    todosEventos = demoEventos()
-    atualizarKPIs(todosEventos)
-    renderLista(todosEventos)
-    document.getElementById('header-sub').textContent = 'Modo demonstração — backend em implantação'
+    todosEventos = []
+    atualizarKPIs([])
+    const list = document.getElementById('events-list')
+    list.innerHTML = `<div class="empty-state">
+      <div class="es-icon">🗂️</div>
+      <h3>Nenhum evento encontrado</h3>
+      <p>Os eventos criados na Agenda Inteligente aparecerão aqui.</p>
+    </div>`
   }
-}
-
-// ── DEMO DATA (enquanto backend não tem a rota) ──────────────────────────────
-function demoEventos() {
-  const hoje = new Date()
-  const fmt = (d) => d.toISOString()
-  const add = (days, h=10) => { const d=new Date(hoje); d.setDate(d.getDate()+days); d.setHours(h,0,0,0); return fmt(d) }
-  return [
-    { id:'1', titulo:'Caminhada no Centro Histórico', tipo:'comicio', status:'confirmado', prioridade:2,
-      data_inicio:add(2,9), data_fim:add(2,12), cidade:'Angra dos Reis', bairro:'Centro',
-      descricao:'Caminhada pelas principais ruas do centro histórico com distribuição de material.', publico_estimado:500 },
-    { id:'2', titulo:'Reunião com Lideranças do Bracuí', tipo:'reuniao', status:'planejado', prioridade:2,
-      data_inicio:add(4,19), cidade:'Angra dos Reis', bairro:'Bracuí',
-      descricao:'Alinhamento de estratégia com líderes da região norte.' },
-    { id:'3', titulo:'Visita ao Condomínio Monsuaba', tipo:'visita', status:'concluido', prioridade:3,
-      data_inicio:add(-3,15), data_fim:add(-3,17), cidade:'Angra dos Reis', bairro:'Monsuaba',
-      descricao:'Visita de apresentação e escuta ativa com moradores.', publico_real:80 },
-    { id:'4', titulo:'Ação Social na Ilha Grande', tipo:'acao', status:'planejado', prioridade:1,
-      data_inicio:add(7,8), cidade:'Angra dos Reis', bairro:'Ilha Grande',
-      descricao:'Distribuição de cestas básicas e atendimento médico voluntário.', publico_estimado:300 },
-    { id:'5', titulo:'Reunião de Coordenação Regional', tipo:'reuniao', status:'em_andamento', prioridade:2,
-      data_inicio:add(0,14), cidade:'Angra dos Reis', bairro:'Vila Velha',
-      descricao:'Revisão de metas semanais e distribuição de tarefas.' },
-    { id:'6', titulo:'Comício de Encerramento da Campanha', tipo:'comicio', status:'planejado', prioridade:1,
-      data_inicio:add(14,18), cidade:'Angra dos Reis', bairro:'Praia do Anil',
-      descricao:'Grande comício de encerramento com artistas convidados.', publico_estimado:3000 },
-  ]
 }
 
 // ── KPIs ─────────────────────────────────────────────────────────────────────
@@ -779,7 +653,7 @@ function renderLista(eventos) {
     list.innerHTML = `<div class="empty-state">
       <div class="es-icon">🗂️</div>
       <h3>Nenhum evento encontrado</h3>
-      <p>Ajuste os filtros ou crie o primeiro evento clicando em "+ Novo Evento".</p>
+      <p>Ajuste os filtros ou crie eventos na Agenda Inteligente.</p>
     </div>`; return
   }
   list.innerHTML = eventos.map(e => {
@@ -814,7 +688,6 @@ function renderLista(eventos) {
         </div>
         <div class="event-actions" onclick="event.stopPropagation()">
           <button class="btn-action" onclick="abrirDetalhe('${e.id}')">Ver</button>
-          <button class="btn-action" onclick="abrirEditar('${e.id}')">Editar</button>
         </div>
       </div>
     </div>`
@@ -884,7 +757,6 @@ async function abrirDetalhe(id) {
     `<span class="badge badge-${e.status}">${statusLabel(e.status)}</span>
      <span class="tipo-badge">${tipoLabel(e.tipo)}</span>`
 
-  renderWorkflowBtns(e.status)
   renderObservacoes([])
   mudarAbaDetalhe('info', document.querySelector('.detail-tab'))
 
@@ -896,37 +768,6 @@ function fecharModalDetalhe() {
   eventoAtual = null
 }
 
-// ── WORKFLOW BUTTONS ──────────────────────────────────────────────────────────
-function renderWorkflowBtns(status) {
-  const div = document.getElementById('workflow-btns')
-  const btns = []
-  if (status==='planejado')    btns.push(`<button class="wf-btn confirmar" onclick="mudarStatus('confirmado')">✅ Confirmar</button>`)
-  if (status==='confirmado')   btns.push(`<button class="wf-btn confirmar" onclick="mudarStatus('em_andamento')">▶️ Iniciar</button>`)
-  if (status==='em_andamento') btns.push(`<button class="wf-btn concluir" onclick="mudarStatus('concluido')">🏁 Concluir</button>`)
-  if (['planejado','confirmado','em_andamento'].includes(status))
-    btns.push(`<button class="wf-btn cancelar" onclick="mudarStatus('cancelado')">✕ Cancelar</button>`)
-  btns.push(`<button class="wf-btn" style="color:var(--blue-main);border-color:var(--blue-main)" onclick="fecharModalDetalhe();abrirEditar('${eventoAtual?.id}')">✏️ Editar evento</button>`)
-  div.innerHTML = btns.join('')
-}
-
-async function mudarStatus(novoStatus) {
-  if (!eventoAtual) return
-  try {
-    await api('PATCH', `/api/eventos/${eventoAtual.id}`, { status: novoStatus })
-    eventoAtual.status = novoStatus
-    document.getElementById('det-status-val').innerHTML = `<span class="badge badge-${novoStatus}">${statusLabel(novoStatus)}</span>`
-    document.getElementById('det-badges').innerHTML =
-      `<span class="badge badge-${novoStatus}">${statusLabel(novoStatus)}</span>
-       <span class="tipo-badge">${tipoLabel(eventoAtual.tipo)}</span>`
-    renderWorkflowBtns(novoStatus)
-    const idx = todosEventos.findIndex(e=>e.id===eventoAtual.id)
-    if (idx>=0) todosEventos[idx].status = novoStatus
-    aplicarFiltros()
-    toast('Status atualizado com sucesso', 'success')
-  } catch(e) {
-    toast('Erro: '+e.message, 'error')
-  }
-}
 
 // ── ABAS DO DETALHE ──────────────────────────────────────────────────────────
 function mudarAbaDetalhe(aba, btn) {
@@ -1059,100 +900,6 @@ async function adicionarObs() {
   }
 }
 
-// ── CRIAR / EDITAR ────────────────────────────────────────────────────────────
-function abrirModalCriar() {
-  document.getElementById('modal-criar-title').textContent = 'Novo Evento'
-  document.getElementById('edit-id').value = ''
-  document.getElementById('f-titulo').value    = ''
-  document.getElementById('f-tipo').value      = 'reuniao'
-  document.getElementById('f-prioridade').value= '2'
-  document.getElementById('f-inicio').value    = ''
-  document.getElementById('f-fim').value       = ''
-  document.getElementById('f-cidade').value    = ''
-  document.getElementById('f-bairro').value    = ''
-  document.getElementById('f-endereco').value  = ''
-  document.getElementById('f-publico').value   = ''
-  document.getElementById('f-desc').value      = ''
-  document.getElementById('modal-criar').classList.add('open')
-  setTimeout(()=>document.getElementById('f-titulo').focus(), 200)
-}
-
-function abrirEditar(id) {
-  const e = todosEventos.find(x=>x.id==id)
-  if (!e) return
-  document.getElementById('modal-criar-title').textContent = 'Editar Evento'
-  document.getElementById('edit-id').value     = e.id
-  document.getElementById('f-titulo').value    = e.titulo||''
-  document.getElementById('f-tipo').value      = e.tipo||'outro'
-  document.getElementById('f-prioridade').value= String(e.prioridade||2)
-  document.getElementById('f-inicio').value    = e.data_inicio ? e.data_inicio.slice(0,16) : ''
-  document.getElementById('f-fim').value       = e.data_fim    ? e.data_fim.slice(0,16)    : ''
-  document.getElementById('f-cidade').value    = e.cidade||''
-  document.getElementById('f-bairro').value    = e.bairro||''
-  document.getElementById('f-endereco').value  = e.endereco||''
-  document.getElementById('f-publico').value   = e.publico_estimado||''
-  document.getElementById('f-desc').value      = e.descricao||''
-  document.getElementById('modal-criar').classList.add('open')
-}
-
-function fecharModalCriar() {
-  document.getElementById('modal-criar').classList.remove('open')
-}
-
-async function salvarEvento() {
-  const titulo = document.getElementById('f-titulo').value.trim()
-  const inicio = document.getElementById('f-inicio').value
-  if (!titulo) { toast('Título é obrigatório', 'error'); return }
-  if (!inicio) { toast('Data de início é obrigatória', 'error'); return }
-
-  const body = {
-    titulo,
-    tipo:             document.getElementById('f-tipo').value,
-    prioridade:       parseInt(document.getElementById('f-prioridade').value),
-    data_inicio:      inicio,
-    data_fim:         document.getElementById('f-fim').value || null,
-    cidade:           document.getElementById('f-cidade').value.trim() || null,
-    bairro:           document.getElementById('f-bairro').value.trim() || null,
-    endereco:         document.getElementById('f-endereco').value.trim() || null,
-    publico_estimado: parseInt(document.getElementById('f-publico').value) || null,
-    descricao:        document.getElementById('f-desc').value.trim() || null,
-  }
-
-  const btn = document.getElementById('btn-salvar')
-  btn.disabled = true; btn.textContent = 'Salvando…'
-
-  try {
-    const id = document.getElementById('edit-id').value
-    if (id) {
-      await api('PATCH', `/api/eventos/${id}`, body)
-      const idx = todosEventos.findIndex(e=>e.id==id)
-      if (idx>=0) todosEventos[idx] = { ...todosEventos[idx], ...body }
-      toast('Evento atualizado com sucesso!', 'success')
-    } else {
-      const r = await api('POST', '/api/eventos', body)
-      todosEventos.unshift({ ...body, id: r.id||r.data?.id||Date.now(), status:'planejado', criado_em:new Date().toISOString() })
-      toast('Evento criado com sucesso!', 'success')
-    }
-    fecharModalCriar()
-    atualizarKPIs(todosEventos)
-    aplicarFiltros()
-  } catch(e) {
-    // Se backend não tem rota ainda, simula localmente
-    const id = document.getElementById('edit-id').value
-    if (!id) {
-      todosEventos.unshift({ ...body, id:String(Date.now()), status:'planejado', criado_em:new Date().toISOString() })
-      fecharModalCriar()
-      atualizarKPIs(todosEventos)
-      aplicarFiltros()
-      toast('Evento salvo localmente (modo demo)', 'info')
-    } else {
-      toast('Erro: '+e.message, 'error')
-    }
-  } finally {
-    btn.disabled = false; btn.textContent = 'Salvar Evento'
-  }
-}
-
 // ── FILTROS ──────────────────────────────────────────────────────────────────
 function debounceBusca() {
   clearTimeout(busca_timer)
@@ -1229,13 +976,12 @@ function toast(msg, type='info') {
   t._timer = setTimeout(()=>t.classList.remove('show'), 3200)
 }
 
-// Fecha modais ao clicar fora
-document.getElementById('modal-criar').addEventListener('click', e=>{ if(e.target===e.currentTarget) fecharModalCriar() })
+// Fecha modal ao clicar fora
 document.getElementById('modal-detalhe').addEventListener('click', e=>{ if(e.target===e.currentTarget) fecharModalDetalhe() })
 
 // Fecha com Escape
 document.addEventListener('keydown', e=>{
-  if (e.key==='Escape') { fecharModalCriar(); fecharModalDetalhe() }
+  if (e.key==='Escape') fecharModalDetalhe()
 })
 </script>
 </body>
