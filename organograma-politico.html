@@ -6,6 +6,9 @@
 <title>Paralax — Organograma Político</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* Heroicons helper */
+  .hi { display:inline-block; vertical-align:middle; flex-shrink:0; }
+  .hi-dot { display:inline-block; width:9px; height:9px; border-radius:50%; flex-shrink:0; vertical-align:middle; }
 :root {
   --blue-deep:  #0d2d6b;
   --blue-main:  #1565c0;
@@ -457,7 +460,7 @@ body.view-only .area-foto-url { display:none !important; }
 <div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9000;">
   <div style="width:360px;background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;animation:modalIn .25s cubic-bezier(0.34,1.56,0.64,1);">
     <div style="text-align:center;">
-      <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">🏛️</div>
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 10a48.36 48.36 0 0 0-7.5-.332V21m0 0h15M3 9h18"/></svg>️</div>
       <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Organograma Político</h2>
       <p style="margin:6px 0 0;font-size:13px;color:#64748b;">Insira suas credenciais para continuar</p>
     </div>
@@ -487,7 +490,7 @@ body.view-only .area-foto-url { display:none !important; }
 
 <!-- ===== BLOCKER ===== -->
 <div id="blocker" style="position:fixed;inset:0;background:#071426;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:8000;">
-  <div style="font-size:36px;">🏛️</div>
+  <div style="font-size:36px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 10a48.36 48.36 0 0 0-7.5-.332V21m0 0h15M3 9h18"/></svg>️</div>
   <p style="margin:0;font-size:14px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando organograma...</p>
 </div>
 
@@ -499,12 +502,12 @@ body.view-only .area-foto-url { display:none !important; }
 <div class="orb orb-2" id="orb-2"></div>
 <div class="orb orb-3" id="orb-3"></div>
 
-<div class="toast" id="toast">⚡ <span id="toast-msg">Salvo!</span></div>
+<div class="toast" id="toast"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/></svg> <span id="toast-msg">Salvo!</span></div>
 
 <div id="app">
   <nav class="top-nav">
     <div class="nav-brand">
-      <div class="nav-logo">🏛️</div>
+      <div class="nav-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 10a48.36 48.36 0 0 0-7.5-.332V21m0 0h15M3 9h18"/></svg>️</div>
       <div class="nav-name">Paralax</div>
       <div class="nav-badge">Organograma</div>
     </div>
@@ -514,8 +517,8 @@ body.view-only .area-foto-url { display:none !important; }
     <div class="nav-actions">
       <span id="user-chip" style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);padding:4px 12px;border-radius:20px;display:none;"></span>
       <span class="badge-role badge-viewer" id="role-badge">Carregando</span>
-      <button class="btn btn-ghost btn-sm edit-only" onclick="carregarSistema()">↓ Carregar</button>
-      <button class="btn btn-primary btn-sm edit-only" onclick="salvarSistema()">↑ Salvar</button>
+      <button class="btn btn-ghost btn-sm edit-only" onclick="carregarSistema()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3"/></svg> Carregar</button>
+      <button class="btn btn-primary btn-sm edit-only" onclick="salvarSistema()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"/></svg> Salvar</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()" title="Sair" style="color:rgba(255,255,255,.5);">Sair</button>
     </div>
   </nav>
@@ -627,7 +630,7 @@ function init() {
     try {
       const saved = JSON.parse(raw);
       sistema = { ...sistema, ...saved, tenant_id: window.TENANT_ID || 'default' };
-      // Compatibilidade retroativa: áreas eram strings simples → converte para objetos
+      // Compatibilidade retroativa: áreas eram strings simples <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg> converte para objetos
       if (Array.isArray(sistema.areas) && sistema.areas.length > 0 && typeof sistema.areas[0] === 'string') {
         sistema.areas = sistema.areas.map(nome => ({
           id: uid(), nome, responsavel: 'Responsável', funcao: 'Função na campanha', contato: '', foto: ''
@@ -732,7 +735,7 @@ function renderAreas() {
     card.id = 'area-card-' + (area.id || i);
 
     card.innerHTML = `
-      ${podeEditar ? `<button class="area-remove edit-only" onclick="removerArea(${i})" title="Remover área">✕</button>` : ''}
+      ${podeEditar ? `<button class="area-remove edit-only" onclick="removerArea(${i})" title="Remover área"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>` : ''}
 
       <div class="area-avatar-wrap">
         <div class="area-avatar" style="background:${cor};">
@@ -759,7 +762,7 @@ function renderAreas() {
            data-field="funcao" data-area-idx="${i}">${escOrg(area.funcao||'Função na campanha')}</div>
 
       <div class="area-contato-row">
-        <span class="area-contato-icon">📞</span>
+        <span class="area-contato-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.338c0 5.033 2.952 9.367 7.222 11.437m0 0c.16.072.322.141.485.207m-.485-.207-.007-.003m.007.003.007.003M9.472 17.775c.507-.226 1.01-.46 1.511-.7A8.952 8.952 0 0 1 12 16.5c.628 0 1.235.08 1.812.23m-5.34 1.045c.149-.066.298-.135.448-.205m5.34-1.045a8.965 8.965 0 0 0 2.525-1.756M9.472 17.775c-.507.227-1.01.46-1.51.7m0 0c-.507.226-1.01.46-1.51.7m3.02-1.4a9.014 9.014 0 0 1-1.509.7"/></svg></span>
         <input type="text" class="area-contato"
                placeholder="Contato / WhatsApp"
                value="${escOrg(area.contato||'')}"
@@ -854,7 +857,7 @@ function renderBloco(bloco) {
       </div>
       ${podeEditar ? `<div class="bloco-actions edit-only">
         <button class="btn btn-ghost btn-sm" onclick="duplicarBloco('${bloco.id}')">⧉ Duplicar</button>
-        <button class="btn btn-danger btn-sm" onclick="removerBloco('${bloco.id}')">✕</button>
+        <button class="btn btn-danger btn-sm" onclick="removerBloco('${bloco.id}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>
       </div>` : ''}
     </div>
     <div id="body-${bloco.id}"></div>
@@ -879,7 +882,7 @@ function renderSlotsGrid(container, bloco) {
     card.className = 'slot-card';
     card.id = 'slot-' + slot.id;
     card.innerHTML = `
-      ${podeEditar ? `<button class="slot-remove edit-only" onclick="removerSlot('${bloco.id}','${slot.id}')">✕</button>` : ''}
+      ${podeEditar ? `<button class="slot-remove edit-only" onclick="removerSlot('${bloco.id}','${slot.id}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>` : ''}
       <span class="slot-name" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${slot.nome}</span>
       <span class="slot-resp" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${slot.resp}</span>
       <div class="slot-numbers">
@@ -943,7 +946,7 @@ function renderListaGrid(container, bloco) {
     card.innerHTML = `
       <div class="lista-card-header">
         <span class="lista-zona-name" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${zona.nome}</span>
-        ${podeEditar ? `<button class="btn btn-danger btn-sm lista-zona-remove edit-only" onclick="removerZona('${bloco.id}','${zona.id}')">✕</button>` : ''}
+        ${podeEditar ? `<button class="btn btn-danger btn-sm lista-zona-remove edit-only" onclick="removerZona('${bloco.id}','${zona.id}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>` : ''}
       </div>
       <div class="lista-items" id="items-${zona.id}"></div>
       ${podeEditar ? `<button class="lista-add-bairro edit-only" onclick="adicionarBairro('${bloco.id}','${zona.id}')">+ bairro</button>` : ''}
@@ -981,7 +984,7 @@ function renderBairros(container, bloco, zona) {
     const item = document.createElement('div');
     item.className = 'lista-item';
     item.innerHTML = `<span class="lista-item-text" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${b}</span>` +
-      (podeEditar ? `<button class="lista-item-del edit-only" onclick="removerBairro('${bloco.id}','${zona.id}',${bi})">✕</button>` : '');
+      (podeEditar ? `<button class="lista-item-del edit-only" onclick="removerBairro('${bloco.id}','${zona.id}',${bi})"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>` : '');
     item.querySelector('.lista-item-text')?.addEventListener('input', e => { zona.bairros[bi] = e.target.textContent.trim(); });
     container.appendChild(item);
   });
@@ -1067,7 +1070,7 @@ function salvarSistema() {
   try {
     localStorage.setItem('paralax_org_' + sistema.tenant_id, JSON.stringify(sistema));
   } catch {}
-  toast('✅ Organograma salvo!');
+  toast('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Organograma salvo!');
 }
 
 function carregarSistema() {
@@ -1081,12 +1084,12 @@ function carregarSistema() {
       renderAreas();
       renderTodosBlocos();
       atualizarTotais();
-      toast('📂 Carregado com sucesso!');
+      toast('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"/></svg> Carregado com sucesso!');
     } else {
-      toast('⚠️ Nenhum dado salvo.');
+      toast('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>️ Nenhum dado salvo.');
     }
   } catch {
-    toast('❌ Erro ao carregar.');
+    toast('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Erro ao carregar.');
   }
 }
 
@@ -1098,5 +1101,6 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 </script>
+<script src="./assets/icons.js"></script>
 </body>
 </html>

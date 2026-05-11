@@ -9,6 +9,9 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
+  /* Heroicons helper */
+  .hi { display:inline-block; vertical-align:middle; flex-shrink:0; }
+  .hi-dot { display:inline-block; width:9px; height:9px; border-radius:50%; flex-shrink:0; vertical-align:middle; }
 :root {
   --blue-deep: #0d2d6b;
   --blue-main: #1565c0;
@@ -603,7 +606,7 @@ textarea {
 <div id="login-card-overlay" style="position:fixed;inset:0;background:rgba(8,18,48,0.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:9000;">
   <div style="width:360px;max-width:calc(100vw - 32px);background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;">
     <div style="text-align:center;">
-      <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">🗺️</div>
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>️</div>
       <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Painel de Lideranças</h2>
       <p style="margin:6px 0 0;font-size:13px;color:#64748b;">Insira suas credenciais para continuar</p>
     </div>
@@ -636,7 +639,7 @@ textarea {
 
   <div class="page-header">
     <div>
-      <h1>🗺️ Painel de Lideranças</h1>
+      <h1><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>️ Painel de Lideranças</h1>
       <p>Gestão e cadastro de lideranças</p>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -652,7 +655,7 @@ textarea {
   <div class="card anim">
     <div class="card-header">
       <div class="card-title">
-        <div class="card-icon">🏙️</div>
+        <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z"/></svg>️</div>
         Selecionar cidade
       </div>
     </div>
@@ -694,10 +697,10 @@ textarea {
   <div class="card anim" style="animation-delay:0.05s">
     <div class="card-header">
       <div class="card-title">
-        <div class="card-icon" id="form-icon">➕</div>
+        <div class="card-icon" id="form-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg></div>
         <span id="form-title">Nova Liderança</span>
       </div>
-      <button id="cancelar-btn" class="btn btn-secondary btn-sm hidden">✕ Cancelar edição</button>
+      <button id="cancelar-btn" class="btn btn-secondary btn-sm hidden"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg> Cancelar edição</button>
     </div>
 
     <div class="form-row">
@@ -733,9 +736,9 @@ textarea {
       <div class="form-group">
         <label>Status</label>
         <select id="status">
-          <option value="ativa">● Ativa</option>
-          <option value="pendente">◑ Pendente</option>
-          <option value="inativa">○ Inativa</option>
+          <option value="ativa"><span class="hi-dot" style="background:#94a3b8"></span> Ativa</option>
+          <option value="pendente"><span class="hi-dot" style="background:#94a3b8"></span> Pendente</option>
+          <option value="inativa"><span class="hi-dot" style="background:#e2e8f0"></span> Inativa</option>
         </select>
       </div>
     </div>
@@ -755,7 +758,7 @@ textarea {
       <label>Candidato</label>
       <select id="vinculo_politico">
         <!-- preenchido dinamicamente por injetarCandidatosAdmin() -->
-        <option value="ambos">🟢 Ambos</option>
+        <option value="ambos"><span class="hi-dot" style="background:#22c55e"></span> Ambos</option>
       </select>
     </div>
 
@@ -780,15 +783,15 @@ textarea {
       <input type="file" id="foto" accept="image/jpeg,image/png">
     </div>
 
-    <button id="salvar-btn" class="btn btn-primary btn-full">💾 Salvar liderança</button>
-    <button id="btn-gerar-link" class="btn btn-full" style="margin-top:8px;background:#f0fdf4;color:#166534;border:1.5px solid #bbf7d0;font-weight:600;" onclick="abrirModalCadastro()">🔗 Gerar link de auto-cadastro</button>
+    <button id="salvar-btn" class="btn btn-primary btn-full"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar liderança</button>
+    <button id="btn-gerar-link" class="btn btn-full" style="margin-top:8px;background:#f0fdf4;color:#166534;border:1.5px solid #bbf7d0;font-weight:600;" onclick="abrirModalCadastro()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg> Gerar link de auto-cadastro</button>
   </div>
 
   <!-- ===== MODAL AUTO-CADASTRO ===== -->
   <div id="modal-cadastro" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
     <div style="background:#fff;border-radius:16px;padding:28px 24px 24px;max-width:420px;width:calc(100% - 32px);box-shadow:0 8px 40px rgba(0,0,0,.22);position:relative;">
-      <button onclick="fecharModalCadastro()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#64748b;">✕</button>
-      <h3 style="margin:0 0 4px;font-size:1.1rem;color:#1e293b;">🔗 Gerar link de cadastro</h3>
+      <button onclick="fecharModalCadastro()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#64748b;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>
+      <h3 style="margin:0 0 4px;font-size:1.1rem;color:#1e293b;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg> Gerar link de cadastro</h3>
       <p style="margin:0 0 18px;font-size:.85rem;color:#64748b;">A pessoa receberá um link de uso único para se cadastrar sozinha.</p>
 
       <div style="margin-bottom:12px;">
@@ -812,16 +815,16 @@ textarea {
       <!-- Resultado -->
       <div id="mc-resultado" style="display:none;">
         <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:14px 12px;margin-bottom:12px;">
-          <p style="margin:0 0 8px;font-size:.8rem;color:#166534;font-weight:600;">✅ Link gerado com sucesso!</p>
+          <p style="margin:0 0 8px;font-size:.8rem;color:#166534;font-weight:600;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Link gerado com sucesso!</p>
           <div style="display:flex;gap:8px;align-items:center;">
             <input id="mc-link-input" type="text" readonly style="flex:1;padding:7px 10px;border:1.5px solid #86efac;border-radius:7px;font-size:.78rem;background:#fff;color:#1e293b;">
-            <button onclick="copiarLinkCadastro()" style="background:#16a34a;color:#fff;border:none;border-radius:7px;padding:7px 12px;cursor:pointer;font-size:.82rem;white-space:nowrap;">📋 Copiar</button>
+            <button onclick="copiarLinkCadastro()" style="background:#16a34a;color:#fff;border:none;border-radius:7px;padding:7px 12px;cursor:pointer;font-size:.82rem;white-space:nowrap;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"/></svg> Copiar</button>
           </div>
           <p id="mc-expira" style="margin:8px 0 0;font-size:.75rem;color:#64748b;"></p>
         </div>
         <!-- QR Code via API — sem dependência de lib JS -->
         <div style="text-align:center;padding:8px 0 4px;">
-          <p style="font-size:.75rem;color:#64748b;margin:0 0 8px;">📱 QR Code para compartilhar</p>
+          <p style="font-size:.75rem;color:#64748b;margin:0 0 8px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18h3"/></svg> QR Code para compartilhar</p>
           <img id="mc-qrcode-img" src="" alt="QR Code" style="width:180px;height:180px;border-radius:10px;border:1.5px solid #e2e8f0;">
         </div>
       </div>
@@ -834,7 +837,7 @@ textarea {
   <div class="card anim" id="gastos-card" style="display:none;animation-delay:0.1s;">
     <div class="card-header">
       <div class="card-title">
-        <div class="card-icon" style="background:#fee2e2;">💸</div>
+        <div class="card-icon" style="background:#fee2e2;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z"/></svg></div>
         Gastos da liderança
       </div>
     </div>
@@ -865,7 +868,7 @@ textarea {
   <div class="card anim" style="animation-delay:0.12s;">
     <div class="card-header">
       <div class="card-title">
-        <div class="card-icon">👥</div>
+        <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg></div>
         Lideranças da cidade
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
@@ -880,7 +883,7 @@ textarea {
 
     <div id="lista-liderancas">
       <div class="state-msg">
-        <div class="icon">🏙️</div>
+        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z"/></svg>️</div>
         <p>Selecione uma cidade para ver as lideranças</p>
       </div>
     </div>
@@ -890,7 +893,7 @@ textarea {
   <div class="card anim" id="card-candidatos" style="display:none;animation-delay:0.18s;">
     <div class="card-header">
       <div class="card-title">
-        <div class="card-icon">🎨</div>
+        <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.097-1.414m-3.097 1.414 4.765-4.13M9.53 16.122l4.765-4.13m0 0 1.882-1.63c1.27-1.098 3.042-1.189 4.182-.2a3.06 3.06 0 0 1 .192 4.54l-.47.407m-8.456-2.117 8.456 2.117m-8.456-2.117-3.617 3.13"/></svg></div>
         Personalização do sistema
       </div>
     </div>
@@ -898,7 +901,7 @@ textarea {
       Configure candidatos, cores, fotos, mapas, regiões e identidade visual deste tenant.
     </p>
     <a href="../personalizacao.html" class="btn btn-full" style="display:block;text-align:center;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:#fff;text-decoration:none;padding:13px;border-radius:10px;">
-      🎨 Personalizar sistema
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.097-1.414m-3.097 1.414 4.765-4.13M9.53 16.122l4.765-4.13m0 0 1.882-1.63c1.27-1.098 3.042-1.189 4.182-.2a3.06 3.06 0 0 1 .192 4.54l-.47.407m-8.456-2.117 8.456 2.117m-8.456-2.117-3.617 3.13"/></svg> Personalizar sistema
     </a>
   </div>
 
@@ -947,7 +950,7 @@ function injetarCandidatosAdmin() {
   if (!sel) return;
   sel.innerHTML =
     cands.map(c => `<option value="${c.chave}">${c.nome}</option>`).join('') +
-    (cands.length > 1 ? '<option value="ambos">🟢 Ambos</option>' : '');
+    (cands.length > 1 ? '<option value="ambos"><span class="hi-dot" style="background:#22c55e"></span> Ambos</option>' : '');
 
   // Default: primeiro candidato ao criar nova liderança
   if (sel.value === 'ambos' && cands.length === 1) sel.value = cands[0].chave;
@@ -1077,10 +1080,10 @@ function atualizarPreviewAniversario() {
   if (!val) { preview.textContent = '—'; preview.style.background = '#f8fafc'; return }
   const dias = diasParaAniversario(val)
   if (dias === 0) {
-    preview.innerHTML = '🎂 <strong>Aniversário hoje!</strong>'
+    preview.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> <strong>Aniversário hoje!</strong>'
     preview.style.background = '#fef9c3'
   } else if (dias !== null && dias <= 7) {
-    preview.innerHTML = `🎉 Aniversário em <strong>${dias} dias</strong>`
+    preview.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg> Aniversário em <strong>${dias} dias</strong>`
     preview.style.background = '#fff7ed'
   } else {
     preview.textContent = formatarDataBR(val)
@@ -1115,10 +1118,10 @@ function atualizarPreviewAniversario() {
   if (!val) { preview.textContent = '—'; preview.style.background = '#f8fafc'; return }
   const dias = diasParaAniversario(val)
   if (dias === 0) {
-    preview.innerHTML = '🎂 <strong>Aniversário hoje!</strong>'
+    preview.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> <strong>Aniversário hoje!</strong>'
     preview.style.background = '#fef9c3'
   } else if (dias !== null && dias <= 7) {
-    preview.innerHTML = `🎉 Aniversário em <strong>${dias} dias</strong>`
+    preview.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg> Aniversário em <strong>${dias} dias</strong>`
     preview.style.background = '#fff7ed'
   } else {
     preview.textContent = formatarDataBR(val)
@@ -1148,7 +1151,7 @@ async function login() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         usuario: loginUser.value.trim().toLowerCase(),
-        senha: loginPass.value   // ⚠️ não aplicar .trim() — espaços podem ser parte da senha
+        senha: loginPass.value   // <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>️ não aplicar .trim() — espaços podem ser parte da senha
       })
     });
     if (!res.ok) throw new Error();
@@ -1335,13 +1338,13 @@ function getInitials(nome) {
 }
 
 function badgeCampanha(v) {
-  if (!v || v === 'ambos') return '<span class="badge badge-ambos">🟢 Ambos</span>';
+  if (!v || v === 'ambos') return '<span class="badge badge-ambos"><span class="hi-dot" style="background:#22c55e"></span> Ambos</span>';
   const cand = (configSistema.candidatos || []).find(c => c.chave === v);
   if (cand) {
-    return `<span class="badge" style="background:${cand.cor_fundo};color:${cand.cor_texto};">● ${cand.nome.split(' ')[0]}</span>`;
+    return `<span class="badge" style="background:${cand.cor_fundo};color:${cand.cor_texto};"><span class="hi-dot" style="background:#94a3b8"></span> ${cand.nome.split(' ')[0]}</span>`;
   }
   // fallback para chaves legadas
-  return `<span class="badge badge-ambos">● ${v}</span>`;
+  return `<span class="badge badge-ambos"><span class="hi-dot" style="background:#94a3b8"></span> ${v}</span>`;
 }
 
 function badgeStatus(s) {
@@ -1351,7 +1354,7 @@ function badgeStatus(s) {
     pendente: 'badge-pendente',
     inativa: 'badge-inativa'
   };
-  const labels = { ativa: '● Ativa', pendente: '◑ Pendente', inativa: '○ Inativa' };
+  const labels = { ativa: '<span class="hi-dot" style="background:#94a3b8"></span> Ativa', pendente: '<span class="hi-dot" style="background:#94a3b8"></span> Pendente', inativa: '<span class="hi-dot" style="background:#e2e8f0"></span> Inativa' };
   return `<span class="badge ${map[st] || 'badge-ativa'}">${labels[st] || st}</span>`;
 }
 
@@ -1359,16 +1362,16 @@ function badgeStatus(s) {
 async function carregarLiderancas() {
   const cidadeVal = cidade.value;
   if (!cidadeVal) {
-    lista.innerHTML = `<div class="state-msg"><div class="icon">🏙️</div><p>Selecione uma cidade</p></div>`;
+    lista.innerHTML = `<div class="state-msg"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z"/></svg>️</div><p>Selecione uma cidade</p></div>`;
     return;
   }
   if (CIDADES_COM_BAIRROS[cidadeVal] && !bairroSelect.value) {
-    lista.innerHTML = `<div class="state-msg"><div class="icon">🏘️</div><p>Selecione um bairro</p></div>`;
+    lista.innerHTML = `<div class="state-msg"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>️</div><p>Selecione um bairro</p></div>`;
     return;
   }
   const chave = getCidadeOuBairro();
 
-  lista.innerHTML = `<div class="state-msg"><div class="icon">⏳</div><p>Carregando...</p></div>`;
+  lista.innerHTML = `<div class="state-msg"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg></div><p>Carregando...</p></div>`;
 
   const mapa = cidade.value === 'Angra dos Reis' ? 'angra'
              : cidade.value === 'Rio de Janeiro' ? 'rjcapital'
@@ -1395,11 +1398,11 @@ async function carregarLiderancas() {
   statsDiv.className = 'stats-summary';
   statsDiv.innerHTML = `
     <div class="stat-row">
-      <span class="stat-label">👥 Lideranças (${filtroValue === 'todas' ? 'todas' : filtroValue})</span>
+      <span class="stat-label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg> Lideranças (${filtroValue === 'todas' ? 'todas' : filtroValue})</span>
       <span class="stat-val">${somaLiderancas.toLocaleString('pt-BR')}</span>
     </div>
     <div class="stat-total">
-      <span class="label">🗳️ TOTAL ESPERADO</span>
+      <span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"/></svg>️ TOTAL ESPERADO</span>
       <span class="value">${somaLiderancas.toLocaleString('pt-BR')}</span>
     </div>
   `;
@@ -1408,7 +1411,7 @@ async function carregarLiderancas() {
   if (!blocoCidade || !liderancas.length) {
     const emp = document.createElement('div');
     emp.className = 'state-msg';
-    emp.innerHTML = `<div class="icon">🔍</div><p>Nenhuma liderança encontrada</p>`;
+    emp.innerHTML = `<div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg></div><p>Nenhuma liderança encontrada</p>`;
     lista.appendChild(emp);
     return;
   }
@@ -1419,8 +1422,8 @@ async function carregarLiderancas() {
 
     const tel = (l.contato || '').replace(/\D/g, '');
     const contatoHtml = tel
-      ? `<span>📱 <a href="https://wa.me/55${tel}" target="_blank" style="color:var(--blue-main);text-decoration:none;font-weight:600;">${l.contato}</a></span>`
-      : (l.contato ? `<span>📱 ${l.contato}</span>` : '');
+      ? `<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18h3"/></svg> <a href="https://wa.me/55${tel}" target="_blank" style="color:var(--blue-main);text-decoration:none;font-weight:600;">${l.contato}</a></span>`
+      : (l.contato ? `<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18h3"/></svg> ${l.contato}</span>` : '');
 
     const avatarHtml = l.foto
       ? `<img src="${l.foto}" class="lideranca-avatar" alt="${l.nome}">`
@@ -1437,16 +1440,16 @@ async function carregarLiderancas() {
             ${badgeCampanha(l.vinculo_politico)}
           </div>
           <div class="lideranca-meta">
-            ${l.perfil ? `<span>🏷️ ${l.perfil}</span>` : ''}
-            <span>🗳️ ${(l.expectativa_votos || 0).toLocaleString('pt-BR')} votos</span>
+            ${l.perfil ? `<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/></svg>️ ${l.perfil}</span>` : ''}
+            <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"/></svg>️ ${(l.expectativa_votos || 0).toLocaleString('pt-BR')} votos</span>
             ${contatoHtml}
           </div>
         </div>
       </div>
       ${l.release ? `<p style="font-size:13px;color:var(--slate-500);margin:6px 0 10px;padding:8px 10px;background:var(--slate-100);border-radius:8px;line-height:1.5;">${l.release}</p>` : ''}
       <div class="actions" ${user.nivel === 'visualizador' ? 'style="display:none;"' : ''}>
-        <button class="btn btn-secondary btn-sm btn-edit" data-id="${l.id}">✏️ Editar</button>
-        <button class="btn btn-danger btn-sm btn-excluir" data-id="${l.id}">🗑 Excluir</button>
+        <button class="btn btn-secondary btn-sm btn-edit" data-id="${l.id}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>️ Editar</button>
+        <button class="btn btn-danger btn-sm btn-excluir" data-id="${l.id}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg> Excluir</button>
       </div>
     `;
 
@@ -1480,7 +1483,7 @@ function editarLiderancaCompleta(id, nomeVal, contatoVal, votosVal, perfilVal, r
   document.getElementById('rede_social').value = redeSocialVal || '';
 
   formTitle.textContent = 'Editar liderança';
-  document.getElementById('form-icon').textContent = '✏️';
+  document.getElementById('form-icon').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>️';
   cancelarBtn.classList.remove('hidden');
 
   // Scroll to form
@@ -1505,7 +1508,7 @@ function cancelarEdicao() {
   const cands = configSistema.candidatos || [];
   document.getElementById('vinculo_politico').value = cands.length === 1 ? cands[0].chave : (cands[0]?.chave || 'ambos');
   formTitle.textContent = 'Nova Liderança';
-  document.getElementById('form-icon').textContent = '➕';
+  document.getElementById('form-icon').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>';
   cancelarBtn.classList.add('hidden');
   document.getElementById('gastos-card').style.display = 'none';
   acFecharDrop();
@@ -1547,7 +1550,7 @@ function acSelecionarPessoa(p) {
   const cidades = Array.isArray(p.cidades) && p.cidades.length
     ? p.cidades.join(', ') : 'sem cidades anteriores';
   const info = document.getElementById('ac-nome-info');
-  info.textContent = `✔ Pessoa já cadastrada · ${cidades}`;
+  info.textContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Pessoa já cadastrada · ${cidades}`;
   info.style.display = 'block';
   acFecharDrop();
 }
@@ -1582,7 +1585,7 @@ function acRenderDrop(lista, termo) {
     item.innerHTML = `<span style="width:32px;height:32px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${letra}</span>
       <div style="min-width:0">
         <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nome}</div>
-        ${cidades ? `<div style="font-size:11px;color:#64748b">📍 ${cidades}</div>` : ''}
+        ${cidades ? `<div style="font-size:11px;color:#64748b"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg> ${cidades}</div>` : ''}
       </div>
       <span style="margin-left:auto;background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;flex-shrink:0">EXISTENTE</span>`;
     item.addEventListener('mousedown', e => { e.preventDefault(); acSelecionarPessoa(p); });
@@ -1653,7 +1656,7 @@ async function salvar() {
   const regiaoFinal = regiao.value || getRegiaoParaCidade(cidade.value);
   if (!regiaoFinal) {
     alert('Não foi possível determinar a região desta cidade. Selecione a região manualmente.');
-    btn.textContent = '💾 Salvar liderança';
+    btn.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar liderança';
     btn.disabled = false;
     return;
   }
@@ -1693,7 +1696,7 @@ async function salvar() {
   } catch(e) {
     alert('Erro ao salvar: ' + (e.message || 'verifique sua conexão e tente novamente'));
   } finally {
-    btn.textContent = '💾 Salvar liderança';
+    btn.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar liderança';
     btn.disabled = false;
   }
 }
@@ -1719,7 +1722,7 @@ async function carregarGastos(liderancaId) {
 
   const listaGastos = document.getElementById('listaGastos');
   if (!gastos.length) {
-    listaGastos.innerHTML = `<div class="state-msg" style="padding:20px;"><div class="icon" style="font-size:24px;">💸</div><p>Nenhum gasto registrado</p></div>`;
+    listaGastos.innerHTML = `<div class="state-msg" style="padding:20px;"><div class="icon" style="font-size:24px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z"/></svg></div><p>Nenhum gasto registrado</p></div>`;
   } else {
     listaGastos.innerHTML = gastos.map(g => `
       <div class="gasto-item">
@@ -1852,7 +1855,7 @@ async function gerarLinkCadastro() {
     document.getElementById('mc-link-input').value = url;
     const exp = new Date(data.expires_at);
     document.getElementById('mc-expira').textContent =
-      `⏰ Expira em: ${exp.toLocaleDateString('pt-BR')} às ${exp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Expira em: ${exp.toLocaleDateString('pt-BR')} às ${exp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 
     // QR Code via API de imagem (sem lib JS)
     const qrImg = document.getElementById('mc-qrcode-img');
@@ -1862,7 +1865,7 @@ async function gerarLinkCadastro() {
     btn.disabled = false;
     btn.textContent = '+ Gerar outro';
   } catch (err) {
-    erroEl.textContent = '❌ ' + err.message;
+    erroEl.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> ' + err.message;
     erroEl.style.display = 'block';
     btn.disabled = false;
     btn.textContent = 'Gerar link';
@@ -1873,13 +1876,14 @@ function copiarLinkCadastro() {
   const input = document.getElementById('mc-link-input');
   navigator.clipboard.writeText(input.value).then(() => {
     const btn = input.nextElementSibling;
-    btn.textContent = '✅ Copiado!';
-    setTimeout(() => btn.textContent = '📋 Copiar', 2000);
+    btn.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Copiado!';
+    setTimeout(() => btn.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"/></svg> Copiar', 2000);
   }).catch(() => {
     input.select();
     document.execCommand('copy');
   });
 }
 </script>
+<script src="../assets/icons.js"></script>
 </body>
 </html>

@@ -6,6 +6,9 @@
   <title>Personalização do Sistema</title>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
+  /* Heroicons helper */
+  .hi { display:inline-block; vertical-align:middle; flex-shrink:0; }
+  .hi-dot { display:inline-block; width:9px; height:9px; border-radius:50%; flex-shrink:0; vertical-align:middle; }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Sora', sans-serif; background: #f1f5f9; color: #0f172a; min-height: 100vh; }
 
@@ -291,7 +294,7 @@
 ══════════════════════════════════════ -->
 <div id="login-overlay">
   <div class="login-box">
-    <div class="login-icon">🎨</div>
+    <div class="login-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.097-1.414m-3.097 1.414 4.765-4.13M9.53 16.122l4.765-4.13m0 0 1.882-1.63c1.27-1.098 3.042-1.189 4.182-.2a3.06 3.06 0 0 1 .192 4.54l-.47.407m-8.456-2.117 8.456 2.117m-8.456-2.117-3.617 3.13"/></svg></div>
     <h2>Personalização</h2>
     <p>Acesso restrito ao dono do sistema</p>
     <input id="login-user" type="text" placeholder="Usuário" autocomplete="username">
@@ -309,28 +312,28 @@
   <!-- Header -->
   <div class="page-header">
     <div>
-      <h1>🎨 Personalização do Sistema</h1>
+      <h1><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.097-1.414m-3.097 1.414 4.765-4.13M9.53 16.122l4.765-4.13m0 0 1.882-1.63c1.27-1.098 3.042-1.189 4.182-.2a3.06 3.06 0 0 1 .192 4.54l-.47.407m-8.456-2.117 8.456 2.117m-8.456-2.117-3.617 3.13"/></svg> Personalização do Sistema</h1>
       <p>Configure candidatos, mapas, regiões e identidade visual do seu tenant</p>
     </div>
-    <a href="./home.html" class="btn-back">← Voltar</a>
+    <a href="./home.html" class="btn-back"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg> Voltar</a>
   </div>
 
   <!-- Tabs -->
   <div class="tabs-bar">
     <button class="tab-btn ativo" data-tab="candidatos" onclick="abrirTab('candidatos')">
-      🏅 Candidatos <span class="tab-badge" id="badge-cands">0</span>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"/></svg> Candidatos <span class="tab-badge" id="badge-cands">0</span>
     </button>
     <button class="tab-btn" data-tab="mapas" onclick="abrirTab('mapas')">
-      🗺️ Mapas <span class="tab-badge" id="badge-mapas">0</span>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>️ Mapas <span class="tab-badge" id="badge-mapas">0</span>
     </button>
     <button class="tab-btn" data-tab="regioes" onclick="abrirTab('regioes')">
-      📍 Regiões <span class="tab-badge" id="badge-regioes">0</span>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg> Regiões <span class="tab-badge" id="badge-regioes">0</span>
     </button>
     <button class="tab-btn" data-tab="home" onclick="abrirTab('home')">
-      🏠 Home
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg> Home
     </button>
     <button class="tab-btn" data-tab="identidade" onclick="abrirTab('identidade')">
-      🏢 Identidade
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z"/></svg> Identidade
     </button>
   </div>
 
@@ -341,7 +344,7 @@
     <div class="wrap">
 
       <div class="info-box">
-        <strong>⚠️ Atenção:</strong> A <strong>chave interna</strong> de cada candidato é usada para
+        <strong><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>️ Atenção:</strong> A <strong>chave interna</strong> de cada candidato é usada para
         vincular lideranças e salvar metas. Não altere a chave após já ter gravado dados com ela.
         O <strong>tenant 1 (padrão)</strong> usa as chaves <code>celia</code> e <code>fernando</code>.
       </div>
@@ -349,8 +352,8 @@
       <!-- Lista -->
       <div class="card">
         <div class="card-title">
-          🏅 Candidatos cadastrados
-          <button class="btn-secondary ml" onclick="carregarCandidatos()">↺ Atualizar</button>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"/></svg> Candidatos cadastrados
+          <button class="btn-secondary ml" onclick="carregarCandidatos()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg> Atualizar</button>
         </div>
         <div id="cand-list" class="item-list">
           <div class="empty-state">Carregando...</div>
@@ -359,11 +362,11 @@
 
       <!-- Formulário -->
       <div class="card">
-        <div class="card-title" id="cand-form-title">➕ Adicionar candidato</div>
+        <div class="card-title" id="cand-form-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Adicionar candidato</div>
 
         <div class="form-row">
           <div class="form-group">
-            <label>Chave interna <span class="warn-hint hint">⚠ não mude após gravar dados</span></label>
+            <label>Chave interna <span class="warn-hint hint"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg> não mude após gravar dados</span></label>
             <input type="text" id="c-chave" placeholder="ex: betao_2026" oninput="atualizarPreviewCor()">
           </div>
           <div class="form-group">
@@ -382,7 +385,7 @@
             <input type="color" id="c-cor-texto" value="#3730a3" oninput="atualizarPreviewCor()">
           </div>
           <div class="form-group" style="flex:0 0 auto;min-width:0;">
-            <label title="Cor usada para pintar cidades no mapa conforme a meta">🗺️ Cor do mapa</label>
+            <label title="Cor usada para pintar cidades no mapa conforme a meta"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>️ Cor do mapa</label>
             <input type="color" id="c-cor-mapa" value="#cb181d">
           </div>
           <div class="form-group" style="flex:0 0 80px;min-width:0;">
@@ -411,7 +414,7 @@
         <!-- Preview de cor ao vivo -->
         <div class="color-preview-row" id="color-preview-row">
           <span class="color-preview-badge" id="color-preview-badge">Nome do candidato</span>
-          <span class="color-preview-label">← pré-visualização do badge</span>
+          <span class="color-preview-label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg> pré-visualização do badge</span>
         </div>
 
         <!-- Foto -->
@@ -430,10 +433,10 @@
 
         <div style="display:flex;gap:10px;margin-top:4px;">
           <button class="btn-primary" id="c-salvar-btn" onclick="salvarCandidato()" style="flex:1;">
-            💾 Salvar candidato
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar candidato
           </button>
           <button class="btn-secondary" id="c-cancelar-btn" onclick="cancelarEdicaoCandidato()" style="display:none;">
-            ✕ Cancelar
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg> Cancelar
           </button>
         </div>
       </div>
@@ -456,8 +459,8 @@
       <!-- Lista -->
       <div class="card">
         <div class="card-title">
-          🗺️ Mapas configurados
-          <button class="btn-secondary ml" onclick="carregarMapas()">↺ Atualizar</button>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>️ Mapas configurados
+          <button class="btn-secondary ml" onclick="carregarMapas()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg> Atualizar</button>
         </div>
         <div id="mapas-list" class="item-list">
           <div class="empty-state">Carregando...</div>
@@ -466,11 +469,11 @@
 
       <!-- Formulário -->
       <div class="card">
-        <div class="card-title" id="mapa-form-title">➕ Adicionar / editar mapa</div>
+        <div class="card-title" id="mapa-form-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Adicionar / editar mapa</div>
 
         <div class="form-row">
           <div class="form-group">
-            <label>ID do mapa <span class="warn-hint hint">⚠ não mude após configurar</span></label>
+            <label>ID do mapa <span class="warn-hint hint"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg> não mude após configurar</span></label>
             <input type="text" id="m-id" placeholder="ex: rj, angra, rjcapital">
           </div>
           <div class="form-group">
@@ -500,7 +503,7 @@
           <div class="form-group" style="flex:1;min-width:200px;">
             <div class="color-preview-row" id="mapa-color-preview" style="margin-top:22px;">
               <span class="color-preview-badge" id="mapa-preview-badge">Estado do RJ</span>
-              <span class="color-preview-label">← pré-visualização</span>
+              <span class="color-preview-label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg> pré-visualização</span>
             </div>
           </div>
         </div>
@@ -518,10 +521,10 @@
 
         <div style="display:flex;gap:10px;margin-top:4px;">
           <button class="btn-primary" id="m-salvar-btn" onclick="salvarMapa()" style="flex:1;">
-            💾 Salvar mapa
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar mapa
           </button>
           <button class="btn-secondary" id="m-cancelar-btn" onclick="cancelarEdicaoMapa()" style="display:none;">
-            ✕ Cancelar
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg> Cancelar
           </button>
         </div>
       </div>
@@ -543,8 +546,8 @@
       <!-- Lista -->
       <div class="card">
         <div class="card-title">
-          📍 Regiões cadastradas
-          <button class="btn-secondary ml" onclick="carregarRegioes()">↺ Atualizar</button>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg> Regiões cadastradas
+          <button class="btn-secondary ml" onclick="carregarRegioes()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg> Atualizar</button>
         </div>
         <div id="regioes-list" class="item-list">
           <div class="empty-state">Carregando...</div>
@@ -553,11 +556,11 @@
 
       <!-- Formulário -->
       <div class="card">
-        <div class="card-title" id="regiao-form-title">➕ Adicionar / editar região</div>
+        <div class="card-title" id="regiao-form-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Adicionar / editar região</div>
 
         <div class="form-row">
           <div class="form-group">
-            <label>Chave <span class="warn-hint hint">⚠ sem espaços, não mude após gravar dados</span></label>
+            <label>Chave <span class="warn-hint hint"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg> sem espaços, não mude após gravar dados</span></label>
             <input type="text" id="r-chave" placeholder="ex: norte, sul_fluminense">
           </div>
           <div class="form-group">
@@ -591,10 +594,10 @@
 
         <div style="display:flex;gap:10px;margin-top:4px;">
           <button class="btn-primary" id="r-salvar-btn" onclick="salvarRegiao()" style="flex:1;">
-            💾 Salvar região
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar região
           </button>
           <button class="btn-secondary" id="r-cancelar-btn" onclick="cancelarEdicaoRegiao()" style="display:none;">
-            ✕ Cancelar
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg> Cancelar
           </button>
         </div>
       </div>
@@ -616,8 +619,8 @@
       <!-- Grade de mapas com toggles -->
       <div class="card">
         <div class="card-title">
-          🗺️ Visibilidade dos mapas no Home
-          <button class="btn-secondary ml" onclick="carregarVisibilidadeMapas()">↺ Atualizar</button>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>️ Visibilidade dos mapas no Home
+          <button class="btn-secondary ml" onclick="carregarVisibilidadeMapas()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg> Atualizar</button>
         </div>
         <div id="home-mapas-grid" style="display:flex;flex-direction:column;gap:10px;">
           <div class="empty-state">Carregando...</div>
@@ -628,7 +631,7 @@
       <div class="card">
         <div class="card-title">
           🃏 Visibilidade dos cards por nível de usuário
-          <button class="btn-secondary ml" onclick="carregarCardsHome()">↺ Atualizar</button>
+          <button class="btn-secondary ml" onclick="carregarCardsHome()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg> Atualizar</button>
         </div>
         <p style="font-size:12px;color:#64748b;margin-bottom:16px;line-height:1.5;">
           Marque quais níveis de usuário podem ver cada card no Home. Cards desmarcados para todos ficam ocultos.
@@ -655,7 +658,7 @@
       </div>
 
       <div class="card">
-        <div class="card-title">🏢 Dados do sistema</div>
+        <div class="card-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z"/></svg> Dados do sistema</div>
 
         <div class="form-row">
           <div class="form-group">
@@ -671,7 +674,7 @@
             <input type="file" id="i-logo-file" accept="image/jpeg,image/png,image/webp,image/svg+xml">
             <span class="hint">JPEG, PNG, WEBP ou SVG — máx 400 px de largura após envio</span>
             <button type="button" id="i-logo-upload-btn" class="btn-primary" style="margin-top:8px;padding:8px 16px;font-size:13px;" onclick="uploadLogo()">
-              ⬆️ Enviar logo
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"/></svg>️ Enviar logo
             </button>
             <div id="i-logo-upload-status" style="font-size:12px;font-weight:600;margin-top:6px;display:none;"></div>
           </div>
@@ -705,7 +708,7 @@
         <div id="i-alert-success" class="alert alert-success"></div>
 
         <button class="btn-primary" id="i-salvar-btn" onclick="salvarIdentidade()">
-          💾 Salvar identidade visual
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar identidade visual
         </button>
       </div>
     </div>
@@ -784,10 +787,10 @@ function iniciarApp() {
 
 // Mapas conhecidos do sistema (fallback caso o tenant ainda não tenha configurado mapas)
 const MAPAS_CONHECIDOS = [
-  { id: 'rj',        nome: 'Mapa Estratégico do Estado', icone: '🗺️', desc: 'Municípios do RJ',       cor: '#dbeafe' },
-  { id: 'angra',     nome: 'Mapa de Angra dos Reis',     icone: '🏝️', desc: 'Bairros de Angra',        cor: '#d1fae5' },
-  { id: 'rjcapital', nome: 'Mapa Rio de Janeiro',        icone: '🏙️', desc: 'Bairros da capital',      cor: '#ccfbf1' },
-  { id: 'pirai',     nome: 'Mapa de Piraí',              icone: '🌿', desc: 'Distritos de Piraí',       cor: '#dcfce7' },
+  { id: 'rj',        nome: 'Mapa Estratégico do Estado', icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>️', desc: 'Municípios do RJ',       cor: '#dbeafe' },
+  { id: 'angra',     nome: 'Mapa de Angra dos Reis',     icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"/></svg>️', desc: 'Bairros de Angra',        cor: '#d1fae5' },
+  { id: 'rjcapital', nome: 'Mapa Rio de Janeiro',        icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z"/></svg>️', desc: 'Bairros da capital',      cor: '#ccfbf1' },
+  { id: 'pirai',     nome: 'Mapa de Piraí',              icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg>', desc: 'Distritos de Piraí',       cor: '#dcfce7' },
 ];
 
 async function carregarVisibilidadeMapas() {
@@ -819,7 +822,7 @@ async function carregarVisibilidadeMapas() {
       ...extras.map(m => ({
         id:      m.mapa_id,
         nome:    m.nome,
-        icone:   '🗺️',
+        icone:   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>️',
         desc:    'nível: ' + m.nivel_usuario,
         cor:     m.badge_fundo || '#e0e7ff',
         visivel: m.visivel !== false,
@@ -837,7 +840,7 @@ async function carregarVisibilidadeMapas() {
           </div>
         </div>
         <span class="toggle-status ${m.visivel ? 'on' : 'off'}" id="toggle-status-${m.id}">
-          ${m.visivel ? '● Visível' : '○ Oculto'}
+          ${m.visivel ? '<span class="hi-dot" style="background:#94a3b8"></span> Visível' : '<span class="hi-dot" style="background:#e2e8f0"></span> Oculto'}
         </span>
         <label class="switch" title="${m.visivel ? 'Clique para ocultar' : 'Clique para mostrar'}">
           <input type="checkbox" id="toggle-chk-${m.id}"
@@ -865,7 +868,7 @@ async function toggleVisibilidadeMapa(mapaId, visivel) {
     if (!res.ok) throw new Error('Erro ' + res.status);
     // Atualiza visual imediatamente
     if (status) {
-      status.textContent = visivel ? '● Visível' : '○ Oculto';
+      status.textContent = visivel ? '<span class="hi-dot" style="background:#94a3b8"></span> Visível' : '<span class="hi-dot" style="background:#e2e8f0"></span> Oculto';
       status.className   = 'toggle-status ' + (visivel ? 'on' : 'off');
     }
     if (row) row.classList.toggle('desligado', !visivel);
@@ -884,17 +887,17 @@ async function toggleVisibilidadeMapa(mapaId, visivel) {
 
 // Todos os cards do home com seus metadados
 const CARDS_HOME_DEF = [
-  { id: 'card-mapa-rj',        icone: '🗺️', nome: 'Mapa Estratégico do Estado' },
-  { id: 'card-mapa-angra',     icone: '🏝️', nome: 'Mapa de Angra dos Reis' },
-  { id: 'card-mapa-rjcapital', icone: '🏙️', nome: 'Mapa Rio de Janeiro' },
-  { id: 'card-mapa-pirai',     icone: '🌿', nome: 'Mapa de Piraí' },
-  { id: 'card-analise',        icone: '📊', nome: 'Análise Eleitoral' },
-  { id: 'card-painel-admin',   icone: '👥', nome: 'Painel Administrativo' },
-  { id: 'card-liderancas',     icone: '📋', nome: 'Lista de Lideranças' },
-  { id: 'card-reunioes',       icone: '🎥', nome: 'Videoconferência' },
-  { id: 'card-command-center', icone: '📡', nome: 'Command Center' },
-  { id: 'card-organograma',    icone: '🏛️', nome: 'Organograma Político' },
-  { id: 'card-admin',          icone: '🛡️', nome: 'Gestão de Acessos' },
+  { id: 'card-mapa-rj',        icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>️', nome: 'Mapa Estratégico do Estado' },
+  { id: 'card-mapa-angra',     icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"/></svg>️', nome: 'Mapa de Angra dos Reis' },
+  { id: 'card-mapa-rjcapital', icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z"/></svg>️', nome: 'Mapa Rio de Janeiro' },
+  { id: 'card-mapa-pirai',     icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg>', nome: 'Mapa de Piraí' },
+  { id: 'card-analise',        icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg>', nome: 'Análise Eleitoral' },
+  { id: 'card-painel-admin',   icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg>', nome: 'Painel Administrativo' },
+  { id: 'card-liderancas',     icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"/></svg>', nome: 'Lista de Lideranças' },
+  { id: 'card-reunioes',       icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>', nome: 'Videoconferência' },
+  { id: 'card-command-center', icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.348 14.651a3.75 3.75 0 0 1 0-5.303m5.304-.001a3.75 3.75 0 0 1 0 5.304m-7.425 2.122a6.75 6.75 0 0 1 0-9.546m9.546.001a6.75 6.75 0 0 1 0 9.545M5.106 18.894c-3.808-3.808-3.808-9.98 0-13.789m13.788 0c3.808 3.808 3.808 9.981 0 13.79M12 12h.008v.008H12V12Z"/></svg>', nome: 'Command Center' },
+  { id: 'card-organograma',    icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 10a48.36 48.36 0 0 0-7.5-.332V21m0 0h15M3 9h18"/></svg>️', nome: 'Organograma Político' },
+  { id: 'card-admin',          icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"/></svg>️', nome: 'Gestão de Acessos' },
 ];
 
 // Defaults do sistema (sem config do tenant)
@@ -905,10 +908,10 @@ const CARDS_HOME_DEFAULTS_ADMIN = {
 
 // Níveis base do sistema
 const NIVEIS_BASE = [
-  { id: 'dono',         label: 'Dono',         icone: '👑' },
-  { id: 'admin',        label: 'Admin',        icone: '⚙️' },
-  { id: 'visualizador', label: 'Visualizador', icone: '👁️' },
-  { id: 'lider_regiao', label: 'Líder Região', icone: '📍' },
+  { id: 'dono',         label: 'Dono',         icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"/></svg>' },
+  { id: 'admin',        label: 'Admin',        icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>️' },
+  { id: 'visualizador', label: 'Visualizador', icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>️' },
+  { id: 'lider_regiao', label: 'Líder Região', icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>' },
 ];
 
 let _cardsConfig  = {};   // config atual do tenant
@@ -932,7 +935,7 @@ async function carregarCardsHome() {
 
     // Nivéis dinâmicos dos mapas (ex: 'rj', 'angra', ...)
     _niveisDinamicos = mapas
-      .map(m => ({ id: m.nivel_usuario, label: m.nome || m.nivel_usuario, icone: '🗺️' }))
+      .map(m => ({ id: m.nivel_usuario, label: m.nome || m.nivel_usuario, icone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>️' }))
       .filter((n, i, arr) => n.id && arr.findIndex(x => x.id === n.id) === i); // unique
 
     const todosNiveis = [...NIVEIS_BASE, ..._niveisDinamicos];
@@ -1002,7 +1005,7 @@ function onCardNivelChange(chk) {
   // Salva com debounce de 800ms
   const statusEl = document.getElementById('home-cards-status');
   if (statusEl) {
-    statusEl.textContent = '💾 Salvando...';
+    statusEl.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvando...';
     statusEl.style.display = 'block';
     statusEl.style.color = '#1565c0';
     statusEl.classList.add('cards-table-saving');
@@ -1018,14 +1021,14 @@ function onCardNivelChange(chk) {
       });
       if (!res.ok) throw new Error('Erro ' + res.status);
       if (statusEl) {
-        statusEl.textContent = '✅ Salvo com sucesso!';
+        statusEl.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Salvo com sucesso!';
         statusEl.style.color = '#059669';
         statusEl.classList.remove('cards-table-saving');
         setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
       }
     } catch(e) {
       if (statusEl) {
-        statusEl.textContent = '❌ Erro ao salvar: ' + e.message;
+        statusEl.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Erro ao salvar: ' + e.message;
         statusEl.style.color = '#dc2626';
         statusEl.classList.remove('cards-table-saving');
       }
@@ -1052,12 +1055,12 @@ async function carregarCandidatos() {
       <div class="item-row" id="cand-row-${c.chave}">
         ${c.foto_url
           ? `<img src="${c.foto_url}" class="avatar" onerror="this.style.display='none'">`
-          : `<div class="avatar-ph">👤</div>`}
+          : `<div class="avatar-ph"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg></div>`}
         <div class="item-info">
           <div class="item-nome">${c.nome}</div>
           <div class="item-meta">
             chave: <code>${c.chave}</code> &nbsp;·&nbsp; ordem ${c.ordem ?? 0}
-            ${c.tem_votos_2022 ? '&nbsp;·&nbsp; ✅ votos 2022' : ''}
+            ${c.tem_votos_2022 ? '&nbsp;·&nbsp; <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> votos 2022' : ''}
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
@@ -1065,8 +1068,8 @@ async function carregarCandidatos() {
           <div class="color-dot" style="background:${c.cor_texto};" title="Cor texto"></div>
           <span class="badge-mini" style="background:${c.cor_fundo};color:${c.cor_texto};">${c.nome.split(' ')[0]}</span>
         </div>
-        <button class="btn-icon btn-edit" onclick='editarCandidato(${JSON.stringify(c)})'>✏️ Editar</button>
-        <button class="btn-icon btn-del"  onclick="excluirCandidato('${c.chave}','${c.nome.replace(/'/g,'')}')">🗑️</button>
+        <button class="btn-icon btn-edit" onclick='editarCandidato(${JSON.stringify(c)})'><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>️ Editar</button>
+        <button class="btn-icon btn-del"  onclick="excluirCandidato('${c.chave}','${c.nome.replace(/'/g,'')}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>️</button>
       </div>`).join('');
   } catch(e) {
     lista.innerHTML = `<div class="empty-state" style="color:#b91c1c;">Erro: ${e.message}</div>`;
@@ -1087,9 +1090,9 @@ function editarCandidato(c) {
   if (c.foto_url) { prev.src = c.foto_url; prev.style.display = 'block'; }
   else prev.style.display = 'none';
   document.getElementById('c-chave').setAttribute('data-original', c.chave);
-  document.getElementById('c-salvar-btn').textContent = '💾 Atualizar candidato';
+  document.getElementById('c-salvar-btn').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Atualizar candidato';
   document.getElementById('c-cancelar-btn').style.display = '';
-  document.getElementById('cand-form-title').textContent = '✏️ Editando: ' + c.nome;
+  document.getElementById('cand-form-title').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>️ Editando: ' + c.nome;
   atualizarPreviewCor();
   abrirTab('candidatos');
   document.getElementById('c-chave').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1105,9 +1108,9 @@ function cancelarEdicaoCandidato() {
   document.getElementById('c-cor-texto').value = '#3730a3';
   document.getElementById('c-cor-mapa').value  = '#cb181d';
   document.getElementById('c-chave').removeAttribute('data-original');
-  document.getElementById('c-salvar-btn').textContent = '💾 Salvar candidato';
+  document.getElementById('c-salvar-btn').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar candidato';
   document.getElementById('c-cancelar-btn').style.display = 'none';
-  document.getElementById('cand-form-title').textContent = '➕ Adicionar candidato';
+  document.getElementById('cand-form-title').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Adicionar candidato';
   atualizarPreviewCor();
 }
 
@@ -1161,7 +1164,7 @@ async function salvarCandidato() {
     carregarCandidatos();
   } catch(e) {
     errEl.textContent = 'Erro: ' + e.message; errEl.style.display = 'block';
-  } finally { btn.textContent = '💾 Salvar candidato'; btn.disabled = false; }
+  } finally { btn.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar candidato'; btn.disabled = false; }
 }
 
 function atualizarPreviewCor() {
@@ -1198,7 +1201,7 @@ async function carregarMapas() {
       const subs = Array.isArray(m.subregioes) ? m.subregioes : (JSON.parse(m.subregioes || '[]'));
       return `
       <div class="item-row">
-        <div class="mapa-icon" style="background:${m.badge_fundo || '#f0fdf4'};">🗺️</div>
+        <div class="mapa-icon" style="background:${m.badge_fundo || '#f0fdf4'};"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>️</div>
         <div class="item-info">
           <div class="item-nome">${m.nome}</div>
           <div class="item-meta">
@@ -1207,8 +1210,8 @@ async function carregarMapas() {
           </div>
         </div>
         <span class="badge-mini" style="background:${m.badge_fundo || '#f0fdf4'};color:${m.badge_texto || '#14532d'};">${m.nome}</span>
-        <button class="btn-icon btn-edit" onclick='editarMapa(${JSON.stringify(m)})'>✏️ Editar</button>
-        <button class="btn-icon btn-del"  onclick="excluirMapa('${m.mapa_id}','${m.nome.replace(/'/g,'')}')">🗑️</button>
+        <button class="btn-icon btn-edit" onclick='editarMapa(${JSON.stringify(m)})'><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>️ Editar</button>
+        <button class="btn-icon btn-del"  onclick="excluirMapa('${m.mapa_id}','${m.nome.replace(/'/g,'')}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>️</button>
       </div>`;
     }).join('');
   } catch(e) {
@@ -1225,9 +1228,9 @@ function editarMapa(m) {
   _mapaSubregioes = Array.isArray(m.subregioes) ? [...m.subregioes] : (JSON.parse(m.subregioes || '[]'));
   renderizarTagsMapa();
   atualizarPreviewMapa();
-  document.getElementById('m-salvar-btn').textContent = '💾 Atualizar mapa';
+  document.getElementById('m-salvar-btn').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Atualizar mapa';
   document.getElementById('m-cancelar-btn').style.display = '';
-  document.getElementById('mapa-form-title').textContent = '✏️ Editando: ' + m.nome;
+  document.getElementById('mapa-form-title').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>️ Editando: ' + m.nome;
   abrirTab('mapas');
   document.getElementById('m-id').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -1239,9 +1242,9 @@ function cancelarEdicaoMapa() {
   _mapaSubregioes = [];
   renderizarTagsMapa();
   atualizarPreviewMapa();
-  document.getElementById('m-salvar-btn').textContent = '💾 Salvar mapa';
+  document.getElementById('m-salvar-btn').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar mapa';
   document.getElementById('m-cancelar-btn').style.display = 'none';
-  document.getElementById('mapa-form-title').textContent = '➕ Adicionar / editar mapa';
+  document.getElementById('mapa-form-title').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Adicionar / editar mapa';
 }
 
 async function excluirMapa(mapa_id, nome) {
@@ -1289,7 +1292,7 @@ async function salvarMapa() {
     carregarMapas();
   } catch(e) {
     errEl.textContent = 'Erro: ' + e.message; errEl.style.display = 'block';
-  } finally { btn.textContent = '💾 Salvar mapa'; btn.disabled = false; }
+  } finally { btn.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar mapa'; btn.disabled = false; }
 }
 
 function atualizarPreviewMapa() {
@@ -1353,7 +1356,7 @@ async function carregarRegioes() {
       const lids = Array.isArray(r.lideres) ? r.lideres : (JSON.parse(r.lideres || '[]'));
       return `
       <div class="item-row">
-        <div class="avatar-ph" style="border-radius:10px;background:#e0e7ff;color:#6366f1;font-size:16px;">📍</div>
+        <div class="avatar-ph" style="border-radius:10px;background:#e0e7ff;color:#6366f1;font-size:16px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg></div>
         <div class="item-info">
           <div class="item-nome">${r.label}</div>
           <div class="item-meta">
@@ -1365,8 +1368,8 @@ async function carregarRegioes() {
             ${cids.slice(0,6).join(', ')}${cids.length > 6 ? ' ...' : ''}
           </div>` : ''}
         </div>
-        <button class="btn-icon btn-edit" onclick='editarRegiao(${JSON.stringify(r)})'>✏️ Editar</button>
-        <button class="btn-icon btn-del"  onclick="excluirRegiao('${r.chave}','${r.label.replace(/'/g,'')}')">🗑️</button>
+        <button class="btn-icon btn-edit" onclick='editarRegiao(${JSON.stringify(r)})'><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>️ Editar</button>
+        <button class="btn-icon btn-del"  onclick="excluirRegiao('${r.chave}','${r.label.replace(/'/g,'')}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>️</button>
       </div>`;
     }).join('');
   } catch(e) {
@@ -1382,9 +1385,9 @@ function editarRegiao(r) {
   _regiaoLideres = Array.isArray(r.lideres) ? [...r.lideres] : (JSON.parse(r.lideres || '[]'));
   renderizarTagsCidades();
   renderizarTagsLideres();
-  document.getElementById('r-salvar-btn').textContent = '💾 Atualizar região';
+  document.getElementById('r-salvar-btn').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Atualizar região';
   document.getElementById('r-cancelar-btn').style.display = '';
-  document.getElementById('regiao-form-title').textContent = '✏️ Editando: ' + r.label;
+  document.getElementById('regiao-form-title').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>️ Editando: ' + r.label;
   abrirTab('regioes');
   document.getElementById('r-chave').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -1394,9 +1397,9 @@ function cancelarEdicaoRegiao() {
   document.getElementById('r-ordem').value = '0';
   _regiaoCidades = []; _regiaoLideres = [];
   renderizarTagsCidades(); renderizarTagsLideres();
-  document.getElementById('r-salvar-btn').textContent = '💾 Salvar região';
+  document.getElementById('r-salvar-btn').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar região';
   document.getElementById('r-cancelar-btn').style.display = 'none';
-  document.getElementById('regiao-form-title').textContent = '➕ Adicionar / editar região';
+  document.getElementById('regiao-form-title').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Adicionar / editar região';
 }
 
 async function excluirRegiao(chave, label) {
@@ -1445,7 +1448,7 @@ async function salvarRegiao() {
     carregarRegioes();
   } catch(e) {
     errEl.textContent = 'Erro: ' + e.message; errEl.style.display = 'block';
-  } finally { btn.textContent = '💾 Salvar região'; btn.disabled = false; }
+  } finally { btn.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar região'; btn.disabled = false; }
 }
 
 /* ── Tags cidades ── */
@@ -1506,7 +1509,7 @@ async function uploadLogo() {
   const file       = fileInput.files[0];
 
   if (!file) {
-    statusEl.textContent = '⚠️ Selecione um arquivo primeiro.';
+    statusEl.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>️ Selecione um arquivo primeiro.';
     statusEl.style.color = '#dc2626';
     statusEl.style.display = 'block';
     return;
@@ -1528,17 +1531,17 @@ async function uploadLogo() {
     const img = document.getElementById('i-logo-preview');
     img.src = d.logo_url; img.style.display = 'block';
 
-    statusEl.textContent = '✅ Logo enviada com sucesso!';
+    statusEl.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Logo enviada com sucesso!';
     statusEl.style.color = '#16a34a';
     statusEl.style.display = 'block';
     fileInput.value = '';
     setTimeout(() => statusEl.style.display = 'none', 4000);
   } catch (e) {
-    statusEl.textContent = '❌ ' + e.message;
+    statusEl.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> ' + e.message;
     statusEl.style.color = '#dc2626';
     statusEl.style.display = 'block';
   } finally {
-    btn.textContent = '⬆️ Enviar logo'; btn.disabled = false;
+    btn.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"/></svg>️ Enviar logo'; btn.disabled = false;
   }
 }
 
@@ -1572,7 +1575,7 @@ async function salvarIdentidade() {
     }
   } catch(e) {
     errEl.textContent = 'Erro: ' + e.message; errEl.style.display = 'block';
-  } finally { btn.textContent = '💾 Salvar identidade visual'; btn.disabled = false; }
+  } finally { btn.textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> Salvar identidade visual'; btn.disabled = false; }
 }
 
 /* ══════════════════════════════════════
@@ -1661,5 +1664,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (token && user?.nivel === 'dono') iniciarApp();
 });
 </script>
+<script src="./assets/icons.js"></script>
 </body>
 </html>

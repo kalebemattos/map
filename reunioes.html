@@ -9,6 +9,9 @@
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
 <style>
+  /* Heroicons helper */
+  .hi { display:inline-block; vertical-align:middle; flex-shrink:0; }
+  .hi-dot { display:inline-block; width:9px; height:9px; border-radius:50%; flex-shrink:0; vertical-align:middle; }
 /* ===== TOKENS ===== */
 :root{
   --blue-deep:#0a2557; --blue-main:#1a56db; --blue-mid:#2563eb; --blue-light:#eff6ff; --blue-glow:rgba(26,86,219,.15);
@@ -402,9 +405,9 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
   <div id="dash-action-bar">
     <span class="dash-action-title">Videoconferências Paralax</span>
     <div class="dash-action-btns">
-      <button class="btn btn-ghost btn-sm" onclick="abrirModalAgendar()">📅 Agendar</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalAgendar()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"/></svg> Agendar</button>
       <button class="btn btn-primary btn-sm" id="dh-new-btn" onclick="abrirModalCriar()" style="display:none">
-        ➕ <span class="dh-new-btn-text">Nova reunião</span>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> <span class="dh-new-btn-text">Nova reunião</span>
       </button>
     </div>
   </div>
@@ -430,7 +433,7 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
     <!-- Próximas reuniões -->
     <div class="dash-section">
       <div class="dash-section-header">
-        <div class="dash-section-title">📅 Próximas reuniões</div>
+        <div class="dash-section-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"/></svg> Próximas reuniões</div>
         <button class="btn btn-ghost btn-sm" onclick="abrirModalAgendar()">+ Agendar</button>
       </div>
       <div id="agenda-grid">
@@ -492,7 +495,7 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
             <span id="quality-txt">Boa</span>
           </div>
           <button class="ov-icon-btn" id="btn-layout" onclick="toggleLayout();showOverlay()" title="Alternar layout">⊞</button>
-          <button class="ov-icon-btn" id="btn-convidar-sala" onclick="abrirConvidar(salaAtualId,salaAtual)" title="Convidar">👥</button>
+          <button class="ov-icon-btn" id="btn-convidar-sala" onclick="abrirConvidar(salaAtualId,salaAtual)" title="Convidar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg></button>
         </div>
       </div>
 
@@ -500,7 +503,7 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
       <div id="thumb-strip"></div>
 
       <!-- Hand raised indicator -->
-      <div id="mao-aviso">✋ <span id="mao-txt"></span></div>
+      <div id="mao-aviso"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.05 4.575a1.575 1.575 0 1 0-3.15 0v3m3.15-3v-1.5a1.575 1.575 0 0 1 3.15 0v1.5m-3.15 0 .075 5.925m3.075.75V4.575m0 0a1.575 1.575 0 0 1 3.15 0V15M6.9 7.575a1.575 1.575 0 1 0-3.15 0v8.175a6.75 6.75 0 0 0 6.75 6.75h2.018a5.25 5.25 0 0 0 3.712-1.538l1.732-1.732a5.25 5.25 0 0 0 1.538-3.712l.003-2.024a.668.668 0 0 1 .198-.471 1.575 1.575 0 1 0-2.228-2.228 3.818 3.818 0 0 0-1.12 2.687M6.9 7.575V12m6.27 4.318A4.49 4.49 0 0 1 16.35 15m.002 0h-.002"/></svg> <span id="mao-txt"></span></div>
 
       <!-- Bottom gradient: secondary + primary controls -->
       <div id="overlay-bottom">
@@ -542,13 +545,13 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
     <!-- Chat panel (slide from right) -->
     <div id="chat-panel">
       <div class="chat-header">
-        💬 Chat
-        <button class="chat-close-btn" onclick="toggleChat()">✕</button>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 0 1 1.037-.443 48.282 48.282 0 0 0 5.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg> Chat
+        <button class="chat-close-btn" onclick="toggleChat()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>
       </div>
       <div id="chat-msgs"></div>
       <div class="chat-input-area">
         <input type="text" id="chat-input" placeholder="Mensagem..." maxlength="500" onkeydown="if(event.key==='Enter')enviarMensagem()"/>
-        <button class="chat-send" onclick="enviarMensagem()">➤</button>
+        <button class="chat-send" onclick="enviarMensagem()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg></button>
       </div>
     </div>
 
@@ -559,8 +562,8 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
 <!-- MODAL CRIAR SALA -->
 <div class="modal-overlay" id="modal-criar" style="display:none" onclick="if(event.target===this)fecharModal('modal-criar')">
   <div class="modal-card">
-    <button class="modal-close-btn" onclick="fecharModal('modal-criar')">✕</button>
-    <div class="modal-title">➕ Nova Reunião</div>
+    <button class="modal-close-btn" onclick="fecharModal('modal-criar')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>
+    <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Nova Reunião</div>
     <label>Nome da reunião *</label>
     <input type="text" id="input-nome-sala" placeholder="Ex: Reunião semanal..." maxlength="80" onkeydown="if(event.key==='Enter')criarSala()"/>
     <label>Região
@@ -586,8 +589,8 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
 <!-- MODAL AGENDAR -->
 <div class="modal-overlay" id="modal-agendar" style="display:none" onclick="if(event.target===this)fecharModal('modal-agendar')">
   <div class="modal-card">
-    <button class="modal-close-btn" onclick="fecharModal('modal-agendar')">✕</button>
-    <div class="modal-title">📅 Agendar Reunião</div>
+    <button class="modal-close-btn" onclick="fecharModal('modal-agendar')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>
+    <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"/></svg> Agendar Reunião</div>
     <label>Nome da reunião *</label>
     <input type="text" id="ag-nome" placeholder="Ex: Reunião da região norte" maxlength="80"/>
     <label>Região</label>
@@ -608,8 +611,8 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
 <!-- MODAL CONVIDAR -->
 <div class="modal-overlay" id="modal-convidar" style="display:none" onclick="if(event.target===this)fecharModal('modal-convidar')">
   <div class="modal-card">
-    <button class="modal-close-btn" onclick="fecharModal('modal-convidar')">✕</button>
-    <div class="modal-title">👥 Convidar para a Sala</div>
+    <button class="modal-close-btn" onclick="fecharModal('modal-convidar')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>
+    <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg> Convidar para a Sala</div>
     <div class="section-label">Usuários online agora</div>
     <div id="convidar-lista" style="max-height:300px;overflow-y:auto;"></div>
     <div class="modal-btns" style="margin-top:13px;">
@@ -846,7 +849,7 @@ function conectarSocket() {
       peerMicState = {}; iceCandidateBuffer = {};
       if (lStream) renderSpotlight('local');
       socket.emit('entrar-sala', { salaId: salaAtualId, nome: usuario.nome });
-      notif('🔄 Reconectado — reconstruindo sala...', 'warn');
+      notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg> Reconectado — reconstruindo sala...', 'warn');
     }
   });
   socket.on('connect_error', e => console.warn('Socket:', e.message));
@@ -865,7 +868,7 @@ function atualizarOnlinePill() {
 function mostrarConviteToast(salaId, salaName, de) {
   convitePendente = { salaId, salaName };
   document.getElementById('convite-de-txt').textContent = de + ' te convidou';
-  document.getElementById('convite-sala-txt').textContent = '📹 ' + salaName;
+  document.getElementById('convite-sala-txt').textContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg> ' + salaName;
   document.getElementById('convite-aceitar').onclick = () => {
     fecharConviteToast();
     entrarSala(convitePendente.salaId, convitePendente.salaName);
@@ -890,13 +893,13 @@ function mostrarAniversariantesToast(lista) {
   const hoje = lista.filter(a => parseInt(a.dias_para_aniversario) === 0);
   const breve = lista.filter(a => parseInt(a.dias_para_aniversario) > 0);
   let linhas = [];
-  if (hoje.length) linhas.push('🎂 <strong>Hoje:</strong> ' + hoje.map(a => escHtml(a.nome) + (a.cidade ? ' (' + escHtml(a.cidade) + ')' : '')).join(', '));
+  if (hoje.length) linhas.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg> <strong>Hoje:</strong> ' + hoje.map(a => escHtml(a.nome) + (a.cidade ? ' (' + escHtml(a.cidade) + ')' : '')).join(', '));
   if (breve.length) {
     const grupos = {};
     breve.forEach(a => { const d = parseInt(a.dias_para_aniversario); if (!grupos[d]) grupos[d] = []; grupos[d].push(a); });
     Object.keys(grupos).sort((a,b)=>a-b).forEach(d => {
       const label = d == 1 ? 'Amanhã' : 'Em ' + d + ' dias';
-      linhas.push('📅 <strong>' + label + ':</strong> ' + grupos[d].map(a => escHtml(a.nome)).join(', '));
+      linhas.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"/></svg> <strong>' + label + ':</strong> ' + grupos[d].map(a => escHtml(a.nome)).join(', '));
     });
   }
   const el = document.createElement('div');
@@ -920,17 +923,17 @@ async function carregarSalas() {
 function renderSalas(salas) {
   const grid = document.getElementById('rooms-grid');
   if (!salas.length) {
-    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>Nenhuma sala ativa.<br>Clique em "Nova reunião" para começar.</p></div>';
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"/></svg></div><p>Nenhuma sala ativa.<br>Clique em "Nova reunião" para começar.</p></div>';
     return;
   }
   const podeGerenciar = (s) => ['dono', 'admin'].includes(usuario.nivel) || s.host_id === usuario.id;
   grid.innerHTML = salas.map(s => `
     <div class="room-card" onclick="entrarSala('${s.id}','${escHtml(s.nome)}')">
       <div class="room-card-top">
-        <div class="room-icon">🎥</div>
+        <div class="room-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg></div>
         <div style="flex:1;min-width:0">
           <div class="room-name">${escHtml(s.nome)}</div>
-          <div class="room-meta">Host: ${escHtml(s.host_nome || '')}${s.regiao ? ' · 📍 ' + escHtml(s.regiao) : ''}</div>
+          <div class="room-meta">Host: ${escHtml(s.host_nome || '')}${s.regiao ? ' · <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg> ' + escHtml(s.regiao) : ''}</div>
         </div>
       </div>
       <div class="room-footer">
@@ -939,9 +942,9 @@ function renderSalas(salas) {
           ${s.regiao ? '<span class="badge badge-regiao">' + escHtml(s.regiao) + '</span>' : ''}
         </div>
         <div class="room-actions" onclick="event.stopPropagation()">
-          <button class="btn-icon" title="Convidar" onclick="abrirConvidar('${s.id}','${escHtml(s.nome)}')">👥</button>
-          ${podeGerenciar(s) ? `<button class="btn-icon" style="color:#f87171" title="Encerrar" onclick="encerrarSala('${s.id}')">🗑</button>` : ''}
-          <button class="btn btn-primary btn-sm" onclick="entrarSala('${s.id}','${escHtml(s.nome)}')">Entrar →</button>
+          <button class="btn-icon" title="Convidar" onclick="abrirConvidar('${s.id}','${escHtml(s.nome)}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg></button>
+          ${podeGerenciar(s) ? `<button class="btn-icon" style="color:#f87171" title="Encerrar" onclick="encerrarSala('${s.id}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg></button>` : ''}
+          <button class="btn btn-primary btn-sm" onclick="entrarSala('${s.id}','${escHtml(s.nome)}')">Entrar <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg></button>
         </div>
       </div>
     </div>`).join('');
@@ -968,7 +971,7 @@ async function criarSala() {
     const sala = await r.json();
     document.getElementById('input-nome-sala').value = '';
     fecharModal('modal-criar');
-    notif('✅ Sala criada!', 'success');
+    notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Sala criada!', 'success');
     await carregarSalas();
     await entrarSala(sala.id, sala.nome);
   } catch { notif('Erro ao criar sala', 'error'); }
@@ -990,15 +993,15 @@ function renderAgenda() {
   const futuras = agenda.filter(a => new Date(a.data) > agora).sort((a, b) => new Date(a.data) - new Date(b.data));
   const passadas = agenda.filter(a => new Date(a.data) <= agora).sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 3);
   if (!agenda.length) {
-    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><p>Nenhuma reunião agendada.<br>Clique em "+ Agendar" para adicionar.</p></div>';
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"/></svg></div><p>Nenhuma reunião agendada.<br>Clique em "+ Agendar" para adicionar.</p></div>';
     return;
   }
   const card = (a, past) => {
     const d = new Date(a.data); const hoje = d.toDateString() === agora.toDateString();
     return `<div class="agenda-card${hoje ? ' hoje' : ''}">
-      <div class="agenda-data">${hoje ? '🔔 HOJE — ' : ''}${d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+      <div class="agenda-data">${hoje ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg> HOJE — ' : ''}${d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
       <div class="agenda-nome">${escHtml(a.nome)}</div>
-      <div class="agenda-info">${a.regiao ? '<span>📍 ' + escHtml(a.regiao) + '</span>' : ''}${a.desc ? '<span>📝 ' + escHtml(a.desc.slice(0, 40)) + '</span>' : ''}${a.participantes?.length ? '<span>👥 ' + a.participantes.length + ' convidados</span>' : ''}</div>
+      <div class="agenda-info">${a.regiao ? '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg> ' + escHtml(a.regiao) + '</span>' : ''}${a.desc ? '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg> ' + escHtml(a.desc.slice(0, 40)) + '</span>' : ''}${a.participantes?.length ? '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg> ' + a.participantes.length + ' convidados</span>' : ''}</div>
       ${!past ? `<div class="agenda-actions"><button class="btn btn-primary btn-sm" onclick="iniciarAgendada('${a.id}')">Iniciar agora</button><button class="btn btn-ghost btn-sm" onclick="removerAgenda('${a.id}')">Remover</button></div>` : '<div style="font-size:11px;color:var(--text-muted);">Concluída</div>'}
     </div>`;
   };
@@ -1026,7 +1029,7 @@ function agendarReuniao() {
   const participantes = [...document.querySelectorAll('#ag-participantes .participante-check:checked')].map(c => c.value);
   agenda.push({ id: Date.now().toString(), nome, data, regiao: document.getElementById('ag-regiao').value, desc: document.getElementById('ag-desc').value.trim(), participantes });
   localStorage.setItem('paralax_agenda', JSON.stringify(agenda));
-  renderAgenda(); fecharModal('modal-agendar'); notif('📅 Reunião agendada!', 'success');
+  renderAgenda(); fecharModal('modal-agendar'); notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"/></svg> Reunião agendada!', 'success');
   ['ag-nome', 'ag-data', 'ag-desc'].forEach(id => document.getElementById(id).value = '');
 }
 
@@ -1057,8 +1060,8 @@ async function iniciarAgendada(id) {
           }
         });
         const ausentes = a.participantes.length - convidados;
-        if (convidados > 0) notif('📨 ' + convidados + ' participante(s) convidado(s) automaticamente!', 'success');
-        if (ausentes > 0) notif('⚠️ ' + ausentes + ' participante(s) não está(ão) online agora.', 'warn');
+        if (convidados > 0) notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg> ' + convidados + ' participante(s) convidado(s) automaticamente!', 'success');
+        if (ausentes > 0) notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>️ ' + ausentes + ' participante(s) não está(ão) online agora.', 'warn');
       }, 1800); // aguarda socket entrar na sala antes de emitir convites
     }
   } catch { notif('Erro ao iniciar', 'error'); }
@@ -1068,7 +1071,7 @@ function verificarNotificacoes() {
   const agora = new Date();
   agenda.forEach(a => {
     const d = new Date(a.data); const diff = (d - agora) / 60000;
-    if (diff > 0 && diff <= 15) notif('🔔 "' + a.nome + '" em ' + Math.round(diff) + ' min!', 'warn');
+    if (diff > 0 && diff <= 15) notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg> "' + a.nome + '" em ' + Math.round(diff) + ' min!', 'warn');
   });
 }
 
@@ -1080,7 +1083,7 @@ function renderOnline() {
   const grid = document.getElementById('online-grid');
   const outros = usuariosOnline.filter(u => u.id !== usuario.id);
   if (!outros.length) {
-    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">👤</div><p>Nenhum outro usuário online agora.</p></div>';
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg></div><p>Nenhum outro usuário online agora.</p></div>';
     return;
   }
   grid.innerHTML = outros.map(u => `
@@ -1090,7 +1093,7 @@ function renderOnline() {
         <div class="user-card-nome">${escHtml(u.nome)}</div>
         <div class="user-card-regiao">${escHtml(u.regiao || ({ dono: 'Dono', admin: 'Admin', lider_regiao: 'Líder' }[u.nivel]) || u.nivel || '')}</div>
       </div>
-      ${salaAtualId ? `<button class="btn-icon" title="Convidar" onclick="convidarUsuario('${u.id}','${escHtml(u.nome)}')">➕</button>` : ''}
+      ${salaAtualId ? `<button class="btn-icon" title="Convidar" onclick="convidarUsuario('${u.id}','${escHtml(u.nome)}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg></button>` : ''}
     </div>`).join('');
 }
 
@@ -1183,8 +1186,8 @@ async function criarPC(peerId, deveOfertar) {
   pc.onicecandidate = (e) => { if (e.candidate) socket.emit('ice-candidate', { paraId: peerId, candidate: e.candidate }); };
   pc.onconnectionstatechange = () => {
     if (pc.connectionState === 'connected') { if (qualidadeAtual !== 'good') aplicarQualidade(qualidadeAtual); }
-    if (pc.connectionState === 'disconnected') { notif('⚠️ Conexão instável com ' + (peerNomes[peerId] || 'participante'), 'warn'); tentarReconexao(peerId, deveOfertar); }
-    if (pc.connectionState === 'failed') { notif('❌ Falha de conexão com ' + (peerNomes[peerId] || 'participante'), 'warn'); tentarReconexao(peerId, deveOfertar); }
+    if (pc.connectionState === 'disconnected') { notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>️ Conexão instável com ' + (peerNomes[peerId] || 'participante'), 'warn'); tentarReconexao(peerId, deveOfertar); }
+    if (pc.connectionState === 'failed') { notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Falha de conexão com ' + (peerNomes[peerId] || 'participante'), 'warn'); tentarReconexao(peerId, deveOfertar); }
     if (pc.connectionState === 'closed') removerPeer(peerId);
   };
   if (deveOfertar) {
@@ -1391,12 +1394,12 @@ function toggleGravacao() {
       };
       mediaRec.start(1000); gravando = true;
       setCtrl('btn-rec', { circleClass: 'ctrl-circle rec', icon: 'radio_button_checked', label: 'Gravando' });
-      notif('⏺ Gravação iniciada');
+      notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z"/></svg> Gravação iniciada');
     } catch (e) { notif('Erro ao gravar: ' + e.message, 'error'); }
   } else {
     mediaRec.stop(); gravando = false;
     setCtrl('btn-rec', { circleClass: 'ctrl-circle', icon: 'radio_button_checked', label: 'Gravar' });
-    notif('✅ Gravação salva', 'success');
+    notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Gravação salva', 'success');
   }
 }
 
@@ -1416,7 +1419,7 @@ function adicionarMsg(nome, texto, hora, isMe) {
   msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
   if (!chatAberto) {
     const u = document.getElementById('chat-unread');
-    u.style.display = 'inline'; u.textContent = '🔴';
+    u.style.display = 'inline'; u.textContent = '<span class="hi-dot" style="background:#ef4444"></span>';
   }
 }
 
@@ -1569,5 +1572,6 @@ function notif(msg, tipo) {
 
 init();
 </script>
+<script src="./assets/icons.js"></script>
 </body>
 </html>

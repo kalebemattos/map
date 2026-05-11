@@ -16,6 +16,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* Heroicons helper */
+  .hi { display:inline-block; vertical-align:middle; flex-shrink:0; }
+  .hi-dot { display:inline-block; width:9px; height:9px; border-radius:50%; flex-shrink:0; vertical-align:middle; }
 :root {
   --blue-deep: #0d2d6b;
   --blue-main: #1565c0;
@@ -632,7 +635,7 @@ tbody tr:last-child td { border-bottom: none; }
   .candidato-info h3 { font-size: 15px; }
   .candidato-votos strong { font-size: 17px; }
 
-  /* Tabela → cards */
+  /* Tabela <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg> cards */
   table { min-width: unset; }
   table thead { display: none; }
   table, tbody, tr, td { display: block; width: 100%; }
@@ -776,7 +779,7 @@ tbody tr:last-child td { border-bottom: none; }
     .cidade-clicavel { cursor: pointer; }
     .cidade-clicavel:hover td { background: #eff6ff !important; }
     .cidade-clicavel .city-name::after {
-      content: ' ▸';
+      content: ' <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>';
       font-size: 10px;
       color: var(--blue-main);
       opacity: 0.6;
@@ -1165,39 +1168,39 @@ body.modal-aberto {
   <!-- NAV -->
   <nav class="top-nav">
     <div class="nav-brand">
-      <div class="nav-logo">📊</div>
+      <div class="nav-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg></div>
       <div>
         <h1>Análise Estratégica</h1>
         <p>Dados eleitorais · BigQuery / TSE</p>
       </div>
     </div>
-    <a href="../home.html" class="nav-back">← Voltar</a>
+    <a href="../home.html" class="nav-back"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg> Voltar</a>
   </nav>
 
   <!-- [NEW] SELETOR DE TIPO DE ELEIÇÃO -->
   <div class="et-selector" id="et-selector">
     <div class="et-card" data-tipo="municipal" onclick="setTipoEleicao('municipal')">
-      <span class="et-icon">🏘️</span>
+      <span class="et-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>️</span>
       <div>
         <div class="et-label">Municipal</div>
         <div class="et-sub">Prefeito · Vereador · 2024, 2020…</div>
       </div>
-      <span class="et-check">✓</span>
+      <span class="et-check"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg></span>
     </div>
     <div class="et-card" data-tipo="geral" onclick="setTipoEleicao('geral')">
-      <span class="et-icon">🏛️</span>
+      <span class="et-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 10a48.36 48.36 0 0 0-7.5-.332V21m0 0h15M3 9h18"/></svg>️</span>
       <div>
         <div class="et-label">Geral</div>
         <div class="et-sub">Dep. · Senador · Governador · 2022, 2018…</div>
       </div>
-      <span class="et-check">✓</span>
+      <span class="et-check"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg></span>
     </div>
   </div>
 
   <!-- CONTROLS CARD -->
   <div class="card">
     <div class="card-title">
-      <div class="card-icon">🔍</div>
+      <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg></div>
       Filtros de busca
     </div>
     <div class="controls-grid">
@@ -1284,7 +1287,7 @@ body.modal-aberto {
   <div class="card" style="padding:0;overflow:hidden;">
     <div style="padding:18px 22px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <div class="card-title" style="margin-bottom:0;">
-        <div class="card-icon">🗳️</div>
+        <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"/></svg>️</div>
         Resultado por cidade
       </div>
     </div>
@@ -1413,7 +1416,7 @@ function _renderContextHeader() {
   const parts = [];
   if (tipoEleicao) {
     const cls  = tipoEleicao === 'municipal' ? 'ctx-badge-municipal' : 'ctx-badge-geral';
-    const icon = tipoEleicao === 'municipal' ? '🏘️' : '🏛️';
+    const icon = tipoEleicao === 'municipal' ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>️' : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 10a48.36 48.36 0 0 0-7.5-.332V21m0 0h15M3 9h18"/></svg>️';
     const label = tipoEleicao === 'municipal' ? 'Municipal' : 'Geral';
     parts.push(`<span class="ctx-badge ${cls}">${icon} ${label}</span>`);
   }
@@ -1438,7 +1441,7 @@ function _renderCidadesCards(dados, totalVotos, maxVotos) {
   grid.innerHTML = '';
 
   if (!dados.length) {
-    grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>Nenhum resultado encontrado</p></div>';
+    grid.innerHTML = '<div class="empty-state"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg></div><p>Nenhum resultado encontrado</p></div>';
     return;
   }
 
@@ -1465,11 +1468,11 @@ function _renderCidadesCards(dados, totalVotos, maxVotos) {
         <span style="font-size:11px;color:#94a3b8;">${(r.votos_validos||0).toLocaleString('pt-BR')} válidos</span>
         <button class="crc-btn"
           onclick="event.stopPropagation();abrirModalDetalhe('${municipioEsc}','${r.id_municipio}')">
-          🏘️ Bairros
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>️ Bairros
         </button>
         <button class="crc-btn-info"
           onclick="event.stopPropagation();abrirModalPerfil('${municipioEsc}','${r.id_municipio}')">
-          👥 Perfil
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg> Perfil
         </button>
       </div>`;
     grid.appendChild(card);
@@ -1526,7 +1529,7 @@ async function buscarCandidatos() {
     return;
   }
 
-  select.innerHTML = '<option value="">⏳ Buscando...</option>';
+  select.innerHTML = '<option value=""><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Buscando...</option>';
   select.disabled = true;
 
   const params = new URLSearchParams({ ano, uf, turno: '1' });
@@ -1560,7 +1563,7 @@ async function buscarCandidatos() {
       });
     }
   } catch (e) {
-    select.innerHTML = `<option value="">❌ Erro: ${e.message}</option>`;
+    select.innerHTML = `<option value=""><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Erro: ${e.message}</option>`;
     console.error('[buscarCandidatos]', e);
   } finally {
     select.disabled = false;
@@ -1594,7 +1597,7 @@ async function carregarResultados() {
   if (!candidatoAtual) return;
   const turno = document.getElementById('turnoSelect').value;
   const tbody = document.getElementById('resultado');
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:36px;color:#94a3b8;">⏳ Consultando BigQuery...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:36px;color:#94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Consultando BigQuery...</td></tr>';
   document.getElementById('result-footer').style.display = 'none';
 
   const params = new URLSearchParams({
@@ -1612,7 +1615,7 @@ async function carregarResultados() {
     resultadosAtual = json.data;
     renderTabela();
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">❌</div><p>${e.message}</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg></div><p>${e.message}</p></div></td></tr>`;
     console.error('[carregarResultados]', e);
   }
 }
@@ -1643,7 +1646,7 @@ function renderTabela() {
     tbody.innerHTML = '';
 
     if (!dados.length) {
-      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">🔍</div><p>Nenhum resultado encontrado</p></div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg></div><p>Nenhum resultado encontrado</p></div></td></tr>';
       document.getElementById('result-footer').style.display = 'none';
       return;
     }
@@ -1669,11 +1672,11 @@ function renderTabela() {
         <td data-label="">
           <button class="btn-perfil"
             onclick="event.stopPropagation();abrirModalDetalhe('${cidEsc}','${r.id_municipio}')">
-            🏘️ Bairros
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>️ Bairros
           </button>
           <button class="btn-perfil-info"
             onclick="event.stopPropagation();abrirModalPerfil('${cidEsc}','${r.id_municipio}')">
-            👥 Perfil
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg> Perfil
           </button>
         </td>`;
       tbody.appendChild(tr);
@@ -1708,7 +1711,7 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
   document.getElementById('mb-sub').textContent =
     candidatoAtual.nome + ' · ' + candidatoAtual.cargo + ' · ' + candidatoAtual.ano;
 
-  conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">⏳ Consultando votos por bairro...</div>';
+  conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Consultando votos por bairro...</div>';
   mb.classList.add('aberto');
   document.body.classList.add('modal-aberto');
 
@@ -1730,13 +1733,13 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
 
     const lista = json.data;
     if (!lista.length) {
-      conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de bairros para esta cidade.</div>';
+      conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"/></svg> Sem dados de bairros para esta cidade.</div>';
       return;
     }
 
     const maxV    = Math.max(...lista.map(b => b.votos), 1);
     const totalV  = lista.reduce((s, b) => s + b.votos, 0);
-    // por_bairro=true → nomes reais de bairro; false → fallback com zona
+    // por_bairro=true <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg> nomes reais de bairro; false <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg> fallback com zona
     const rotulo  = json.por_bairro === true ? 'Bairro' : 'Zona';
 
     const rows = lista.map(b => {
@@ -1763,7 +1766,7 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
       '</div>';
 
   } catch (e) {
-    conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de bairros para esta cidade.</div>`;
+    conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"/></svg> Sem dados de bairros para esta cidade.</div>`;
     console.error('[abrirModalDetalhe]', e);
   }
 }
@@ -1811,7 +1814,7 @@ async function mudarAba(aba) {
 
 async function carregarAba(aba) {
   const conteudo = document.getElementById('mp-conteudo');
-  conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">⏳ Carregando...</div>';
+  conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Carregando...</div>';
   const token   = localStorage.getItem('token') || '';
   const headers = { Authorization: 'Bearer ' + token };
   const turno   = document.getElementById('turnoSelect').value;
@@ -1849,14 +1852,14 @@ async function carregarAba(aba) {
       renderPerfilEleitorado(json.data);
     }
   } catch (e) {
-    conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;">❌ Erro ao carregar dados: ${e.message}</div>`;
+    conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Erro ao carregar dados: ${e.message}</div>`;
   }
 }
 
 function renderHistorico(data) {
   const conteudo = document.getElementById('mp-conteudo');
   if (!data.length) {
-    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados históricos disponíveis.</div>';
+    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"/></svg> Sem dados históricos disponíveis.</div>';
     return;
   }
   const maxV = Math.max(...data.map(d => d.votos), 1);
@@ -1879,7 +1882,7 @@ function renderHistorico(data) {
 function renderAbstencao(data) {
   const conteudo = document.getElementById('mp-conteudo');
   if (!data.length) {
-    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de abstenção disponíveis.</div>';
+    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"/></svg> Sem dados de abstenção disponíveis.</div>';
     return;
   }
   const maxAbst = Math.max(...data.map(d => parseFloat(d.pct_abstencao) || 0), 1);
@@ -1917,7 +1920,7 @@ function renderAbstencao(data) {
 function renderPerfilEleitorado(data) {
   const conteudo = document.getElementById('mp-conteudo');
   if (!data.length) {
-    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">📂 Sem dados de perfil disponíveis.</div>';
+    conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"/></svg> Sem dados de perfil disponíveis.</div>';
     return;
   }
 
@@ -2005,7 +2008,7 @@ document.addEventListener('keydown', e => {
     card.style.transform  = '';
     card.style.opacity    = '';
     if (delta > 100) {
-      // swipe suficiente → fecha
+      // swipe suficiente <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg> fecha
       if (e.currentTarget.id === 'modal-bairros') fecharModalBairros();
       else fecharModal();
     }
@@ -2030,7 +2033,7 @@ document.addEventListener('keydown', e => {
         <div class="modal-bairros-titulo" id="mb-titulo"></div>
         <div class="modal-bairros-sub" id="mb-sub"></div>
       </div>
-      <button class="modal-close" onclick="fecharModalBairros()">✕</button>
+      <button class="modal-close" onclick="fecharModalBairros()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>
     </div>
     <div id="mb-conteudo"></div>
   </div>
@@ -2043,15 +2046,16 @@ document.addEventListener('keydown', e => {
         <div class="modal-perfil-titulo" id="mp-titulo"></div>
         <div class="modal-perfil-sub" id="mp-sub"></div>
       </div>
-      <button class="modal-close" onclick="fecharModalPerfil()">✕</button>
+      <button class="modal-close" onclick="fecharModalPerfil()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>
     </div>
     <div class="perfil-tabs">
-      <button class="perfil-tab ativa" onclick="mudarAba('historico')" id="tab-historico">📈 Histórico</button>
-      <button class="perfil-tab" onclick="mudarAba('abstencao')" id="tab-abstencao">📊 Abstenção</button>
-      <button class="perfil-tab" onclick="mudarAba('perfil')" id="tab-perfil">👥 Perfil do Eleitorado</button>
+      <button class="perfil-tab ativa" onclick="mudarAba('historico')" id="tab-historico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941"/></svg> Histórico</button>
+      <button class="perfil-tab" onclick="mudarAba('abstencao')" id="tab-abstencao"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg> Abstenção</button>
+      <button class="perfil-tab" onclick="mudarAba('perfil')" id="tab-perfil"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg> Perfil do Eleitorado</button>
     </div>
     <div class="perfil-tab-body" id="mp-conteudo"></div>
   </div>
 </div>
+<script src="../assets/icons.js"></script>
 </body>
 </html>
