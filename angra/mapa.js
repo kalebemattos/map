@@ -253,6 +253,26 @@ function injetarCandidatosAngra() {
       ).join('')
   }
 
+  // 5. Linhas por candidato no card de totais do distrito (igual ao mapa do estado)
+  const regiaoCandsEl = document.getElementById('regiao-cand-rows')
+  if (regiaoCandsEl) {
+    regiaoCandsEl.innerHTML = cands.map(c =>
+      `${c.tem_votos_2022 ? `
+      <div class="regiao-totais-row">
+        <span class="regiao-totais-label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"/></svg> Votos ${c.nome} (2022)</span>
+        <span class="regiao-totais-val" id="regiao-votos-${c.chave}">0</span>
+      </div>` : ''}
+      <div class="regiao-totais-row">
+        <span class="regiao-totais-label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z"/></svg> Meta ${c.nome}</span>
+        <span class="regiao-totais-val" id="regiao-exp-${c.chave}">0</span>
+      </div>
+      <div class="regiao-totais-row">
+        <span class="regiao-totais-label" style="color:rgba(255,255,255,0.75);"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"/></svg> Exp. Lideranças ${c.nome}</span>
+        <span class="regiao-totais-val" id="regiao-exp-lid-${c.chave}" style="color:#34d399;font-size:12px;">0</span>
+      </div>`
+    ).join('')
+  }
+
   // Repintar mapa com as cores atualizadas do config
   repaintMapa()
 }
@@ -527,110 +547,88 @@ function filtrarDistrito(distrito) {
 }
 
 // ─────────────────────────────────────────────
-// RESUMO DO DISTRITO (votos válidos, 2022, meta)
+// TOTAIS DO DISTRITO (mesmo design e lógica do mapa do estado)
 // ─────────────────────────────────────────────
 function mostrarResumoDistrito(distrito) {
-  const card    = document.getElementById('resumo-distrito-card')
-  const content = document.getElementById('resumo-distrito-content')
-  if (!card || !content) return
+  const card      = document.getElementById('regiao-totais-card')
+  const blockWrap = document.getElementById('block-totais-distrito')
+  if (!card) return
 
   if (!distrito) {
-    card.style.display = 'none'
-    content.innerHTML  = ''
+    card.style.display  = 'none'
+    if (blockWrap) blockWrap.style.display = 'none'
     return
   }
 
   const bairrosDistrito = (distritos[distrito]?.bairros || [])
   const cands           = configSistema.candidatos || []
-  const API_BASE        = (window.API_URL || '').replace(/\/api$/, '')
 
-  // ── Totais por bairro do distrito ─────────────
-  let totalValidos = 0
-  const totalRef2022 = {}   // { chave: soma }
-  const totalMeta    = {}   // { chave: soma }
+  // contadores por candidato: { chave: { votos, expCid, expLid } }
+  const porCand = {}
+  cands.forEach(c => { porCand[c.chave] = { votos: 0, expCid: 0, expLid: 0 } })
 
-  cands.forEach(c => { totalRef2022[c.chave] = 0; totalMeta[c.chave] = 0 })
+  let totalVotos = 0
 
   bairrosDistrito.forEach(b => {
     const bNorm = normalizar(b)
 
-    // Votos válidos 2022
+    // Votos válidos
     for (const k of Object.keys(VOTOS_VALIDOS)) {
-      if (normalizar(k) === bNorm) { totalValidos += VOTOS_VALIDOS[k]; break }
+      if (normalizar(k) === bNorm) { totalVotos += VOTOS_VALIDOS[k]; break }
     }
 
-    // Votos de referência 2022 (Célia e outros com tem_votos_2022)
+    // Votos históricos 2022 por candidato (VOTOS_REFERENCIA_2022 é da Célia — candidata com tem_votos_2022)
     cands.filter(c => c.tem_votos_2022).forEach(c => {
       for (const k of Object.keys(VOTOS_REFERENCIA_2022)) {
-        if (normalizar(k) === bNorm) { totalRef2022[c.chave] += VOTOS_REFERENCIA_2022[k]; break }
+        if (normalizar(k) === bNorm) { porCand[c.chave].votos += VOTOS_REFERENCIA_2022[k]; break }
       }
     })
 
-    // Meta (expectativas carregadas)
-    const entry = getCacheEntry(b)
+    // Expectativa das cidades e lideranças do cache
+    const cd = getCacheEntry(b)
     cands.forEach(c => {
-      totalMeta[c.chave] += Number(entry.expectativaCidade?.[c.chave] || 0)
+      porCand[c.chave].expCid += Number(cd.expectativaCidade?.[c.chave] || 0)
+    })
+    ;(cd.liderancas || []).forEach(l => {
+      const vp   = l.vinculo_politico
+      const voto = Number(l.expectativa_votos || 0)
+      if (vp === 'ambos') {
+        cands.forEach(c => { porCand[c.chave].expLid += voto / cands.length })
+      } else if (porCand[vp] !== undefined) {
+        porCand[vp].expLid += voto
+      }
     })
   })
 
-  const fmt = n => n.toLocaleString('pt-BR')
+  const totalExpCid = cands.reduce((s, c) => s + porCand[c.chave].expCid, 0)
+  const totalExpLid = cands.reduce((s, c) => s + porCand[c.chave].expLid, 0)
+  const cobertura   = totalExpCid > 0 ? Math.round((totalExpLid / totalExpCid) * 100) : 0
+  const corCob      = cobertura >= 80 ? '#34d399' : cobertura >= 50 ? '#fbbf24' : '#f87171'
 
-  // ── Linha votos válidos ───────────────────────
-  let html = `
-    <div class="resumo-row">
-      <div class="resumo-label">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"/></svg>
-        Votos válidos (2022)
-      </div>
-      <div style="text-align:right">
-        <div class="resumo-valor">${fmt(totalValidos)}</div>
-      </div>
-    </div>`
+  const fmt = n => Math.round(n).toLocaleString('pt-BR')
 
-  // ── Votos 2022 por candidato ──────────────────
-  const candsComVotos = cands.filter(c => c.tem_votos_2022)
-  if (candsComVotos.length) {
-    html += `<div class="resumo-divider">Votação 2022</div>`
-    candsComVotos.forEach(c => {
-      const v   = totalRef2022[c.chave] || 0
-      const pct = totalValidos > 0 ? (v / totalValidos * 100).toFixed(1) + '%' : '—'
-      const fotoSrc = `../img/${c.chave}.jpg`
-      html += `
-        <div class="resumo-cand-bar">
-          <img src="${fotoSrc}" onerror="this.style.display='none'"
-               class="resumo-cand-foto" style="border:2px solid ${c.cor_texto}44;">
-          <div class="resumo-cand-info">
-            <div class="resumo-cand-nome">${c.nome}</div>
-            <div class="resumo-cand-votos" style="color:${c.cor_texto}">${fmt(v)}</div>
-            <div class="resumo-cand-pct">${pct} dos votos válidos</div>
-          </div>
-        </div>`
-    })
-  }
+  document.getElementById('regiao-totais-nome').textContent =
+    distrito + ' · ' + bairrosDistrito.length + ' bairros'
+  document.getElementById('regiao-total-votos').textContent = fmt(totalVotos)
 
-  // ── Meta por candidato ────────────────────────
-  const totalMetaGeral = cands.reduce((s, c) => s + (totalMeta[c.chave] || 0), 0)
-  if (totalMetaGeral > 0) {
-    html += `<div class="resumo-divider">Meta do distrito</div>`
-    cands.forEach(c => {
-      const m = totalMeta[c.chave] || 0
-      if (!m) return
-      html += `
-        <div class="resumo-row">
-          <div class="resumo-label">
-            <span class="resumo-meta-chip" style="background:${c.cor_fundo};color:${c.cor_texto};">
-              ${c.nome.split(' ')[0]}
-            </span>
-          </div>
-          <div style="text-align:right">
-            <div class="resumo-valor" style="color:${c.cor_texto}">${fmt(m)}</div>
-          </div>
-        </div>`
-    })
-  }
+  cands.forEach(c => {
+    const elVotos  = document.getElementById('regiao-votos-'    + c.chave)
+    const elExpCid = document.getElementById('regiao-exp-'      + c.chave)
+    const elExpLid = document.getElementById('regiao-exp-lid-'  + c.chave)
+    if (elVotos)  elVotos.textContent  = fmt(porCand[c.chave].votos)
+    if (elExpCid) elExpCid.textContent = fmt(porCand[c.chave].expCid)
+    if (elExpLid) elExpLid.textContent = fmt(porCand[c.chave].expLid)
+  })
 
-  content.innerHTML = html
-  card.style.display = 'block'
+  const elTotalCid = document.getElementById('regiao-exp-total-cid')
+  const elTotalLid = document.getElementById('regiao-exp-total-lid')
+  const elCob      = document.getElementById('regiao-cobertura')
+  if (elTotalCid) elTotalCid.textContent = fmt(totalExpCid)
+  if (elTotalLid) elTotalLid.textContent = fmt(totalExpLid)
+  if (elCob)      { elCob.textContent = cobertura + '%'; elCob.style.color = corCob }
+
+  card.style.display  = 'block'
+  if (blockWrap) blockWrap.style.display = 'block'
 }
 
 // ─────────────────────────────────────────────
