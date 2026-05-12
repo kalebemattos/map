@@ -588,6 +588,55 @@ body.sidebar-closed #sidebar { transform: translateX(100%); }
 
 .sidebar-block:hover { box-shadow: var(--shadow-md); }
 
+/* Resumo do distrito */
+.resumo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--slate-100);
+  font-size: 13px;
+  color: var(--slate-700);
+}
+.resumo-row:last-child { border-bottom: none; }
+.resumo-row .resumo-label { display: flex; align-items: center; gap: 6px; }
+.resumo-row .resumo-valor {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--blue-deep);
+}
+.resumo-row .resumo-sub {
+  font-size: 11px;
+  color: var(--slate-500);
+  margin-top: 1px;
+}
+.resumo-cand-bar {
+  display: flex; align-items: center; gap: 8px; padding: 7px 0;
+  border-bottom: 1px solid var(--slate-100);
+}
+.resumo-cand-bar:last-child { border-bottom: none; }
+.resumo-cand-foto {
+  width: 36px; height: 36px; border-radius: 50%;
+  object-fit: cover; flex-shrink: 0;
+}
+.resumo-cand-info { flex: 1; min-width: 0; }
+.resumo-cand-nome { font-size: 11px; font-weight: 600; color: var(--slate-600); margin-bottom: 2px; }
+.resumo-cand-votos {
+  font-family: 'Sora', sans-serif; font-weight: 800;
+  font-size: 17px;
+}
+.resumo-cand-pct { font-size: 11px; color: var(--slate-500); margin-top: 1px; }
+.resumo-meta-chip {
+  font-size: 11px; font-weight: 700; padding: 2px 8px;
+  border-radius: 20px; white-space: nowrap;
+}
+.resumo-divider {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .6px; color: var(--slate-400);
+  margin: 8px 0 4px;
+}
+
 .block-label {
   font-family: 'Sora', sans-serif;
   font-size: 13px;
@@ -927,6 +976,12 @@ body.sidebar-closed .logo-container { right: 20px; }
     <div id="lider-distrito-card" class="sidebar-block" style="display:none;">
       <label class="block-label">Líder responsável</label>
       <div id="lista-lideres-distrito"></div>
+    </div>
+
+    <!-- RESUMO DO DISTRITO -->
+    <div id="resumo-distrito-card" class="sidebar-block" style="display:none;">
+      <label class="block-label">Resumo do distrito</label>
+      <div id="resumo-distrito-content"></div>
     </div>
 
     <!-- BUSCAR BAIRRO -->

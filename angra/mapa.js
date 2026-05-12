@@ -527,6 +527,113 @@ function filtrarDistrito(distrito) {
 }
 
 // ─────────────────────────────────────────────
+// RESUMO DO DISTRITO (votos válidos, 2022, meta)
+// ─────────────────────────────────────────────
+function mostrarResumoDistrito(distrito) {
+  const card    = document.getElementById('resumo-distrito-card')
+  const content = document.getElementById('resumo-distrito-content')
+  if (!card || !content) return
+
+  if (!distrito) {
+    card.style.display = 'none'
+    content.innerHTML  = ''
+    return
+  }
+
+  const bairrosDistrito = (distritos[distrito]?.bairros || [])
+  const cands           = configSistema.candidatos || []
+  const API_BASE        = (window.API_URL || '').replace(/\/api$/, '')
+
+  // ── Totais por bairro do distrito ─────────────
+  let totalValidos = 0
+  const totalRef2022 = {}   // { chave: soma }
+  const totalMeta    = {}   // { chave: soma }
+
+  cands.forEach(c => { totalRef2022[c.chave] = 0; totalMeta[c.chave] = 0 })
+
+  bairrosDistrito.forEach(b => {
+    const bNorm = normalizar(b)
+
+    // Votos válidos 2022
+    for (const k of Object.keys(VOTOS_VALIDOS)) {
+      if (normalizar(k) === bNorm) { totalValidos += VOTOS_VALIDOS[k]; break }
+    }
+
+    // Votos de referência 2022 (Célia e outros com tem_votos_2022)
+    cands.filter(c => c.tem_votos_2022).forEach(c => {
+      for (const k of Object.keys(VOTOS_REFERENCIA_2022)) {
+        if (normalizar(k) === bNorm) { totalRef2022[c.chave] += VOTOS_REFERENCIA_2022[k]; break }
+      }
+    })
+
+    // Meta (expectativas carregadas)
+    const entry = getCacheEntry(b)
+    cands.forEach(c => {
+      totalMeta[c.chave] += Number(entry.expectativaCidade?.[c.chave] || 0)
+    })
+  })
+
+  const fmt = n => n.toLocaleString('pt-BR')
+
+  // ── Linha votos válidos ───────────────────────
+  let html = `
+    <div class="resumo-row">
+      <div class="resumo-label">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"/></svg>
+        Votos válidos (2022)
+      </div>
+      <div style="text-align:right">
+        <div class="resumo-valor">${fmt(totalValidos)}</div>
+      </div>
+    </div>`
+
+  // ── Votos 2022 por candidato ──────────────────
+  const candsComVotos = cands.filter(c => c.tem_votos_2022)
+  if (candsComVotos.length) {
+    html += `<div class="resumo-divider">Votação 2022</div>`
+    candsComVotos.forEach(c => {
+      const v   = totalRef2022[c.chave] || 0
+      const pct = totalValidos > 0 ? (v / totalValidos * 100).toFixed(1) + '%' : '—'
+      const fotoSrc = `../img/${c.chave}.jpg`
+      html += `
+        <div class="resumo-cand-bar">
+          <img src="${fotoSrc}" onerror="this.style.display='none'"
+               class="resumo-cand-foto" style="border:2px solid ${c.cor_texto}44;">
+          <div class="resumo-cand-info">
+            <div class="resumo-cand-nome">${c.nome}</div>
+            <div class="resumo-cand-votos" style="color:${c.cor_texto}">${fmt(v)}</div>
+            <div class="resumo-cand-pct">${pct} dos votos válidos</div>
+          </div>
+        </div>`
+    })
+  }
+
+  // ── Meta por candidato ────────────────────────
+  const totalMetaGeral = cands.reduce((s, c) => s + (totalMeta[c.chave] || 0), 0)
+  if (totalMetaGeral > 0) {
+    html += `<div class="resumo-divider">Meta do distrito</div>`
+    cands.forEach(c => {
+      const m = totalMeta[c.chave] || 0
+      if (!m) return
+      html += `
+        <div class="resumo-row">
+          <div class="resumo-label">
+            <span class="resumo-meta-chip" style="background:${c.cor_fundo};color:${c.cor_texto};">
+              ${c.nome.split(' ')[0]}
+            </span>
+          </div>
+          <div style="text-align:right">
+            <div class="resumo-valor" style="color:${c.cor_texto}">${fmt(m)}</div>
+          </div>
+        </div>`
+    })
+  }
+
+  content.innerHTML = html
+  card.style.display = 'block'
+}
+
+// ─────────────────────────────────────────────
 // LÍDER DO DISTRITO
 // ─────────────────────────────────────────────
 function mostrarLiderDistrito(distrito) {
@@ -951,6 +1058,7 @@ function selecionarBairro(bairroNome, layer) {
 document.getElementById("select-distrito").addEventListener("change", e => {
   filtrarDistrito(e.target.value)
   mostrarLiderDistrito(e.target.value)
+  mostrarResumoDistrito(e.target.value)
 })
 
 // ─────────────────────────────────────────────
@@ -1164,6 +1272,7 @@ window.iniciarMapa = async function() {
       if (window._distritoFixo) {
         filtrarDistrito(window._distritoFixo)
         mostrarLiderDistrito(window._distritoFixo)
+        mostrarResumoDistrito(window._distritoFixo)
       }
     })
     .catch(err => {
