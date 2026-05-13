@@ -727,7 +727,8 @@ app.post('/api/liderancas',
       pessoa_id: pessoaIdRaw, nome, cidade, contato, perfil,
       expectativa_votos, responsavel, status, release,
       vinculo_politico, regiao: regiaoBody, data_nascimento, mapa,
-      apelido, rede_social
+      apelido, rede_social,
+      cep, bairro, lat, lng   // campos geo
     } = req.body;
 
     if (!validarTexto(cidade, 120))
@@ -799,19 +800,27 @@ app.post('/api/liderancas',
     // Cria vínculo pessoa ↔ cidade
     await client.query(`
       INSERT INTO liderancas
-        (pessoa_id, tenant_id, cidade, regiao, mapa, expectativa_votos, status, responsavel, vinculo_politico)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        (pessoa_id, tenant_id, cidade, regiao, mapa, expectativa_votos, status, responsavel, vinculo_politico,
+         cep, bairro, lat, lng)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
       ON CONFLICT (pessoa_id, cidade, tenant_id) DO UPDATE
         SET expectativa_votos = EXCLUDED.expectativa_votos,
             status            = EXCLUDED.status,
             responsavel       = EXCLUDED.responsavel,
             vinculo_politico  = EXCLUDED.vinculo_politico,
             regiao            = EXCLUDED.regiao,
-            mapa              = EXCLUDED.mapa
+            mapa              = EXCLUDED.mapa,
+            cep               = COALESCE(EXCLUDED.cep,    liderancas.cep),
+            bairro            = COALESCE(EXCLUDED.bairro, liderancas.bairro),
+            lat               = COALESCE(EXCLUDED.lat,    liderancas.lat),
+            lng               = COALESCE(EXCLUDED.lng,    liderancas.lng)
     `, [pessoaId, req.tenantId, cidade,
         regiaoFinal,
         mapa || null, Number(expectativa_votos) || 0,
-        status || 'ativa', responsavel || null, vinculo_politico || null]);
+        status || 'ativa', responsavel || null, vinculo_politico || null,
+        cep   || null, bairro || null,
+        lat   ? Number(lat)  : null,
+        lng   ? Number(lng)  : null]);
 
     await client.query('COMMIT');
     try { await registrarAuditoria(req.user.id, 'CRIAR', 'lideranca', String(pessoaId)); } catch (_) {}
@@ -822,6 +831,31 @@ app.post('/api/liderancas',
     console.error('Erro ao salvar liderança:', err);
     res.status(500).json({ error: 'Erro ao salvar liderança: ' + err.message });
   } finally { client.release(); }
+});
+
+/* ================= PINS GEOGRÁFICOS (lideranças com lat/lng) ================= */
+// GET /api/liderancas/geo?mapa=pirai — retorna lideranças geocodificadas para renderização no mapa
+app.get('/api/liderancas/geo', auth, withTenant, async (req, res) => {
+  const mapaFiltro = req.query.mapa;
+  if (!mapaFiltro) return res.status(400).json({ error: 'Parâmetro mapa obrigatório' });
+  try {
+    const { rows } = await pool.query(`
+      SELECT l.id, l.cidade, l.vinculo_politico, l.expectativa_votos,
+             l.cep, l.bairro, l.lat, l.lng,
+             p.nome, p.foto, p.contato
+      FROM liderancas l
+      JOIN pessoas p ON p.id = l.pessoa_id
+      WHERE l.tenant_id = $1
+        AND l.mapa      = $2
+        AND l.lat       IS NOT NULL
+        AND l.lng       IS NOT NULL
+      ORDER BY p.nome
+    `, [req.tenantId, mapaFiltro]);
+    res.json(rows);
+  } catch (err) {
+    console.error('[GET /liderancas/geo]', err);
+    res.status(500).json({ error: 'Erro ao buscar pins geográficos' });
+  }
 });
 
 /* ================= EXCLUIR LIDERANÇA ================= */
@@ -852,7 +886,8 @@ app.put('/api/liderancas/:id', auth, withTenant, allowAll(), upload.single('foto
     const {
       nome, contato, cidade, expectativa_votos, perfil, responsavel,
       status, release, vinculo_politico, regiao: regiaoBody, data_nascimento, mapa,
-      apelido, rede_social
+      apelido, rede_social,
+      cep, bairro, lat, lng   // campos geo
     } = req.body;
 
     if (!validarTexto(cidade, 120)) return res.status(400).json({ error: 'Cidade inválida' });
@@ -917,14 +952,21 @@ app.put('/api/liderancas/:id', auth, withTenant, allowAll(), upload.single('foto
         responsavel      = COALESCE($4, responsavel),
         vinculo_politico = COALESCE($5, vinculo_politico),
         regiao           = COALESCE($6, regiao),
-        mapa             = COALESCE($7, mapa)
+        mapa             = COALESCE($7, mapa),
+        cep              = COALESCE($11, cep),
+        bairro           = COALESCE($12, bairro),
+        lat              = COALESCE($13::double precision, lat),
+        lng              = COALESCE($14::double precision, lng)
       WHERE id=$8 AND tenant_id=$9
       AND (regiao=$6 OR $10=ANY(ARRAY['dono','admin']))
     `, [cidade || null,
         expectativa_votos ? Number(expectativa_votos) : null,
         status || null, responsavel || null, vinculo_politico || null,
         regiaoFinal || req.user.regiao, mapa || null,
-        id, req.tenantId, req.user.nivel]);
+        id, req.tenantId, req.user.nivel,
+        cep   || null, bairro || null,
+        lat   ? String(Number(lat))  : null,
+        lng   ? String(Number(lng))  : null]);
 
     if (result.rowCount === 0)
       return res.status(404).json({ error: 'Não encontrado ou sem permissão' });
@@ -972,7 +1014,11 @@ app.get('/api/liderancas', auth, withTenant, async (req, res) => {
           'foto',             p.foto,
           'perfil',           p.perfil,
           'data_nascimento',  p.data_nascimento,
-          'release',          p.release
+          'release',          p.release,
+          'cep',              l.cep,
+          'bairro',           l.bairro,
+          'lat',              l.lat,
+          'lng',              l.lng
         ) ORDER BY p.nome) AS liderancas
       FROM liderancas l
       JOIN pessoas p ON p.id = l.pessoa_id
@@ -4181,6 +4227,18 @@ server.listen(PORT, async () => {
     console.log('[migration] liderancas.origem OK');
   } catch (e) {
     console.warn('[migration] liderancas.origem:', e.message);
+  }
+
+  // ── CAMPOS GEOGRÁFICOS EM liderancas ─────────────────────────────────────
+  try {
+    await pool.query(`ALTER TABLE liderancas ADD COLUMN IF NOT EXISTS cep    TEXT`);
+    await pool.query(`ALTER TABLE liderancas ADD COLUMN IF NOT EXISTS bairro TEXT`);
+    await pool.query(`ALTER TABLE liderancas ADD COLUMN IF NOT EXISTS lat    DOUBLE PRECISION`);
+    await pool.query(`ALTER TABLE liderancas ADD COLUMN IF NOT EXISTS lng    DOUBLE PRECISION`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_liderancas_geo ON liderancas(lat, lng) WHERE lat IS NOT NULL`);
+    console.log('[migration] liderancas geo-fields OK');
+  } catch (e) {
+    console.warn('[migration] liderancas geo-fields:', e.message);
   }
 
   // ── AUTO-CADASTRO TOKENS ──────────────────────────────────────────────────

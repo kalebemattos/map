@@ -72,6 +72,7 @@ async function apiFetch(endpoint, options = {}) {
 // CONFIG DINÂMICA (candidatos)
 // ─────────────────────────────────────────────
 let configSistema = { candidatos: [], cores: {}, mapas: [] }
+window.configSistema = configSistema   // expõe para GeoMode (pins coloridos por candidato)
 
 async function carregarConfig() {
   try {
@@ -81,6 +82,7 @@ async function carregarConfig() {
     })
     if (!r.ok) return
     configSistema = await r.json()
+    window.configSistema = configSistema   // sincroniza referência global
     // Aplicar cores de identidade visual como variáveis CSS
     if (configSistema.cores) {
       const c = typeof configSistema.cores === 'string'
@@ -583,6 +585,7 @@ async function excluirLideranca(l, bairro) {
     await carregarTudo()
     repaintMapa()
     renderLiderancas(bairro)
+    if (window.GeoMode && window.GeoMode.isAtivo()) window.GeoMode.refreshPins()
   } catch (err) {
     console.error(err)
     alert('Erro ao excluir liderança')
@@ -709,6 +712,10 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
   const contato = document.getElementById("lideranca-contato").value.trim()
   const vinculo = document.getElementById("lideranca-vinculo").value
   const votos   = Number(document.getElementById("lideranca-votos").value) || 0
+  const cep     = document.getElementById("lideranca-cep").value.trim()
+  const bairro  = document.getElementById("lideranca-bairro").value.trim()
+  const lat     = document.getElementById("lideranca-lat").value
+  const lng     = document.getElementById("lideranca-lng").value
 
   if (!nome) { alert("Informe o nome da liderança."); return }
 
@@ -724,6 +731,10 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
     formData.append('contato',           contato)
     formData.append('vinculo_politico',  vinculo)
     formData.append('expectativa_votos', votos)
+    if (cep)    formData.append('cep',    cep)
+    if (bairro) formData.append('bairro', bairro)
+    if (lat)    formData.append('lat',    lat)
+    if (lng)    formData.append('lng',    lng)
 
     await apiFetch('/liderancas', {
       method: 'POST',
@@ -733,10 +744,16 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
     document.getElementById("lideranca-nome").value    = ""
     document.getElementById("lideranca-contato").value = ""
     document.getElementById("lideranca-votos").value   = "0"
+    document.getElementById("lideranca-cep").value     = ""
+    document.getElementById("lideranca-bairro").value  = ""
+    document.getElementById("lideranca-lat").value     = ""
+    document.getElementById("lideranca-lng").value     = ""
+    document.getElementById("lideranca-cep-status").textContent = ""
 
     await carregarTudo()
     repaintMapa()
     if (bairroAtual) renderLiderancas(bairroAtual)
+    if (window.GeoMode && window.GeoMode.isAtivo()) window.GeoMode.refreshPins()
   } catch (err) {
     console.error(err)
     alert('Erro ao adicionar liderança')
@@ -901,6 +918,7 @@ window.iniciarMapa = async function() {
     })
     .then(() => {
       repaintMapa()
+      if (window.GeoMode && window.GeoMode.isAtivo()) window.GeoMode.refreshPins()
       if (window._distritoFixo) {
         filtrarDistrito(window._distritoFixo)
         mostrarLiderDistrito(window._distritoFixo)
@@ -920,10 +938,17 @@ let _editBairro    = null
 function abrirModalEditar(l, bairro) {
   _editLideranca = l
   _editBairro    = bairro
-  document.getElementById('edit-nome').value    = l.nome || ''
+  document.getElementById('edit-nome').value    = l.nome    || ''
   document.getElementById('edit-contato').value = l.contato || ''
   document.getElementById('edit-votos').value   = l.expectativa_votos || 0
   document.getElementById('edit-vinculo').value = l.vinculo_politico || 'ambos'
+  // Campos geográficos
+  document.getElementById('edit-cep').value    = l.cep    || ''
+  document.getElementById('edit-bairro').value = l.bairro || ''
+  document.getElementById('edit-lat').value    = l.lat    || ''
+  document.getElementById('edit-lng').value    = l.lng    || ''
+  document.getElementById('edit-cep-status').textContent = l.lat ? `✓ localizado (${Number(l.lat).toFixed(4)}, ${Number(l.lng).toFixed(4)})` : ''
+  document.getElementById('edit-cep-status').className = l.lat ? 'cep-status ok' : 'cep-status'
   document.getElementById('modal-editar').style.display = 'flex'
 }
 
@@ -937,6 +962,10 @@ document.getElementById('edit-salvar-btn').addEventListener('click', async () =>
   const contato = document.getElementById('edit-contato').value.trim()
   const votos   = Number(document.getElementById('edit-votos').value) || 0
   const vinculo = document.getElementById('edit-vinculo').value
+  const cep     = document.getElementById('edit-cep').value.trim()
+  const bairroG = document.getElementById('edit-bairro').value.trim()
+  const lat     = document.getElementById('edit-lat').value
+  const lng     = document.getElementById('edit-lng').value
   if (!nome) { alert('Nome é obrigatório'); return }
 
   try {
@@ -947,6 +976,10 @@ document.getElementById('edit-salvar-btn').addEventListener('click', async () =>
     formData.append('vinculo_politico',  vinculo)
     formData.append('cidade',            _editBairro || bairroAtual)
     formData.append('mapa',              'pirai')
+    if (cep)     formData.append('cep',    cep)
+    if (bairroG) formData.append('bairro', bairroG)
+    if (lat)     formData.append('lat',    lat)
+    if (lng)     formData.append('lng',    lng)
 
     await apiFetch(`/liderancas/${_editLideranca.id}`, {
       method: 'PUT',
@@ -957,6 +990,7 @@ document.getElementById('edit-salvar-btn').addEventListener('click', async () =>
     await carregarTudo()
     repaintMapa()
     renderLiderancas(_editBairro || bairroAtual)
+    if (window.GeoMode && window.GeoMode.isAtivo()) window.GeoMode.refreshPins()
   } catch (err) {
     console.error(err)
     alert('Erro ao editar liderança')

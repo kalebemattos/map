@@ -17,13 +17,14 @@ window.GeoMode = (function () {
   'use strict'
 
   // ── Estado interno ──────────────────────────────────────────────────────
-  let _active       = false
-  let _tileLayer    = null
-  let _maskLayer    = null
-  let _glowLayer    = null
-  let _geojsonCache = null   // GeoJSON data cacheado após primeiro fetch
-  let _selectedLayer = null  // layer selecionado no modo geo
-  let _filtroAtivo  = null   // distrito filtrado pelo dropdown
+  let _active        = false
+  let _tileLayer     = null
+  let _maskLayer     = null
+  let _glowLayer     = null
+  let _geojsonCache  = null   // GeoJSON data cacheado após primeiro fetch
+  let _selectedLayer = null   // layer selecionado no modo geo
+  let _filtroAtivo   = null   // distrito filtrado pelo dropdown
+  let _pinsGroup     = null   // LayerGroup com os marcadores das lideranças
 
   // ── Paleta visual ───────────────────────────────────────────────────────
   const GEO = {
@@ -158,6 +159,112 @@ window.GeoMode = (function () {
     syncStyles()
   }
 
+  // ── Pins das lideranças ─────────────────────────────────────────────────
+
+  // Retorna a cor do pin com base no vínculo político
+  function _corPin(vinculo) {
+    const cands = (window.configSistema && window.configSistema.candidatos) || []
+    const cand  = cands.find(c => c.chave === vinculo)
+    if (cand && cand.cor_fundo) {
+      // Cor mais vibrante: usa cor_texto se disponível, senão cor_fundo
+      return cand.cor_texto || cand.cor_fundo
+    }
+    const defaults = { celia: '#ec4899', fernando: '#8b5cf6', ambos: '#38bdf8' }
+    return defaults[vinculo] || '#38bdf8'
+  }
+
+  // Cria o ícone SVG do pin com animação de pulso
+  function _criarIconePin(l) {
+    const cor = _corPin(l.vinculo_politico)
+    return L.divIcon({
+      className: '',
+      html: `<div class="geo-pin" title="${l.nome}">
+               <div class="geo-pin-dot"  style="background:${cor};"></div>
+               <div class="geo-pin-pulse" style="background:${cor};"></div>
+             </div>`,
+      iconSize:   [22, 22],
+      iconAnchor: [11, 11],
+      popupAnchor:[0, -14]
+    })
+  }
+
+  // Cria o HTML do popup da liderança
+  function _criarPopupPin(l) {
+    const cor  = _corPin(l.vinculo_politico)
+    const cands = (window.configSistema && window.configSistema.candidatos) || []
+    const cand  = cands.find(c => c.chave === l.vinculo_politico)
+    const label = cand ? cand.nome.split(' ')[0] : (l.vinculo_politico || 'Ambos')
+    const votos = Number(l.expectativa_votos || 0).toLocaleString('pt-BR')
+    const bairroLabel = l.bairro ? `<div class="pgp-linha">📍 ${l.bairro}</div>` : ''
+    const contatoLabel = l.contato ? `<div class="pgp-linha">📞 ${l.contato}</div>` : ''
+
+    return `<div class="pgp-card">
+      <div class="pgp-nome">${l.nome}</div>
+      ${bairroLabel}
+      ${contatoLabel}
+      <div class="pgp-linha">🗳️ ${votos} votos esperados</div>
+      <span class="pgp-badge" style="background:${cor};color:#fff;">${label}</span>
+    </div>`
+  }
+
+  // Renderiza os pins de um array de lideranças
+  function _renderizarPins(lista) {
+    const map = _map()
+    if (!map) return
+
+    // Limpa grupo existente
+    if (_pinsGroup) { map.removeLayer(_pinsGroup); _pinsGroup = null }
+    if (!lista || !lista.length) return
+
+    _pinsGroup = L.layerGroup()
+
+    lista.forEach(l => {
+      if (!l.lat || !l.lng) return
+      const marker = L.marker([Number(l.lat), Number(l.lng)], {
+        icon:      _criarIconePin(l),
+        zIndexOffset: 500,
+        riseOnHover:  true,
+        pane:     'markerPane'
+      })
+
+      marker.bindPopup(_criarPopupPin(l), {
+        className:   'pin-geo-popup',
+        maxWidth:    260,
+        autoPanPadding: [20, 20]
+      })
+
+      marker.on('mouseover', () => marker.openPopup())
+
+      _pinsGroup.addLayer(marker)
+    })
+
+    _pinsGroup.addTo(map)
+    console.log(`[GeoMode] ${lista.length} pins renderizados`)
+  }
+
+  // Busca pins do backend e renderiza
+  async function refreshPins() {
+    if (!_active) return
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      const r = await fetch(`${window.API_URL}/liderancas/geo?mapa=pirai`, {
+        headers: { Authorization: 'Bearer ' + token }
+      })
+      if (!r.ok) return
+      const lista = await r.json()
+      _renderizarPins(lista)
+    } catch (e) {
+      console.warn('[GeoMode] refreshPins:', e)
+    }
+  }
+
+  // Remove todos os pins do mapa
+  function _clearPins() {
+    const map = _map()
+    if (_pinsGroup && map) { map.removeLayer(_pinsGroup); _pinsGroup = null }
+  }
+
   // ── Hover handlers (adicionados quando geo mode ativa) ──────────────────
   let _hoverHandlers = []
 
@@ -260,6 +367,9 @@ window.GeoMode = (function () {
     // 8. Classe CSS no body para overrides visuais
     document.body.classList.add('geo-mode-active')
 
+    // 9. Carregar e renderizar pins das lideranças
+    refreshPins()
+
     console.log('[GeoMode] Modo Geográfico ativado')
   }
 
@@ -276,6 +386,7 @@ window.GeoMode = (function () {
     if (_tileLayer) { map.removeLayer(_tileLayer); _tileLayer = null }
     if (_maskLayer) { map.removeLayer(_maskLayer); _maskLayer = null }
     if (_glowLayer) { map.removeLayer(_glowLayer); _glowLayer = null }
+    _clearPins()
 
     // 2. Remove hooks de hover
     _unhookHovers()
@@ -298,6 +409,6 @@ window.GeoMode = (function () {
   function isAtivo() { return _active }
 
   // ── API pública ──────────────────────────────────────────────────────────
-  return { ativar, desativar, isAtivo, syncStyles, filtrarGeo, selecionarDistrito }
+  return { ativar, desativar, isAtivo, syncStyles, filtrarGeo, selecionarDistrito, refreshPins }
 
 })()

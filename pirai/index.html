@@ -120,6 +120,124 @@
   text-shadow: 0 0 8px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.8) !important;
 }
 
+/* ═══════════════════════════════════════════════════
+   PINS GEOGRÁFICOS — marcadores das lideranças
+   ═══════════════════════════════════════════════════ */
+
+/* Container do pin */
+.geo-pin {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+}
+
+/* Dot central */
+.geo-pin-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.92);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.15);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 2;
+}
+.geo-pin:hover .geo-pin-dot,
+.geo-pin.ativo .geo-pin-dot {
+  transform: translate(-50%, -50%) scale(1.5);
+}
+
+/* Anel de pulso */
+.geo-pin-pulse {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  opacity: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.3);
+  animation: geo-pin-pulse 2.8s ease-out infinite;
+  z-index: 1;
+}
+
+@keyframes geo-pin-pulse {
+  0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0.6; }
+  80%  { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* Animação de entrada do marcador */
+@keyframes geo-pin-enter {
+  from { transform: scale(0) translateY(8px); opacity: 0; }
+  to   { transform: scale(1) translateY(0);  opacity: 1; }
+}
+.leaflet-marker-icon .geo-pin {
+  animation: geo-pin-enter 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* Popup dos pins */
+.pin-geo-popup .leaflet-popup-content-wrapper {
+  background: rgba(8, 18, 48, 0.97);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(56,189,248,0.25);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 0;
+}
+.pin-geo-popup .leaflet-popup-tip-container { display: none; }
+.pin-geo-popup .leaflet-popup-content { margin: 0; }
+
+.pgp-card {
+  padding: 14px 16px;
+  min-width: 200px;
+  font-family: 'DM Sans', sans-serif;
+}
+.pgp-nome {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.pgp-linha {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+}
+.pgp-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+/* Campo CEP no form */
+.cep-wrap {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.cep-status {
+  font-size: 10px;
+  margin-top: 3px;
+  min-height: 14px;
+  transition: color .2s;
+}
+.cep-status.ok   { color: #4ade80; }
+.cep-status.err  { color: #f87171; }
+.cep-status.wait { color: #94a3b8; }
+
 /* ===== PIN POPUP ===== */
 .pin-popup{width:270px;font-family:'DM Sans',Arial,sans-serif}
 .pp-header{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
@@ -384,6 +502,15 @@
             </select>
             <input id="lideranca-votos" type="number" min="0" value="0" placeholder="Votos" class="form-input">
           </div>
+          <!-- Campos geográficos -->
+          <div class="cep-wrap">
+            <input id="lideranca-cep" type="text" placeholder="CEP (ex: 27500-000)" class="form-input" maxlength="9" style="flex:1;">
+            <span id="lideranca-cep-spinner" style="font-size:13px;display:none;">⏳</span>
+          </div>
+          <div id="lideranca-cep-status" class="cep-status"></div>
+          <input id="lideranca-bairro" type="text" placeholder="Bairro / Localidade" class="form-input">
+          <input id="lideranca-lat" type="hidden">
+          <input id="lideranca-lng" type="hidden">
           <button id="add-lideranca" class="btn-add">+ Adicionar</button>
         </div>
       </div>
@@ -490,6 +617,88 @@ document.addEventListener("keydown", e => {
 })
 
 // ═══════════════════════════════════════════════════════
+// GEOCODIFICAÇÃO VIA CEP (ViaCEP + Nominatim)
+// ═══════════════════════════════════════════════════════
+async function geocodificarCep(cep, statusEl) {
+  const c = cep.replace(/\D/g, '')
+  if (c.length !== 8) return null
+
+  if (statusEl) { statusEl.textContent = 'Localizando...'; statusEl.className = 'cep-status wait' }
+
+  try {
+    // 1. ViaCEP → endereço
+    const vr  = await fetch(`https://viacep.com.br/ws/${c}/json/`)
+    const vd  = await vr.json()
+    if (vd.erro) throw new Error('CEP não encontrado')
+
+    // 2. Nominatim → lat/lng
+    const q   = encodeURIComponent(`${c}, Brasil`)
+    const nr  = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'pt-BR' } }
+    )
+    const nd  = await nr.json()
+    if (!nd.length) throw new Error('Coordenadas não encontradas')
+
+    if (statusEl) { statusEl.textContent = `✓ ${vd.localidade} – ${vd.uf}`; statusEl.className = 'cep-status ok' }
+
+    return {
+      bairro: vd.bairro || vd.localidade || '',
+      lat:    parseFloat(nd[0].lat),
+      lng:    parseFloat(nd[0].lon)
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.textContent = '✗ ' + e.message; statusEl.className = 'cep-status err' }
+    return null
+  }
+}
+
+// Auto-formata CEP enquanto digita
+function formatarCep(input) {
+  let v = input.value.replace(/\D/g, '').slice(0, 8)
+  if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5)
+  input.value = v
+}
+
+// Wiring do campo CEP do formulário de adicionar
+document.getElementById('lideranca-cep').addEventListener('input', function () {
+  formatarCep(this)
+  document.getElementById('lideranca-lat').value = ''
+  document.getElementById('lideranca-lng').value = ''
+  document.getElementById('lideranca-cep-status').textContent = ''
+})
+
+document.getElementById('lideranca-cep').addEventListener('blur', async function () {
+  const res = await geocodificarCep(this.value, document.getElementById('lideranca-cep-status'))
+  if (res) {
+    if (!document.getElementById('lideranca-bairro').value.trim()) {
+      document.getElementById('lideranca-bairro').value = res.bairro
+    }
+    document.getElementById('lideranca-lat').value = res.lat
+    document.getElementById('lideranca-lng').value = res.lng
+  }
+})
+
+// Wiring do campo CEP do modal editar
+document.getElementById('edit-cep').addEventListener('input', function () {
+  formatarCep(this)
+  document.getElementById('edit-lat').value = ''
+  document.getElementById('edit-lng').value = ''
+  document.getElementById('edit-cep-status').textContent = ''
+})
+
+document.getElementById('edit-cep').addEventListener('blur', async function () {
+  const res = await geocodificarCep(this.value, document.getElementById('edit-cep-status'))
+  if (res) {
+    if (!document.getElementById('edit-bairro').value.trim()) {
+      document.getElementById('edit-bairro').value = res.bairro
+    }
+    document.getElementById('edit-lat').value = res.lat
+    document.getElementById('edit-lng').value = res.lng
+  }
+})
+
+// ═══════════════════════════════════════════════════════
 // TOGGLE MODO ESTRATÉGICO / MODO GEOGRÁFICO
 // ═══════════════════════════════════════════════════════
 ;(function () {
@@ -574,6 +783,20 @@ document.addEventListener("keydown", e => {
         <!-- opções por candidato — preenchidas por injetarCandidatosPirai() -->
       </select>
     </div>
+    <!-- Campos geográficos -->
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">CEP</label>
+      <input id="edit-cep" type="text" maxlength="9" placeholder="00000-000"
+        style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+      <div id="edit-cep-status" class="cep-status"></div>
+    </div>
+    <div>
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:5px;">Bairro / Localidade</label>
+      <input id="edit-bairro" type="text" placeholder="Bairro"
+        style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+    </div>
+    <input id="edit-lat" type="hidden">
+    <input id="edit-lng" type="hidden">
     <div style="display:flex;gap:8px;margin-top:4px;">
       <button onclick="fecharModalEditar()" style="flex:1;padding:11px;border:1.5px solid #e2e8f0;border-radius:10px;background:white;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:#64748b;">Cancelar</button>
       <button id="edit-salvar-btn" style="flex:1;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Salvar</button>
