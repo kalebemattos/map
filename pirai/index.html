@@ -10,6 +10,116 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
+
+/* ═══════════════════════════════════════════════════
+   TOGGLE DE MODO  —  Estratégico / Geográfico
+   ═══════════════════════════════════════════════════ */
+#modo-toggle {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  background: rgba(6, 14, 38, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 100px;
+  padding: 4px;
+  gap: 2px;
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.06) inset;
+  animation: fadeUp .4s ease;
+}
+
+.modo-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 20px;
+  border: none;
+  border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  background: transparent;
+  cursor: pointer;
+  transition: color .22s, background .22s, box-shadow .22s;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.modo-toggle-btn svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity .22s;
+}
+
+.modo-toggle-btn:not(.ativo):hover {
+  color: rgba(255,255,255,0.75);
+  background: rgba(255,255,255,0.07);
+}
+.modo-toggle-btn:not(.ativo):hover svg { opacity: 0.7; }
+
+/* Estado ativo — Modo Estratégico (azul) */
+.modo-toggle-btn.ativo {
+  color: #fff;
+  background: linear-gradient(135deg, #0d2d6b, #1565c0);
+  box-shadow: 0 2px 14px rgba(21,101,192,0.50);
+}
+.modo-toggle-btn.ativo svg { opacity: 1; }
+
+/* Estado ativo — Modo Geográfico (cyan/teal) */
+.modo-toggle-btn.ativo.geo {
+  background: linear-gradient(135deg, #0c3349, #0e7490);
+  box-shadow: 0 2px 16px rgba(14,116,144,0.55), 0 0 0 1px rgba(56,189,248,0.25);
+}
+
+/* ═══════════════════════════════════════════════════
+   GEO MODE — OVERRIDES VISUAIS (aplicados via .geo-mode-active no body)
+   ═══════════════════════════════════════════════════ */
+
+/* Tiles OSM levemente escurecidos e dessaturados */
+.geo-mode-active .geo-tile-layer {
+  filter: brightness(0.48) saturate(0.55) sepia(0.15);
+}
+
+/* Borda do município com glow cyan */
+.geo-border-glow {
+  filter: drop-shadow(0 0 5px rgba(56,189,248,0.75))
+          drop-shadow(0 0 14px rgba(56,189,248,0.40));
+}
+
+/* Fundo do mapa torna-se bem escuro no geo mode */
+.geo-mode-active .leaflet-container {
+  background: #020b1a !important;
+}
+
+/* Legenda fica mais discreta no geo mode */
+.geo-mode-active #legenda {
+  opacity: 0.60;
+  transition: opacity .3s;
+}
+.geo-mode-active #legenda:hover { opacity: 1; }
+
+/* Controles esquerda levemente transparentes no geo mode */
+.geo-mode-active #map-left-controls {
+  opacity: 0.80;
+  transition: opacity .3s;
+}
+.geo-mode-active #map-left-controls:hover { opacity: 1; }
+
+/* Labels dos distritos ficam brancos no geo mode */
+.geo-mode-active .leaflet-marker-pane > * div {
+  color: rgba(255,255,255,0.85) !important;
+  text-shadow: 0 0 8px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.8) !important;
+}
+
 /* ===== PIN POPUP ===== */
 .pin-popup{width:270px;font-family:'DM Sans',Arial,sans-serif}
 .pp-header{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
@@ -93,6 +203,28 @@
 </div>
 
 <div id="content-wrapper" style="display:none;">
+
+<!-- ===== TOGGLE DE MODO ===== -->
+<div id="modo-toggle">
+  <button id="btn-modo-estrategico" class="modo-toggle-btn ativo" title="Modo Estratégico — polígonos personalizados">
+    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor" opacity=".7"/>
+      <rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor"/>
+      <rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor"/>
+      <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity=".5"/>
+    </svg>
+    Modo Estratégico
+  </button>
+  <button id="btn-modo-geografico" class="modo-toggle-btn geo" title="Modo Geográfico — mapa real com OpenStreetMap">
+    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+      <ellipse cx="8" cy="8" rx="2.8" ry="6.5" stroke="currentColor" stroke-width="1.2"/>
+      <line x1="1.5" y1="6" x2="14.5" y2="6" stroke="currentColor" stroke-width="1.2"/>
+      <line x1="1.5" y1="10" x2="14.5" y2="10" stroke="currentColor" stroke-width="1.2"/>
+    </svg>
+    Modo Geográfico
+  </button>
+</div>
 
 <!-- CONTROLES FLUTUANTES DO MAPA -->
 <div id="map-left-controls">
@@ -314,6 +446,7 @@ window.iniciarAplicacao = async function () {
 <script src="auth.js"></script>
 <script src="distritos.js"></script>
 <script src="mapa.js"></script>
+<script src="geo-mode.js"></script>
 
 <script>
 
@@ -355,6 +488,64 @@ function fecharModalLideranca() {
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") fecharModalLideranca()
 })
+
+// ═══════════════════════════════════════════════════════
+// TOGGLE MODO ESTRATÉGICO / MODO GEOGRÁFICO
+// ═══════════════════════════════════════════════════════
+;(function () {
+  const btnEst = document.getElementById('btn-modo-estrategico')
+  const btnGeo = document.getElementById('btn-modo-geografico')
+  if (!btnEst || !btnGeo) return
+
+  let _transitando = false
+
+  function setModoEstrategico() {
+    if (_transitando) return
+    _transitando = true
+
+    btnEst.classList.add('ativo')
+    btnGeo.classList.remove('ativo')
+    btnEst.disabled = true
+    btnGeo.disabled = false
+
+    if (window.GeoMode && window.GeoMode.isAtivo()) {
+      window.GeoMode.desativar()
+    }
+
+    // Reaplicar zoom/bounds do modo estratégico
+    if (window.map && window.geoBairros) {
+      window.map.setMaxBounds(window.geoBairros.getBounds().pad(0.5))
+    }
+
+    setTimeout(() => { _transitando = false }, 300)
+  }
+
+  function setModoGeografico() {
+    if (_transitando) return
+    if (!window.map) { console.warn('[toggle] map ainda não disponível'); return }
+    _transitando = true
+
+    btnGeo.classList.add('ativo')
+    btnEst.classList.remove('ativo')
+    btnGeo.disabled = true
+    btnEst.disabled = false
+
+    // Ativa o modo geográfico (async — faz o fetch do GeoJSON internamente)
+    window.GeoMode.ativar().then(() => {
+      // Expand max bounds para permitir algum pan no mapa real
+      if (window.geoBairros) {
+        window.map.setMaxBounds(window.geoBairros.getBounds().pad(1.2))
+      }
+      setTimeout(() => { _transitando = false }, 300)
+    }).catch(e => {
+      console.error('[GeoMode] falha ao ativar:', e)
+      setModoEstrategico()  // fallback
+    })
+  }
+
+  btnEst.addEventListener('click', setModoEstrategico)
+  btnGeo.addEventListener('click', setModoGeografico)
+})()
 </script>
 
 <!-- MODAL EDITAR LIDERANÇA -->

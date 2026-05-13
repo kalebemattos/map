@@ -382,6 +382,8 @@ function getCorModo(bairro) {
 // ─────────────────────────────────────────────
 function repaintMapa() {
   if (!geoBairros) return
+  // Delega ao Modo Geográfico quando ativo (sem alterar lógica estratégica)
+  if (window.GeoMode && window.GeoMode.isAtivo()) { window.GeoMode.syncStyles(); return }
   geoBairros.eachLayer(layer => {
     const b = layer.feature.properties[BAIRRO_PROP]
     layer.setStyle({
@@ -394,12 +396,15 @@ function repaintMapa() {
   calcularTotalGeral()
   atualizarLegenda()
 }
+window.repaintMapa = repaintMapa
 
 // ─────────────────────────────────────────────
 // FILTRAR DISTRITO
 // ─────────────────────────────────────────────
 function filtrarDistrito(distrito) {
   if (!geoBairros) return
+  // Delega ao Modo Geográfico quando ativo
+  if (window.GeoMode && window.GeoMode.isAtivo()) { window.GeoMode.filtrarGeo(distrito); return }
   geoBairros.eachLayer(layer => {
     const b = layer.feature.properties[BAIRRO_PROP]
     if (!distrito) {
@@ -597,8 +602,11 @@ function selecionarBairro(nomeDistrito, layer) {
     })
   }
   layerSelecionado = layer
+  window._piraiLayerSelecionado = layer   // expõe para GeoMode
   bairroAtual = nomeDistrito
   layer.setStyle({ weight: 3.5, color: "#0f172a", fillOpacity: 0.92 })
+  // Notifica o Modo Geográfico para corrigir os estilos visuais
+  if (window.GeoMode && window.GeoMode.isAtivo()) window.GeoMode.selecionarDistrito(layer)
 
   document.getElementById("bairro-nome").textContent = nomeDistrito
   document.getElementById("bairro-info").innerHTML =
@@ -884,6 +892,7 @@ window.iniciarMapa = async function() {
           }).addTo(map)
         }
       }).addTo(map)
+      window.geoBairros = geoBairros   // expõe para GeoMode
 
       map.fitBounds(geoBairros.getBounds(), { padding: [20, 20] })
       map.setMinZoom(Math.max(map.getZoom() - 1, 9))
