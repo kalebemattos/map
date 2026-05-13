@@ -778,6 +778,21 @@ textarea {
       </div>
     </div>
 
+    <!-- ── Localização geográfica ── -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>CEP</label>
+        <input id="admin-cep" type="text" maxlength="9" placeholder="00000-000">
+        <div id="admin-cep-status" style="font-size:11px;min-height:14px;margin-top:3px;transition:color .2s;"></div>
+      </div>
+      <div class="form-group">
+        <label>Bairro / Localidade</label>
+        <input id="admin-bairro" type="text" placeholder="Bairro">
+      </div>
+    </div>
+    <input type="hidden" id="admin-lat">
+    <input type="hidden" id="admin-lng">
+
     <div class="form-group">
       <label>Foto</label>
       <input type="file" id="foto" accept="image/jpeg,image/png">
@@ -1455,7 +1470,7 @@ async function carregarLiderancas() {
 
     // Store data on element for edit
     div.querySelector('.btn-edit')?.addEventListener('click', () => {
-      editarLiderancaCompleta(l.id, l.nome, l.contato || '', l.expectativa_votos || 0, l.perfil || '', l.responsavel || '', l.status || 'ativa', l.release || '', l.vinculo_politico || 'ambos', l.apelido || '', l.rede_social || '');
+      editarLiderancaCompleta(l.id, l.nome, l.contato || '', l.expectativa_votos || 0, l.perfil || '', l.responsavel || '', l.status || 'ativa', l.release || '', l.vinculo_politico || 'ambos', l.apelido || '', l.rede_social || '', l.cep || '', l.bairro || '', l.lat || null, l.lng || null);
     });
     div.querySelector('.btn-excluir')?.addEventListener('click', () => excluir(l.id));
 
@@ -1464,7 +1479,7 @@ async function carregarLiderancas() {
 }
 
 /* ===== EDITAR ===== */
-function editarLiderancaCompleta(id, nomeVal, contatoVal, votosVal, perfilVal, respVal, statusVal, releaseVal, vinculoVal, apelidoVal, redeSocialVal) {
+function editarLiderancaCompleta(id, nomeVal, contatoVal, votosVal, perfilVal, respVal, statusVal, releaseVal, vinculoVal, apelidoVal, redeSocialVal, cepVal, bairroVal, latVal, lngVal) {
   const user = JSON.parse(localStorage.getItem('user'));
   if (user.nivel === 'visualizador') return;
 
@@ -1481,6 +1496,17 @@ function editarLiderancaCompleta(id, nomeVal, contatoVal, votosVal, perfilVal, r
   document.getElementById('vinculo_politico').value = vinculoVal || 'ambos';
   document.getElementById('apelido').value = apelidoVal || '';
   document.getElementById('rede_social').value = redeSocialVal || '';
+
+  const adminCepEl    = document.getElementById('admin-cep')
+  const adminBairroEl = document.getElementById('admin-bairro')
+  const adminLatEl    = document.getElementById('admin-lat')
+  const adminLngEl    = document.getElementById('admin-lng')
+  const adminCepSt    = document.getElementById('admin-cep-status')
+  if (adminCepEl)    adminCepEl.value    = cepVal    || ''
+  if (adminBairroEl) adminBairroEl.value = bairroVal || ''
+  if (adminLatEl)    adminLatEl.value    = latVal    || ''
+  if (adminLngEl)    adminLngEl.value    = lngVal    || ''
+  if (adminCepSt)    adminCepSt.textContent = cepVal ? `✓ CEP salvo` : ''
 
   formTitle.textContent = 'Editar liderança';
   document.getElementById('form-icon').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>️';
@@ -1505,6 +1531,16 @@ function cancelarEdicao() {
   fotoInput.value = '';
   document.getElementById('apelido').value = '';
   document.getElementById('rede_social').value = '';
+  const adminCepEl = document.getElementById('admin-cep')
+  if (adminCepEl) adminCepEl.value = ''
+  const adminBairroEl = document.getElementById('admin-bairro')
+  if (adminBairroEl) adminBairroEl.value = ''
+  const adminLatEl = document.getElementById('admin-lat')
+  if (adminLatEl) adminLatEl.value = ''
+  const adminLngEl = document.getElementById('admin-lng')
+  if (adminLngEl) adminLngEl.value = ''
+  const adminCepStatus = document.getElementById('admin-cep-status')
+  if (adminCepStatus) adminCepStatus.textContent = ''
   const cands = configSistema.candidatos || [];
   document.getElementById('vinculo_politico').value = cands.length === 1 ? cands[0].chave : (cands[0]?.chave || 'ambos');
   formTitle.textContent = 'Nova Liderança';
@@ -1676,6 +1712,15 @@ async function salvar() {
   fd.append('release', releaseInput.value);
   fd.append('vinculo_politico', document.getElementById('vinculo_politico').value);
   fd.append('data_nascimento', dataNascimentoInput.value || '');
+
+  const adminCep    = (document.getElementById('admin-cep')?.value    || '').trim()
+  const adminBairro = (document.getElementById('admin-bairro')?.value || '').trim()
+  const adminLat    = document.getElementById('admin-lat')?.value
+  const adminLng    = document.getElementById('admin-lng')?.value
+  if (adminCep)    fd.append('cep',    adminCep)
+  if (adminBairro) fd.append('bairro', adminBairro)
+  if (adminLat)    fd.append('lat',    adminLat)
+  if (adminLng)    fd.append('lng',    adminLng)
 
   if (fotoInput.files.length) fd.append('foto', fotoInput.files[0]);
 
@@ -1882,6 +1927,71 @@ function copiarLinkCadastro() {
     document.execCommand('copy');
   });
 }
+
+// ═══════════════════════════════════════════════════════════
+// GEOCODIFICAÇÃO VIA CEP  —  admin/cadastro de lideranças
+// ═══════════════════════════════════════════════════════════
+
+async function adminGeocodificarCep(cepRaw, statusEl) {
+  const c = cepRaw.replace(/\D/g, '')
+  if (c.length !== 8) return null
+  if (statusEl) { statusEl.textContent = 'Localizando...'; statusEl.style.color = '#64748b' }
+  try {
+    const vr = await fetch(`https://viacep.com.br/ws/${c}/json/`)
+    const vd = await vr.json()
+    if (vd.erro) throw new Error('CEP não encontrado')
+
+    const q  = encodeURIComponent(`${c}, Brasil`)
+    const nr = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'pt-BR' } }
+    )
+    const nd = await nr.json()
+    if (!nd.length) throw new Error('Coordenadas não encontradas')
+
+    if (statusEl) { statusEl.textContent = `✓ ${vd.localidade} – ${vd.uf}`; statusEl.style.color = '#16a34a' }
+
+    return {
+      bairro: vd.bairro || vd.localidade || '',
+      lat:    parseFloat(nd[0].lat),
+      lng:    parseFloat(nd[0].lon)
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.textContent = '✗ ' + e.message; statusEl.style.color = '#dc2626' }
+    return null
+  }
+}
+
+function adminFormatarCep(input) {
+  let v = input.value.replace(/\D/g, '').slice(0, 8)
+  if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5)
+  input.value = v
+}
+
+;(function () {
+  const cepEl    = document.getElementById('admin-cep')
+  const bairroEl = document.getElementById('admin-bairro')
+  const latEl    = document.getElementById('admin-lat')
+  const lngEl    = document.getElementById('admin-lng')
+  const statusEl = document.getElementById('admin-cep-status')
+  if (!cepEl) return
+
+  cepEl.addEventListener('input', function () {
+    adminFormatarCep(this)
+    if (latEl) latEl.value = ''
+    if (lngEl) lngEl.value = ''
+    if (statusEl) statusEl.textContent = ''
+  })
+
+  cepEl.addEventListener('blur', async function () {
+    const res = await adminGeocodificarCep(this.value, statusEl)
+    if (res) {
+      if (bairroEl && !bairroEl.value.trim()) bairroEl.value = res.bairro
+      if (latEl) latEl.value = res.lat
+      if (lngEl) lngEl.value = res.lng
+    }
+  })
+})()
 </script>
 <script src="../assets/icons.js"></script>
 </body>

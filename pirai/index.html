@@ -680,22 +680,29 @@ document.getElementById('lideranca-cep').addEventListener('blur', async function
 })
 
 // Wiring do campo CEP do modal editar
-document.getElementById('edit-cep').addEventListener('input', function () {
-  formatarCep(this)
-  document.getElementById('edit-lat').value = ''
-  document.getElementById('edit-lng').value = ''
-  document.getElementById('edit-cep-status').textContent = ''
-})
+// (o modal é injetado depois do script — usa delegação via DOMContentLoaded)
+document.addEventListener('DOMContentLoaded', function () {
+  const editCep = document.getElementById('edit-cep')
+  if (!editCep) return
 
-document.getElementById('edit-cep').addEventListener('blur', async function () {
-  const res = await geocodificarCep(this.value, document.getElementById('edit-cep-status'))
-  if (res) {
-    if (!document.getElementById('edit-bairro').value.trim()) {
-      document.getElementById('edit-bairro').value = res.bairro
+  editCep.addEventListener('input', function () {
+    formatarCep(this)
+    document.getElementById('edit-lat').value = ''
+    const lngEl = document.getElementById('edit-lng')
+    if (lngEl) lngEl.value = ''
+    document.getElementById('edit-cep-status').textContent = ''
+  })
+
+  editCep.addEventListener('blur', async function () {
+    const res = await geocodificarCep(this.value, document.getElementById('edit-cep-status'))
+    if (res) {
+      const bairroEl = document.getElementById('edit-bairro')
+      if (bairroEl && !bairroEl.value.trim()) bairroEl.value = res.bairro
+      document.getElementById('edit-lat').value = res.lat
+      const lngEl = document.getElementById('edit-lng')
+      if (lngEl) lngEl.value = res.lng
     }
-    document.getElementById('edit-lat').value = res.lat
-    document.getElementById('edit-lng').value = res.lng
-  }
+  })
 })
 
 // ═══════════════════════════════════════════════════════
