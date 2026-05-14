@@ -367,7 +367,14 @@ window.GeoMode = (function () {
     // 8. Classe CSS no body para overrides visuais
     document.body.classList.add('geo-mode-active')
 
-    // 9. Carregar e renderizar pins das lideranças
+    // 9. Garantir que os indicadores e o sidebar reflitam o estado atual
+    //    (o bairroAtual pode já estar selecionado do modo estratégico)
+    if (typeof window.repaintMapa === 'function') window.repaintMapa()
+    if (window.bairroAtual && typeof window.renderLiderancas === 'function') {
+      window.renderLiderancas(window.bairroAtual)
+    }
+
+    // 10. Carregar e renderizar pins das lideranças
     refreshPins()
 
     console.log('[GeoMode] Modo Geográfico ativado')
@@ -401,6 +408,11 @@ window.GeoMode = (function () {
       window.GeoMode = null
       window.repaintMapa()
       window.GeoMode = _bkp
+    }
+
+    // 5. Re-renderiza o sidebar com o distrito atual (se houver)
+    if (window.bairroAtual && typeof window.renderLiderancas === 'function') {
+      window.renderLiderancas(window.bairroAtual)
     }
 
     console.log('[GeoMode] Modo Estratégico restaurado')

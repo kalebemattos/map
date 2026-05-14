@@ -1827,6 +1827,7 @@ async function carregarAba(aba) {
         cargo:     candidatoAtual.cargo,
         uf:        candidatoAtual.uf,
         id_municipio: _perfilIdMunicipio,
+        cidade: _perfilMunicipio || '',
       });
       const res  = await fetch(`${API_BASE}/api/eleicoes/historico?${params}`, { headers });
       const json = await res.json();
@@ -1836,6 +1837,7 @@ async function carregarAba(aba) {
     } else if (aba === 'abstencao') {
       const params = new URLSearchParams({
         ano: candidatoAtual.ano, turno, uf: candidatoAtual.uf, id_municipio: _perfilIdMunicipio,
+        cidade: _perfilMunicipio || '',
       });
       const res  = await fetch(`${API_BASE}/api/eleicoes/abstencao?${params}`, { headers });
       const json = await res.json();
@@ -1845,11 +1847,16 @@ async function carregarAba(aba) {
     } else if (aba === 'perfil') {
       const params = new URLSearchParams({
         ano: candidatoAtual.ano, uf: candidatoAtual.uf, id_municipio: _perfilIdMunicipio,
+        cidade: _perfilMunicipio || '',
       });
       const res  = await fetch(`${API_BASE}/api/eleicoes/perfil-eleitorado?${params}`, { headers });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error);
-      renderPerfilEleitorado(json.data);
+      if (json.escolaridade) {
+        renderPerfilEleitoradoLocal(json);
+      } else {
+        renderPerfilEleitorado(json.data);
+      }
     }
   } catch (e) {
     conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Erro ao carregar dados: ${e.message}</div>`;
@@ -1886,7 +1893,7 @@ function renderAbstencao(data) {
     return;
   }
   const maxAbst = Math.max(...data.map(d => parseFloat(d.pct_abstencao) || 0), 1);
-  const totalAptos = data.reduce((s, d) => s + d.eleitores_aptos, 0);
+  const totalAptos = data.reduce((s, d) => s + (d.aptos || d.eleitores_aptos || 0), 0);
   const totalAbst  = data.reduce((s, d) => s + d.abstencoes, 0);
   const pctGeral   = totalAptos > 0 ? ((totalAbst / totalAptos) * 100).toFixed(1) : '—';
 
@@ -1902,14 +1909,15 @@ function renderAbstencao(data) {
       <div style="font-size:11px;color:#166534;">${(totalAptos - totalAbst).toLocaleString('pt-BR')} eleitores</div>
     </div>
   </div>
-  <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:10px;">Abstenção por zona</div>`;
+  ${data.length > 1 ? '<div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:10px;">Abstenção por zona</div>' : ''}`;
 
   data.forEach(d => {
     const pct = parseFloat(d.pct_abstencao) || 0;
     const w   = (pct / maxAbst * 100).toFixed(1);
     const cor = pct > 30 ? '#ef4444' : pct > 20 ? '#f59e0b' : '#22c55e';
+    const zonaLabel = d.zona === 'Município' ? d.zona : `Zona ${d.zona}`;
     html += `<div class="abst-row">
-      <div class="abst-zona">Zona ${d.zona}</div>
+      <div class="abst-zona">${zonaLabel}</div>
       <div class="abst-bar-wrap"><div class="abst-bar-fill" style="width:${w}%;background:${cor};"></div></div>
       <div class="abst-pct" style="color:${cor}">${pct}%</div>
     </div>`;
@@ -1952,6 +1960,66 @@ function renderPerfilEleitorado(data) {
     html += '</div>';
   });
   html += '</div>';
+  conteudo.innerHTML = html;
+}
+
+function renderPerfilEleitoradoLocal(json) {
+  const conteudo = document.getElementById('mp-conteudo');
+  const genero      = json.genero      || {};
+  const faixa_etaria = json.faixa_etaria || {};
+  const escolaridade = json.escolaridade || {};
+  const estado_civil  = json.estado_civil  || {};
+
+  function renderBarGroup(title, obj, cor) {
+    const entries = Object.entries(obj).sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((s, [,v]) => s + (Number(v) || 0), 0);
+    const maxV  = Math.max(...entries.map(([,v]) => Number(v) || 0), 1);
+    let h = `<div style="margin-bottom:18px;">
+      <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:8px;">${title}</div>`;
+    entries.forEach(([label, val]) => {
+      const v   = Number(val) || 0;
+      const pct = total > 0 ? (v / total * 100).toFixed(1) : '0.0';
+      const w   = (v / maxV * 100).toFixed(1);
+      h += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <div style="min-width:140px;font-size:11px;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${label}">${label}</div>
+        <div style="flex:1;background:#e2e8f0;border-radius:4px;height:10px;overflow:hidden;">
+          <div style="width:${w}%;height:100%;background:${cor};border-radius:4px;"></div>
+        </div>
+        <div style="min-width:40px;font-size:11px;color:${cor};text-align:right;font-weight:600;">${pct}%</div>
+      </div>`;
+    });
+    h += '</div>';
+    return h;
+  }
+
+  // Gênero donut-style summary bar
+  const genEntries = Object.entries(genero);
+  const genTotal   = genEntries.reduce((s, [,v]) => s + (Number(v)||0), 0);
+  const genCores   = { 'FEMININO': '#ec4899', 'MASCULINO': '#3b82f6', 'NÃO INFORMADO': '#94a3b8' };
+  let genBar = `<div style="margin-bottom:18px;">
+    <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:8px;">Gênero · ${genTotal.toLocaleString('pt-BR')} eleitores aptos</div>
+    <div style="display:flex;border-radius:6px;overflow:hidden;height:18px;margin-bottom:6px;">`;
+  genEntries.forEach(([g, v]) => {
+    const pct = genTotal > 0 ? (Number(v)/genTotal*100).toFixed(1) : 0;
+    const cor = genCores[g.toUpperCase()] || '#6366f1';
+    genBar += `<div style="width:${pct}%;background:${cor};" title="${g}: ${pct}%"></div>`;
+  });
+  genBar += '</div><div style="display:flex;flex-wrap:wrap;gap:10px;">';
+  genEntries.forEach(([g, v]) => {
+    const pct = genTotal > 0 ? (Number(v)/genTotal*100).toFixed(1) : 0;
+    const cor = genCores[g.toUpperCase()] || '#6366f1';
+    genBar += `<div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#475569;">
+      <div style="width:10px;height:10px;border-radius:2px;background:${cor};"></div>
+      ${g}: <strong>${pct}%</strong>
+    </div>`;
+  });
+  genBar += '</div></div>';
+
+  let html = genBar;
+  html += renderBarGroup('Faixa Etária', faixa_etaria, '#3b82f6');
+  html += renderBarGroup('Escolaridade', escolaridade, '#8b5cf6');
+  html += renderBarGroup('Estado Civil', estado_civil, '#06b6d4');
+
   conteudo.innerHTML = html;
 }
 

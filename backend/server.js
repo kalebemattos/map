@@ -3335,15 +3335,88 @@ app.get('/api/eleicoes/schema-debug', auth, withTenant, allow('dono', 'admin'), 
   }
 });
 
+// ── helpers para dados locais ─────────────────────────────────────────────────
+function normalizeStr(s) {
+  return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim();
+}
+
+const DADOS_DIR = path.join(__dirname, '..', 'analise', 'dados');
+const ANOS_LOCAIS = [2010, 2014, 2018, 2022];
+
+function lerResumoLocal(ano) {
+  try {
+    const p = path.join(DADOS_DIR, String(ano), 'resumo.json');
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (e) { return null; }
+}
+
+function lerEleitoradoLocal(ano) {
+  try {
+    const p = path.join(DADOS_DIR, String(ano), 'eleitorado.json');
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (e) { return null; }
+}
+
+function encontrarCidadeLocal(obj, cidade) {
+  if (!obj || !cidade) return null;
+  const norm = normalizeStr(cidade);
+  // exact match
+  for (const k of Object.keys(obj)) {
+    if (normalizeStr(k) === norm) return { key: k, data: obj[k] };
+  }
+  // partial match
+  for (const k of Object.keys(obj)) {
+    if (normalizeStr(k).includes(norm) || norm.includes(normalizeStr(k))) return { key: k, data: obj[k] };
+  }
+  return null;
+}
+
 // ── GET /api/eleicoes/historico ──────────────────────────────────────────────
 // Retorna evolução de votos do candidato por ano eleitoral no mesmo município.
 // JOIN com tabela candidatos para filtrar por nome_urna (resultados não tem essa coluna).
 app.get('/api/eleicoes/historico', auth, withTenant, allowAll(), async (req, res) => {
   try {
-    const { nome_urna, numero, cargo, uf, id_municipio } = req.query;
+    const { nome_urna, numero, cargo, uf, id_municipio, cidade } = req.query;
     if (!nome_urna || !uf || !id_municipio) {
       return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: nome_urna, uf, id_municipio' });
     }
+
+    // ── Fonte local: tenta primeiro se cidade fornecida ou BQ indisponível ──
+    if (cidade) {
+      try {
+        const nomeNorm  = normalizeStr(nome_urna);
+        const nomeWords = nomeNorm.split(/\s+/).filter(Boolean);
+        const cargoNorm = cargo ? normalizeStr(cargo) : null;
+        const cidadeNorm = normalizeStr(cidade);
+
+        const resultado = [];
+        for (const ano of ANOS_LOCAIS) {
+          const resumo = lerResumoLocal(ano);
+          if (!resumo) continue;
+          for (const [cargoKey, cargoData] of Object.entries(resumo)) {
+            if (cargoNorm && normalizeStr(cargoKey) !== cargoNorm) continue;
+            const cidades = cargoData.CIDADES || {};
+            const match = encontrarCidadeLocal(cidades, cidadeNorm);
+            if (!match) continue;
+            const candidatos = match.data.candidatos || [];
+            for (const cand of candidatos) {
+              const nCand = normalizeStr(cand.nome || '');
+              if (nomeWords.every(w => nCand.includes(w))) {
+                resultado.push({ ano, votos: Number(cand.votos) || 0 });
+                break;
+              }
+            }
+          }
+        }
+        if (resultado.length > 0) {
+          resultado.sort((a, b) => a.ano - b.ano);
+          return res.json({ ok: true, data: resultado, fonte: 'local' });
+        }
+      } catch (le) {
+        console.warn('[/api/eleicoes/historico] local lookup falhou:', le.message);
+      }
+    }
+
     const params = {
       nome_urna:    nome_urna.trim().toUpperCase(),
       uf:           uf.trim().toUpperCase(),
@@ -3373,9 +3446,15 @@ app.get('/api/eleicoes/historico', auth, withTenant, allowAll(), async (req, res
       GROUP BY r.ano
       ORDER BY r.ano ASC
     `;
-    const rows = await runBQ(sql, params);
-    const data = rows.map(r => ({ ano: Number(r.ano), votos: Number(r.votos) || 0 }));
-    return res.json({ ok: true, data });
+    try {
+      const rows = await runBQ(sql, params);
+      const data = rows.map(r => ({ ano: Number(r.ano), votos: Number(r.votos) || 0 }));
+      return res.json({ ok: true, data });
+    } catch (bqErr) {
+      console.warn('[/api/eleicoes/historico] BigQuery falhou, tentando local:', bqErr.message.split('\n')[0]);
+      // Fallback local sem cidade específica: usar id_municipio não é possível nos JSONs locais
+      return res.json({ ok: true, data: [], fonte: 'local_fallback', aviso: 'BigQuery indisponível e cidade não informada' });
+    }
   } catch (e) {
     console.error('[/api/eleicoes/historico]', e.message);
     res.status(500).json({ ok: false, error: e.message });
@@ -3387,10 +3466,51 @@ app.get('/api/eleicoes/historico', auth, withTenant, allowAll(), async (req, res
 // Coluna correta na tabela TSE: "aptos" (não eleitores_aptos). Abstencoes = aptos - comparecimento.
 app.get('/api/eleicoes/abstencao', auth, withTenant, allowAll(), async (req, res) => {
   try {
-    const { ano, turno = '1', uf, id_municipio } = req.query;
+    const { ano, turno = '1', uf, id_municipio, cidade } = req.query;
     if (!ano || !uf || !id_municipio) {
       return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: ano, uf, id_municipio' });
     }
+
+    // ── Fonte local ──────────────────────────────────────────────────────────
+    if (cidade) {
+      try {
+        const cidadeNorm = normalizeStr(cidade);
+        const eleitorado = lerEleitoradoLocal(parseInt(ano));
+        const resumo     = lerResumoLocal(parseInt(ano));
+        if (eleitorado && resumo) {
+          const elMatch = encontrarCidadeLocal(eleitorado, cidadeNorm);
+          if (elMatch) {
+            const genero = elMatch.data.genero || {};
+            const aptos  = Object.values(genero).reduce((s, v) => s + (Number(v) || 0), 0);
+
+            // busca total_validos + brancos (95) + nulos (96) de qualquer cargo disponível
+            let comparecimento = 0;
+            for (const cargoData of Object.values(resumo)) {
+              const cidades = cargoData.CIDADES || {};
+              const resMatch = encontrarCidadeLocal(cidades, cidadeNorm);
+              if (!resMatch) continue;
+              const total_validos = Number(resMatch.data.total_validos) || 0;
+              let brancos = 0, nulos = 0;
+              for (const cand of (resMatch.data.candidatos || [])) {
+                if (cand.numero === 95) brancos = Number(cand.votos) || 0;
+                if (cand.numero === 96) nulos   = Number(cand.votos) || 0;
+              }
+              const comp = total_validos + brancos + nulos;
+              if (comp > comparecimento) comparecimento = comp;
+              break; // usa o primeiro cargo encontrado
+            }
+
+            const abstencoes  = aptos - comparecimento;
+            const pct_abstencao = aptos > 0 ? ((abstencoes / aptos) * 100).toFixed(1) : null;
+            const data = [{ zona: 'Município', aptos, comparecimento, abstencoes, pct_abstencao }];
+            return res.json({ ok: true, data, fonte: 'local' });
+          }
+        }
+      } catch (le) {
+        console.warn('[/api/eleicoes/abstencao] local lookup falhou:', le.message);
+      }
+    }
+
     const params = {
       ano:          parseInt(ano),
       turno:        parseInt(turno),
@@ -3409,20 +3529,25 @@ app.get('/api/eleicoes/abstencao', auth, withTenant, allowAll(), async (req, res
       GROUP BY d.zona
       ORDER BY d.zona ASC
     `;
-    const rows = await runBQ(sql, params);
-    const data = rows.map(r => {
-      const aptos = Number(r.aptos)          || 0;
-      const comp  = Number(r.comparecimento) || 0;
-      const abst  = aptos - comp;
-      return {
-        zona:           Number(r.zona),
-        aptos,
-        comparecimento: comp,
-        abstencoes:     abst,
-        pct_abstencao:  aptos > 0 ? ((abst / aptos) * 100).toFixed(1) : null,
-      };
-    });
-    return res.json({ ok: true, data });
+    try {
+      const rows = await runBQ(sql, params);
+      const data = rows.map(r => {
+        const aptos = Number(r.aptos)          || 0;
+        const comp  = Number(r.comparecimento) || 0;
+        const abst  = aptos - comp;
+        return {
+          zona:           Number(r.zona),
+          aptos,
+          comparecimento: comp,
+          abstencoes:     abst,
+          pct_abstencao:  aptos > 0 ? ((abst / aptos) * 100).toFixed(1) : null,
+        };
+      });
+      return res.json({ ok: true, data });
+    } catch (bqErr) {
+      console.warn('[/api/eleicoes/abstencao] BigQuery falhou:', bqErr.message.split('\n')[0]);
+      return res.json({ ok: true, data: [], fonte: 'local_fallback', aviso: 'BigQuery indisponível e cidade não informada' });
+    }
   } catch (e) {
     console.error('[/api/eleicoes/abstencao]', e.message);
     res.status(500).json({ ok: false, error: e.message });
@@ -3434,10 +3559,39 @@ app.get('/api/eleicoes/abstencao', auth, withTenant, allowAll(), async (req, res
 // Agrega perfil_eleitorado_local_votacao (confirmado existente) ao nível municipal.
 app.get('/api/eleicoes/perfil-eleitorado', auth, withTenant, allowAll(), async (req, res) => {
   try {
-    const { ano, uf, id_municipio } = req.query;
+    const { ano, uf, id_municipio, cidade } = req.query;
     if (!ano || !uf || !id_municipio) {
       return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: ano, uf, id_municipio' });
     }
+
+    // ── Fonte local ──────────────────────────────────────────────────────────
+    if (cidade) {
+      try {
+        const cidadeNorm = normalizeStr(cidade);
+        const eleitorado = lerEleitoradoLocal(parseInt(ano));
+        if (eleitorado) {
+          const match = encontrarCidadeLocal(eleitorado, cidadeNorm);
+          if (match) {
+            const d = match.data;
+            // Trim keys in all sub-objects
+            function trimKeys(obj) {
+              const out = {};
+              for (const [k, v] of Object.entries(obj || {})) out[k.trim()] = v;
+              return out;
+            }
+            const genero      = trimKeys(d.genero      || {});
+            const faixa_etaria = trimKeys(d.faixa_etaria || {});
+            const escolaridade = trimKeys(d.escolaridade || {});
+            const estado_civil  = trimKeys(d.estado_civil  || {});
+            console.log(`[perfil-eleitorado] ok via local JSON para ${match.key}`);
+            return res.json({ ok: true, genero, faixa_etaria, escolaridade, estado_civil, fonte: 'local' });
+          }
+        }
+      } catch (le) {
+        console.warn('[/api/eleicoes/perfil-eleitorado] local lookup falhou:', le.message);
+      }
+    }
+
     const params = {
       ano:          parseInt(ano),
       uf:           uf.trim().toUpperCase(),

@@ -384,6 +384,9 @@ function getCorModo(bairro) {
 // ─────────────────────────────────────────────
 function repaintMapa() {
   if (!geoBairros) return
+  // Indicadores de lideranças e totais — sempre atualizados independente do modo
+  calcularTotalGeral()
+  atualizarLegenda()
   // Delega ao Modo Geográfico quando ativo (sem alterar lógica estratégica)
   if (window.GeoMode && window.GeoMode.isAtivo()) { window.GeoMode.syncStyles(); return }
   geoBairros.eachLayer(layer => {
@@ -395,10 +398,16 @@ function repaintMapa() {
       fillOpacity: layer === layerSelecionado ? 0.92 : 0.72
     })
   })
-  calcularTotalGeral()
-  atualizarLegenda()
 }
-window.repaintMapa = repaintMapa
+window.repaintMapa      = repaintMapa
+window.renderLiderancas = renderLiderancas
+
+// Mantém bairroAtual sincronizado para o GeoMode consultar
+Object.defineProperty(window, 'bairroAtual', {
+  get: () => bairroAtual,
+  set: v => { bairroAtual = v },
+  configurable: true
+})
 
 // ─────────────────────────────────────────────
 // FILTRAR DISTRITO
