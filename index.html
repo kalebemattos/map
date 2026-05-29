@@ -1551,6 +1551,74 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
   color: #fbbf24;
   font-size: 18px;
 }
+
+/* ═══════════════════════════════════════════════════
+   TOGGLE DE MODO  —  Estratégico / Geográfico
+   ═══════════════════════════════════════════════════ */
+#modo-toggle-estado {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  background: rgba(6, 14, 38, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 100px;
+  padding: 4px;
+  gap: 2px;
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.06) inset;
+  animation: fadeUp .4s ease;
+}
+.modo-toggle-btn-est {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 20px;
+  border: none;
+  border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  background: transparent;
+  cursor: pointer;
+  transition: color .22s, background .22s, box-shadow .22s;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  user-select: none;
+}
+.modo-toggle-btn-est svg { width:15px; height:15px; flex-shrink:0; opacity:0.5; transition:opacity .22s; }
+.modo-toggle-btn-est:not(.ativo):hover { color:rgba(255,255,255,0.75); background:rgba(255,255,255,0.07); }
+.modo-toggle-btn-est:not(.ativo):hover svg { opacity:0.7; }
+.modo-toggle-btn-est.ativo { color:#fff; background:linear-gradient(135deg,#0d2d6b,#1565c0); box-shadow:0 2px 14px rgba(21,101,192,0.50); }
+.modo-toggle-btn-est.ativo svg { opacity:1; }
+.modo-toggle-btn-est.ativo.geo { background:linear-gradient(135deg,#0c3349,#0e7490); box-shadow:0 2px 16px rgba(14,116,144,0.55),0 0 0 1px rgba(56,189,248,0.25); }
+
+/* GEO MODE — overrides visuais */
+.geo-mode-active .geo-tile-layer { filter:brightness(0.48) saturate(0.55) sepia(0.15); }
+.geo-border-glow { filter:drop-shadow(0 0 5px rgba(56,189,248,0.75)) drop-shadow(0 0 14px rgba(56,189,248,0.40)); }
+.geo-mode-active .leaflet-container { background:#020b1a !important; }
+.geo-mode-active .city-label { color:rgba(255,255,255,0.80) !important; text-shadow:0 0 8px rgba(0,0,0,0.9),0 1px 3px rgba(0,0,0,0.8) !important; }
+
+/* PINS GEOGRÁFICOS */
+.geo-pin { position:relative; width:22px; height:22px; cursor:pointer; }
+.geo-pin-dot { width:12px; height:12px; border-radius:50%; border:2px solid rgba(255,255,255,0.92); box-shadow:0 2px 10px rgba(0,0,0,0.55); position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); transition:transform .18s cubic-bezier(0.34,1.56,0.64,1); z-index:2; }
+.geo-pin:hover .geo-pin-dot { transform:translate(-50%,-50%) scale(1.5); }
+.geo-pin-pulse { width:22px; height:22px; border-radius:50%; opacity:0; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0.3); animation:geo-pin-pulse 2.8s ease-out infinite; z-index:1; }
+@keyframes geo-pin-pulse { 0%{transform:translate(-50%,-50%) scale(0.3);opacity:0.6;} 80%{transform:translate(-50%,-50%) scale(2.2);opacity:0;} 100%{opacity:0;} }
+.leaflet-marker-icon .geo-pin { animation:geo-pin-enter .35s cubic-bezier(0.34,1.56,0.64,1) both; }
+@keyframes geo-pin-enter { from{transform:scale(0) translateY(8px);opacity:0;} to{transform:scale(1) translateY(0);opacity:1;} }
+.pin-geo-popup .leaflet-popup-content-wrapper { background:rgba(8,18,48,0.97); backdrop-filter:blur(12px); border:1px solid rgba(56,189,248,0.25); border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,0.6); color:#fff; padding:0; }
+.pin-geo-popup .leaflet-popup-tip-container { display:none; }
+.pin-geo-popup .leaflet-popup-content { margin:0; }
+.pgp-card { padding:14px 16px; min-width:200px; font-family:'DM Sans',sans-serif; }
+.pgp-nome { font-size:14px; font-weight:700; color:#fff; margin-bottom:4px; }
+.pgp-linha { font-size:11px; color:rgba(255,255,255,0.55); display:flex; align-items:center; gap:5px; margin-top:3px; }
+.pgp-badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; margin-top:6px; }
 </style>
 </head>
 <body>
@@ -1584,6 +1652,28 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
 
 <!-- ===== CONTENT WRAPPER ===== -->
 <div id="content-wrapper" style="display:none; height:100%; width:100%;">
+
+<!-- ===== TOGGLE DE MODO ===== -->
+<div id="modo-toggle-estado">
+  <button id="btn-modo-est-estrategico" class="modo-toggle-btn-est ativo" title="Modo Estratégico — polígonos personalizados">
+    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor" opacity=".7"/>
+      <rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor"/>
+      <rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor"/>
+      <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity=".5"/>
+    </svg>
+    Modo Estratégico
+  </button>
+  <button id="btn-modo-est-geografico" class="modo-toggle-btn-est geo" title="Modo Geográfico — mapa real com OpenStreetMap">
+    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+      <ellipse cx="8" cy="8" rx="2.8" ry="6.5" stroke="currentColor" stroke-width="1.2"/>
+      <line x1="1.5" y1="6" x2="14.5" y2="6" stroke="currentColor" stroke-width="1.2"/>
+      <line x1="1.5" y1="10" x2="14.5" y2="10" stroke="currentColor" stroke-width="1.2"/>
+    </svg>
+    Modo Geográfico
+  </button>
+</div>
 
   <div id="map"></div>
 
@@ -1808,6 +1898,7 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
 <script src="deputadosFederais.js"></script>
 <script src="votosBairro.js"></script>
 <script src="votosCelia.js"></script>
+<script src="geo-mode-estado.js"></script>
 <script>
 // =================================================================
 // 1. VARIÁVEIS GLOBAIS (Inicializadas a null para evitar erros de referência)
@@ -2067,6 +2158,8 @@ let deputadosVisible = true;
 let cidadeSelecionada = null;
 let layerSelecionada = null;
 let layerRJ = null;
+// Expõe função getter para GeoModeEstado ler a cidade selecionada atual
+window._getCidadeSelecionada = () => cidadeSelecionada;
 const MAPA_ID = 'rj';          // identificador deste mapa — isola pins por mapa
 let pinsLayer = null;
 let pinsVisiveis = true;
@@ -3413,6 +3506,11 @@ function selecionarCidade(nome, layer) {
     console.log("Acesso apenas leitura para: " + nome);
   }
 
+  if (window.GeoModeEstado && window.GeoModeEstado.isAtivo()) {
+    window._estadoLayerSelecionado = layer;
+    window.GeoModeEstado.selecionarDistrito(layer);
+  }
+
   cidadeSelecionada = nome;
   layerSelecionada = layer;
 
@@ -4025,6 +4123,8 @@ function initializeMapAndApp() {
           f.properties.name   = proper;   // garante fallback também
         });
 
+        window._estadoGeoJsonRaw = data;   // expõe para GeoModeEstado (máscara)
+
         layerRJ = L.geoJSON(data, {
           style: feature => {
             const nome = feature.properties.NM_MUN || feature.properties.name;
@@ -4176,6 +4276,9 @@ if (modoAdicionarPin) {
             });
           }
         }).addTo(map);
+
+        window.layerRJ           = layerRJ;          // expõe para GeoModeEstado
+        window.renderLiderancas  = renderLiderancas;  // expõe para GeoModeEstado
 
         const bounds = layerRJ.getBounds();
         map.fitBounds(bounds, { padding: [30, 30] });
@@ -4469,6 +4572,13 @@ function destacarRegiaoPersonalizada(cidades) {
 function repaintMap() {
   if (!layerRJ) return;
 
+  updateLegendByMode();
+
+  if (window.GeoModeEstado && window.GeoModeEstado.isAtivo()) {
+    window.GeoModeEstado.syncStyles();
+    return;
+  }
+
   layerRJ.eachLayer(layer => {
     const nome =
       layer.feature.properties.NM_MUN ||
@@ -4488,9 +4598,8 @@ function repaintMap() {
       weight: 1
     });
   });
-
-  updateLegendByMode();
 }
+window.repaintMap = repaintMap;
 
 
 // #toggleMapMode removido — seleção de modo agora via .mode-btn
@@ -5286,6 +5395,50 @@ function mostrarLiderRegiao(regiaoKey) {
   card.style.display = 'block';
 }
 // calcularExpectativaTotalPor foi substituída por calcularExpCidadesPor e calcularExpLiderancasPor
+
+// ═══════════════════════════════════════════════════════
+// TOGGLE MODO ESTRATÉGICO / MODO GEOGRÁFICO — ESTADO RJ
+// ═══════════════════════════════════════════════════════
+;(function () {
+  const btnEst = document.getElementById('btn-modo-est-estrategico')
+  const btnGeo = document.getElementById('btn-modo-est-geografico')
+  if (!btnEst || !btnGeo) return
+
+  let _transitando = false
+
+  function setModoEstrategico() {
+    if (_transitando) return
+    _transitando = true
+    btnEst.classList.add('ativo')
+    btnGeo.classList.remove('ativo')
+    btnEst.disabled = true
+    btnGeo.disabled = false
+    if (window.GeoModeEstado && window.GeoModeEstado.isAtivo()) window.GeoModeEstado.desativar()
+    if (window.map && window.layerRJ) window.map.setMaxBounds(window.layerRJ.getBounds().pad(0.3))
+    setTimeout(() => { _transitando = false }, 300)
+  }
+
+  function setModoGeografico() {
+    if (_transitando) return
+    if (!window.map) { console.warn('[toggle] map ainda não disponível'); return }
+    if (!window.layerRJ) { console.warn('[toggle] layerRJ ainda não carregado'); return }
+    _transitando = true
+    btnGeo.classList.add('ativo')
+    btnEst.classList.remove('ativo')
+    btnGeo.disabled = true
+    btnEst.disabled = false
+    window.GeoModeEstado.ativar().then(() => {
+      if (window.layerRJ) window.map.setMaxBounds(window.layerRJ.getBounds().pad(1.2))
+      setTimeout(() => { _transitando = false }, 300)
+    }).catch(e => {
+      console.error('[GeoModeEstado] falha ao ativar:', e)
+      setModoEstrategico()
+    })
+  }
+
+  btnEst.addEventListener('click', setModoEstrategico)
+  btnGeo.addEventListener('click', setModoGeografico)
+})()
 </script>
 <div id="modal-pin" class="modal-overlay" style="display:none;">
   <div class="modal-card">
