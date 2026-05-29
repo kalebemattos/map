@@ -560,6 +560,9 @@ function getCorModo(bairro) {
 // ─────────────────────────────────────────────
 function repaintMapa() {
   if (!geoBairros) return
+  calcularTotalGeral()
+  atualizarLegenda()
+  if (window.GeoMode && window.GeoMode.isAtivo()) { window.GeoMode.syncStyles(); return }
   geoBairros.eachLayer(layer => {
     const b = layer.feature.properties[BAIRRO_PROP]
     layer.setStyle({
@@ -569,8 +572,6 @@ function repaintMapa() {
       fillOpacity: layer === layerSelecionado ? 0.92 : 0.72
     })
   })
-  calcularTotalGeral()
-  atualizarLegenda()
 }
 
 // ─────────────────────────────────────────────
@@ -578,6 +579,7 @@ function repaintMapa() {
 // ─────────────────────────────────────────────
 function filtrarDistrito(distrito) {
   if (!geoBairros) return
+  if (window.GeoMode && window.GeoMode.isAtivo()) { window.GeoMode.filtrarGeo(distrito); return }
   geoBairros.eachLayer(layer => {
     const b = layer.feature.properties[BAIRRO_PROP]
     const d = getDistritoDoBairro(b)
@@ -1018,6 +1020,10 @@ document.getElementById("salvar-exp").addEventListener("click", async () => {
 // SELECIONAR BAIRRO
 // ─────────────────────────────────────────────
 function selecionarBairro(bairroNome, layer) {
+  if (window.GeoMode && window.GeoMode.isAtivo()) {
+    window._rjLayerSelecionado = layer
+    window.GeoMode.selecionarDistrito(layer)
+  }
   if (layerSelecionado) {
     const old = layerSelecionado.feature.properties[BAIRRO_PROP]
     layerSelecionado.setStyle({
@@ -1028,7 +1034,9 @@ function selecionarBairro(bairroNome, layer) {
   }
   layerSelecionado = layer
   bairroAtual = bairroNome
-  layer.setStyle({ weight: 3.5, color: "#0f172a", fillOpacity: 0.92 })
+  if (!(window.GeoMode && window.GeoMode.isAtivo())) {
+    layer.setStyle({ weight: 3.5, color: "#0f172a", fillOpacity: 0.92 })
+  }
 
   document.getElementById("bairro-nome").textContent = bairroNome
   document.getElementById("bairro-info").innerHTML =
@@ -1392,4 +1400,13 @@ document.getElementById('edit-salvar-btn').addEventListener('click', async () =>
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') fecharModalEditar()
+})
+
+// ── Exposição de globais para GeoMode ──────────────────────────────────────
+window.repaintMapa      = repaintMapa
+window.renderLiderancas = renderLiderancas
+Object.defineProperty(window, 'bairroAtual', {
+  get: () => bairroAtual,
+  set: v => { bairroAtual = v },
+  configurable: true
 })
