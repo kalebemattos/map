@@ -3506,13 +3506,14 @@ function selecionarCidade(nome, layer) {
     console.log("Acesso apenas leitura para: " + nome);
   }
 
+  cidadeSelecionada = nome;
+  layerSelecionada = layer;
+
   if (window.GeoModeEstado && window.GeoModeEstado.isAtivo()) {
     window._estadoLayerSelecionado = layer;
     window.GeoModeEstado.selecionarDistrito(layer);
+    return; // não sobrescreve estilos geográficos com estilos estratégicos
   }
-
-  cidadeSelecionada = nome;
-  layerSelecionada = layer;
 
   const munNames = regions[regiaoAtiva];
   const munNamesNorm = munNames ? munNames.map(n => normalizeCityName(n)) : null;
