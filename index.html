@@ -4077,6 +4077,7 @@ function initializeMapAndApp() {
       maxZoom: 11,
       attributionControl: false
     }).setView([-22.5, -43.5], 7);
+    window.map = map;   // expõe para GeoModeEstado
     pinsLayer = L.layerGroup().addTo(map);
 
     map.on('click', function (e) {

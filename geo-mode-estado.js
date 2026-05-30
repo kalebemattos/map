@@ -327,6 +327,9 @@ window.GeoModeEstado = (function () {
       window.renderLiderancas(cidade)
     }
 
+    // Força o Leaflet a recalcular o tamanho e renderizar os tiles
+    setTimeout(() => map.invalidateSize(), 50)
+
     refreshPins()
 
     console.log('[GeoModeEstado] Modo Geográfico ativado (Estado RJ)')
@@ -356,10 +359,14 @@ window.GeoModeEstado = (function () {
       window.GeoModeEstado = _bkp
     }
 
-    const cidade = window.cidadeSelecionada
+    const cidade = window._getCidadeSelecionada ? window._getCidadeSelecionada() : null
     if (cidade && typeof window.renderLiderancas === 'function') {
       window.renderLiderancas(cidade)
     }
+
+    // Força recálculo do tamanho após remover o tile layer
+    const map2 = _map()
+    if (map2) setTimeout(() => map2.invalidateSize(), 50)
 
     console.log('[GeoModeEstado] Modo Estratégico restaurado (Estado RJ)')
   }
