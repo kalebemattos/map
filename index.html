@@ -4572,10 +4572,9 @@ function destacarRegiaoPersonalizada(cidades) {
 function repaintMap() {
   if (!layerRJ) return;
 
-  updateLegendByMode();
-
   if (window.GeoModeEstado && window.GeoModeEstado.isAtivo()) {
     window.GeoModeEstado.syncStyles();
+    updateLegendByMode();
     return;
   }
 
@@ -4598,6 +4597,8 @@ function repaintMap() {
       weight: 1
     });
   });
+
+  updateLegendByMode();
 }
 window.repaintMap = repaintMap;
 
