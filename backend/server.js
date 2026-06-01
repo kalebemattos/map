@@ -4198,39 +4198,37 @@ app.get("/ping", (req, res) => {
   res.status(200).send("pong");
 });
 
-// ── IA GEMINI — proxy seguro (chave fica no servidor) ────────────────────────
+// ── IA GROQ — proxy seguro (chave fica no servidor) ──────────────────────────
 app.post('/api/ia/chat', auth, withTenant, async (req, res) => {
-  const GEMINI_KEY = process.env.GEMINI_API_KEY;
-  if (!GEMINI_KEY) return res.status(503).json({ error: 'IA não configurada no servidor.' });
+  const GROQ_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_KEY) return res.status(503).json({ error: 'IA não configurada no servidor. Adicione GROQ_API_KEY nas variáveis de ambiente.' });
 
   const { mensagem, contexto } = req.body;
-  if (!mensagem) return res.status(400).json({ error: 'mensagem obrigatória' });
+  if (!mensagem && !contexto) return res.status(400).json({ error: 'mensagem obrigatória' });
 
-  const prompt = contexto
-    ? `${contexto}\n\nPergunta do usuário: ${mensagem}`
-    : mensagem;
+  const mensagemFinal = mensagem || '';
 
   try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 1500 },
-          safetySettings: [
-            { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-          ]
-        })
-      }
-    );
+    const messages = [];
+    if (contexto) messages.push({ role: 'system', content: contexto });
+    if (mensagemFinal) messages.push({ role: 'user', content: mensagemFinal });
+
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages,
+        temperature: 0.7,
+        max_tokens: 1500
+      })
+    });
     const data = await r.json();
-    if (!r.ok) return res.status(r.status).json({ error: data.error?.message || 'Erro na API Gemini' });
-    const texto = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!r.ok) return res.status(r.status).json({ error: data.error?.message || 'Erro na API Groq' });
+    const texto = data.choices?.[0]?.message?.content || '';
     res.json({ resposta: texto });
   } catch (e) {
     console.error('[IA] erro:', e);
