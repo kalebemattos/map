@@ -245,3 +245,5 @@ let lideresRegiao = {
     }
   ]
 };
+// Expõe para ia.js e geo-mode-estado.js
+window.votosValidos = votosValidos;

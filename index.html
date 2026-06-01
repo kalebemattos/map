@@ -2764,6 +2764,9 @@ document.getElementById('modal-pin-agenda')?.addEventListener('click', e => {
 // =================================================================
 
 let dataCache = {}; // Cache dos dados carregados para acesso rápido
+// Expõe para ia.js (getter vivo — sempre reflete o estado atual)
+Object.defineProperty(window, 'dataCache',     { get: () => dataCache,     configurable: true })
+Object.defineProperty(window, 'configSistema', { get: () => configSistema, configurable: true })
 let _dataCacheNorm = {}; // índice normalizado (sem acento, maiúsculo) <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg> mesma referência
 
 // Lookup tolerante a diferenças de grafia entre GeoJSON e banco (ex: Parati vs Paraty)
@@ -2773,6 +2776,7 @@ function getDataCache(nome) {
     || _dataCacheNorm[normalizeCityName(nome)]
     || {};
 }
+window.getDataCache = getDataCache; // expõe para ia.js
 
 // Função para buscar todos os dados (Lideranças e Observações) do servidor
 async function carregarTudo() {
