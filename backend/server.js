@@ -4242,44 +4242,116 @@ app.post('/api/ia/chat', auth, withTenant, async (req, res) => {
   }
 });
 
+// ── Cache do contexto da IA por tenant (TTL 5 min) ──────────────────────────
+const _iaContextoCache = new Map();
+const IA_CTX_TTL = 5 * 60 * 1000;
+
 /**
  * GET /api/ia/contexto
- * Monta contexto rico para Alice: dados do tenant (lideranças + config)
- * + resultados eleitorais do BigQuery (se candidatos tiverem nome_urna_bq configurado)
- * + perfil do eleitorado estadual.
- * Retorna { contexto: string }.
+ * Monta contexto rico para Alice combinando:
+ *  - Dados do tenant: lideranças + metas por cidade (Postgres)
+ *  - Votos válidos por município em 2022 (BigQuery)
+ *  - Resultados eleitorais dos candidatos por município (BigQuery, busca automática por nome)
+ *  - Histórico eleitoral do candidato por ano (BigQuery)
+ *  - Perfil do eleitorado RJ: faixa etária + gênero (BigQuery)
+ *  - Taxa de abstenção por município (BigQuery)
+ * O resultado é cacheado por 5 minutos por tenant.
  */
 app.get('/api/ia/contexto', auth, withTenant, async (req, res) => {
+  const tenantId = req.tenantId;
   const f = n => Number(n || 0).toLocaleString('pt-BR');
 
+  // Serve do cache se ainda válido
+  const cached = _iaContextoCache.get(tenantId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return res.json({ ok: true, contexto: cached.contexto, fonte: 'cache' });
+  }
+
   try {
-    const cfg = await getConfigTenant(req.tenantId);
+    // ── 1. Dados do tenant (Postgres) ─────────────────────────────────────────
+    const [cfg, { rows: lidRows }] = await Promise.all([
+      getConfigTenant(tenantId),
+      pool.query(`
+        SELECT l.cidade,
+               COUNT(*)                              AS total_lideres,
+               SUM(COALESCE(l.expectativa_votos, 0)) AS meta_votos
+        FROM liderancas l
+        WHERE l.tenant_id = $1 AND l.mapa IS NULL
+        GROUP BY l.cidade
+      `, [tenantId])
+    ]);
+
     const candidatos = cfg.candidatos || [];
     const nomeSist   = cfg.nome_sistema || 'Campanha';
-
-    // 1. Lideranças por cidade
-    const { rows: lidRows } = await pool.query(`
-      SELECT l.cidade,
-             COUNT(*)                              AS total_lideres,
-             SUM(COALESCE(l.expectativa_votos, 0)) AS meta_votos
-      FROM liderancas l
-      WHERE l.tenant_id = $1 AND l.mapa IS NULL
-      GROUP BY l.cidade
-    `, [req.tenantId]);
+    const nomCands   = candidatos.map(c => c.nome || c.chave).join(', ');
 
     const lidMap = {};
     for (const r of lidRows) {
       lidMap[r.cidade] = { lideres: Number(r.total_lideres), meta: Number(r.meta_votos) };
     }
 
-    // 2. Votos válidos por município (lidos de uma tabela local de referência ou do próprio BQ)
-    //    Por enquanto usamos os dados do config estático de votos (mesmo do data.js)
-    //    — buscamos via query no BQ se disponível, senão retornamos sem essa coluna.
-    let votosValidos = {}; // municipio → número
-    try {
-      const bq = getBQ();
-      if (bq) {
-        const sqlVV = `
+    // ── 2. BigQuery (paralelo) ────────────────────────────────────────────────
+    let votosValidos = {};   // municipio(UPPER) → votos
+    let resultsByCand = {};  // chave → { municipio(UPPER) → votos }
+    let historicoByCand = {}; // chave → [{ ano, votos_total }]
+    let perfilTexto = '';
+    let abstencaoTexto = '';
+
+    const bq = getBQ();
+    if (bq) {
+      // Descobre sequenciais dos candidatos no BQ (pelo nome, busca automática)
+      const seqMap = {}; // chave → { sequencial, ano, cargo, nome_urna }
+
+      await Promise.all(candidatos.map(async cand => {
+        // Usa nome_urna_bq se configurado, senão usa o nome do sistema como busca
+        const nomeBusca = (cand.nome_urna_bq || cand.nome || '').trim();
+        if (!nomeBusca) return;
+        const anoBusca  = cand.ano_eleicao_bq || 2022;
+        const cargoBusca = cand.cargo_bq || null;
+
+        try {
+          const sqlSeq = `
+            SELECT DISTINCT
+              CAST(sequencial AS STRING) AS sequencial,
+              ano,
+              UPPER(cargo)     AS cargo,
+              UPPER(nome_urna) AS nome_urna
+            FROM \`basedosdados.br_tse_eleicoes.candidatos\`
+            WHERE sigla_uf = 'RJ'
+              AND ano = @ano
+              AND UPPER(nome_urna) LIKE @nome
+              ${cargoBusca ? 'AND UPPER(cargo) = @cargo' : ''}
+            ORDER BY ano DESC
+            LIMIT 3
+          `;
+          const params = {
+            ano:  parseInt(anoBusca),
+            nome: '%' + nomeBusca.toUpperCase() + '%',
+            ...(cargoBusca ? { cargo: cargoBusca.toUpperCase() } : {})
+          };
+          const rows = await runBQ(sqlSeq, params);
+          if (rows.length > 0) {
+            seqMap[cand.chave] = {
+              sequencial: rows[0].sequencial,
+              ano:        rows[0].ano,
+              cargo:      rows[0].cargo,
+              nome_urna:  rows[0].nome_urna,
+            };
+            console.log(`[ia/contexto] ${cand.chave} → ${rows[0].nome_urna} (seq ${rows[0].sequencial}, ${rows[0].cargo})`);
+          } else {
+            console.warn(`[ia/contexto] BQ: candidato "${nomeBusca}" não encontrado em ${anoBusca}`);
+          }
+        } catch (e) {
+          console.warn(`[ia/contexto] BQ busca seq ${cand.chave}:`, e.message.split('\n')[0]);
+        }
+      }));
+
+      // Executa todas as queries em paralelo
+      const bqTasks = [];
+
+      // 2a. Votos válidos por município 2022
+      bqTasks.push(
+        runBQ(`
           SELECT UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
                  SUM(d.votos_validos) AS votos_validos
           FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
@@ -4287,129 +4359,182 @@ app.get('/api/ia/contexto', auth, withTenant, async (req, res) => {
             ON d.id_municipio = m.id_municipio
           WHERE d.ano = 2022 AND d.turno = 1 AND d.sigla_uf = 'RJ'
           GROUP BY municipio
-        `;
-        const vvRows = await runBQ(sqlVV, {});
-        for (const r of vvRows) votosValidos[r.municipio] = Number(r.votos_validos);
-      }
-    } catch (_) { /* silencioso — fallback para sem votos válidos */ }
+        `, {}).then(rows => {
+          for (const r of rows) votosValidos[r.municipio] = Number(r.votos_validos);
+        }).catch(e => console.warn('[ia/ctx] votos_validos:', e.message.split('\n')[0]))
+      );
 
-    // 3. Resultados eleitorais por candidato (se nome_urna_bq configurado)
-    const resultsByCand = {}; // chave → { municipio → { votos, pct } }
-    const bq = getBQ();
-    if (bq) {
+      // 2b. Resultados por candidato por município
       for (const cand of candidatos) {
-        const { nome_urna_bq, ano_eleicao_bq, cargo_bq, chave } = cand;
-        if (!nome_urna_bq || !ano_eleicao_bq) continue;
-        try {
-          const sql = `
+        const info = seqMap[cand.chave];
+        if (!info) continue;
+        bqTasks.push(
+          runBQ(`
             SELECT UPPER(COALESCE(m.nome, CAST(r.id_municipio AS STRING))) AS municipio,
                    SUM(r.votos) AS votos
+            FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
+            LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
+              ON r.id_municipio = m.id_municipio
+            WHERE r.ano = @ano AND r.turno = 1 AND r.sigla_uf = 'RJ'
+              AND CAST(r.sequencial_candidato AS STRING) = @seq
+            GROUP BY municipio
+          `, { ano: parseInt(info.ano), seq: info.sequencial }).then(rows => {
+            const mapa = {};
+            for (const r of rows) mapa[r.municipio] = Number(r.votos);
+            resultsByCand[cand.chave] = { mapa, ano: info.ano, cargo: info.cargo, nome_urna: info.nome_urna };
+          }).catch(e => console.warn(`[ia/ctx] resultados ${cand.chave}:`, e.message.split('\n')[0]))
+        );
+
+        // 2c. Histórico eleitoral do candidato (todos os anos disponíveis)
+        bqTasks.push(
+          runBQ(`
+            SELECT r.ano, SUM(r.votos) AS votos_total
             FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
             JOIN \`basedosdados.br_tse_eleicoes.candidatos\` c
               ON c.ano = r.ano AND c.sigla_uf = r.sigla_uf
               AND CAST(c.sequencial AS STRING) = CAST(r.sequencial_candidato AS STRING)
-            LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
-              ON r.id_municipio = m.id_municipio
-            WHERE r.ano = @ano AND r.turno = 1 AND r.sigla_uf = 'RJ'
-              AND UPPER(c.nome_urna) = @nome_urna
-              ${cargo_bq ? 'AND UPPER(c.cargo) = @cargo' : ''}
-            GROUP BY municipio
-          `;
-          const params = {
-            ano:       parseInt(ano_eleicao_bq),
-            nome_urna: nome_urna_bq.trim().toUpperCase(),
-            ...(cargo_bq ? { cargo: cargo_bq.trim().toUpperCase() } : {})
-          };
-          const rows = await runBQ(sql, params);
-          const mapa = {};
-          for (const r of rows) mapa[r.municipio] = Number(r.votos);
-          resultsByCand[chave] = mapa;
-        } catch (bqErr) {
-          console.warn(`[ia/contexto] BQ resultados ${chave}:`, bqErr.message.split('\n')[0]);
-        }
+            WHERE r.sigla_uf = 'RJ' AND r.turno = 1
+              AND UPPER(c.nome_urna) LIKE @nome
+            GROUP BY r.ano
+            ORDER BY r.ano
+          `, { nome: '%' + (cand.nome_urna_bq || cand.nome || '').toUpperCase() + '%' })
+          .then(rows => {
+            historicoByCand[cand.chave] = rows.map(r => ({ ano: r.ano, votos: Number(r.votos_total) }));
+          }).catch(e => console.warn(`[ia/ctx] historico ${cand.chave}:`, e.message.split('\n')[0]))
+        );
       }
-    }
 
-    // 4. Perfil do eleitorado RJ — estado inteiro (agregado)
-    let perfilTexto = '';
-    if (bq) {
-      try {
-        const sqlPerfil = `
+      // 2d. Perfil do eleitorado RJ (faixa etária + gênero)
+      bqTasks.push(
+        runBQ(`
           SELECT faixa_etaria, genero, SUM(qtde_eleitores_perfil) AS total
           FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_municipio\`
           WHERE ano = 2022 AND sigla_uf = 'RJ'
           GROUP BY faixa_etaria, genero
           ORDER BY faixa_etaria, genero
-        `;
-        const pfRows = await runBQ(sqlPerfil, {});
-        // Agrupa por faixa
-        const pfMap = {};
-        for (const r of pfRows) {
-          const fx = r.faixa_etaria || 'Não informado';
-          if (!pfMap[fx]) pfMap[fx] = { M: 0, F: 0, total: 0 };
-          const g = (r.genero || '').toUpperCase();
-          if (g === 'MASCULINO') pfMap[fx].M += Number(r.total);
-          else if (g === 'FEMININO') pfMap[fx].F += Number(r.total);
-          pfMap[fx].total += Number(r.total);
-        }
-        const pfLinhas = Object.entries(pfMap)
-          .map(([fx, d]) => `  ${fx}: total=${f(d.total)}, fem=${f(d.F)}, masc=${f(d.M)}`)
-          .join('\n');
-        perfilTexto = `\nPERFIL DO ELEITORADO RJ (2022):\n${pfLinhas}`;
-      } catch (bqErr) {
-        console.warn('[ia/contexto] BQ perfil:', bqErr.message.split('\n')[0]);
-      }
+        `, {}).then(rows => {
+          const pfMap = {};
+          for (const r of rows) {
+            const fx = r.faixa_etaria || 'Não informado';
+            if (!pfMap[fx]) pfMap[fx] = { M: 0, F: 0, total: 0 };
+            const g = (r.genero || '').toUpperCase();
+            if (g === 'MASCULINO') pfMap[fx].M += Number(r.total);
+            else if (g === 'FEMININO') pfMap[fx].F += Number(r.total);
+            pfMap[fx].total += Number(r.total);
+          }
+          const linhasPf = Object.entries(pfMap)
+            .map(([fx, d]) => `  ${fx}: total=${f(d.total)}, feminino=${f(d.F)}, masculino=${f(d.M)}`)
+            .join('\n');
+          perfilTexto = linhasPf ? `\nPERFIL DO ELEITORADO RJ (2022, por faixa etária e gênero):\n${linhasPf}` : '';
+        }).catch(e => console.warn('[ia/ctx] perfil:', e.message.split('\n')[0]))
+      );
+
+      // 2e. Abstenção por município 2022 (top 20 com maior abstenção)
+      bqTasks.push(
+        runBQ(`
+          SELECT UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
+                 ROUND(SUM(d.abstencoes) * 100.0 / NULLIF(SUM(d.comparecimento + d.abstencoes), 0), 1) AS pct_abstencao
+          FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
+          LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
+            ON d.id_municipio = m.id_municipio
+          WHERE d.ano = 2022 AND d.turno = 1 AND d.sigla_uf = 'RJ'
+          GROUP BY municipio
+          HAVING pct_abstencao IS NOT NULL
+          ORDER BY pct_abstencao DESC
+          LIMIT 20
+        `, {}).then(rows => {
+          if (rows.length) {
+            const linhasAbs = rows.map(r => `  ${r.municipio}: ${r.pct_abstencao}%`).join('\n');
+            abstencaoTexto = `\nTOP 20 MUNICÍPIOS POR ABSTENÇÃO (2022):\n${linhasAbs}`;
+          }
+        }).catch(e => console.warn('[ia/ctx] abstencao:', e.message.split('\n')[0]))
+      );
+
+      // Aguarda todas as queries BQ em paralelo
+      await Promise.all(bqTasks);
     }
 
-    // 5. Monta tabela principal por município
+    // ── 3. Monta tabela por município ─────────────────────────────────────────
     const todasCidades = new Set([
       ...Object.keys(lidMap),
-      ...Object.keys(votosValidos)
+      ...Object.keys(votosValidos).map(c => c)
     ]);
 
+    // Normaliza nomes do lidMap para UPPER para fazer join com BQ
+    const lidMapUpper = {};
+    for (const [k, v] of Object.entries(lidMap)) lidMapUpper[k.toUpperCase()] = { ...v, nomeOriginal: k };
+
     const linhas = [...todasCidades]
-      .sort((a, b) => ((votosValidos[b] || 0) - (votosValidos[a] || 0)))
+      .sort((a, b) => (votosValidos[b] || votosValidos[b.toUpperCase()] || 0) -
+                      (votosValidos[a] || votosValidos[a.toUpperCase()] || 0))
       .map(cidade => {
-        const vv   = votosValidos[cidade] || 0;
-        const ld   = lidMap[cidade] || { lideres: 0, meta: 0 };
-        let linha  = `  ${cidade}: votos_validos=${f(vv)}, lideres=${ld.lideres}, meta_votos=${f(ld.meta)}`;
+        const cidadeUp = cidade.toUpperCase();
+        const vv  = votosValidos[cidadeUp] || votosValidos[cidade] || 0;
+        const ld  = lidMapUpper[cidadeUp] || lidMap[cidade] || { lideres: 0, meta: 0 };
+        let linha = `  ${cidade}: votos_validos=${f(vv)}, lideres=${ld.lideres}, meta_votos=${f(ld.meta)}`;
         for (const cand of candidatos) {
           const res = resultsByCand[cand.chave];
-          if (res) {
-            const cidadeUp = cidade.toUpperCase();
-            const votos = res[cidadeUp] || res[cidade] || 0;
+          if (res && res.mapa) {
+            const votos = res.mapa[cidadeUp] || res.mapa[cidade] || 0;
             const pct = vv > 0 ? ((votos / vv) * 100).toFixed(1) : '?';
-            linha += `, votos_${cand.chave}_2022=${f(votos)}(${pct}%)`;
+            linha += `, votos_${cand.chave}_${res.ano}=${f(votos)}(${pct}%)`;
           }
         }
         return linha;
       }).join('\n');
 
-    // Totais
-    const totalVV    = Object.values(votosValidos).reduce((s, v) => s + v, 0);
-    const totalLid   = lidRows.reduce((s, r) => s + Number(r.total_lideres), 0);
-    const totalMeta  = lidRows.reduce((s, r) => s + Number(r.meta_votos), 0);
-    const nomCands   = candidatos.map(c => c.nome || c.chave).join(', ');
+    // ── 4. Histórico por candidato ────────────────────────────────────────────
+    let historicoTexto = '';
+    for (const cand of candidatos) {
+      const hist = historicoByCand[cand.chave];
+      if (hist && hist.length) {
+        const res = resultsByCand[cand.chave];
+        const nomeBQ = res ? res.nome_urna : (cand.nome || cand.chave);
+        const linhasH = hist.map(h => `  ${h.ano}: ${f(h.votos)} votos`).join('\n');
+        historicoTexto += `\nHISTÓRICO ELEITORAL — ${nomeBQ} (total estado RJ):\n${linhasH}\n`;
+      }
+    }
+
+    // ── 5. Info dos candidatos encontrados no BQ ──────────────────────────────
+    let candBQTexto = '';
+    for (const cand of candidatos) {
+      const res = resultsByCand[cand.chave];
+      if (res) {
+        const totalVotosCand = Object.values(res.mapa).reduce((s, v) => s + v, 0);
+        const totalVV = Object.values(votosValidos).reduce((s, v) => s + v, 0);
+        const pctTotal = totalVV > 0 ? ((totalVotosCand / totalVV) * 100).toFixed(2) : '?';
+        candBQTexto += `  ${cand.nome || cand.chave} (${res.nome_urna}, ${res.cargo}, ${res.ano}): `
+                     + `${f(totalVotosCand)} votos no estado (${pctTotal}% dos votos válidos)\n`;
+      }
+    }
+
+    // ── 6. Totais ─────────────────────────────────────────────────────────────
+    const totalVV   = Object.values(votosValidos).reduce((s, v) => s + v, 0);
+    const totalLid  = lidRows.reduce((s, r) => s + Number(r.total_lideres), 0);
+    const totalMeta = lidRows.reduce((s, r) => s + Number(r.meta_votos), 0);
 
     const contexto = `Você é Alice, assistente estratégica da ${nomeSist}.
 ${nomCands ? `Candidatos da campanha: ${nomCands}.` : ''}
 
 REGRAS OBRIGATÓRIAS:
-1. Responda APENAS com base nos dados abaixo. Não invente, não extrapole, não assuma valores que não estejam na tabela.
+1. Responda APENAS com base nos dados fornecidos abaixo. Não invente nem extrapole.
 2. Se o dado solicitado não estiver disponível, diga: "Não tenho essa informação nos dados disponíveis."
 3. Use os valores numéricos exatos da tabela — não arredonde nem estime.
 4. Seja preciso, direto e estratégico.
 
 RESUMO GERAL:
   Municípios monitorados: ${todasCidades.size}
-  Total votos válidos no estado (2022): ${f(totalVV)}
+  Total votos válidos no estado RJ (2022): ${f(totalVV)}
   Total líderes cadastrados: ${totalLid}
   Meta total de votos: ${f(totalMeta)}
-${perfilTexto}
+${candBQTexto ? '\nDESEMPENHO ELEITORAL 2022:\n' + candBQTexto : ''}${historicoTexto}${perfilTexto}${abstencaoTexto}
 
-DADOS POR MUNICÍPIO (decrescente por votos válidos):
+DADOS POR MUNICÍPIO (decrescente por votos válidos — inclui votos do candidato se disponível):
 ${linhas}
 `;
+
+    // Cacheia por 5 min
+    _iaContextoCache.set(tenantId, { contexto, expiresAt: Date.now() + IA_CTX_TTL });
 
     res.json({ ok: true, contexto });
 

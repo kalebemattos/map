@@ -647,8 +647,8 @@ window.iniciarAplicacao = async function() {
     cw.style.overflow      = 'hidden'
   }
   registrarBotoes()
-  await carregarContexto()
-  input.focus()
+  carregarContexto()   // não await — deixa a UI disponível imediatamente
+  setTimeout(() => { try { input.focus() } catch {} }, 100)
 }
 </script>
 </body>
