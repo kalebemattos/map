@@ -470,6 +470,38 @@ body {
 .card-rose   .card-icon-wrap { background: rgba(190,18,60,0.3);   box-shadow: 0 4px 12px rgba(190,18,60,0.2); }
 .card-rose:hover   { border-color: rgba(251,113,133,0.25); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(190,18,60,0.1); }
 
+/* ── Alice — card especial com gradiente animado ── */
+.card-alice .card-icon-wrap {
+  background: linear-gradient(135deg, rgba(109,40,217,0.4), rgba(79,70,229,0.4));
+  box-shadow: 0 4px 16px rgba(109,40,217,0.35);
+  position: relative;
+}
+.card-alice .card-icon-wrap::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5, #06b6d4);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity .4s;
+}
+.card-alice:hover .card-icon-wrap::after { opacity: 0.5; }
+.card-alice { border-color: rgba(124,58,237,0.2); position: relative; overflow: hidden; }
+.card-alice::before {
+  background: linear-gradient(135deg,
+    rgba(109,40,217,0.06) 0%,
+    rgba(79,70,229,0.04) 50%,
+    rgba(6,182,212,0.04) 100%) !important;
+}
+.card-alice:hover {
+  border-color: rgba(167,139,250,0.35) !important;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.5), 0 0 32px rgba(124,58,237,0.18), 0 0 0 1px rgba(167,139,250,0.1) !important;
+}
+.card-alice .card-title { background: linear-gradient(90deg, #c4b5fd, #818cf8, #67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.card-alice .card-cta { color: rgba(196,181,253,0.8) !important; }
+.card-alice:hover .card-cta { color: #c4b5fd !important; }
+
 .card-slate  .card-icon-wrap { background: rgba(100,116,139,0.3); box-shadow: 0 4px 12px rgba(100,116,139,0.2); }
 .card-slate:hover  { border-color: rgba(148,163,184,0.25); box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 20px rgba(100,116,139,0.1); }
 
@@ -1235,6 +1267,13 @@ const CATALOGO_CARDS = [
     icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg>', titulo: 'Mapa de Piraí',
     desc: 'Distritos de Piraí com expectativa de votos, lideranças e análise territorial por distrito.',
     cta: 'Abrir mapa',
+  },
+  {
+    id: 'card-alice', href: './alice.html', cor: 'card-alice',
+    icon: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px;"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M8 10h.01M16 10h.01M9.5 15a4 4 0 0 0 5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".4"/></svg>`,
+    titulo: 'Alice — IA de Campanha',
+    desc: 'Assistente inteligente com acesso a todos os dados da campanha. Analise municípios, gere relatórios e tome decisões com base em dados reais.',
+    cta: 'Conversar com Alice',
   },
   {
     id: 'card-analise', href: './analise/', cor: 'card-amber',
