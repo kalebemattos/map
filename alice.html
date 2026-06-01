@@ -10,13 +10,13 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="tenant.js"></script>
 <script src="auth.js"></script>
+<script src="data.js"></script>
 
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body { height: 100%; overflow: hidden; }
-
-body {
+html, body {
+  height: 100%; overflow: hidden;
   font-family: 'DM Sans', sans-serif;
   background: #040b1a;
   color: #e2e8f0;
@@ -27,28 +27,75 @@ body {
 /* ── FUNDO ANIMADO ── */
 .bg-canvas {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(109,40,217,0.18) 0%, transparent 60%),
-              radial-gradient(ellipse 60% 50% at 10% 80%, rgba(79,70,229,0.12) 0%, transparent 55%),
-              radial-gradient(ellipse 50% 40% at 90% 70%, rgba(6,182,212,0.08) 0%, transparent 55%),
-              #040b1a;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(109,40,217,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 10% 80%,  rgba(79,70,229,0.12)  0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 90% 70%,  rgba(6,182,212,0.08)  0%, transparent 55%),
+    #040b1a;
 }
 .bg-grid {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image: linear-gradient(rgba(148,163,184,0.03) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(148,163,184,0.03) 1px, transparent 1px);
+  background-image:
+    linear-gradient(rgba(148,163,184,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,0.03) 1px, transparent 1px);
   background-size: 48px 48px;
 }
-.orb {
-  position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0;
-  animation: orb-drift 12s ease-in-out infinite alternate;
-}
-.orb-1 { width: 500px; height: 500px; background: rgba(109,40,217,0.12); top: -150px; right: -100px; animation-delay: 0s; }
+.orb { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; animation: orb-drift 12s ease-in-out infinite alternate; }
+.orb-1 { width: 500px; height: 500px; background: rgba(109,40,217,0.12); top: -150px; right: -100px; }
 .orb-2 { width: 400px; height: 400px; background: rgba(6,182,212,0.07); bottom: -100px; left: -80px; animation-delay: -6s; }
 @keyframes orb-drift { from { transform: translate(0,0) scale(1); } to { transform: translate(30px,20px) scale(1.08); } }
 
+/* ── LOGIN MODAL (padrão auth.js) ── */
+#login-modal {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(4,11,26,0.95); backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center;
+}
+.login-card {
+  width: 360px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 22px; padding: 36px 32px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+  display: flex; flex-direction: column; gap: 16px; text-align: center;
+  animation: fade-in .4s ease;
+}
+.login-logo {
+  width: 52px; height: 52px; border-radius: 16px; margin: 0 auto 8px;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5, #06b6d4);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 32px rgba(124,58,237,0.4);
+}
+.login-logo svg { width: 26px; height: 26px; color: #fff; }
+.login-card h2 { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; color: #e2e8f0; }
+.login-card p  { font-size: 13px; color: rgba(148,163,184,0.6); }
+.login-input {
+  width: 100%; padding: 11px 14px; border-radius: 10px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  color: #e2e8f0; font-family: inherit; font-size: 14px; outline: none; transition: border-color .2s;
+}
+.login-input:focus { border-color: rgba(124,58,237,0.5); }
+.login-input::placeholder { color: rgba(148,163,184,0.3); }
+.login-btn {
+  padding: 12px; border-radius: 11px; border: none; width: 100%;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #fff; font-family: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer; box-shadow: 0 6px 20px rgba(124,58,237,0.4); transition: opacity .2s;
+}
+.login-btn:hover { opacity: .9; }
+#login-error { background: rgba(239,68,68,0.15); color: #fca5a5; font-size: 12px; padding: 8px; border-radius: 8px; display: none; }
+
+/* ── CONTENT WRAPPER ── */
+#content-wrapper {
+  display: none;          /* auth.js vai setar display:block; iniciarAplicacao corrige para flex */
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
 /* ── HEADER ── */
 header {
-  position: relative; z-index: 10;
+  flex-shrink: 0;
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 24px;
   background: rgba(4,11,26,0.7);
@@ -57,11 +104,10 @@ header {
 }
 .header-left { display: flex; align-items: center; gap: 14px; }
 .alice-avatar {
-  width: 40px; height: 40px; border-radius: 12px;
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
   background: linear-gradient(135deg, #7c3aed, #4f46e5, #06b6d4);
   display: flex; align-items: center; justify-content: center;
-  position: relative; flex-shrink: 0;
-  box-shadow: 0 0 20px rgba(124,58,237,0.4);
+  position: relative; box-shadow: 0 0 20px rgba(124,58,237,0.4);
 }
 .alice-avatar::after {
   content: ''; position: absolute; inset: -2px; border-radius: 14px;
@@ -77,10 +123,7 @@ header {
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 .alice-info p { font-size: 11px; color: rgba(148,163,184,0.7); margin-top: 1px; }
-.status-dot {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11px; color: rgba(148,163,184,0.7);
-}
+.status-dot { display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(148,163,184,0.7); }
 .status-dot::before {
   content: ''; width: 7px; height: 7px; border-radius: 50%;
   background: #34d399; box-shadow: 0 0 8px #34d399;
@@ -99,7 +142,7 @@ header {
 
 /* ── LAYOUT PRINCIPAL ── */
 .main {
-  flex: 1; display: flex; gap: 0; overflow: hidden; position: relative; z-index: 1;
+  flex: 1; display: flex; overflow: hidden; min-height: 0;
 }
 
 /* ── SIDEBAR ── */
@@ -107,9 +150,11 @@ header {
   width: 260px; flex-shrink: 0;
   background: rgba(4,11,26,0.5);
   border-right: 1px solid rgba(255,255,255,0.06);
-  display: flex; flex-direction: column; gap: 0;
-  overflow-y: auto; padding: 20px 16px;
+  display: flex; flex-direction: column;
+  overflow-y: auto; padding: 20px 16px; gap: 0;
 }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.12); border-radius: 4px; }
 .sidebar-section { margin-bottom: 24px; }
 .sidebar-label {
   font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
@@ -129,7 +174,6 @@ header {
 }
 .quick-btn svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
 .quick-btn:hover svg { opacity: 1; }
-
 .chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
   padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;
@@ -137,29 +181,26 @@ header {
   color: rgba(148,163,184,0.75); cursor: pointer; transition: all .18s;
 }
 .chip:hover { background: rgba(124,58,237,0.15); border-color: rgba(167,139,250,0.35); color: #c4b5fd; }
-
 .new-chat-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 10px; border-radius: 10px; width: 100%; margin-bottom: 20px;
   background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(79,70,229,0.2));
   border: 1px solid rgba(124,58,237,0.3); color: #c4b5fd;
-  font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: all .2s;
+  font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
 }
 .new-chat-btn:hover { background: linear-gradient(135deg, rgba(124,58,237,0.4), rgba(79,70,229,0.3)); box-shadow: 0 4px 16px rgba(124,58,237,0.25); }
 .new-chat-btn svg { width: 15px; height: 15px; }
 
 /* ── ÁREA DE CHAT ── */
 .chat-area {
-  flex: 1; display: flex; flex-direction: column; overflow: hidden;
-  background: transparent;
+  flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0;
 }
 
 /* Mensagens */
 .msgs-container {
   flex: 1; overflow-y: auto; padding: 32px 40px;
   display: flex; flex-direction: column; gap: 20px;
-  scroll-behavior: smooth;
+  scroll-behavior: smooth; min-height: 0;
 }
 .msgs-container::-webkit-scrollbar { width: 4px; }
 .msgs-container::-webkit-scrollbar-track { background: transparent; }
@@ -168,7 +209,7 @@ header {
 /* Welcome */
 .welcome-block {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  flex: 1; padding: 40px 20px; text-align: center; gap: 20px;
+  flex: 1; min-height: 400px; padding: 40px 20px; text-align: center; gap: 20px;
   animation: fade-in .5s ease;
 }
 .welcome-avatar {
@@ -176,8 +217,7 @@ header {
   background: linear-gradient(135deg, #7c3aed, #4f46e5, #06b6d4);
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 0 40px rgba(124,58,237,0.4), 0 0 80px rgba(124,58,237,0.15);
-  animation: welcome-pulse 4s ease-in-out infinite;
-  margin-bottom: 8px;
+  animation: welcome-pulse 4s ease-in-out infinite; margin-bottom: 8px;
 }
 @keyframes welcome-pulse { 0%,100%{box-shadow:0 0 40px rgba(124,58,237,.4),0 0 80px rgba(124,58,237,.15);} 50%{box-shadow:0 0 60px rgba(124,58,237,.6),0 0 100px rgba(124,58,237,.25);} }
 .welcome-avatar svg { width: 34px; height: 34px; color: #fff; }
@@ -187,10 +227,7 @@ header {
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 .welcome-block p { font-size: 14px; color: rgba(148,163,184,0.65); max-width: 480px; line-height: 1.6; }
-
-.suggestion-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 560px;
-}
+.suggestion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 560px; }
 .suggestion-card {
   padding: 14px 16px; border-radius: 14px; text-align: left; cursor: pointer;
   background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
@@ -198,52 +235,41 @@ header {
   line-height: 1.4; transition: all .2s;
 }
 .suggestion-card strong { display: block; font-size: 13px; color: #e2e8f0; margin-bottom: 3px; }
-.suggestion-card:hover {
-  background: rgba(124,58,237,0.1); border-color: rgba(167,139,250,0.25);
-  color: rgba(196,181,253,0.9); transform: translateY(-1px);
-}
+.suggestion-card:hover { background: rgba(124,58,237,0.1); border-color: rgba(167,139,250,0.25); color: rgba(196,181,253,0.9); transform: translateY(-1px); }
 
-/* Mensagens */
+/* Mensagens individuais */
 .msg-row { display: flex; gap: 12px; animation: fade-in .3s ease; }
 .msg-row.user { flex-direction: row-reverse; }
 @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-
 .msg-avatar {
   width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center; margin-top: 2px;
 }
-.msg-avatar.alice-av {
-  background: linear-gradient(135deg, #7c3aed, #4f46e5);
-  box-shadow: 0 0 12px rgba(124,58,237,0.35);
-}
-.msg-avatar.user-av { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); }
+.msg-avatar.alice-av { background: linear-gradient(135deg, #7c3aed, #4f46e5); box-shadow: 0 0 12px rgba(124,58,237,0.35); }
+.msg-avatar.user-av  { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); }
 .msg-avatar svg { width: 16px; height: 16px; color: #fff; }
-
 .msg-bubble {
   max-width: 72%; padding: 14px 18px; border-radius: 16px;
   font-size: 14px; line-height: 1.65;
 }
 .msg-bubble.alice {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: #e2e8f0;
-  border-radius: 4px 16px 16px 16px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  color: #e2e8f0; border-radius: 4px 16px 16px 16px;
 }
 .msg-bubble.user {
   background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(79,70,229,0.25));
-  border: 1px solid rgba(124,58,237,0.25);
-  color: #e2e8f0;
+  border: 1px solid rgba(124,58,237,0.25); color: #e2e8f0;
   border-radius: 16px 4px 16px 16px;
 }
 .msg-bubble.erro { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); color: #fca5a5; }
 
 /* Markdown */
 .msg-bubble strong { color: #c4b5fd; font-weight: 700; }
-.msg-bubble em { color: #94a3b8; font-style: italic; }
-.msg-bubble .md-h { font-size: 14px; font-weight: 700; color: #e2e8f0; margin: 10px 0 4px; display: block; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px; }
+.msg-bubble em     { color: #94a3b8; font-style: italic; }
+.msg-bubble .md-h  { font-size: 14px; font-weight: 700; color: #e2e8f0; margin: 10px 0 4px; display: block; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px; }
 .msg-bubble .md-li { display: flex; gap: 8px; margin: 3px 0; padding-left: 4px; }
 .msg-bubble .md-li::before { content: '▸'; color: #7c3aed; flex-shrink: 0; font-size: 11px; margin-top: 2px; }
-.msg-bubble code { background: rgba(124,58,237,0.15); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: #a5b4fc; font-family: monospace; }
+.msg-bubble code   { background: rgba(124,58,237,0.15); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: #a5b4fc; font-family: monospace; }
 
 /* Digitando */
 .typing-row { display: flex; gap: 12px; }
@@ -259,6 +285,7 @@ header {
 
 /* ── INPUT ── */
 .input-area {
+  flex-shrink: 0;
   padding: 16px 40px 24px;
   background: rgba(4,11,26,0.4);
   border-top: 1px solid rgba(255,255,255,0.05);
@@ -266,15 +293,11 @@ header {
 }
 .input-wrapper {
   display: flex; gap: 10px; align-items: flex-end;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
   border-radius: 16px; padding: 10px 10px 10px 18px;
   transition: border-color .2s, box-shadow .2s;
 }
-.input-wrapper:focus-within {
-  border-color: rgba(124,58,237,0.45);
-  box-shadow: 0 0 0 3px rgba(124,58,237,0.08);
-}
+.input-wrapper:focus-within { border-color: rgba(124,58,237,0.45); box-shadow: 0 0 0 3px rgba(124,58,237,0.08); }
 #alice-input {
   flex: 1; background: none; border: none; outline: none; resize: none;
   font-family: 'DM Sans', sans-serif; font-size: 14px; color: #e2e8f0;
@@ -294,48 +317,13 @@ header {
 .send-btn svg { width: 16px; height: 16px; }
 .input-hint { font-size: 11px; color: rgba(148,163,184,0.3); text-align: center; margin-top: 10px; }
 
-/* ── LOGIN MODAL (padrão auth.js) ── */
-#login-modal {
-  position: fixed; inset: 0; z-index: 100;
-  background: rgba(4,11,26,0.95); backdrop-filter: blur(12px);
-  display: flex; align-items: center; justify-content: center;
+/* Status de carregamento do contexto */
+.ctx-status {
+  font-size: 11px; text-align: center; padding: 4px 0 0;
+  color: rgba(148,163,184,0.4); transition: opacity .5s;
 }
-.login-card {
-  width: 360px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 22px; padding: 36px 32px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
-  display: flex; flex-direction: column; gap: 16px; text-align: center;
-  animation: fade-in .4s ease;
-}
-.login-logo {
-  width: 52px; height: 52px; border-radius: 16px; margin: 0 auto 8px;
-  background: linear-gradient(135deg, #7c3aed, #4f46e5, #06b6d4);
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 32px rgba(124,58,237,0.4);
-}
-.login-logo svg { width: 26px; height: 26px; color: #fff; }
-.login-card h2 { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; color: #e2e8f0; }
-.login-card p { font-size: 13px; color: rgba(148,163,184,0.6); }
-.login-input {
-  width: 100%; padding: 11px 14px; border-radius: 10px;
-  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-  color: #e2e8f0; font-family: inherit; font-size: 14px; outline: none;
-  transition: border-color .2s;
-}
-.login-input:focus { border-color: rgba(124,58,237,0.5); }
-.login-input::placeholder { color: rgba(148,163,184,0.3); }
-.login-btn {
-  padding: 12px; border-radius: 11px; border: none; width: 100%;
-  background: linear-gradient(135deg, #7c3aed, #4f46e5);
-  color: #fff; font-family: inherit; font-size: 14px; font-weight: 700;
-  cursor: pointer; box-shadow: 0 6px 20px rgba(124,58,237,0.4);
-  transition: opacity .2s;
-}
-.login-btn:hover { opacity: .9; }
-#login-error { background: rgba(239,68,68,0.15); color: #fca5a5; font-size: 12px; padding: 8px; border-radius: 8px; display: none; }
-
-/* content-wrapper oculto até auth.js liberar */
-#content-wrapper { display: none; }
+.ctx-status.ok   { color: rgba(52,211,153,0.6); }
+.ctx-status.err  { color: rgba(252,165,165,0.6); }
 
 /* ── RESPONSIVO ── */
 @media (max-width: 768px) {
@@ -353,7 +341,7 @@ header {
 <div class="orb orb-1"></div>
 <div class="orb orb-2"></div>
 
-<!-- Login Modal (gerenciado pelo auth.js) -->
+<!-- Login Modal — IDs obrigatórios para o auth.js -->
 <div id="login-modal">
   <div class="login-card">
     <div class="login-logo">
@@ -363,147 +351,226 @@ header {
     <p>Assistente inteligente de campanha</p>
     <input class="login-input" id="login-user" type="text" placeholder="Usuário" autocomplete="username">
     <input class="login-input" id="login-pass" type="password" placeholder="Senha" autocomplete="current-password">
-    <div id="login-error">Usuário ou senha inválidos</div>
+    <div id="login-error"></div>
     <button class="login-btn" id="login-btn">Entrar</button>
   </div>
 </div>
 
-<!-- Conteúdo principal (liberado pelo auth.js após login) -->
+<!-- Conteúdo principal — liberado pelo auth.js -->
 <div id="content-wrapper">
 
-<!-- Header -->
-<header>
-  <div class="header-left">
-    <div class="alice-avatar">
-      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M8 10h.01M16 10h.01M9.5 15a4 4 0 0 0 5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-    </div>
-    <div class="alice-info">
-      <h1>Alice</h1>
-      <p>Assistente IA de Campanha · Paralax</p>
-    </div>
-    <div class="status-dot">Online</div>
-  </div>
-  <a href="./home.html" class="btn-home">
-    <svg viewBox="0 0 24 24" fill="none"><path d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 0 1 0 12h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Voltar
-  </a>
-</header>
-
-<!-- Main -->
-<div class="main">
-
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <button class="new-chat-btn" id="btn-new-chat">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      Nova conversa
-    </button>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Ações rápidas</div>
-      <button class="quick-btn" data-prompt="Gere um relatório estratégico completo da campanha no estado do Rio de Janeiro.">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        Relatório completo
-      </button>
-      <button class="quick-btn" data-prompt="Quais são os 10 municípios com maior meta de votos? Liste com meta, votos válidos e número de líderes.">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" stroke="currentColor" stroke-width="1.5"/></svg>
-        Top municípios
-      </button>
-      <button class="quick-btn" data-prompt="Quais municípios têm meta alta mas poucos líderes cadastrados? Esses são pontos críticos que precisam de atenção.">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        Pontos críticos
-      </button>
-      <button class="quick-btn" data-prompt="Quais regiões do estado têm melhor cobertura de líderes em relação à meta? Mostre os destaques positivos da campanha.">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="1.5"/></svg>
-        Pontos fortes
-      </button>
-      <button class="quick-btn" data-prompt="Sugira 5 ações estratégicas concretas que a campanha deveria priorizar agora com base nos dados disponíveis.">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Próximos passos
-      </button>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Perguntas rápidas</div>
-      <div class="chip-list">
-        <span class="chip" data-prompt="Qual município tem mais votos válidos?">Maior eleitorado</span>
-        <span class="chip" data-prompt="Quantos líderes temos cadastrados no total?">Total líderes</span>
-        <span class="chip" data-prompt="Qual é a meta total de votos da campanha?">Meta total</span>
-        <span class="chip" data-prompt="Quais municípios não têm líderes cadastrados?">Sem líderes</span>
-        <span class="chip" data-prompt="Compare os municípios de Niterói e São Gonçalo em termos de votos e líderes.">Niterói vs SG</span>
-        <span class="chip" data-prompt="Liste os 5 municípios com menor número de votos válidos.">Menor eleitorado</span>
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="alice-avatar">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M8 10h.01M16 10h.01M9.5 15a4 4 0 0 0 5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </div>
-    </div>
-  </aside>
-
-  <!-- Chat -->
-  <div class="chat-area">
-    <div class="msgs-container" id="msgs">
-      <!-- Welcome state -->
-      <div class="welcome-block" id="welcome-block">
-        <div class="welcome-avatar">
-          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M8 10h.01M16 10h.01M9.5 15a4 4 0 0 0 5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </div>
-        <h2>Olá, sou a Alice</h2>
-        <p>Sua assistente estratégica de campanha. Tenho acesso a todos os dados do sistema — municípios, líderes, metas e votos válidos. Como posso ajudar?</p>
-        <div class="suggestion-grid">
-          <button class="suggestion-card" data-prompt="Faça um resumo geral da situação atual da campanha no estado do Rio de Janeiro.">
-            <strong>📊 Resumo da campanha</strong>
-            Situação atual, metas e destaques
-          </button>
-          <button class="suggestion-card" data-prompt="Quais são os municípios mais estratégicos para concentrar esforços agora?">
-            <strong>🎯 Municípios estratégicos</strong>
-            Onde focar os esforços
-          </button>
-          <button class="suggestion-card" data-prompt="Quais municípios têm alta meta mas poucos líderes? Preciso de atenção urgente neles.">
-            <strong>⚠️ Alertas críticos</strong>
-            Municípios que precisam de atenção
-          </button>
-          <button class="suggestion-card" data-prompt="Gere sugestões de mensagem para mobilizar líderes em municípios com baixa adesão.">
-            <strong>✍️ Mensagens de mobilização</strong>
-            Textos para engajar líderes
-          </button>
-        </div>
+      <div class="alice-info">
+        <h1>Alice</h1>
+        <p>Assistente IA de Campanha · Paralax</p>
       </div>
+      <div class="status-dot" id="alice-status">Online</div>
     </div>
+    <a href="./home.html" class="btn-home">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 0 1 0 12h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Voltar
+    </a>
+  </header>
 
-    <div class="input-area">
-      <div class="input-wrapper">
-        <textarea id="alice-input" placeholder="Pergunte à Alice sobre a campanha…" rows="1"></textarea>
-        <button class="send-btn" id="send-btn">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <button class="new-chat-btn" id="btn-new-chat">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Nova conversa
+      </button>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Ações rápidas</div>
+        <button class="quick-btn" data-prompt="Gere um relatório estratégico completo da campanha no estado do Rio de Janeiro, com totais gerais, destaques, municípios críticos e recomendações.">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Relatório completo
+        </button>
+        <button class="quick-btn" data-prompt="Quais são os 10 municípios com maior meta de votos? Liste com meta, votos válidos e número de líderes.">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" stroke="currentColor" stroke-width="1.5"/></svg>
+          Top municípios
+        </button>
+        <button class="quick-btn" data-prompt="Quais municípios têm meta alta mas poucos líderes cadastrados? Liste esses pontos críticos com os dados.">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Pontos críticos
+        </button>
+        <button class="quick-btn" data-prompt="Quais municípios têm melhor relação entre número de líderes e votos válidos? Mostre os destaques positivos.">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="1.5"/></svg>
+          Pontos fortes
+        </button>
+        <button class="quick-btn" data-prompt="Com base nos dados da campanha, sugira 5 ações estratégicas concretas e prioritárias para os próximos dias.">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Próximos passos
         </button>
       </div>
-      <p class="input-hint">Alice pode cometer erros. Sempre valide decisões importantes.</p>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Perguntas rápidas</div>
+        <div class="chip-list">
+          <span class="chip" data-prompt="Qual município tem mais votos válidos?">Maior eleitorado</span>
+          <span class="chip" data-prompt="Quantos líderes temos cadastrados no total em todos os municípios?">Total líderes</span>
+          <span class="chip" data-prompt="Qual é a soma total de metas de votos da campanha?">Meta total</span>
+          <span class="chip" data-prompt="Quais municípios não têm nenhum líder cadastrado?">Sem líderes</span>
+          <span class="chip" data-prompt="Compare Niterói e São Gonçalo: votos válidos, líderes e meta.">Niterói vs SG</span>
+          <span class="chip" data-prompt="Liste os 5 municípios com menor número de votos válidos.">Menor eleitorado</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Chat -->
+    <div class="chat-area">
+      <div class="msgs-container" id="msgs">
+        <div class="welcome-block" id="welcome-block">
+          <div class="welcome-avatar">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M8 10h.01M16 10h.01M9.5 15a4 4 0 0 0 5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h2>Olá, sou a Alice</h2>
+          <p>Sua assistente estratégica de campanha. Tenho acesso aos dados reais do sistema — municípios, líderes, metas e votos válidos. Como posso ajudar?</p>
+          <div class="suggestion-grid">
+            <button class="suggestion-card" data-prompt="Faça um resumo geral da situação atual da campanha no estado do Rio de Janeiro.">
+              <strong>📊 Resumo da campanha</strong>
+              Situação atual, metas e destaques
+            </button>
+            <button class="suggestion-card" data-prompt="Quais são os municípios mais estratégicos para concentrar esforços agora, considerando votos válidos e número de líderes?">
+              <strong>🎯 Municípios estratégicos</strong>
+              Onde focar os esforços
+            </button>
+            <button class="suggestion-card" data-prompt="Quais municípios têm meta alta mas poucos líderes? Preciso de atenção urgente neles.">
+              <strong>⚠️ Alertas críticos</strong>
+              Municípios que precisam de atenção
+            </button>
+            <button class="suggestion-card" data-prompt="Gere sugestões de mensagem para mobilizar líderes em municípios com baixa adesão.">
+              <strong>✍️ Mensagens de mobilização</strong>
+              Textos para engajar líderes
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-wrapper">
+          <textarea id="alice-input" placeholder="Pergunte à Alice sobre a campanha…" rows="1"></textarea>
+          <button class="send-btn" id="send-btn" disabled>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="ctx-status" id="ctx-status">Carregando dados da campanha…</div>
+      </div>
     </div>
-  </div>
-</div><!-- /main -->
+
+  </div><!-- /main -->
 </div><!-- /content-wrapper -->
 
 <script>
 // ── Config ────────────────────────────────────────────────────────────────
-const API   = window.API_URL || ''
-const ENDPOINT = API + '/ia/chat'
+const ENDPOINT = (window.API_URL || '') + '/ia/chat'
 
-// ── Contexto base (busca do servidor) ────────────────────────────────────
-let _contextoCache = null
+// ── Contexto ──────────────────────────────────────────────────────────────
+let _contexto = null   // string do system prompt — preenchido em carregarContexto()
 
-async function _getContexto(mensagem) {
-  // Constrói contexto básico a partir dos dados disponíveis
-  // (sem dataCache local — Alice funciona standalone)
-  return null  // contexto será enriquecido pelo servidor via token de tenant
+async function carregarContexto() {
+  const statusEl = document.getElementById('ctx-status')
+  const sendBtn  = document.getElementById('send-btn')
+
+  try {
+    const token = localStorage.getItem('token')
+    const headers = { 'Authorization': 'Bearer ' + token }
+
+    // Busca config (candidatos/metas) e lideranças em paralelo
+    const [cfgRes, lidRes] = await Promise.all([
+      fetch((window.API_URL || '') + '/config', { headers }),
+      fetch((window.API_URL || '') + '/liderancas', { headers })
+    ])
+
+    if (!cfgRes.ok || !lidRes.ok) throw new Error('Falha ao buscar dados')
+
+    const cfg  = await cfgRes.json()
+    const lids = await lidRes.json()   // array de { cidade, liderancas: [...] }
+
+    // Monta mapa cidade → { count, meta }
+    const porCidade = {}
+    for (const row of lids) {
+      const cidade = row.cidade
+      const count  = (row.liderancas || []).length
+      const meta   = (row.liderancas || []).reduce((s, l) => s + Number(l.expectativa_votos || 0), 0)
+      porCidade[cidade] = { count, meta }
+    }
+
+    // Monta tabela com votosValidos (data.js) + dados do servidor
+    const votos = window.votosValidos || {}
+    const linhas = Object.entries(votos)
+      .sort((a, b) => b[1] - a[1])
+      .map(([mun, v]) => {
+        const d = porCidade[mun] || { count: 0, meta: 0 }
+        return `  ${mun}: votos_validos=${v.toLocaleString('pt-BR')}, lideres=${d.count}, meta_votos=${d.meta.toLocaleString('pt-BR')}`
+      }).join('\n')
+
+    // Totais
+    const totalVotos  = Object.values(votos).reduce((s, v) => s + v, 0)
+    const totalLiders = Object.values(porCidade).reduce((s, d) => s + d.count, 0)
+    const totalMeta   = Object.values(porCidade).reduce((s, d) => s + d.meta, 0)
+    const nomeSist    = cfg.nome_sistema || 'Campanha'
+    const candidatos  = (cfg.candidatos || []).map(c => c.nome || c.chave).join(', ')
+
+    _contexto = `Você é Alice, assistente estratégica da ${nomeSist}.
+${candidatos ? `Candidatos: ${candidatos}.` : ''}
+
+REGRAS OBRIGATÓRIAS:
+1. Responda APENAS com base nos dados abaixo. Não invente, não extrapole, não assuma valores que não estejam na tabela.
+2. Se o dado solicitado não estiver na tabela, diga claramente: "Não tenho essa informação nos dados disponíveis."
+3. Use os dados numéricos exatamente como estão — não arredonde nem estime.
+4. Seja preciso, direto e estratégico. Foque em insights acionáveis.
+
+RESUMO GERAL:
+  Total de municípios monitorados: ${Object.keys(votos).length}
+  Total de votos válidos no estado: ${totalVotos.toLocaleString('pt-BR')}
+  Total de líderes cadastrados: ${totalLiders}
+  Meta total de votos: ${totalMeta.toLocaleString('pt-BR')}
+
+DADOS POR MUNICÍPIO (ordem: maior eleitorado primeiro):
+${linhas}
+`
+
+    if (statusEl) { statusEl.textContent = `✓ Dados carregados — ${Object.keys(votos).length} municípios, ${totalLiders} líderes`; statusEl.className = 'ctx-status ok' }
+    if (sendBtn)  sendBtn.disabled = false
+
+  } catch (err) {
+    console.error('[Alice] contexto:', err)
+    // Fallback: usa só votosValidos estáticos sem dados de liderança
+    const votos = window.votosValidos || {}
+    if (Object.keys(votos).length) {
+      const linhas = Object.entries(votos).sort((a,b)=>b[1]-a[1])
+        .map(([m,v]) => `  ${m}: votos_validos=${v.toLocaleString('pt-BR')}, lideres=sem dados, meta_votos=sem dados`).join('\n')
+      _contexto = `Você é Alice, assistente estratégica de campanha.\n\nREGRAS: Responda APENAS com base nos dados abaixo. Não invente informações.\n\nDADOS POR MUNICÍPIO:\n${linhas}`
+      if (statusEl) { statusEl.textContent = '⚠ Dados parciais (sem lideranças)'; statusEl.className = 'ctx-status err' }
+      if (sendBtn)  sendBtn.disabled = false
+    } else {
+      if (statusEl) { statusEl.textContent = '✕ Falha ao carregar dados'; statusEl.className = 'ctx-status err' }
+    }
+  }
 }
 
 // ── Chamada à API ──────────────────────────────────────────────────────────
-async function chamarAlice(mensagem, contextoExtra) {
+async function chamarAlice(mensagem) {
   const token = localStorage.getItem('token')
   const r = await fetch(ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-    body: JSON.stringify({ mensagem, contexto: contextoExtra || _contextoCache || undefined })
+    body: JSON.stringify({ mensagem, contexto: _contexto || undefined })
   })
+  if (!r.ok) {
+    let msg = 'Erro na API'
+    try { const d = await r.json(); msg = d.error || msg } catch {}
+    throw new Error(msg)
+  }
   const data = await r.json()
-  if (!r.ok) throw new Error(data.error || 'Erro na API')
   return data.resposta || ''
 }
 
@@ -521,19 +588,19 @@ function renderMd(txt) {
 }
 
 // ── DOM ────────────────────────────────────────────────────────────────────
-const msgs      = document.getElementById('msgs')
-const input     = document.getElementById('alice-input')
-const sendBtn   = document.getElementById('send-btn')
-const welcome   = document.getElementById('welcome-block')
+const msgs    = document.getElementById('msgs')
+const input   = document.getElementById('alice-input')
+const sendBtn = document.getElementById('send-btn')
+const welcome = document.getElementById('welcome-block')
 
 function hideWelcome() {
-  if (welcome) { welcome.style.display = 'none' }
+  if (welcome && welcome.style.display !== 'none') welcome.style.display = 'none'
 }
 
 function addMsg(role, texto) {
   hideWelcome()
   const row = document.createElement('div')
-  row.className = 'msg-row ' + (role === 'user' ? 'user' : '')
+  row.className = 'msg-row' + (role === 'user' ? ' user' : '')
   const avatarHtml = role === 'user'
     ? `<div class="msg-avatar user-av"><svg viewBox="0 0 24 24" fill="none"><path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" stroke="currentColor" stroke-width="1.5"/></svg></div>`
     : `<div class="msg-avatar alice-av"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M8 10h.01M16 10h.01M9.5 15a4 4 0 0 0 5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>`
@@ -554,7 +621,6 @@ function showTyping() {
     <div class="typing-bubble"><div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div></div>`
   msgs.appendChild(row)
   msgs.scrollTop = msgs.scrollHeight
-  return row
 }
 
 function removeTyping() {
@@ -562,18 +628,22 @@ function removeTyping() {
 }
 
 async function enviar(texto) {
-  texto = texto.trim(); if (!texto) return
+  texto = texto.trim(); if (!texto || sendBtn.disabled) return
   input.value = ''; input.style.height = 'auto'
   input.disabled = true; sendBtn.disabled = true
   addMsg('user', texto)
-  const typing = showTyping()
+  showTyping()
   try {
     const resp = await chamarAlice(texto)
     removeTyping(); addMsg('alice', resp)
   } catch(e) {
     removeTyping(); addMsg('erro', '⚠️ ' + e.message)
   } finally {
-    input.disabled = false; sendBtn.disabled = false; input.focus()
+    input.disabled = false
+    // Só reabilita send se contexto já foi carregado
+    if (_contexto) sendBtn.disabled = false
+    input.focus()
+    msgs.scrollTop = msgs.scrollHeight
   }
 }
 
@@ -587,22 +657,31 @@ input.addEventListener('keydown', e => {
 })
 sendBtn.addEventListener('click', () => enviar(input.value))
 
-// Botões rápidos
-document.querySelectorAll('[data-prompt]').forEach(el => {
-  el.addEventListener('click', () => enviar(el.dataset.prompt))
-})
+// Botões com data-prompt (sidebar + suggestion cards)
+function registrarBotoes() {
+  document.querySelectorAll('[data-prompt]').forEach(el => {
+    el.addEventListener('click', () => enviar(el.dataset.prompt))
+  })
+}
 
 // Nova conversa
 document.getElementById('btn-new-chat').addEventListener('click', () => {
-  // Remove mensagens mas mantém welcome
   Array.from(msgs.children).forEach(c => { if (c.id !== 'welcome-block') c.remove() })
-  if (welcome) welcome.style.display = 'flex'
+  if (welcome) { welcome.style.display = 'flex' }
 })
 
-// ── Foco no input após auth.js liberar a interface ──────────────────────────
-// auth.js chama liberarInterface() que mostra #content-wrapper.
-// Aguardamos um tick para garantir que o elemento já está visível.
+// ── Inicialização após auth.js liberar ──────────────────────────────────────
 window.iniciarAplicacao = async function() {
+  // auth.js seta display:block — corremos para flex para o layout funcionar
+  const cw = document.getElementById('content-wrapper')
+  if (cw) {
+    cw.style.display       = 'flex'
+    cw.style.flexDirection = 'column'
+    cw.style.flex          = '1'
+    cw.style.overflow      = 'hidden'
+  }
+  registrarBotoes()
+  await carregarContexto()
   input.focus()
 }
 </script>
