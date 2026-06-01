@@ -13,6 +13,8 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google-cloud/bigquery": "^7.0.0",
+    "@google/genai": "^2.7.0",
     "@supabase/supabase-js": "^2.93.3",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
@@ -26,7 +28,6 @@
     "socket.io": "^4.8.3",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
-    "uuid": "^13.0.0",
-    "@google-cloud/bigquery": "^7.0.0"
+    "uuid": "^13.0.0"
   }
 }

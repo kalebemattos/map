@@ -1899,6 +1899,7 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
 <script src="votosBairro.js"></script>
 <script src="votosCelia.js"></script>
 <script src="geo-mode-estado.js"></script>
+<script src="ia.js"></script>
 <script>
 // =================================================================
 // 1. VARIÁVEIS GLOBAIS (Inicializadas a null para evitar erros de referência)
@@ -3065,6 +3066,26 @@ const normalized = normalizeCityName(cityName);
   });
   renderLiderancas(cityName);
   renderObservacoes(cityName);
+
+  // Botão IA — analisar cidade selecionada
+  if (window.IACampanha) {
+    window.IACampanha.setCidadeAtual(cityName)
+    let btnIA = document.getElementById('ia-analisar-btn')
+    if (!btnIA) {
+      btnIA = document.createElement('button')
+      btnIA.id = 'ia-analisar-btn'
+      btnIA.style.cssText = `width:100%;margin-top:10px;padding:9px;border:none;border-radius:10px;
+        background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-family:'DM Sans',sans-serif;
+        font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;`
+      btnIA.innerHTML = '🤖 Analisar com IA'
+      btnIA.onclick = () => window.IACampanha.analisarCidade(cityName)
+      // Injeta após o bloco de expectativa ou no final do sidebar content
+      const sidebarContent = document.querySelector('.sidebar-content') || document.querySelector('.sidebar')
+      if (sidebarContent) sidebarContent.appendChild(btnIA)
+    } else {
+      btnIA.onclick = () => window.IACampanha.analisarCidade(cityName)
+    }
+  }
   const user = JSON.parse(localStorage.getItem('user'));
 if (user && user.nivel === 'visualizador') {
     // Esconde botões de ação

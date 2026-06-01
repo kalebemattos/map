@@ -91,6 +91,11 @@ function liberarInterface() {
   if (loginModal) loginModal.style.display = 'none';
   if (blocker)    blocker.style.display    = 'none';
   if (content)    content.style.display    = 'block';
+
+  // Inicializa IA (apenas se disponível nesta página)
+  if (window.IACampanha && typeof window.IACampanha.init === 'function') {
+    window.IACampanha.init()
+  }
 }
 
 // ─────────────────────────────────────────────
