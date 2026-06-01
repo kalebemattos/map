@@ -24,24 +24,39 @@ window.IACampanha = (function () {
   }
 
   function _contextoBase() {
-    const cands = _candidatos()
-    const nomes = cands.map(c => c.nome).join(' e ')
-    const totalCidades = Object.keys(window.dataCache || {}).length
+    const cands  = _candidatos()
+    const nomes  = cands.map(c => c.nome).join(' e ')
+    const cache  = window.dataCache    || {}
+    const votos  = window.votosValidos || {}
     let totalLideres = 0
     let metaTotal    = 0
 
-    Object.values(window.dataCache || {}).forEach(c => {
+    Object.values(cache).forEach(c => {
       totalLideres += (c.liderancas || []).length
       Object.values(c.expectativaCidade || {}).forEach(v => { metaTotal += Number(v || 0) })
     })
 
+    // Tabela completa de votos válidos por município (dados estáticos)
+    const tabelaVotos = Object.entries(votos)
+      .sort((a, b) => b[1] - a[1])
+      .map(([mun, v]) => {
+        const c    = cache[mun] || {}
+        const lids = (c.liderancas || []).length
+        const meta = Object.values(c.expectativaCidade || {}).reduce((s, x) => s + Number(x || 0), 0)
+        return `  ${mun}: votos=${v.toLocaleString('pt-BR')}, líderes=${lids}, meta=${meta.toLocaleString('pt-BR')}`
+      }).join('\n')
+
     return `Você é um assistente estratégico de campanha eleitoral do estado do Rio de Janeiro.
 A campanha é de: ${nomes || 'candidatos não informados'}.
-Total de municípios monitorados: ${totalCidades}.
+Total de municípios: ${Object.keys(votos).length}.
 Total de líderes cadastrados: ${totalLideres.toLocaleString('pt-BR')}.
 Meta total de votos: ${metaTotal.toLocaleString('pt-BR')}.
+
+DADOS POR MUNICÍPIO (votos válidos eleição anterior, líderes cadastrados, meta):
+${tabelaVotos || '(dados ainda carregando)'}
+
 Responda de forma objetiva, prática e em português brasileiro.
-Nunca invente dados — use apenas o contexto fornecido.`
+Nunca invente dados — use apenas o contexto fornecido acima.`
   }
 
   function _contextoMunicipio(nome) {
