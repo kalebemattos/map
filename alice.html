@@ -481,75 +481,41 @@ async function carregarContexto() {
 
   try {
     const token = localStorage.getItem('token')
-    const headers = { 'Authorization': 'Bearer ' + token }
+    const r = await fetch((window.API_URL || '') + '/ia/contexto', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
 
-    // Busca config (candidatos/metas) e lideranças em paralelo
-    const [cfgRes, lidRes] = await Promise.all([
-      fetch((window.API_URL || '') + '/config', { headers }),
-      fetch((window.API_URL || '') + '/liderancas', { headers })
-    ])
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    const data = await r.json()
+    if (!data.ok || !data.contexto) throw new Error(data.error || 'Sem contexto')
 
-    if (!cfgRes.ok || !lidRes.ok) throw new Error('Falha ao buscar dados')
+    _contexto = data.contexto
 
-    const cfg  = await cfgRes.json()
-    const lids = await lidRes.json()   // array de { cidade, liderancas: [...] }
+    // Extrai contagens do resumo para exibir no status
+    const mMatch = _contexto.match(/Municípios monitorados:\s*([\d.]+)/)
+    const lMatch = _contexto.match(/líderes cadastrados:\s*([\d.,]+)/)
+    const municipios = mMatch ? mMatch[1] : '?'
+    const lideres    = lMatch ? lMatch[1] : '?'
 
-    // Monta mapa cidade → { count, meta }
-    const porCidade = {}
-    for (const row of lids) {
-      const cidade = row.cidade
-      const count  = (row.liderancas || []).length
-      const meta   = (row.liderancas || []).reduce((s, l) => s + Number(l.expectativa_votos || 0), 0)
-      porCidade[cidade] = { count, meta }
-    }
+    const temBQ = _contexto.includes('votos_')  // colunas de resultado eleitoral
+    const temPerfil = _contexto.includes('PERFIL DO ELEITORADO')
 
-    // Monta tabela com votosValidos (data.js) + dados do servidor
-    const votos = window.votosValidos || {}
-    const linhas = Object.entries(votos)
-      .sort((a, b) => b[1] - a[1])
-      .map(([mun, v]) => {
-        const d = porCidade[mun] || { count: 0, meta: 0 }
-        return `  ${mun}: votos_validos=${v.toLocaleString('pt-BR')}, lideres=${d.count}, meta_votos=${d.meta.toLocaleString('pt-BR')}`
-      }).join('\n')
+    let info = `✓ ${municipios} municípios · ${lideres} líderes`
+    if (temBQ)     info += ' · resultados BQ'
+    if (temPerfil) info += ' · perfil eleitorado'
 
-    // Totais
-    const totalVotos  = Object.values(votos).reduce((s, v) => s + v, 0)
-    const totalLiders = Object.values(porCidade).reduce((s, d) => s + d.count, 0)
-    const totalMeta   = Object.values(porCidade).reduce((s, d) => s + d.meta, 0)
-    const nomeSist    = cfg.nome_sistema || 'Campanha'
-    const candidatos  = (cfg.candidatos || []).map(c => c.nome || c.chave).join(', ')
-
-    _contexto = `Você é Alice, assistente estratégica da ${nomeSist}.
-${candidatos ? `Candidatos: ${candidatos}.` : ''}
-
-REGRAS OBRIGATÓRIAS:
-1. Responda APENAS com base nos dados abaixo. Não invente, não extrapole, não assuma valores que não estejam na tabela.
-2. Se o dado solicitado não estiver na tabela, diga claramente: "Não tenho essa informação nos dados disponíveis."
-3. Use os dados numéricos exatamente como estão — não arredonde nem estime.
-4. Seja preciso, direto e estratégico. Foque em insights acionáveis.
-
-RESUMO GERAL:
-  Total de municípios monitorados: ${Object.keys(votos).length}
-  Total de votos válidos no estado: ${totalVotos.toLocaleString('pt-BR')}
-  Total de líderes cadastrados: ${totalLiders}
-  Meta total de votos: ${totalMeta.toLocaleString('pt-BR')}
-
-DADOS POR MUNICÍPIO (ordem: maior eleitorado primeiro):
-${linhas}
-`
-
-    if (statusEl) { statusEl.textContent = `✓ Dados carregados — ${Object.keys(votos).length} municípios, ${totalLiders} líderes`; statusEl.className = 'ctx-status ok' }
+    if (statusEl) { statusEl.textContent = info; statusEl.className = 'ctx-status ok' }
     if (sendBtn)  sendBtn.disabled = false
 
   } catch (err) {
     console.error('[Alice] contexto:', err)
-    // Fallback: usa só votosValidos estáticos sem dados de liderança
+    // Fallback: usa votosValidos estáticos do data.js
     const votos = window.votosValidos || {}
     if (Object.keys(votos).length) {
       const linhas = Object.entries(votos).sort((a,b)=>b[1]-a[1])
         .map(([m,v]) => `  ${m}: votos_validos=${v.toLocaleString('pt-BR')}, lideres=sem dados, meta_votos=sem dados`).join('\n')
-      _contexto = `Você é Alice, assistente estratégica de campanha.\n\nREGRAS: Responda APENAS com base nos dados abaixo. Não invente informações.\n\nDADOS POR MUNICÍPIO:\n${linhas}`
-      if (statusEl) { statusEl.textContent = '⚠ Dados parciais (sem lideranças)'; statusEl.className = 'ctx-status err' }
+      _contexto = `Você é Alice, assistente estratégica de campanha.\n\nREGRA: Responda APENAS com base nos dados abaixo. Não invente informações.\n\nDADOS POR MUNICÍPIO:\n${linhas}`
+      if (statusEl) { statusEl.textContent = '⚠ Dados parciais — sem servidor'; statusEl.className = 'ctx-status err' }
       if (sendBtn)  sendBtn.disabled = false
     } else {
       if (statusEl) { statusEl.textContent = '✕ Falha ao carregar dados'; statusEl.className = 'ctx-status err' }

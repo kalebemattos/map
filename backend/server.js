@@ -31,7 +31,7 @@ async function getConfigTenant(tenantId) {
   try {
     const [cfgRow, candidatos, mapas, regioes] = await Promise.all([
       dbGet('SELECT nome_sistema, logo_url, cores, home_cards_config FROM tenant_config WHERE tenant_id = $1', [tenantId]),
-      dbAll('SELECT chave, nome, cor_fundo, cor_texto, cor_mapa, tem_votos_2022, foto_url FROM tenant_candidatos WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
+      dbAll('SELECT chave, nome, cor_fundo, cor_texto, cor_mapa, tem_votos_2022, foto_url, nome_urna_bq, ano_eleicao_bq, cargo_bq FROM tenant_candidatos WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
       dbAll('SELECT mapa_id AS id, nome, nivel_usuario, badge_fundo, badge_texto, subregioes, COALESCE(visivel, true) AS visivel FROM tenant_mapas WHERE tenant_id = $1', [tenantId]),
       dbAll('SELECT chave, label, cidades, lideres FROM tenant_regioes WHERE tenant_id = $1 ORDER BY ordem ASC', [tenantId]),
     ]);
@@ -2383,7 +2383,7 @@ app.get('/api/admin/config/candidatos', auth, withTenant, allow('dono'), async (
 
 app.post('/api/admin/config/candidatos', auth, withTenant, allow('dono'), upload.single('foto'), async (req, res) => {
   try {
-    const { chave, nome, cor_fundo, cor_texto, cor_mapa, tem_votos_2022, ordem } = req.body;
+    const { chave, nome, cor_fundo, cor_texto, cor_mapa, tem_votos_2022, ordem, nome_urna_bq, ano_eleicao_bq, cargo_bq } = req.body;
     if (!chave || !nome) return res.status(400).json({ error: 'chave e nome são obrigatórios' });
 
     // Upload de foto para Supabase (bucket 'candidatos')
@@ -2402,14 +2402,20 @@ app.post('/api/admin/config/candidatos', auth, withTenant, allow('dono'), upload
     }
 
     await pool.query(
-      `INSERT INTO tenant_candidatos (tenant_id, chave, nome, cor_fundo, cor_texto, cor_mapa, tem_votos_2022, ordem, foto_url)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      `INSERT INTO tenant_candidatos (tenant_id, chave, nome, cor_fundo, cor_texto, cor_mapa, tem_votos_2022, ordem, foto_url, nome_urna_bq, ano_eleicao_bq, cargo_bq)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        ON CONFLICT (tenant_id, chave) DO UPDATE SET
          nome = $3, cor_fundo = $4, cor_texto = $5, cor_mapa = $6, tem_votos_2022 = $7, ordem = $8,
-         foto_url = COALESCE($9, tenant_candidatos.foto_url)`,
+         foto_url = COALESCE($9, tenant_candidatos.foto_url),
+         nome_urna_bq = COALESCE($10, tenant_candidatos.nome_urna_bq),
+         ano_eleicao_bq = COALESCE($11, tenant_candidatos.ano_eleicao_bq),
+         cargo_bq = COALESCE($12, tenant_candidatos.cargo_bq)`,
       [req.tenantId, chave, nome, cor_fundo ?? '#e0e7ff', cor_texto ?? '#3730a3',
        cor_mapa ?? cor_texto ?? '#cb181d',
-       tem_votos_2022 === 'true' || tem_votos_2022 === true, ordem ?? 0, foto_url]
+       tem_votos_2022 === 'true' || tem_votos_2022 === true, ordem ?? 0, foto_url,
+       nome_urna_bq || null,
+       ano_eleicao_bq ? parseInt(ano_eleicao_bq) : null,
+       cargo_bq || null]
     );
     invalidateTenantCache(req.tenantId);
     res.json({ ok: true, foto_url });
@@ -4236,6 +4242,183 @@ app.post('/api/ia/chat', auth, withTenant, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/ia/contexto
+ * Monta contexto rico para Alice: dados do tenant (lideranças + config)
+ * + resultados eleitorais do BigQuery (se candidatos tiverem nome_urna_bq configurado)
+ * + perfil do eleitorado estadual.
+ * Retorna { contexto: string }.
+ */
+app.get('/api/ia/contexto', auth, withTenant, async (req, res) => {
+  const f = n => Number(n || 0).toLocaleString('pt-BR');
+
+  try {
+    const cfg = await getConfigTenant(req.tenantId);
+    const candidatos = cfg.candidatos || [];
+    const nomeSist   = cfg.nome_sistema || 'Campanha';
+
+    // 1. Lideranças por cidade
+    const { rows: lidRows } = await pool.query(`
+      SELECT l.cidade,
+             COUNT(*)                              AS total_lideres,
+             SUM(COALESCE(l.expectativa_votos, 0)) AS meta_votos
+      FROM liderancas l
+      WHERE l.tenant_id = $1 AND l.mapa IS NULL
+      GROUP BY l.cidade
+    `, [req.tenantId]);
+
+    const lidMap = {};
+    for (const r of lidRows) {
+      lidMap[r.cidade] = { lideres: Number(r.total_lideres), meta: Number(r.meta_votos) };
+    }
+
+    // 2. Votos válidos por município (lidos de uma tabela local de referência ou do próprio BQ)
+    //    Por enquanto usamos os dados do config estático de votos (mesmo do data.js)
+    //    — buscamos via query no BQ se disponível, senão retornamos sem essa coluna.
+    let votosValidos = {}; // municipio → número
+    try {
+      const bq = getBQ();
+      if (bq) {
+        const sqlVV = `
+          SELECT UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
+                 SUM(d.votos_validos) AS votos_validos
+          FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
+          LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
+            ON d.id_municipio = m.id_municipio
+          WHERE d.ano = 2022 AND d.turno = 1 AND d.sigla_uf = 'RJ'
+          GROUP BY municipio
+        `;
+        const vvRows = await runBQ(sqlVV, {});
+        for (const r of vvRows) votosValidos[r.municipio] = Number(r.votos_validos);
+      }
+    } catch (_) { /* silencioso — fallback para sem votos válidos */ }
+
+    // 3. Resultados eleitorais por candidato (se nome_urna_bq configurado)
+    const resultsByCand = {}; // chave → { municipio → { votos, pct } }
+    const bq = getBQ();
+    if (bq) {
+      for (const cand of candidatos) {
+        const { nome_urna_bq, ano_eleicao_bq, cargo_bq, chave } = cand;
+        if (!nome_urna_bq || !ano_eleicao_bq) continue;
+        try {
+          const sql = `
+            SELECT UPPER(COALESCE(m.nome, CAST(r.id_municipio AS STRING))) AS municipio,
+                   SUM(r.votos) AS votos
+            FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
+            JOIN \`basedosdados.br_tse_eleicoes.candidatos\` c
+              ON c.ano = r.ano AND c.sigla_uf = r.sigla_uf
+              AND CAST(c.sequencial AS STRING) = CAST(r.sequencial_candidato AS STRING)
+            LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
+              ON r.id_municipio = m.id_municipio
+            WHERE r.ano = @ano AND r.turno = 1 AND r.sigla_uf = 'RJ'
+              AND UPPER(c.nome_urna) = @nome_urna
+              ${cargo_bq ? 'AND UPPER(c.cargo) = @cargo' : ''}
+            GROUP BY municipio
+          `;
+          const params = {
+            ano:       parseInt(ano_eleicao_bq),
+            nome_urna: nome_urna_bq.trim().toUpperCase(),
+            ...(cargo_bq ? { cargo: cargo_bq.trim().toUpperCase() } : {})
+          };
+          const rows = await runBQ(sql, params);
+          const mapa = {};
+          for (const r of rows) mapa[r.municipio] = Number(r.votos);
+          resultsByCand[chave] = mapa;
+        } catch (bqErr) {
+          console.warn(`[ia/contexto] BQ resultados ${chave}:`, bqErr.message.split('\n')[0]);
+        }
+      }
+    }
+
+    // 4. Perfil do eleitorado RJ — estado inteiro (agregado)
+    let perfilTexto = '';
+    if (bq) {
+      try {
+        const sqlPerfil = `
+          SELECT faixa_etaria, genero, SUM(qtde_eleitores_perfil) AS total
+          FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_municipio\`
+          WHERE ano = 2022 AND sigla_uf = 'RJ'
+          GROUP BY faixa_etaria, genero
+          ORDER BY faixa_etaria, genero
+        `;
+        const pfRows = await runBQ(sqlPerfil, {});
+        // Agrupa por faixa
+        const pfMap = {};
+        for (const r of pfRows) {
+          const fx = r.faixa_etaria || 'Não informado';
+          if (!pfMap[fx]) pfMap[fx] = { M: 0, F: 0, total: 0 };
+          const g = (r.genero || '').toUpperCase();
+          if (g === 'MASCULINO') pfMap[fx].M += Number(r.total);
+          else if (g === 'FEMININO') pfMap[fx].F += Number(r.total);
+          pfMap[fx].total += Number(r.total);
+        }
+        const pfLinhas = Object.entries(pfMap)
+          .map(([fx, d]) => `  ${fx}: total=${f(d.total)}, fem=${f(d.F)}, masc=${f(d.M)}`)
+          .join('\n');
+        perfilTexto = `\nPERFIL DO ELEITORADO RJ (2022):\n${pfLinhas}`;
+      } catch (bqErr) {
+        console.warn('[ia/contexto] BQ perfil:', bqErr.message.split('\n')[0]);
+      }
+    }
+
+    // 5. Monta tabela principal por município
+    const todasCidades = new Set([
+      ...Object.keys(lidMap),
+      ...Object.keys(votosValidos)
+    ]);
+
+    const linhas = [...todasCidades]
+      .sort((a, b) => ((votosValidos[b] || 0) - (votosValidos[a] || 0)))
+      .map(cidade => {
+        const vv   = votosValidos[cidade] || 0;
+        const ld   = lidMap[cidade] || { lideres: 0, meta: 0 };
+        let linha  = `  ${cidade}: votos_validos=${f(vv)}, lideres=${ld.lideres}, meta_votos=${f(ld.meta)}`;
+        for (const cand of candidatos) {
+          const res = resultsByCand[cand.chave];
+          if (res) {
+            const cidadeUp = cidade.toUpperCase();
+            const votos = res[cidadeUp] || res[cidade] || 0;
+            const pct = vv > 0 ? ((votos / vv) * 100).toFixed(1) : '?';
+            linha += `, votos_${cand.chave}_2022=${f(votos)}(${pct}%)`;
+          }
+        }
+        return linha;
+      }).join('\n');
+
+    // Totais
+    const totalVV    = Object.values(votosValidos).reduce((s, v) => s + v, 0);
+    const totalLid   = lidRows.reduce((s, r) => s + Number(r.total_lideres), 0);
+    const totalMeta  = lidRows.reduce((s, r) => s + Number(r.meta_votos), 0);
+    const nomCands   = candidatos.map(c => c.nome || c.chave).join(', ');
+
+    const contexto = `Você é Alice, assistente estratégica da ${nomeSist}.
+${nomCands ? `Candidatos da campanha: ${nomCands}.` : ''}
+
+REGRAS OBRIGATÓRIAS:
+1. Responda APENAS com base nos dados abaixo. Não invente, não extrapole, não assuma valores que não estejam na tabela.
+2. Se o dado solicitado não estiver disponível, diga: "Não tenho essa informação nos dados disponíveis."
+3. Use os valores numéricos exatos da tabela — não arredonde nem estime.
+4. Seja preciso, direto e estratégico.
+
+RESUMO GERAL:
+  Municípios monitorados: ${todasCidades.size}
+  Total votos válidos no estado (2022): ${f(totalVV)}
+  Total líderes cadastrados: ${totalLid}
+  Meta total de votos: ${f(totalMeta)}
+${perfilTexto}
+
+DADOS POR MUNICÍPIO (decrescente por votos válidos):
+${linhas}
+`;
+
+    res.json({ ok: true, contexto });
+
+  } catch (err) {
+    console.error('[GET /api/ia/contexto]', err);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 server.listen(PORT, async () => {
   console.log("Backend rodando em http://localhost:" + PORT);
   // Migrations automáticas — seguras de rodar múltiplas vezes (IF NOT EXISTS)
@@ -4432,6 +4615,20 @@ server.listen(PORT, async () => {
   } catch (e) {
     console.warn('[migration] liderancas geo-fields:', e.message);
   }
+
+  // ── CAMPOS BQ EM CANDIDATOS ───────────────────────────────────────────────
+  try {
+    await pool.query(`ALTER TABLE tenant_candidatos ADD COLUMN IF NOT EXISTS nome_urna_bq TEXT`);
+    console.log('[migration] tenant_candidatos.nome_urna_bq OK');
+  } catch (e) { console.warn('[migration] tenant_candidatos.nome_urna_bq:', e.message); }
+  try {
+    await pool.query(`ALTER TABLE tenant_candidatos ADD COLUMN IF NOT EXISTS ano_eleicao_bq INTEGER`);
+    console.log('[migration] tenant_candidatos.ano_eleicao_bq OK');
+  } catch (e) { console.warn('[migration] tenant_candidatos.ano_eleicao_bq:', e.message); }
+  try {
+    await pool.query(`ALTER TABLE tenant_candidatos ADD COLUMN IF NOT EXISTS cargo_bq TEXT`);
+    console.log('[migration] tenant_candidatos.cargo_bq OK');
+  } catch (e) { console.warn('[migration] tenant_candidatos.cargo_bq:', e.message); }
 
   // ── AUTO-CADASTRO TOKENS ──────────────────────────────────────────────────
   try {
