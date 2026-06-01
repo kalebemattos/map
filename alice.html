@@ -294,8 +294,8 @@ header {
 .send-btn svg { width: 16px; height: 16px; }
 .input-hint { font-size: 11px; color: rgba(148,163,184,0.3); text-align: center; margin-top: 10px; }
 
-/* ── LOGIN OVERLAY ── */
-#login-overlay {
+/* ── LOGIN MODAL (padrão auth.js) ── */
+#login-modal {
   position: fixed; inset: 0; z-index: 100;
   background: rgba(4,11,26,0.95); backdrop-filter: blur(12px);
   display: flex; align-items: center; justify-content: center;
@@ -334,6 +334,9 @@ header {
 .login-btn:hover { opacity: .9; }
 #login-error { background: rgba(239,68,68,0.15); color: #fca5a5; font-size: 12px; padding: 8px; border-radius: 8px; display: none; }
 
+/* content-wrapper oculto até auth.js liberar */
+#content-wrapper { display: none; }
+
 /* ── RESPONSIVO ── */
 @media (max-width: 768px) {
   .sidebar { display: none; }
@@ -350,20 +353,23 @@ header {
 <div class="orb orb-1"></div>
 <div class="orb orb-2"></div>
 
-<!-- Login -->
-<div id="login-overlay">
+<!-- Login Modal (gerenciado pelo auth.js) -->
+<div id="login-modal">
   <div class="login-card">
     <div class="login-logo">
       <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M8 10h.01M16 10h.01M9.5 15a4 4 0 0 0 5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     </div>
     <h2>Alice</h2>
     <p>Assistente inteligente de campanha</p>
-    <input class="login-input" id="lp-user" type="text" placeholder="Usuário" autocomplete="username">
-    <input class="login-input" id="lp-pass" type="password" placeholder="Senha" autocomplete="current-password">
+    <input class="login-input" id="login-user" type="text" placeholder="Usuário" autocomplete="username">
+    <input class="login-input" id="login-pass" type="password" placeholder="Senha" autocomplete="current-password">
     <div id="login-error">Usuário ou senha inválidos</div>
-    <button class="login-btn" id="lp-btn">Entrar</button>
+    <button class="login-btn" id="login-btn">Entrar</button>
   </div>
 </div>
+
+<!-- Conteúdo principal (liberado pelo auth.js após login) -->
+<div id="content-wrapper">
 
 <!-- Header -->
 <header>
@@ -471,9 +477,9 @@ header {
       <p class="input-hint">Alice pode cometer erros. Sempre valide decisões importantes.</p>
     </div>
   </div>
-</div>
+</div><!-- /main -->
+</div><!-- /content-wrapper -->
 
-<script src="tenant.js"></script>
 <script>
 // ── Config ────────────────────────────────────────────────────────────────
 const API   = window.API_URL || ''
@@ -593,43 +599,11 @@ document.getElementById('btn-new-chat').addEventListener('click', () => {
   if (welcome) welcome.style.display = 'flex'
 })
 
-// ── Login ──────────────────────────────────────────────────────────────────
-const overlay = document.getElementById('login-overlay')
-const lpUser  = document.getElementById('lp-user')
-const lpPass  = document.getElementById('lp-pass')
-const lpBtn   = document.getElementById('lp-btn')
-const lpErr   = document.getElementById('login-error')
-
-async function fazerLogin() {
-  lpErr.style.display = 'none'
-  lpBtn.disabled = true; lpBtn.textContent = 'Entrando…'
-  try {
-    const r = await fetch(API + '/api/login', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario: lpUser.value.trim(), senha: lpPass.value })
-    })
-    const d = await r.json()
-    if (!r.ok) throw new Error(d.error || 'Inválido')
-    localStorage.setItem('token', d.token)
-    if (d.user) localStorage.setItem('user', JSON.stringify(d.user))
-    overlay.style.display = 'none'
-    input.focus()
-  } catch(e) {
-    lpErr.textContent = e.message; lpErr.style.display = 'block'
-  } finally {
-    lpBtn.disabled = false; lpBtn.textContent = 'Entrar'
-  }
-}
-
-lpBtn.addEventListener('click', fazerLogin)
-lpPass.addEventListener('keydown', e => { if (e.key === 'Enter') fazerLogin() })
-
-// Verifica token existente
-const tk = localStorage.getItem('token')
-if (tk) {
-  fetch(API + '/api/config', { headers: { Authorization: 'Bearer ' + tk } })
-    .then(r => { if (r.ok) overlay.style.display = 'none' })
-    .catch(() => {})
+// ── Foco no input após auth.js liberar a interface ──────────────────────────
+// auth.js chama liberarInterface() que mostra #content-wrapper.
+// Aguardamos um tick para garantir que o elemento já está visível.
+window.iniciarAplicacao = async function() {
+  input.focus()
 }
 </script>
 </body>
