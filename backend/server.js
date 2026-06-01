@@ -4205,6 +4205,12 @@ app.get("/ping", (req, res) => {
 });
 
 // ── IA GROQ — proxy seguro (chave fica no servidor) ──────────────────────────
+// Modelos Groq em ordem de preferência (fallback automático se rate limit)
+const GROQ_MODELS = [
+  'llama-3.1-8b-instant',       // 20k TPM free — principal (mais rápido e maior limite)
+  'llama-3.3-70b-versatile',    // 6k TPM free — fallback para respostas mais elaboradas
+];
+
 app.post('/api/ia/chat', auth, withTenant, async (req, res) => {
   const GROQ_KEY = process.env.GROQ_API_KEY;
   if (!GROQ_KEY) return res.status(503).json({ error: 'IA não configurada no servidor. Adicione GROQ_API_KEY nas variáveis de ambiente.' });
@@ -4214,32 +4220,52 @@ app.post('/api/ia/chat', auth, withTenant, async (req, res) => {
 
   const mensagemFinal = mensagem || '';
 
-  try {
-    const messages = [];
-    if (contexto) messages.push({ role: 'system', content: contexto });
-    if (mensagemFinal) messages.push({ role: 'user', content: mensagemFinal });
-
-    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages,
-        temperature: 0.7,
-        max_tokens: 1500
-      })
-    });
-    const data = await r.json();
-    if (!r.ok) return res.status(r.status).json({ error: data.error?.message || 'Erro na API Groq' });
-    const texto = data.choices?.[0]?.message?.content || '';
-    res.json({ resposta: texto });
-  } catch (e) {
-    console.error('[IA] erro:', e);
-    res.status(500).json({ error: 'Erro interno ao chamar a IA.' });
+  // Trunca o contexto se for muito grande (limite seguro: ~3500 tokens ≈ 14000 chars)
+  const MAX_CTX_CHARS = 14000;
+  let contextoFinal = contexto || '';
+  if (contextoFinal.length > MAX_CTX_CHARS) {
+    // Mantém cabeçalho (regras + resumo) e trunca a tabela de municípios pelo meio
+    const corte = contextoFinal.lastIndexOf('\n', MAX_CTX_CHARS);
+    contextoFinal = contextoFinal.slice(0, corte > 0 ? corte : MAX_CTX_CHARS)
+      + '\n  ... (demais municípios omitidos por limite de contexto)';
+    console.warn(`[IA] contexto truncado: ${contexto.length} → ${contextoFinal.length} chars`);
   }
+
+  const messages = [];
+  if (contextoFinal) messages.push({ role: 'system', content: contextoFinal });
+  if (mensagemFinal) messages.push({ role: 'user', content: mensagemFinal });
+
+  // Tenta cada modelo em ordem, com fallback automático em caso de rate limit
+  let lastError = null;
+  for (const model of GROQ_MODELS) {
+    try {
+      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
+        body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: 1200 })
+      });
+      const data = await r.json();
+
+      // Rate limit (429) → tenta próximo modelo
+      if (r.status === 429) {
+        console.warn(`[IA] rate limit em ${model}, tentando próximo...`);
+        lastError = data.error?.message || 'Rate limit';
+        continue;
+      }
+
+      if (!r.ok) return res.status(r.status).json({ error: data.error?.message || 'Erro na API Groq' });
+
+      const texto = data.choices?.[0]?.message?.content || '';
+      return res.json({ resposta: texto, modelo: model });
+
+    } catch (e) {
+      console.error(`[IA] erro no modelo ${model}:`, e.message);
+      lastError = e.message;
+    }
+  }
+
+  // Todos os modelos falharam
+  res.status(429).json({ error: `Limite de requisições atingido. Aguarde alguns segundos e tente novamente. (${lastError})` });
 });
 
 // ── Cache do contexto da IA por tenant (TTL 5 min) ──────────────────────────
@@ -4464,23 +4490,29 @@ app.get('/api/ia/contexto', auth, withTenant, async (req, res) => {
     const lidMapUpper = {};
     for (const [k, v] of Object.entries(lidMap)) lidMapUpper[k.toUpperCase()] = { ...v, nomeOriginal: k };
 
-    const linhas = [...todasCidades]
-      .sort((a, b) => (votosValidos[b] || votosValidos[b.toUpperCase()] || 0) -
-                      (votosValidos[a] || votosValidos[a.toUpperCase()] || 0))
+    // Formato compacto para economizar tokens: números sem separador de milhar,
+    // colunas separadas por pipe, nomes abreviados.
+    // Ex: "Rio de Janeiro|4907206|12|45000|celia:3241(0.1%)"
+    const cabecalhoCols = ['cidade', 'vv', 'lid', 'meta',
+      ...candidatos.filter(c => resultsByCand[c.chave]).map(c => `${c.chave}`)
+    ].join('|');
+
+    const linhas = cabecalhoCols + '\n' + [...todasCidades]
+      .sort((a, b) => (votosValidos[b.toUpperCase()] || votosValidos[b] || 0) -
+                      (votosValidos[a.toUpperCase()] || votosValidos[a] || 0))
       .map(cidade => {
         const cidadeUp = cidade.toUpperCase();
         const vv  = votosValidos[cidadeUp] || votosValidos[cidade] || 0;
         const ld  = lidMapUpper[cidadeUp] || lidMap[cidade] || { lideres: 0, meta: 0 };
-        let linha = `  ${cidade}: votos_validos=${f(vv)}, lideres=${ld.lideres}, meta_votos=${f(ld.meta)}`;
+        let cols = [cidade, vv, ld.lideres, Math.round(ld.meta)];
         for (const cand of candidatos) {
           const res = resultsByCand[cand.chave];
-          if (res && res.mapa) {
-            const votos = res.mapa[cidadeUp] || res.mapa[cidade] || 0;
-            const pct = vv > 0 ? ((votos / vv) * 100).toFixed(1) : '?';
-            linha += `, votos_${cand.chave}_${res.ano}=${f(votos)}(${pct}%)`;
-          }
+          if (!res || !res.mapa) continue;
+          const votos = res.mapa[cidadeUp] || res.mapa[cidade] || 0;
+          const pct = vv > 0 ? ((votos / vv) * 100).toFixed(1) : '?';
+          cols.push(`${votos}(${pct}%)`);
         }
-        return linha;
+        return cols.join('|');
       }).join('\n');
 
     // ── 4. Histórico por candidato ────────────────────────────────────────────
@@ -4513,23 +4545,22 @@ app.get('/api/ia/contexto', auth, withTenant, async (req, res) => {
     const totalLid  = lidRows.reduce((s, r) => s + Number(r.total_lideres), 0);
     const totalMeta = lidRows.reduce((s, r) => s + Number(r.meta_votos), 0);
 
-    const contexto = `Você é Alice, assistente estratégica da ${nomeSist}.
-${nomCands ? `Candidatos da campanha: ${nomCands}.` : ''}
+    // Coluna de candidatos presentes na tabela
+    const candCols = candidatos.filter(c => resultsByCand[c.chave])
+      .map(c => { const res = resultsByCand[c.chave]; return `${c.chave}=votos ${res.nome_urna} ${res.ano}`; })
+      .join(', ');
 
-REGRAS OBRIGATÓRIAS:
-1. Responda APENAS com base nos dados fornecidos abaixo. Não invente nem extrapole.
-2. Se o dado solicitado não estiver disponível, diga: "Não tenho essa informação nos dados disponíveis."
-3. Use os valores numéricos exatos da tabela — não arredonde nem estime.
-4. Seja preciso, direto e estratégico.
+    const contexto = `Alice — assistente estratégica da ${nomeSist}.${nomCands ? ` Candidatos: ${nomCands}.` : ''}
 
-RESUMO GERAL:
-  Municípios monitorados: ${todasCidades.size}
-  Total votos válidos no estado RJ (2022): ${f(totalVV)}
-  Total líderes cadastrados: ${totalLid}
-  Meta total de votos: ${f(totalMeta)}
-${candBQTexto ? '\nDESEMPENHO ELEITORAL 2022:\n' + candBQTexto : ''}${historicoTexto}${perfilTexto}${abstencaoTexto}
+REGRAS: Responda APENAS com os dados abaixo. Não invente. Se não houver dado, diga isso.
 
-DADOS POR MUNICÍPIO (decrescente por votos válidos — inclui votos do candidato se disponível):
+RESUMO: municípios=${todasCidades.size}, votos_validos_RJ_2022=${totalVV}, lideres=${totalLid}, meta_total=${totalMeta}
+${candBQTexto ? 'DESEMPENHO 2022: ' + candBQTexto.trim() : ''}
+${historicoTexto.trim()}
+${perfilTexto.trim()}
+${abstencaoTexto.trim()}
+
+TABELA POR MUNICÍPIO (colunas: ${cabecalhoCols}${candCols ? ' | ' + candCols : ''}):
 ${linhas}
 `;
 
