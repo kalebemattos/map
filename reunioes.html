@@ -799,32 +799,22 @@ function conectarSocket() {
   socket.on('peers-existentes', async (lista) => {
     for (const { peerId, nome } of lista) { peerNomes[peerId] = nome; await criarPC(peerId, true); }
   });
-  socket.on('novo-peer', async ({ peerId, nome }) => { peerNomes[peerId] = nome; await criarPC(peerId, false); });
+  // Apenas guarda o nome — o PC sera criado quando o offer chegar, evitando PC duplicado no Android
+  socket.on('novo-peer', ({ peerId, nome }) => { peerNomes[peerId] = nome; });
   socket.on('offer', async ({ deId, nome, offer }) => {
     peerNomes[deId] = nome;
-    // Fecha qualquer PC existente que não esteja em estado neutro
-    // Isso resolve o "glare" (ambos os lados tentando ofertar ao mesmo tempo)
-    if (peers[deId]) {
-      const sigState = peers[deId].signalingState;
-      const connState = peers[deId].connectionState;
-      if (['failed', 'closed'].includes(connState) || sigState !== 'stable') {
-        peers[deId].close(); delete peers[deId];
-      }
-    }
-    let pc = peers[deId] || await criarPC(deId, false);
+    // Sempre fecha o PC anterior e cria um novo limpo.
+    // Isso garante que o ontrack seja registrado ANTES do handshake em todos os browsers/Android.
+    if (peers[deId]) { peers[deId].close(); delete peers[deId]; }
+    const pc = await criarPC(deId, false);
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
       await flushIceCandidates(deId);
-      const ans = await pc.createAnswer(); await pc.setLocalDescription(ans);
+      const ans = await pc.createAnswer();
+      await pc.setLocalDescription(ans);
       socket.emit('answer', { paraId: deId, answer: ans });
     } catch (e) {
-      console.warn('offer handler error, recriando PC:', e);
-      if (peers[deId]) { peers[deId].close(); delete peers[deId]; }
-      pc = await criarPC(deId, false);
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      await flushIceCandidates(deId);
-      const ans = await pc.createAnswer(); await pc.setLocalDescription(ans);
-      socket.emit('answer', { paraId: deId, answer: ans });
+      console.warn('offer handler error:', e);
     }
   });
   socket.on('answer', async ({ deId, answer }) => {
