@@ -4283,6 +4283,52 @@ const IA_CTX_TTL = 5 * 60 * 1000;
  *  - Taxa de abstenção por município (BigQuery)
  * O resultado é cacheado por 5 minutos por tenant.
  */
+
+/* ─────────────────────────────────────────────────────────────
+ * GET /api/turn-credentials
+ * Retorna credenciais temporárias do Cloudflare TURN (TTL 24h).
+ * Requer variáveis de ambiente: CF_TURN_KEY_ID, CF_TURN_API_TOKEN
+ * ───────────────────────────────────────────────────────────── */
+app.get('/api/turn-credentials', auth, async (req, res) => {
+  const keyId = process.env.CF_TURN_KEY_ID;
+  const token = process.env.CF_TURN_API_TOKEN;
+
+  if (!keyId || !token) {
+    // Sem credenciais configuradas — retorna STUN público como fallback
+    return res.json({ iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun.cloudflare.com:3478' }
+    ]});
+  }
+
+  try {
+    const cfRes = await fetch(
+      `https://rtc.live.cloudflare.com/v1/turn/keys/${keyId}/credentials/generate`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ttl: 86400 }) // 24 horas
+      }
+    );
+
+    if (!cfRes.ok) {
+      const err = await cfRes.text();
+      console.error('[TURN] Cloudflare error:', cfRes.status, err);
+      return res.status(502).json({ error: 'Falha ao obter credenciais TURN' });
+    }
+
+    const data = await cfRes.json();
+    // Cloudflare retorna { iceServers: [...] } diretamente
+    return res.json(data);
+
+  } catch (err) {
+    console.error('[TURN] Erro:', err);
+    return res.status(500).json({ error: 'Erro interno ao buscar TURN' });
+  }
+});
 app.get('/api/ia/contexto', auth, withTenant, async (req, res) => {
   const tenantId = req.tenantId;
   const f = n => Number(n || 0).toLocaleString('pt-BR');
