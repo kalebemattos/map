@@ -4321,8 +4321,14 @@ app.get('/api/turn-credentials', auth, async (req, res) => {
     }
 
     const data = await cfRes.json();
-    // Cloudflare retorna { iceServers: [...] } diretamente
-    return res.json(data);
+    // Cloudflare retorna iceServers como objeto único — precisa ser array para RTCPeerConnection
+    const cfIce = data.iceServers;
+    const iceServers = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun.cloudflare.com:3478' },
+      ...(Array.isArray(cfIce) ? cfIce : [cfIce])
+    ];
+    return res.json({ iceServers });
 
   } catch (err) {
     console.error('[TURN] Erro:', err);
