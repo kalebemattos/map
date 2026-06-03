@@ -1189,7 +1189,7 @@ async function criarPC(peerId, deveOfertar) {
     // Sempre atualiza o spotlight se este peer já está em destaque
     if (spotlightPeerId === peerId) {
       const vid = document.getElementById('vc-bg');
-      if (vid) vid.srcObject = stream;
+      if (vid) { vid.srcObject = stream; vid.play().catch(() => {}); }
     } else if (spotlightPeerId === 'local' && Object.keys(peerStreams).filter(k => k !== 'local').length >= 1) {
       renderSpotlight(peerId);
     }
@@ -1255,6 +1255,7 @@ function renderSpotlight(peerId) {
   if (stream) {
     vid.srcObject = stream;
     vid.muted = peerId === 'local';
+    vid.play().catch(() => {});
     const hasVideo = stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
     avatarEl.style.display = hasVideo ? 'none' : 'flex';
     avatarLetter.textContent = (nome || '?')[0].toUpperCase();
@@ -1269,7 +1270,7 @@ function adicionarThumb(id, nome, stream, isLocal) {
   if (isLocal) {
     // Local goes to the PiP bubble
     const pipVid = document.getElementById('pip-vid');
-    if (pipVid) pipVid.srcObject = stream;
+    if (pipVid) { pipVid.srcObject = stream; pipVid.play().catch(() => {}); }
     const hasVideo = stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
     const pipAv = document.getElementById('pip-avatar');
     if (pipAv) pipAv.style.display = hasVideo ? 'none' : 'flex';
@@ -1286,13 +1287,14 @@ function adicionarThumb(id, nome, stream, isLocal) {
     tile.id = 'thumb-' + id;
     tile.onclick = () => { renderSpotlight(id); showOverlay(); };
     tile.innerHTML = `
-      <video id="thumbvid-${id}" autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>
+      <video id="thumbvid-${id}" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
       <div class="thumb-avatar" id="thumbav-${id}"><div class="thumb-avatar-circle">${(nome || '?')[0].toUpperCase()}</div></div>
       <div class="thumb-label">${escHtml(nome)}</div>`;
     strip.appendChild(tile);
   }
   const v = document.getElementById('thumbvid-' + id);
   v.srcObject = stream;
+  v.play().catch(() => {});
   const hasVideo = stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
   document.getElementById('thumbav-' + id).style.display = hasVideo ? 'none' : 'flex';
   atualizarContagem();
