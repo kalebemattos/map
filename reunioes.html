@@ -802,14 +802,30 @@ function conectarSocket() {
   socket.on('novo-peer', async ({ peerId, nome }) => { peerNomes[peerId] = nome; await criarPC(peerId, false); });
   socket.on('offer', async ({ deId, nome, offer }) => {
     peerNomes[deId] = nome;
-    if (peers[deId] && ['failed', 'closed'].includes(peers[deId].connectionState)) {
-      peers[deId].close(); delete peers[deId];
+    // Fecha qualquer PC existente que não esteja em estado neutro
+    // Isso resolve o "glare" (ambos os lados tentando ofertar ao mesmo tempo)
+    if (peers[deId]) {
+      const sigState = peers[deId].signalingState;
+      const connState = peers[deId].connectionState;
+      if (['failed', 'closed'].includes(connState) || sigState !== 'stable') {
+        peers[deId].close(); delete peers[deId];
+      }
     }
     let pc = peers[deId] || await criarPC(deId, false);
-    await pc.setRemoteDescription(new RTCSessionDescription(offer));
-    await flushIceCandidates(deId);
-    const ans = await pc.createAnswer(); await pc.setLocalDescription(ans);
-    socket.emit('answer', { paraId: deId, answer: ans });
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      await flushIceCandidates(deId);
+      const ans = await pc.createAnswer(); await pc.setLocalDescription(ans);
+      socket.emit('answer', { paraId: deId, answer: ans });
+    } catch (e) {
+      console.warn('offer handler error, recriando PC:', e);
+      if (peers[deId]) { peers[deId].close(); delete peers[deId]; }
+      pc = await criarPC(deId, false);
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      await flushIceCandidates(deId);
+      const ans = await pc.createAnswer(); await pc.setLocalDescription(ans);
+      socket.emit('answer', { paraId: deId, answer: ans });
+    }
   });
   socket.on('answer', async ({ deId, answer }) => {
     const pc = peers[deId];
@@ -1177,11 +1193,16 @@ async function criarPC(peerId, deveOfertar) {
   pc.ontrack = (e) => {
     if (!e.streams || !e.streams[0]) return;
     const stream = e.streams[0];
-    if (peerStreams[peerId] === stream) return;
     peerStreams[peerId] = stream;
     adicionarThumb(peerId, peerNomes[peerId] || peerId, stream, false);
     atualizarContagem();
-    if (spotlightPeerId === 'local' && Object.keys(peerStreams).length > 1) renderSpotlight(peerId);
+    // Sempre atualiza o spotlight se este peer já está em destaque
+    if (spotlightPeerId === peerId) {
+      const vid = document.getElementById('vc-bg');
+      if (vid) vid.srcObject = stream;
+    } else if (spotlightPeerId === 'local' && Object.keys(peerStreams).filter(k => k !== 'local').length >= 1) {
+      renderSpotlight(peerId);
+    }
   };
   pc.onicecandidate = (e) => { if (e.candidate) socket.emit('ice-candidate', { paraId: peerId, candidate: e.candidate }); };
   pc.onconnectionstatechange = () => {
