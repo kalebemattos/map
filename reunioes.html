@@ -463,7 +463,14 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
   <div id="video-container">
 
     <!-- Fullscreen background video (spotlight participant) -->
-    <video id="vc-bg" autoplay playsinline></video>
+    <video id="vc-bg" autoplay playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5"></video>
+    <!-- Overlay tap-to-play para Android (aparece quando autoplay é bloqueado) -->
+    <div id="tap-to-play" style="display:none;position:absolute;inset:0;z-index:10;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);flex-direction:column;gap:12px;cursor:pointer;">
+      <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.18);border:2px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 24 24" fill="white" width="32" height="32"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+      <span style="color:#fff;font-size:14px;font-family:inherit;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,0.6)">Toque para ativar o vídeo</span>
+    </div>
     <!-- Avatar fallback when no video -->
     <div id="vc-bg-avatar">
       <div class="vc-bg-circle" id="vc-bg-avatar-letter"></div>
@@ -472,7 +479,7 @@ html,body{height:100%;font-family:var(--font);background:#060d20;overflow:hidden
 
     <!-- Draggable local camera PiP (mirrored, like WhatsApp) -->
     <div id="local-pip">
-      <video id="pip-vid" autoplay muted playsinline></video>
+      <video id="pip-vid" autoplay muted playsinline webkit-playsinline x5-playsinline></video>
       <div id="pip-avatar"><div class="pip-letter" id="pip-letter"></div></div>
     </div>
 
@@ -1126,9 +1133,66 @@ function enviarConvites() {
 }
 
 /* ====== WEBRTC + SALA ====== */
+/**
+ * Toca um vídeo de forma robusta para Android Chrome.
+ * Android bloqueia autoplay de vídeo não-mutado fora de um gesto de usuário.
+ * Se play() falhar com NotAllowedError, exibe o overlay tap-to-play.
+ */
+function playRobusto(videoEl, { muted = false } = {}) {
+  if (!videoEl) return;
+  videoEl.muted = muted;
+  videoEl.playsInline = true;
+  const p = videoEl.play();
+  if (p && typeof p.catch === 'function') {
+    p.catch(err => {
+      if (err.name === 'NotAllowedError') {
+        // Autoplay bloqueado pelo browser — mostra overlay de toque
+        if (videoEl.id === 'vc-bg') {
+          const overlay = document.getElementById('tap-to-play');
+          if (overlay) {
+            overlay.style.display = 'flex';
+            overlay.onclick = () => {
+              overlay.style.display = 'none';
+              videoEl.play().catch(() => {});
+            };
+          }
+        }
+      }
+      // NotSupportedError ou AbortError podem acontecer se srcObject mudou — ignorar
+    });
+  }
+}
+
+/**
+ * Seta srcObject e tenta play robusto. Usa evento loadedmetadata como fallback
+ * para garantir que o vídeo está pronto antes de tentar reproduzir.
+ */
+function setSrcAndPlay(videoEl, stream, { muted = false } = {}) {
+  if (!videoEl) return;
+  videoEl.srcObject = stream;
+  videoEl.muted = muted;
+  // Tenta imediatamente
+  playRobusto(videoEl, { muted });
+  // Fallback: tenta novamente quando metadados carregarem (necessário em alguns Android)
+  videoEl.addEventListener('loadedmetadata', () => playRobusto(videoEl, { muted }), { once: true });
+  // Se o vídeo for pausado inesperadamente (bug em alguns Android), retoma
+  videoEl.addEventListener('pause', () => {
+    if (videoEl.srcObject && videoEl.srcObject.active) {
+      playRobusto(videoEl, { muted });
+    }
+  });
+}
+
 async function entrarSala(salaId, salaNome) {
   document.getElementById('loading').style.display = 'flex';
   document.querySelector('.loading-txt').textContent = 'Acessando câmera e microfone...';
+
+  // ── WARM-UP: ativa os elementos de vídeo sincronamente dentro do gesto do usuário
+  // Isso "registra" a permissão de autoplay no Android antes das chamadas assíncronas.
+  ['vc-bg', 'pip-vid'].forEach(id => {
+    const v = document.getElementById(id);
+    if (v && !v.srcObject) { v.muted = true; v.play().catch(() => {}); }
+  });
   const audioC = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
   const videoTentativas = [
     { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 }, facingMode: 'user' },
@@ -1189,7 +1253,7 @@ async function criarPC(peerId, deveOfertar) {
     // Sempre atualiza o spotlight se este peer já está em destaque
     if (spotlightPeerId === peerId) {
       const vid = document.getElementById('vc-bg');
-      if (vid) { vid.srcObject = stream; vid.play().catch(() => {}); }
+      if (vid) setSrcAndPlay(vid, stream, { muted: false });
     } else if (spotlightPeerId === 'local' && Object.keys(peerStreams).filter(k => k !== 'local').length >= 1) {
       renderSpotlight(peerId);
     }
@@ -1253,9 +1317,8 @@ function renderSpotlight(peerId) {
   const avatarLetter = document.getElementById('vc-bg-avatar-letter');
   const avatarName = document.getElementById('vc-bg-avatar-name');
   if (stream) {
-    vid.srcObject = stream;
-    vid.muted = peerId === 'local';
-    vid.play().catch(() => {});
+    const isLocal = peerId === 'local';
+    setSrcAndPlay(vid, stream, { muted: isLocal });
     const hasVideo = stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
     avatarEl.style.display = hasVideo ? 'none' : 'flex';
     avatarLetter.textContent = (nome || '?')[0].toUpperCase();
@@ -1270,7 +1333,7 @@ function adicionarThumb(id, nome, stream, isLocal) {
   if (isLocal) {
     // Local goes to the PiP bubble
     const pipVid = document.getElementById('pip-vid');
-    if (pipVid) { pipVid.srcObject = stream; pipVid.play().catch(() => {}); }
+    if (pipVid) setSrcAndPlay(pipVid, stream, { muted: true });
     const hasVideo = stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
     const pipAv = document.getElementById('pip-avatar');
     if (pipAv) pipAv.style.display = hasVideo ? 'none' : 'flex';
@@ -1287,14 +1350,13 @@ function adicionarThumb(id, nome, stream, isLocal) {
     tile.id = 'thumb-' + id;
     tile.onclick = () => { renderSpotlight(id); showOverlay(); };
     tile.innerHTML = `
-      <video id="thumbvid-${id}" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
+      <video id="thumbvid-${id}" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
       <div class="thumb-avatar" id="thumbav-${id}"><div class="thumb-avatar-circle">${(nome || '?')[0].toUpperCase()}</div></div>
       <div class="thumb-label">${escHtml(nome)}</div>`;
     strip.appendChild(tile);
   }
   const v = document.getElementById('thumbvid-' + id);
-  v.srcObject = stream;
-  v.play().catch(() => {});
+  setSrcAndPlay(v, stream, { muted: true });
   const hasVideo = stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
   document.getElementById('thumbav-' + id).style.display = hasVideo ? 'none' : 'flex';
   atualizarContagem();
