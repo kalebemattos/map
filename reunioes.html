@@ -1211,43 +1211,72 @@ function playRobusto(videoEl, { muted = false } = {}) {
  */
 /**
  * Define o stream no elemento de vídeo (sempre muted) e no elemento de áudio separado.
- * Isso contorna a política de autoplay do Android Chrome que bloqueia vídeo com som.
- * - videoEl: sempre muted (vídeo renderiza sem restrição)
- * - #remote-audio: recebe as faixas de áudio (áudio não tem restrição de autoplay)
+ * - videoEl: sempre muted (sem restrição de autoplay no Android)
+ * - #remote-audio: faixas de áudio (elementos <audio> não têm restrição no Android)
+ *
+ * No Android o ontrack pode disparar antes da faixa de vídeo chegar — o listener
+ * onaddtrack garante que o vídeo seja re-iniciado quando a faixa chegar.
  */
 function setSrcAndPlay(videoEl, stream, { muted = false } = {}) {
   if (!videoEl) return;
 
-  // Vídeo sempre muted — sem restrição de autoplay no Android
-  videoEl.srcObject = stream;
-  videoEl.muted = true;
-  videoEl.playsInline = true;
-  const pv = videoEl.play();
-  if (pv && typeof pv.catch === 'function') {
-    pv.catch(err => {
-      if (err.name === 'NotAllowedError' && videoEl.id === 'vc-bg') {
-        const overlay = document.getElementById('tap-to-play');
-        if (overlay) {
-          overlay.style.display = 'flex';
-          overlay.onclick = () => { overlay.style.display = 'none'; videoEl.play().catch(() => {}); };
-        }
-      }
-    });
-  }
-  videoEl.addEventListener('loadedmetadata', () => { videoEl.play().catch(() => {}); }, { once: true });
-  videoEl.addEventListener('pause', () => {
-    if (videoEl.srcObject && videoEl.srcObject.active) videoEl.play().catch(() => {});
-  });
-
-  // Áudio: só para o vídeo principal (vc-bg) e apenas streams remotas (não local)
+  // Áudio: para o vídeo principal (vc-bg) com streams remotas
   if (videoEl.id === 'vc-bg' && !muted) {
     const audioEl = document.getElementById('remote-audio');
     if (audioEl) {
-      // Cria stream só com faixas de áudio para o elemento <audio>
       const audioStream = new MediaStream(stream.getAudioTracks());
       audioEl.srcObject = audioStream;
       audioEl.play().catch(() => {});
     }
+  }
+
+  function _startVideo() {
+    videoEl.srcObject = stream;
+    videoEl.muted = true;
+    videoEl.playsInline = true;
+    videoEl.setAttribute('playsinline', '');
+    videoEl.setAttribute('webkit-playsinline', '');
+
+    const doPlay = () => {
+      const p = videoEl.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(err => {
+          if (err.name === 'NotAllowedError' && videoEl.id === 'vc-bg') {
+            const overlay = document.getElementById('tap-to-play');
+            if (overlay) {
+              overlay.style.display = 'flex';
+              overlay.onclick = () => { overlay.style.display = 'none'; videoEl.play().catch(() => {}); };
+            }
+          }
+        });
+      }
+    };
+
+    doPlay();
+    videoEl.addEventListener('loadedmetadata', doPlay, { once: true });
+    videoEl.addEventListener('pause', () => {
+      if (videoEl.srcObject && videoEl.srcObject.active) doPlay();
+    });
+  }
+
+  // Se o stream ainda não tem faixas de vídeo (Android às vezes dispara ontrack cedo),
+  // aguarda a faixa chegar antes de iniciar o vídeo
+  if (stream.getVideoTracks().length > 0) {
+    _startVideo();
+  } else {
+    // Inicia com o stream mesmo sem vídeo (para áudio funcionar) e re-inicia quando vídeo chegar
+    videoEl.srcObject = stream;
+    videoEl.muted = true;
+    videoEl.play().catch(() => {});
+    stream.addEventListener('addtrack', (e) => {
+      if (e.track.kind === 'video') _startVideo();
+    }, { once: true });
+    // Fallback: tenta de novo após 1s caso o evento não dispare
+    setTimeout(() => {
+      if (stream.getVideoTracks().length > 0 && (!videoEl.srcObject || videoEl.paused)) {
+        _startVideo();
+      }
+    }, 1000);
   }
 }
 
