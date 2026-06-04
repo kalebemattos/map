@@ -1264,19 +1264,33 @@ function setSrcAndPlay(videoEl, stream, { muted = false } = {}) {
   if (stream.getVideoTracks().length > 0) {
     _startVideo();
   } else {
-    // Inicia com o stream mesmo sem vídeo (para áudio funcionar) e re-inicia quando vídeo chegar
+    // Inicia com o stream mesmo sem vídeo e re-inicia quando vídeo chegar
     videoEl.srcObject = stream;
     videoEl.muted = true;
     videoEl.play().catch(() => {});
-    stream.addEventListener('addtrack', (e) => {
-      if (e.track.kind === 'video') _startVideo();
-    }, { once: true });
-    // Fallback: tenta de novo após 1s caso o evento não dispare
-    setTimeout(() => {
-      if (stream.getVideoTracks().length > 0 && (!videoEl.srcObject || videoEl.paused)) {
+
+    // SEM { once: true } — se o primeiro addtrack for áudio, não queremos perder o de vídeo
+    const _onAddTrack = (e) => {
+      if (e.track.kind === 'video') {
+        stream.removeEventListener('addtrack', _onAddTrack);
         _startVideo();
       }
-    }, 1000);
+    };
+    stream.addEventListener('addtrack', _onAddTrack);
+
+    // Fallback escalonado: verifica se vídeo chegou mas videoWidth ainda é 0 (tela preta real)
+    const _tryStart = (attempt) => {
+      if (stream.getVideoTracks().length > 0) {
+        // Tem track de vídeo — garante que esteja renderizando
+        if (!videoEl.srcObject || videoEl.videoWidth === 0 || videoEl.paused) {
+          stream.removeEventListener('addtrack', _onAddTrack);
+          _startVideo();
+        }
+      } else if (attempt < 6) {
+        setTimeout(() => _tryStart(attempt + 1), 800);
+      }
+    };
+    setTimeout(() => _tryStart(1), 800);
   }
 }
 
@@ -1343,12 +1357,22 @@ async function criarPC(peerId, deveOfertar) {
   peers[peerId] = pc;
   localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
   pc.ontrack = (e) => {
-    if (!e.streams || !e.streams[0]) return;
-    const stream = e.streams[0];
+    // Android Chrome recente passa e.streams=[] vazio — nunca ignorar o track
+    let stream;
+    if (e.streams && e.streams[0]) {
+      stream = e.streams[0];
+    } else {
+      // Cria/reutiliza uma MediaStream manual para este peer
+      if (!peerStreams[peerId]) peerStreams[peerId] = new MediaStream();
+      peerStreams[peerId].addTrack(e.track);
+      stream = peerStreams[peerId];
+    }
+
     peerStreams[peerId] = stream;
     adicionarThumb(peerId, peerNomes[peerId] || peerId, stream, false);
     atualizarContagem();
-    // Sempre atualiza o spotlight se este peer já está em destaque
+
+    // Atualiza spotlight sempre que uma track chegar (audio ou video)
     if (spotlightPeerId === peerId) {
       const vid = document.getElementById('vc-bg');
       if (vid) setSrcAndPlay(vid, stream, { muted: false });
