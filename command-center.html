@@ -1539,9 +1539,9 @@ function renderResumoRegioes(expRegioes) {
         <span class="regiao-metric-val" style="color:#a78bfa">${fmt(celiaV)} <small style="font-size:10px;color:var(--muted);font-weight:400">${pctCelia !== '—' ? pctCelia+'%' : ''}</small></span>
       </div>
       ${Object.entries(api.metas || {}).length > 0
-        ? Object.entries(api.metas).map(([chave, metaCand], mi) => {
-            const nomeCand = ((window._configSistema||{}).candidatos||[]).find(c=>c.chave===chave)?.nome || chave;
-            const corCand = corCandidato(chave, mi);
+        ? Object.entries(api.metas).map(([candChave, metaCand], mi) => {
+            const nomeCand = ((window._configSistema||{}).candidatos||[]).find(c=>c.chave===candChave)?.nome || candChave;
+            const corCand = corCandidato(candChave, mi);
             const pctCandMeta = eleitor > 0 ? ((metaCand / eleitor) * 100).toFixed(1) : '—';
             return `<div class="regiao-metric-row">
               <span class="regiao-metric-label" style="color:${corCand}">
@@ -1601,10 +1601,16 @@ async function carregarConfig() {
   } catch {}
 }
 
+function safeRender(name, fn) {
+  try { fn(); } catch(e) { console.error(`[render:${name}]`, e); }
+}
+
 async function carregarTudo() {
   await carregarConfig();
-  try {
-    const [kpis, ranking, alertas, expRegioes, agenda, aniversariantes] = await Promise.all([
+
+  // Promise.allSettled: uma falha isolada não bloqueia todo o carregamento
+  const [rKpis, rRanking, rAlertas, rExpRegioes, rAgenda, rAniversariantes] =
+    await Promise.allSettled([
       apiFetch('/dashboard/kpis'),
       apiFetch('/dashboard/ranking'),
       apiFetch('/dashboard/alertas'),
@@ -1613,28 +1619,50 @@ async function carregarTudo() {
       apiFetch('/aniversariantes?dias=7'),
     ]);
 
-    renderKpis(kpis);
-    renderExpectativas(kpis);
-    renderStatus(kpis);
-    renderCandidatos(kpis);
+  const ok   = r => r.status === 'fulfilled' ? r.value   : null;
+  const fail = r => r.status === 'rejected'  ? r.reason  : null;
 
-    renderExpRegioes(expRegioes);
-    renderRadar(expRegioes);
-    renderVotosReg(expRegioes); // usa data.js internamente para eleitorado real
-    renderResumoRegioes(expRegioes);
+  const kpis            = ok(rKpis);
+  const ranking         = ok(rRanking);
+  const alertas         = ok(rAlertas);
+  const expRegioes      = ok(rExpRegioes);
+  const agenda          = ok(rAgenda);
+  const aniversariantes = ok(rAniversariantes);
 
-    renderRanking(ranking);
-    renderAniversariantes(aniversariantes);
-    renderAlertas(alertas);
-    renderAudit(alertas);
-    renderAgenda(agenda);
+  // Loga erros individualmente (visíveis no console do navegador)
+  [['kpis',rKpis],['ranking',rRanking],['alertas',rAlertas],
+   ['expRegioes',rExpRegioes],['agenda',rAgenda],['aniversariantes',rAniversariantes]]
+    .forEach(([name, r]) => { if (fail(r)) console.error(`[fetch:${name}]`, fail(r)); });
 
+  // Se TODOS falharam, mostra erro visível
+  if (!kpis && !ranking && !alertas && !expRegioes && !agenda && !aniversariantes) {
     document.getElementById('last-update').innerHTML =
-      `<span class="pulse-dot"></span>atualizado às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
-
-  } catch (err) {
-    console.error('Erro ao carregar dashboard:', err);
+      `<span style="color:var(--red)">⚠ Erro ao carregar dados — verifique o servidor</span>`;
+    return;
   }
+
+  if (kpis) {
+    safeRender('kpis',        () => renderKpis(kpis));
+    safeRender('expectativas',() => renderExpectativas(kpis));
+    safeRender('status',      () => renderStatus(kpis));
+    safeRender('candidatos',  () => renderCandidatos(kpis));
+  }
+  if (expRegioes) {
+    safeRender('expRegioes',   () => renderExpRegioes(expRegioes));
+    safeRender('radar',        () => renderRadar(expRegioes));
+    safeRender('votosReg',     () => renderVotosReg(expRegioes));
+    safeRender('resumoRegioes',() => renderResumoRegioes(expRegioes));
+  }
+  safeRender('ranking',        () => renderRanking(ranking));
+  safeRender('aniversariantes',() => renderAniversariantes(aniversariantes));
+  if (alertas) {
+    safeRender('alertas', () => renderAlertas(alertas));
+    safeRender('audit',   () => renderAudit(alertas));
+  }
+  safeRender('agenda', () => renderAgenda(agenda));
+
+  document.getElementById('last-update').innerHTML =
+    `<span class="pulse-dot"></span>atualizado às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
 }
 
 /* ══════════════════════════════════════════
