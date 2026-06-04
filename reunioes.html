@@ -1295,11 +1295,16 @@ function setSrcAndPlay(videoEl, stream, { muted = false } = {}) {
 }
 
 async function entrarSala(salaId, salaNome) {
+  // ── CRITICAL (Android): torna o container visível ANTES do warm-up.
+  // O Android Chrome só registra permissão de autoplay em elementos renderizados.
+  // O loading overlay (z-index:8000) fica por cima, então o usuário não vê nada ainda.
+  document.getElementById('video-container').classList.add('active');
+
   document.getElementById('loading').style.display = 'flex';
   document.querySelector('.loading-txt').textContent = 'Acessando câmera e microfone...';
 
   // ── WARM-UP: ativa os elementos de vídeo sincronamente dentro do gesto do usuário
-  // Isso "registra" a permissão de autoplay no Android antes das chamadas assíncronas.
+  // Agora funciona no Android porque vc-bg / pip-vid estão visíveis (rendered).
   ['vc-bg', 'pip-vid'].forEach(id => {
     const v = document.getElementById(id);
     if (v && !v.srcObject) { v.muted = true; v.play().catch(() => {}); }
@@ -1332,8 +1337,7 @@ async function entrarSala(salaId, salaNome) {
 
   socket.emit('entrar-sala', { salaId, nome: usuario.nome });
 
-  // Mostra video em tela cheia (fixed overlay)
-  document.getElementById('video-container').classList.add('active');
+  // video-container já foi ativado no início da função (antes do warm-up)
   document.getElementById('quality-badge').style.display = 'flex';
   document.getElementById('loading').style.display = 'none';
 
