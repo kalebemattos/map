@@ -4295,10 +4295,14 @@ app.get('/api/turn-credentials', auth, async (req, res) => {
   const token = process.env.CF_TURN_API_TOKEN;
 
   if (!keyId || !token) {
-    // Sem credenciais configuradas — retorna STUN público como fallback
+    // Sem credenciais Cloudflare configuradas — usa STUN + TURN gratuitos como fallback.
+    // TURN é necessário para Android em 4G/5G (NAT simétrico de operadoras bloqueia STUN).
     return res.json({ iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun.cloudflare.com:3478' }
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun.cloudflare.com:3478' },
+      { urls: 'turn:freestun.net:3479',  username: 'free', credential: 'free' },
+      { urls: 'turns:freestun.net:5350', username: 'free', credential: 'free' },
     ]});
   }
 
