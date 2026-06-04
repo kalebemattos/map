@@ -752,6 +752,13 @@ async function apiFetch(path, opts = {}) {
 
 function logout() { localStorage.clear(); location.reload(); }
 
+/* ── Cor de candidato a partir da config ── */
+function corCandidato(chave, idx) {
+  const cfg = ((window._configSistema || {}).candidatos || []);
+  const c = cfg.find(c => c.chave === chave);
+  return c?.cor_texto || PAL[idx % PAL.length];
+}
+
 /* ── Animated counter ── */
 function animCount(el, target, ms = 1100) {
   if (typeof target !== 'number') { el.textContent = target; return; }
@@ -832,49 +839,59 @@ async function checkSession() {
 
 /* ══════════════════════════════════════════
    RENDER: KPIs (dinâmico por tenant)
+   Candidatos NUNCA são somados entre si — cada um tem seu card próprio.
 ══════════════════════════════════════════ */
-
-// Paleta de cores para os cards de candidatos (cicla se houver mais de 6)
-const KPI_CAND_CLASSES = ['purple','cyan','indigo','orange','pink','emerald'];
+const KPI_CAND_CLASSES = ['purple','cyan','orange','pink','teal','yellow'];
 
 function renderKpis(d) {
   const cands = d.porCandidato || [];
 
-  // Sub-texto para totais agregados: "Nome1: X · Nome2: Y"
-  const lidSub = cands.map(c => `${c.nome}: ${fmt(c.liderancas)}`).join(' · ') || '—';
-  const cidSub = cands.map(c => `${c.nome}: ${fmt(c.cidades)}`).join(' · ')    || '—';
-  const lidPct0 = d.liderancasTotal > 0 && cands[0]
-    ? Math.round((cands[0].liderancas / d.liderancasTotal) * 100) : 0;
+  // Card global: total de lideranças (todos os candidatos)
+  const pctAtivas = d.totalLiderancas > 0 ? Math.round((d.ativas / d.totalLiderancas) * 100) : 0;
+  const cardGlobal = {
+    cls:'blue',
+    icon:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg>',
+    label: 'Total Lideranças',
+    val: d.totalLiderancas,
+    sub: `${d.ativas} ativas · ${d.inativas||0} inativas`,
+    bar: pctAtivas,
+    barLbl: `${pctAtivas}% ativas`
+  };
 
-  // Cards fixos
-  const fixos = [
-    { cls:'blue',   icon:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg>', label:'Total Lideranças',     val:d.totalLiderancas, sub:`${d.ativas} ativas · ${d.inativas||0} inativas`, bar:d.totalLiderancas>0?Math.round((d.ativas/d.totalLiderancas)*100):0, barLbl:'% ativas' },
-    { cls:'green',  icon:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"/></svg>️', label:'Exp. Lideranças',      val:d.liderancasTotal, sub:lidSub, bar:lidPct0, barLbl:cands[0]?`${lidPct0}% ${cands[0].nome}`:'—' },
-    { cls:'teal',   icon:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z"/></svg>️', label:'Meta Cidades/Bairros', val:d.cidadesTotal,    sub:cidSub, bar:null },
-  ];
+  // Card de regiões
+  const cardRegioes = {
+    cls:'yellow',
+    icon:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>',
+    label: 'Regiões Cobertas',
+    val: d.regioesAtivas,
+    sub: 'regiões com lideranças',
+    bar: null
+  };
 
-  // Cards por candidato (dinâmicos)
-  const porCand = cands.map((c, i) => ({
-    cls:   KPI_CAND_CLASSES[i % KPI_CAND_CLASSES.length],
-    icon:  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"/></svg>',
-    label: c.nome,
-    val:   c.liderancas,
-    sub:   `Lideranças · Cidades: ${fmt(c.cidades)}`,
-    bar:   null,
-  }));
+  // Um card por candidato: exp. lideranças (votos esperados pelos líderes) + meta cidades
+  // NUNCA somados entre si — cada candidato é independente
+  const cardsCand = cands.map((c, i) => {
+    const cor = corCandidato(c.chave, i);
+    return {
+      cls: KPI_CAND_CLASSES[i % KPI_CAND_CLASSES.length],
+      cor,
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"/></svg>',
+      label: c.nome,
+      val: c.liderancas,
+      sub: `Exp. líderes · Meta cidades: ${fmt(c.cidades)}`,
+      bar: null,
+      nomeCand: c.nome
+    };
+  });
 
-  const cards = [
-    ...fixos,
-    ...porCand,
-    { cls:'yellow', icon:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>️', label:'Regiões Cobertas', val:d.regioesAtivas, sub:'de 8 regiões RJ', bar:Math.round((d.regioesAtivas/8)*100), barLbl:'% do estado' },
-  ];
+  const cards = [cardGlobal, ...cardsCand, cardRegioes];
 
-  document.getElementById('kpi-grid').innerHTML = cards.map((c,i) => `
-    <div class="kpi ${c.cls} anim" style="animation-delay:${i*0.06}s">
+  document.getElementById('kpi-grid').innerHTML = cards.map((c, i) => `
+    <div class="kpi ${c.cls} anim" style="animation-delay:${i*0.06}s${c.cor?`;border-color:${c.cor}33`:''}" >
       <div class="kpi-glow"></div>
-      <div class="kpi-top"><div class="kpi-icon">${c.icon}</div></div>
+      <div class="kpi-top"><div class="kpi-icon" style="${c.cor?`background:${c.cor}22`:''}">${c.icon}</div></div>
       <div class="kpi-label">${c.label}</div>
-      <div class="kpi-value" id="kv${i}">0</div>
+      <div class="kpi-value" id="kv${i}" style="${c.cor?`color:${c.cor}`:''}">0</div>
       <div class="kpi-sub">${c.sub}</div>
       ${c.bar !== null ? `
         <div class="kpi-bar-wrap">
@@ -883,48 +900,43 @@ function renderKpis(d) {
         </div>` : ''}
     </div>`).join('');
 
-  cards.forEach((c,i) => {
+  cards.forEach((c, i) => {
     animCount(document.getElementById(`kv${i}`), c.val);
     if (c.bar !== null) {
       setTimeout(() => {
         const el = document.getElementById(`kb${i}`);
-        if (el) el.style.width = Math.min(c.bar,100) + '%';
-      }, 250 + i*60);
+        if (el) el.style.width = Math.min(c.bar, 100) + '%';
+      }, 250 + i * 60);
     }
   });
 }
 
 /* ══════════════════════════════════════════
-   RENDER: EXPECTATIVAS (dinâmico por tenant)
+   RENDER: EXPECTATIVAS por candidato (NUNCA somadas)
+   Cada candidato tem seu próprio painel com:
+   - Exp. líderes (votos prometidos pelas lideranças)
+   - Meta cidades (expectativa cadastrada por cidade/bairro)
 ══════════════════════════════════════════ */
 function renderExpectativas(d) {
-  const COR_EMPTY = 'rgba(30,48,80,0.45)';
   const cands = d.porCandidato || [];
+  if (!cands.length) return;
 
-  // Resolve cores: usa cor_texto do configSistema.candidatos se disponível
-  const configCands = (window._configSistema || {}).candidatos || [];
-  function corCandidato(chave, idx) {
-    const cfg = configCands.find(c => c.chave === chave);
-    return cfg?.cor_texto || PAL[idx % PAL.length];
-  }
-
-  function donutExpectativa(canvasId, legendId, badgeId, numId, campo) {
+  // Gráfico donut — só com candidatos, sem somar
+  function donutCandidatos(canvasId, legendId, campo) {
     const vals   = cands.map(c => c[campo] || 0);
     const total  = vals.reduce((s, v) => s + v, 0);
     const labels = cands.map(c => c.nome);
     const cores  = cands.map((c, i) => corCandidato(c.chave, i));
-
-    const el = document.getElementById(badgeId);
-    if (el) el.textContent = fmt(total);
-    const numEl = document.getElementById(numId);
-    if (numEl) animCount(numEl, total, 1200);
+    const COR_EMPTY = 'rgba(30,48,80,0.45)';
 
     const data    = total > 0 ? vals : cands.map(() => 1);
     const colors  = total > 0 ? cores.map(c => c + 'cc') : cands.map(() => COR_EMPTY);
     const borders = total > 0 ? cores : cands.map(() => COR_EMPTY);
 
     kill(canvasId);
-    charts[canvasId] = new Chart(document.getElementById(canvasId).getContext('2d'), {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    charts[canvasId] = new Chart(canvas.getContext('2d'), {
       type:'doughnut',
       data:{ labels, datasets:[{ data, backgroundColor:colors, borderColor:borders, borderWidth:2, hoverOffset:8 }] },
       options:{
@@ -946,8 +958,32 @@ function renderExpectativas(d) {
     ).join('');
   }
 
-  donutExpectativa('chart-lid-cand', 'lid-cand-legend', 'badge-lid-total', 'lid-total-num', 'liderancas');
-  donutExpectativa('chart-cid-cand', 'cid-cand-legend', 'badge-cid-total', 'cid-total-num', 'cidades');
+  donutCandidatos('chart-lid-cand', 'lid-cand-legend', 'liderancas');
+  donutCandidatos('chart-cid-cand', 'cid-cand-legend', 'cidades');
+
+  // Totais por candidato (nunca somados)
+  const lidTotalEl = document.getElementById('lid-total-num');
+  const cidTotalEl = document.getElementById('cid-total-num');
+  // Mostra o maior candidato como referência, não a soma
+  if (cands.length === 1) {
+    if (lidTotalEl) animCount(lidTotalEl, cands[0].liderancas, 1200);
+    if (cidTotalEl) animCount(cidTotalEl, cands[0].cidades, 1200);
+    const lb = document.getElementById('badge-lid-total');
+    const cb = document.getElementById('badge-cid-total');
+    if (lb) lb.textContent = cands[0].nome;
+    if (cb) cb.textContent = cands[0].nome;
+  } else {
+    // Vários candidatos: mostra breakdown no badge, sem total combinado
+    const lb = document.getElementById('badge-lid-total');
+    const cb = document.getElementById('badge-cid-total');
+    if (lb) lb.textContent = `${cands.length} candidatos`;
+    if (cb) cb.textContent = `${cands.length} candidatos`;
+    // No número grande, mostra o maior
+    const maxLid = Math.max(...cands.map(c => c.liderancas));
+    const maxCid = Math.max(...cands.map(c => c.cidades));
+    if (lidTotalEl) animCount(lidTotalEl, maxLid, 1200);
+    if (cidTotalEl) animCount(cidTotalEl, maxCid, 1200);
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -1026,8 +1062,16 @@ function renderExpRegioes(regioes) {
         <div class="exp-top">
           <span class="exp-name">${r.label || getLabelRegiao(r.regiao)}</span>
           <div class="exp-nums">
-            <span class="exp-num-mapped">${fmt(r.votos_mapeados)} lideranças</span>
-            <span class="exp-num-meta">/ meta ${fmt(r.meta_total)}</span>
+            <span class="exp-num-mapped">${fmt(r.votos_mapeados)} lid.</span>
+            ${Object.entries(r.metas||{}).length > 0
+              ? Object.entries(r.metas).map(([chave, mv], mi) => {
+                  const cfg = ((window._configSistema||{}).candidatos||[]).find(c=>c.chave===chave);
+                  const cor = cfg?.cor_texto || PAL[(mi+2)%PAL.length];
+                  const pctCand = mv > 0 ? Math.round((r.votos_mapeados/mv)*100) : 0;
+                  return `<span style="color:${cor};font-weight:700;font-size:10px">/ ${cfg?.nome||chave}: ${fmt(mv)}</span>`;
+                }).join('')
+              : `<span class="exp-num-meta">/ meta ${fmt(r.meta_total)}</span>`
+            }
             <span class="exp-pct-chip ${pctClass(pct)}">${pct}%</span>
           </div>
         </div>
@@ -1059,41 +1103,62 @@ function renderExpRegioes(regioes) {
     }, 200 + i * 80);
   });
 
-  // Grouped bar chart
+  // Grouped bar chart — metas por candidato separadas
+  const configCands = ((window._configSistema||{}).candidatos||[]);
+  const labels = regioes.map(r => { const lbl = r.label || getLabelRegiao(r.regiao); return lbl.length > 16 ? lbl.slice(0,14)+'…' : lbl; });
+
+  // Dataset de lideranças mapeadas (total, independente de candidato)
+  const datasets = [
+    {
+      label: 'Exp. Lideranças',
+      data: regioes.map(r => r.votos_mapeados),
+      backgroundColor: 'rgba(16,185,129,0.75)',
+      borderColor: '#10b981', borderWidth: 1.5,
+      borderRadius: 5, borderSkipped: false
+    }
+  ];
+
+  // Um dataset por candidato para metas — NUNCA somados
+  if (regioes[0] && regioes[0].metas && Object.keys(regioes[0].metas).length > 0) {
+    Object.keys(regioes[0].metas).forEach((chave, idx) => {
+      const candCfg = configCands.find(c => c.chave === chave);
+      const nome = candCfg?.nome || chave;
+      const cor  = candCfg?.cor_texto || PAL[(idx + 2) % PAL.length];
+      datasets.push({
+        label: `Meta ${nome}`,
+        data: regioes.map(r => (r.metas||{})[chave] || 0),
+        backgroundColor: cor + '44',
+        borderColor: cor, borderWidth: 1.5,
+        borderRadius: 5, borderSkipped: false
+      });
+    });
+  } else {
+    // Fallback se metas não vieram por candidato
+    datasets.push({
+      label: 'Meta Total',
+      data: regioes.map(r => r.meta_total),
+      backgroundColor: 'rgba(59,130,246,0.35)',
+      borderColor: '#3b82f6', borderWidth: 1.5,
+      borderRadius: 5, borderSkipped: false
+    });
+  }
+
   kill('exp-regioes');
   charts['exp-regioes'] = new Chart(document.getElementById('chart-exp-regioes').getContext('2d'), {
-    type:'bar',
-    data:{
-      labels: regioes.map(r => { const lbl = r.label || getLabelRegiao(r.regiao); return lbl.length > 16 ? lbl.slice(0,14)+'…' : lbl; }),
-      datasets:[
-        {
-          label:'Exp. Lideranças',
-          data: regioes.map(r=>r.votos_mapeados),
-          backgroundColor:'rgba(16,185,129,0.75)',
-          borderColor:'#10b981', borderWidth:1.5,
-          borderRadius:5, borderSkipped:false
-        },
-        {
-          label:'Meta',
-          data: regioes.map(r=>r.meta_total),
-          backgroundColor:'rgba(59,130,246,0.35)',
-          borderColor:'#3b82f6', borderWidth:1.5,
-          borderRadius:5, borderSkipped:false
-        }
-      ]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{ display:true, labels:{ color:'#a8b8d0', boxWidth:10, boxHeight:10, padding:14, font:{size:11} } }
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, labels: { color:'#a8b8d0', boxWidth:10, boxHeight:10, padding:14, font:{size:11} } }
       },
-      scales:{
+      scales: {
         ...darkGrid(
           { ticks:{color:'#a8b8d0',font:{size:10},maxRotation:40} },
-          { ticks:{ callback:v=>fmt(v), color:'#4d6480',font:{size:10} } }
+          { ticks:{ callback: v => fmt(v), color:'#4d6480',font:{size:10} } }
         )
       },
-      animation:{ duration:1000 }
+      animation: { duration: 1000 }
     }
   });
 }
@@ -1268,25 +1333,45 @@ function renderVotosReg(expRegioes) {
    RENDER: RANKING
 ══════════════════════════════════════════ */
 function posC(i) { return i===0?'g':i===1?'s':i===2?'b':''; }
+function posEmoji(i) { return i===0?'🥇':i===1?'🥈':i===2?'🥉':''; }
 
 function renderRanking(rows) {
   document.getElementById('ranking-badge').textContent = `top ${rows.length}`;
+
+  const configCands = ((window._configSistema||{}).candidatos||[]);
+
   document.getElementById('ranking-list').innerHTML = rows.length
-    ? rows.map((r,i) => {
+    ? rows.map((r, i) => {
         const initials = (r.nome||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-        const avatar = r.foto
-          ? `<img src="${r.foto}" alt="${r.nome}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='${initials}'">`
-          : initials;
+        const fotoUrl = r.foto_url || r.foto || '';
+        const avatar = fotoUrl
+          ? `<img src="${fotoUrl}" alt="${r.nome}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';this.parentElement.querySelector('.rank-initials').style.display='flex'">`
+          : '';
+
+        // Cor e nome do candidato vinculado
+        const candCfg = configCands.find(c => c.chave && r.vinculo_politico &&
+          c.chave.toLowerCase() === (r.vinculo_politico||'').toLowerCase());
+        const candCor = candCfg?.cor_texto || '#4d6480';
+        const candNome = candCfg?.nome || r.vinculo_politico || '';
+
+        const statusCls = (r.status||'').toLowerCase() === 'ativo' ? 'ativo' : (r.status||'').toLowerCase() === 'inativo' ? 'inativo' : 'pendente';
+
         return `
         <div class="rank-item" style="animation-delay:${i*0.04}s">
-          <div class="rank-pos ${posC(i)}">${i+1}</div>
-          <div class="rank-avatar" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#3b82f655,#6366f155);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text2);flex-shrink:0;overflow:hidden;">${avatar}</div>
+          <div class="rank-pos ${posC(i)}">${i < 3 ? posEmoji(i) : i+1}</div>
+          <div style="width:40px;height:40px;border-radius:50%;flex-shrink:0;overflow:hidden;position:relative;border:2px solid ${candCor}44;">
+            ${avatar}
+            <div class="rank-initials" style="display:${fotoUrl?'none':'flex'};width:100%;height:100%;align-items:center;justify-content:center;background:linear-gradient(135deg,${candCor}33,${candCor}55);font-size:13px;font-weight:800;color:${candCor};">${initials}</div>
+          </div>
           <div class="rank-info">
             <div class="rank-name">${r.nome}</div>
-            <div class="rank-city">${r.cidade||'—'} · ${r.regiao||'—'}</div>
+            <div class="rank-city" style="display:flex;align-items:center;gap:5px;">
+              ${candNome ? `<span style="width:6px;height:6px;border-radius:50%;background:${candCor};flex-shrink:0;display:inline-block"></span><span style="color:${candCor};font-size:10px;font-weight:600">${candNome}</span> · ` : ''}
+              ${r.cidade||r.regiao||'—'}
+            </div>
           </div>
-          <div class="rank-votos">${fmt(r.expectativa_votos)} v</div>
-          <div class="rank-status ${r.status||'pendente'}">${r.status||'?'}</div>
+          <div class="rank-votos">${fmt(r.expectativa_votos)}<span style="font-size:10px;color:var(--muted);font-weight:400"> v</span></div>
+          <div class="rank-status ${statusCls}">${r.status||'?'}</div>
         </div>`;
       }).join('')
     : '<div class="empty">Sem dados</div>';
@@ -1453,10 +1538,24 @@ function renderResumoRegioes(expRegioes) {
         <span class="regiao-metric-label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/></svg> Votos Célia 2022</span>
         <span class="regiao-metric-val" style="color:#a78bfa">${fmt(celiaV)} <small style="font-size:10px;color:var(--muted);font-weight:400">${pctCelia !== '—' ? pctCelia+'%' : ''}</small></span>
       </div>
-      <div class="regiao-metric-row">
-        <span class="regiao-metric-label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z"/></svg>️ Meta</span>
-        <span class="regiao-metric-val" style="color:var(--accent)">${fmt(meta)} <small style="font-size:10px;color:var(--muted);font-weight:400">${pctMeta !== '—' ? pctMeta+'%' : ''}</small></span>
-      </div>
+      ${Object.entries(api.metas || {}).length > 0
+        ? Object.entries(api.metas).map(([chave, metaCand], mi) => {
+            const nomeCand = ((window._configSistema||{}).candidatos||[]).find(c=>c.chave===chave)?.nome || chave;
+            const corCand = corCandidato(chave, mi);
+            const pctCandMeta = eleitor > 0 ? ((metaCand / eleitor) * 100).toFixed(1) : '—';
+            return `<div class="regiao-metric-row">
+              <span class="regiao-metric-label" style="color:${corCand}">
+                <span style="width:7px;height:7px;border-radius:50%;background:${corCand};display:inline-block;flex-shrink:0"></span>
+                Meta ${nomeCand}
+              </span>
+              <span class="regiao-metric-val" style="color:${corCand}">${fmt(metaCand)}${pctCandMeta !== '—' ? `<small style="font-size:10px;color:var(--muted);font-weight:400;margin-left:4px">${pctCandMeta}%</small>` : ''}</span>
+            </div>`;
+          }).join('')
+        : `<div class="regiao-metric-row">
+            <span class="regiao-metric-label">Meta</span>
+            <span class="regiao-metric-val" style="color:var(--accent)">${fmt(meta)}</span>
+          </div>`
+      }
       <div class="regiao-metric-row">
         <span class="regiao-metric-label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"/></svg> Exp. Lideranças</span>
         <span class="regiao-metric-val" style="color:var(--green)">${fmt(expLid)}</span>

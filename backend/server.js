@@ -2150,12 +2150,13 @@ app.get('/api/dashboard/ranking', auth, withTenant, allow('dono', 'admin'), asyn
       SELECT
         l.id, l.nome, l.cidade, l.regiao, l.status,
         l.expectativa_votos, l.vinculo_politico,
+        l.foto_url,
         COALESCE(SUM(g.valor), 0) as total_gastos,
         COUNT(g.id) as num_gastos
       FROM liderancas l
       LEFT JOIN gastos_lideranca g ON g.lideranca_id = l.id
       WHERE l.tenant_id = $1
-      GROUP BY l.id, l.nome, l.cidade, l.regiao, l.status, l.expectativa_votos, l.vinculo_politico
+      GROUP BY l.id, l.nome, l.cidade, l.regiao, l.status, l.expectativa_votos, l.vinculo_politico, l.foto_url
       ORDER BY l.expectativa_votos DESC NULLS LAST
       LIMIT 20
     `, [req.tenantId]);
