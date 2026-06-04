@@ -4348,8 +4348,9 @@ app.get('/api/ia/contexto', auth, withTenant, async (req, res) => {
 
   try {
     // ── 1. Dados do tenant (Postgres) ─────────────────────────────────────────
-    const [cfg, { rows: lidRows }] = await Promise.all([
+    const [cfg, { rows: lidRows }, { rows: lidStatusRows }, { rows: expCidRows }, { rows: regioesCfg }] = await Promise.all([
       getConfigTenant(tenantId),
+      // Líderes por cidade (para tabela de municípios)
       pool.query(`
         SELECT l.cidade,
                COUNT(*)                              AS total_lideres,
@@ -4357,6 +4358,34 @@ app.get('/api/ia/contexto', auth, withTenant, async (req, res) => {
         FROM liderancas l
         WHERE l.tenant_id = $1 AND l.mapa IS NULL
         GROUP BY l.cidade
+      `, [tenantId]),
+      // Líderes com contexto de status e interação
+      pool.query(`
+        SELECT
+          l.id, l.nome, l.cidade, l.regiao,
+          l.status, l.vinculo_politico,
+          COALESCE(l.expectativa_votos, 0) AS expectativa_votos,
+          MAX(g.data) AS ultima_interacao,
+          EXTRACT(DAY FROM NOW() - MAX(g.data)) AS dias_sem_interacao,
+          COUNT(g.id) AS total_gastos
+        FROM liderancas l
+        LEFT JOIN gastos_lideranca g ON g.lideranca_id = l.id
+        WHERE l.tenant_id = $1 AND l.mapa IS NULL
+        GROUP BY l.id, l.nome, l.cidade, l.regiao, l.status, l.vinculo_politico, l.expectativa_votos
+        ORDER BY ultima_interacao ASC NULLS FIRST
+      `, [tenantId]),
+      // Meta por cidade por candidato (JSONB: {chave: valor})
+      pool.query(`
+        SELECT cidade, expectativas
+        FROM expectativa_cidade
+        WHERE tenant_id = $1
+      `, [tenantId]),
+      // Regiões configuradas do tenant
+      pool.query(`
+        SELECT chave, label, cidades
+        FROM tenant_regioes
+        WHERE tenant_id = $1
+        ORDER BY ordem ASC
       `, [tenantId])
     ]);
 
@@ -4368,6 +4397,70 @@ app.get('/api/ia/contexto', auth, withTenant, async (req, res) => {
     for (const r of lidRows) {
       lidMap[r.cidade] = { lideres: Number(r.total_lideres), meta: Number(r.meta_votos) };
     }
+
+    // ── 1b. Processa metas por candidato por cidade ───────────────────────────
+    // expCidMap: cidade(lower) → { chave: valor }
+    const expCidMap = {};
+    for (const r of expCidRows) {
+      expCidMap[(r.cidade || '').toLowerCase()] = r.expectativas || {};
+    }
+
+    // ── 1c. Processa regiões e agrega metas + eleitorado por região ───────────
+    // regiaoMap: chave → { label, cidades[] }
+    const regiaoMap = {};
+    for (const r of regioesCfg) {
+      regiaoMap[r.chave] = {
+        label: r.label || r.chave,
+        cidades: Array.isArray(r.cidades) ? r.cidades : (r.cidades ? JSON.parse(r.cidades) : [])
+      };
+    }
+
+    // ── 1d. Processa status dos líderes com contexto ──────────────────────────
+    // Classifica risco: sem_interacao_nunca / risco_alto (>60d) / risco_medio (30-60d) / ok (<30d)
+    const lidStatusPorCand = {}; // chave → { ativos, inativos, risco_alto, risco_medio, sem_interacao, exp_total }
+    const lidSemInteracaoList = []; // lista para contexto textual
+
+    for (const cand of candidatos) {
+      lidStatusPorCand[cand.chave] = { ativos: 0, inativos: 0, risco_alto: 0, risco_medio: 0, sem_interacao: 0, exp_total: 0 };
+    }
+
+    for (const l of lidStatusRows) {
+      const chave = (l.vinculo_politico || '').toLowerCase();
+      const dias  = l.ultima_interacao ? Number(l.dias_sem_interacao || 0) : null;
+      const exp   = Number(l.expectativa_votos);
+
+      // Acumula por candidato
+      const stats = lidStatusPorCand[chave];
+      if (stats) {
+        if (l.status === 'ativo') stats.ativos++;
+        else stats.inativos++;
+        stats.exp_total += exp;
+        if (dias === null)  stats.sem_interacao++;
+        else if (dias > 60) stats.risco_alto++;
+        else if (dias > 30) stats.risco_medio++;
+      }
+
+      // Candidatos à lista de risco (sem interação ou > 30 dias, ativo, com expectativa)
+      const isRisco = (dias === null || dias > 30) && l.status === 'ativo' && exp > 0;
+      if (isRisco) {
+        lidSemInteracaoList.push({
+          nome: l.nome,
+          cidade: l.cidade,
+          regiao: l.regiao,
+          vinculo: l.vinculo_politico,
+          exp,
+          dias,
+          risco: dias === null ? 'nunca_interagiu' : dias > 60 ? 'critico' : 'medio'
+        });
+      }
+    }
+
+    // Ordena por risco (críticos primeiro) e limita a 40 líderes
+    lidSemInteracaoList.sort((a, b) => {
+      const ord = { nunca_interagiu: 0, critico: 1, medio: 2 };
+      return (ord[a.risco] ?? 3) - (ord[b.risco] ?? 3) || b.exp - a.exp;
+    });
+    const lidRiscoTop = lidSemInteracaoList.slice(0, 40);
 
     // ── 2. BigQuery (paralelo) ────────────────────────────────────────────────
     let votosValidos = {};   // municipio(UPPER) → votos
@@ -4603,13 +4696,105 @@ app.get('/api/ia/contexto', auth, withTenant, async (req, res) => {
       .map(c => { const res = resultsByCand[c.chave]; return `${c.chave}=votos ${res.nome_urna} ${res.ano}`; })
       .join(', ');
 
+    // ── 7. Meta por região por candidato + eleitorado real por região ─────────
+    let regiaoTexto = '';
+    if (Object.keys(regiaoMap).length > 0) {
+      // Normaliza nomes BQ para lookup (UPPER sem acento não é necessário, só UPPER)
+      const votosValidosUpper = {};
+      for (const [k, v] of Object.entries(votosValidos)) votosValidosUpper[k.toUpperCase()] = v;
+
+      const linhasReg = [];
+      for (const [chaveReg, reg] of Object.entries(regiaoMap)) {
+        const cids = reg.cidades || [];
+
+        // Eleitorado real da região (soma votos válidos das cidades)
+        const eleitoradoReg = cids.reduce((s, c) => {
+          return s + (votosValidosUpper[c.toUpperCase()] || 0);
+        }, 0);
+
+        // Meta por candidato na região (soma expectativas das cidades)
+        const metasPorCand = {};
+        for (const cand of candidatos) metasPorCand[cand.chave] = 0;
+        for (const cidade of cids) {
+          const expCid = expCidMap[cidade.toLowerCase()] || {};
+          for (const cand of candidatos) {
+            metasPorCand[cand.chave] += Number(expCid[cand.chave] || 0);
+          }
+        }
+
+        // Exp. líderes por candidato na região
+        const expLideresPorCand = {};
+        for (const cand of candidatos) expLideresPorCand[cand.chave] = 0;
+        for (const l of lidStatusRows) {
+          if ((l.regiao || '').toLowerCase() !== chaveReg.toLowerCase()) continue;
+          const ch = (l.vinculo_politico || '').toLowerCase();
+          if (expLideresPorCand[ch] !== undefined) {
+            expLideresPorCand[ch] += Number(l.expectativa_votos);
+          }
+        }
+
+        // Resultados eleitorais 2022 dos candidatos na região
+        const resultadosReg = {};
+        for (const cand of candidatos) {
+          const res = resultsByCand[cand.chave];
+          if (!res) continue;
+          const totalCand = cids.reduce((s, c) => s + (res.mapa[c.toUpperCase()] || res.mapa[c] || 0), 0);
+          resultadosReg[cand.chave] = totalCand;
+        }
+
+        const candDetalhes = candidatos.map(cand => {
+          const meta  = metasPorCand[cand.chave];
+          const expLid = expLideresPorCand[cand.chave];
+          const res2022 = resultadosReg[cand.chave];
+          const pctMeta = eleitoradoReg > 0 && meta > 0 ? ((meta / eleitoradoReg) * 100).toFixed(1) + '%' : '—';
+          const cobert  = meta > 0 ? Math.round((expLid / meta) * 100) + '%' : '—';
+          const partes = [`${cand.nome || cand.chave}: meta=${f(meta)}_votos(${pctMeta}_do_eleitorado) exp_lideres=${f(expLid)} cobertura=${cobert}`];
+          if (res2022 !== undefined) partes.push(`resultado_2022=${f(res2022)}`);
+          return partes.join(' ');
+        }).join(' | ');
+
+        linhasReg.push(`  ${reg.label} (${cids.length} cidades, eleitorado=${f(eleitoradoReg)}): ${candDetalhes}`);
+      }
+
+      if (linhasReg.length) {
+        regiaoTexto = `\nMETA POR REGIÃO POR CANDIDATO (meta=votos cadastrados, exp_lideres=votos prometidos pelos líderes, cobertura=exp_lid/meta):\n${linhasReg.join('\n')}\n`;
+      }
+    }
+
+    // ── 8. Status e risco dos líderes por candidato ───────────────────────────
+    let statusCandTexto = '';
+    if (candidatos.length > 0) {
+      const linhasStatus = candidatos.map(cand => {
+        const s = lidStatusPorCand[cand.chave] || {};
+        return `  ${cand.nome || cand.chave}: ativos=${s.ativos||0} inativos=${s.inativos||0} `
+             + `risco_critico(>60d_sem_interacao)=${s.risco_alto||0} `
+             + `risco_medio(30-60d)=${s.risco_medio||0} `
+             + `nunca_interagiu=${s.sem_interacao||0} `
+             + `exp_votos_total=${f(s.exp_total||0)}`;
+      }).join('\n');
+      statusCandTexto = `\nSTATUS DOS LÍDERES POR CANDIDATO:\n${linhasStatus}\n`;
+    }
+
+    // ── 9. Líderes em risco (sem interação recente) ───────────────────────────
+    let lidRiscoTexto = '';
+    if (lidRiscoTop.length > 0) {
+      const linhasRisco = lidRiscoTop.map(l => {
+        const diasStr = l.dias === null ? 'nunca_interagiu' : `${Math.round(l.dias)}d_sem_interacao`;
+        return `  ${l.nome} | ${l.cidade} | ${l.regiao} | ${l.vinculo || '—'} | exp=${l.exp} | ${diasStr} | risco=${l.risco}`;
+      }).join('\n');
+      lidRiscoTexto = `\nLÍDERES EM RISCO (ativos, sem interação recente, ordenados por criticidade):\n${linhasRisco}\n`;
+    }
+
     const contexto = `Alice — assistente estratégica da ${nomeSist}.${nomCands ? ` Candidatos: ${nomCands}.` : ''}
 
 REGRAS: Responda APENAS com os dados abaixo. Não invente. Se não houver dado, diga isso.
 
-RESUMO: municípios=${todasCidades.size}, votos_validos_RJ_2022=${totalVV}, lideres=${totalLid}, meta_total=${totalMeta}
+RESUMO: municípios=${todasCidades.size}, votos_validos_RJ_2022=${f(totalVV)}, lideres=${totalLid}, meta_total=${f(totalMeta)}
 ${candBQTexto ? 'DESEMPENHO 2022: ' + candBQTexto.trim() : ''}
 ${historicoTexto.trim()}
+${regiaoTexto.trim()}
+${statusCandTexto.trim()}
+${lidRiscoTexto.trim()}
 ${perfilTexto.trim()}
 ${abstencaoTexto.trim()}
 
@@ -4806,6 +4991,12 @@ server.listen(PORT, async () => {
   }
 
   // ── COLUNA origem EM liderancas ───────────────────────────────────────────
+  try {
+    await pool.query(`ALTER TABLE liderancas ADD COLUMN IF NOT EXISTS foto_url TEXT`);
+    console.log('[migration] liderancas.foto_url OK');
+  } catch (e) {
+    console.warn('[migration] liderancas.foto_url:', e.message);
+  }
   try {
     await pool.query(`ALTER TABLE liderancas ADD COLUMN IF NOT EXISTS origem TEXT DEFAULT 'manual'`);
     console.log('[migration] liderancas.origem OK');
