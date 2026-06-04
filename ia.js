@@ -139,11 +139,12 @@ Gere um relatório estratégico detalhado com: panorama geral, pontos fortes, po
       #ia-cluster {
         position: fixed;
         bottom: 28px;
-        left: 28px;
+        left: 50%;
+        transform: translateX(-50%);
         z-index: 3100;
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
         gap: 10px;
         font-family: 'DM Sans', 'Inter', system-ui, sans-serif;
       }
@@ -281,7 +282,8 @@ Gere um relatório estratégico detalhado com: panorama geral, pontos fortes, po
       #ia-painel {
         position: fixed;
         bottom: 84px;
-        left: 28px;
+        left: 50%;
+        transform: translateX(-50%);
         z-index: 3100;
         width: 390px;
         max-height: 580px;
