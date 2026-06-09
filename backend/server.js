@@ -4269,6 +4269,44 @@ app.post('/api/ia/chat', auth, withTenant, async (req, res) => {
   res.status(429).json({ error: `Limite de requisições atingido. Aguarde alguns segundos e tente novamente. (${lastError})` });
 });
 
+// ── Carrega dados estáticos de deputados das eleições 2022 ──────────────────
+let _deputadosEstaduaisData = null;
+let _deputadosFederaisData = null;
+
+function getDeputadosEstaduais() {
+  if (_deputadosEstaduaisData) return _deputadosEstaduaisData;
+  try {
+    const vm = require('vm');
+    const code = fs.readFileSync(path.join(__dirname, '..', 'data.js'), 'utf8') + '\n__out__ = deputadosByCity;';
+    const ctx = { window: {}, __out__: null };
+    vm.createContext(ctx);
+    vm.runInContext(code, ctx);
+    _deputadosEstaduaisData = ctx.__out__ || {};
+    console.log('[deputados estaduais] carregado:', Object.keys(_deputadosEstaduaisData).length, 'cidades');
+  } catch(e) {
+    console.warn('[deputados estaduais] erro ao carregar data.js:', e.message);
+    _deputadosEstaduaisData = {};
+  }
+  return _deputadosEstaduaisData;
+}
+
+function getDeputadosFederais() {
+  if (_deputadosFederaisData) return _deputadosFederaisData;
+  try {
+    const vm = require('vm');
+    const code = fs.readFileSync(path.join(__dirname, '..', 'deputadosFederais.js'), 'utf8') + '\n__out__ = deputadosFederaisByCity;';
+    const ctx = { window: {}, __out__: null };
+    vm.createContext(ctx);
+    vm.runInContext(code, ctx);
+    _deputadosFederaisData = ctx.__out__ || {};
+    console.log('[deputados federais] carregado:', Object.keys(_deputadosFederaisData).length, 'cidades');
+  } catch(e) {
+    console.warn('[deputados federais] erro ao carregar deputadosFederais.js:', e.message);
+    _deputadosFederaisData = {};
+  }
+  return _deputadosFederaisData;
+}
+
 // ── Cache do contexto da IA por tenant (TTL 5 min) ──────────────────────────
 const _iaContextoCache = new Map();
 const IA_CTX_TTL = 5 * 60 * 1000;
@@ -4789,6 +4827,39 @@ app.get('/api/ia/contexto', auth, withTenant, async (req, res) => {
       lidRiscoTexto = `\nLÍDERES EM RISCO (ativos, sem interação recente, ordenados por criticidade):\n${linhasRisco}\n`;
     }
 
+    // ── 10. Deputados estaduais e federais por município (2022) ─────────────────
+    let deputadosTexto = '';
+    try {
+      const estaduaisData = getDeputadosEstaduais();
+      const federaisData  = getDeputadosFederais();
+
+      // Normaliza lookup: chave UPPER → array
+      const fedUpper = {};
+      for (const [k, v] of Object.entries(federaisData)) fedUpper[k.toUpperCase()] = v;
+
+      const linhasDeputados = [];
+      for (const cidade of [...todasCidades].sort()) {
+        const cidadeUp = cidade.toUpperCase();
+
+        // Estaduais: data.js usa nome original (ex: "Angra dos Reis")
+        const est = estaduaisData[cidade] || [];
+        // Federais: deputadosFederais.js usa UPPER (ex: "ANGRA DOS REIS")
+        const fed = fedUpper[cidadeUp] || [];
+
+        if (est.length === 0 && fed.length === 0) continue;
+
+        const estStr = est.slice(0, 5).map(d => `${d.name}:${d.votes}`).join(', ');
+        const fedStr = fed.slice(0, 5).map(d => `${d.name}:${d.votes}`).join(', ');
+        linhasDeputados.push(`  ${cidade}: estaduais=[${estStr}] federais=[${fedStr}]`);
+      }
+
+      if (linhasDeputados.length) {
+        deputadosTexto = `\nDEPUTADOS MAIS VOTADOS POR MUNICÍPIO (eleições 2022, top 5 estaduais e federais):\n${linhasDeputados.join('\n')}\n`;
+      }
+    } catch(e) {
+      console.warn('[ia/ctx] deputados:', e.message);
+    }
+
     const contexto = `Alice — assistente estratégica da ${nomeSist}.${nomCands ? ` Candidatos: ${nomCands}.` : ''}
 
 REGRAS: Responda APENAS com os dados abaixo. Não invente. Se não houver dado, diga isso.
@@ -4801,6 +4872,7 @@ ${statusCandTexto.trim()}
 ${lidRiscoTexto.trim()}
 ${perfilTexto.trim()}
 ${abstencaoTexto.trim()}
+${deputadosTexto.trim()}
 
 TABELA POR MUNICÍPIO (colunas: ${cabecalhoCols}${candCols ? ' | ' + candCols : ''}):
 ${linhas}

@@ -4687,14 +4687,6 @@ function initLiderancaSearch() {
         const nome = normalizeCityName(l.nome || '');
         const contato = normalizeCityName(l.contato || '');
 
-        if(
- filtro === "todos" ||
- lideranca.vinculo_politico === filtro ||
- lideranca.vinculo_politico === "ambos"
-){
- mostrarPin(lideranca)
-}
-
         if (nome.includes(term) || contato.includes(term)) {
           resultados.push({
             cidade: city,
