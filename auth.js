@@ -1,9 +1,15 @@
 window.API_URL = 'https://map-backend-j88s.onrender.com/api';
 
 // ─────────────────────────────────────────────
+// FETCH NATIVO — sem interceptação
+// Usa a referência salva pelo tenant.js (que carrega primeiro) ou captura aqui.
+// Usado internamente para evitar loops infinitos no interceptor.
+// ─────────────────────────────────────────────
+const _rawFetch = window._nativeFetch || window.fetch.bind(window);
+
+// ─────────────────────────────────────────────
 // TOKEN HELPERS
 // ─────────────────────────────────────────────
-
 function getToken()        { return localStorage.getItem('token') }
 function getRefreshToken() { return localStorage.getItem('refreshToken') }
 
@@ -13,13 +19,16 @@ function salvarTokens(accessToken, refreshToken) {
   if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
 }
 
+// ─────────────────────────────────────────────
+// LOGOUT
+// ─────────────────────────────────────────────
 async function logout() {
   const refreshToken = getRefreshToken();
 
   // Invalida o refresh token no servidor antes de limpar localmente
   if (refreshToken) {
     try {
-      await fetch(`${window.API_URL}/logout`, {
+      await _rawFetch(`${window.API_URL}/logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken })
@@ -36,47 +45,56 @@ async function logout() {
 
 // ─────────────────────────────────────────────
 // REFRESH DO ACCESS TOKEN
-// Tenta renovar o accessToken usando o refreshToken.
-// Retorna true se conseguiu, false se deve deslogar.
+// Delega ao _doRefresh do tenant.js (que já serializa chamadas e usa _nativeFetch).
+// Caso tenant.js não esteja carregado, implementa localmente.
+// Retorna: true (ok), false (token inválido → deve deslogar), 'network_error'
 // ─────────────────────────────────────────────
 async function tentarRefresh() {
+  // Reutiliza o _doRefresh instalado pelo tenant.js se disponível
+  if (typeof window._doRefresh === 'function') {
+    return window._doRefresh();
+  }
+
+  // Fallback para páginas sem tenant.js
   const refreshToken = getRefreshToken();
   if (!refreshToken) return false;
 
   try {
-    const res = await fetch(`${window.API_URL}/refresh`, {
+    const res = await _rawFetch(`${window.API_URL}/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken })
     });
 
-    if (!res.ok) return false;
+    if (res.status === 403 || res.status === 401) return false;
+    if (!res.ok) return 'network_error';
 
     const data = await res.json();
     if (!data.accessToken) return false;
 
     localStorage.setItem('token', data.accessToken);
     return true;
-
   } catch {
-    return false;
+    return 'network_error';
   }
 }
 
 // ─────────────────────────────────────────────
 // RENOVAÇÃO AUTOMÁTICA (a cada 13 minutos)
-// Access token dura 15min — renova antes de expirar
+// Access token dura 15min — renova proativamente antes de expirar
 // ─────────────────────────────────────────────
 let _refreshInterval = null;
 
 function iniciarRenovacaoAutomatica() {
   if (_refreshInterval) clearInterval(_refreshInterval);
   _refreshInterval = setInterval(async () => {
-    const ok = await tentarRefresh();
-    if (!ok) {
+    const resultado = await tentarRefresh();
+    if (resultado === false) {
+      // Refresh inválido — desloga
       clearInterval(_refreshInterval);
       logout();
     }
+    // 'network_error' ou true: continua tentando no próximo intervalo
   }, 13 * 60 * 1000); // 13 minutos
 }
 
@@ -138,8 +156,6 @@ function iniciarLogin() {
 
     try {
       // Inclui tenantId numérico para o backend filtrar pelo tenant correto.
-      // Só envia quando o tenant é explicitamente configurado (> 1) — para não
-      // bloquear usuários de tenants distintos num frontend padrão.
       // window.TENANT_NUM_ID é definido em tenant.js (1 = padrão, 2 = betão, etc.).
       const tenantId = (typeof window.TENANT_NUM_ID !== 'undefined' &&
                         window.TENANT_NUM_ID != null &&
@@ -147,7 +163,7 @@ function iniciarLogin() {
         ? window.TENANT_NUM_ID
         : undefined;
 
-      const res = await fetch(`${window.API_URL}/login`, {
+      const res = await _rawFetch(`${window.API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usuario, senha, ...(tenantId != null ? { tenantId } : {}) })
@@ -183,12 +199,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   const token = getToken();
 
   if (!token) {
-    iniciarLogin();
+    // Sem token local — tenta refresh antes de pedir login
+    const refreshOk = await tentarRefresh();
+    if (refreshOk === true) {
+      iniciarRenovacaoAutomatica();
+      liberarInterface();
+      if (typeof window.iniciarAplicacao === 'function') {
+        await window.iniciarAplicacao();
+      }
+    } else {
+      iniciarLogin();
+    }
     return;
   }
 
   try {
-    const res = await fetch(`${window.API_URL}/validar-token`, {
+    const res = await _rawFetch(`${window.API_URL}/validar-token`, {
       headers: { Authorization: 'Bearer ' + token }
     });
 
@@ -202,10 +228,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    // Token expirado — tenta refresh antes de deslogar
+    // Token expirado — tenta refresh
     if (res.status === 401) {
-      const refreshOk = await tentarRefresh();
-      if (refreshOk) {
+      const resultado = await tentarRefresh();
+      if (resultado === true) {
+        iniciarRenovacaoAutomatica();
+        liberarInterface();
+        if (typeof window.iniciarAplicacao === 'function') {
+          await window.iniciarAplicacao();
+        }
+        return;
+      }
+      if (resultado === 'network_error') {
+        // Rede instável — não desloga, tenta liberar com o token que tem
         iniciarRenovacaoAutomatica();
         liberarInterface();
         if (typeof window.iniciarAplicacao === 'function') {
@@ -215,14 +250,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // Refresh também falhou — desloga
+    // Refresh falhou definitivamente — pede login
     localStorage.clear();
     iniciarLogin();
 
   } catch {
-    // Erro de rede — tenta refresh antes de deslogar
-    const refreshOk = await tentarRefresh();
-    if (refreshOk) {
+    // Erro de rede no validar-token — não desloga, tenta offline
+    const resultado = await tentarRefresh();
+    if (resultado !== false) {
+      // 'network_error' ou true: continua sem deslogar
       iniciarRenovacaoAutomatica();
       liberarInterface();
       if (typeof window.iniciarAplicacao === 'function') {
@@ -246,8 +282,8 @@ window.addEventListener('pageshow', async function (e) {
   // 1. Revalida o token silenciosamente (pode ter expirado enquanto estava em outra aba)
   const token = getToken();
   if (!token) {
-    const refreshOk = await tentarRefresh();
-    if (!refreshOk) { localStorage.clear(); location.reload(); return; }
+    const resultado = await tentarRefresh();
+    if (resultado === false) { localStorage.clear(); location.reload(); return; }
   }
 
   // 2. Força o Leaflet a recalcular o tamanho do container
@@ -259,8 +295,6 @@ window.addEventListener('pageshow', async function (e) {
   }
 
   // 3. Re-injeta o indicador de campanha se o seletor estiver vazio
-  //    (pode acontecer quando a página foi congelada antes do config carregar,
-  //    ou quando o token estava sendo renovado no momento do freeze)
   const seletor = document.getElementById('seletor-campanha');
   if (seletor && !seletor.children.length) {
     if (typeof carregarConfig === 'function') {
