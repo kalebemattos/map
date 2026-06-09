@@ -660,7 +660,9 @@ async function getIceServers() {
   }
   try {
     const token = localStorage.getItem('token');
-    const r = await fetch((window.API_URL || '') + '/turn-credentials', {
+    // API_URL nesta página = 'https://...onrender.com' (sem /api)
+    // window.API_URL (de auth.js) não é carregado aqui, então usa API_URL local + '/api'
+    const r = await fetch(API_URL + '/api/turn-credentials', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     if (!r.ok) throw new Error('status ' + r.status);
