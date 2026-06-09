@@ -1431,6 +1431,8 @@ setTimeout(function() {
 </div><!-- /content-wrapper -->
 
 
+<script src="data.js"></script>
+<script src="votosCelia.js"></script>
 <script src="tenant.js"></script>
 <script>
 // Definido ANTES do auth.js
@@ -1818,6 +1820,7 @@ async function carregarIndicadorCampanha() {
 
     // 3b. Totais regionais (apenas municípios da região do usuário, se aplicável)
     let totaisRegiao = null
+    let dadosRegiao  = null   // dados extras: votos válidos, votos 2022, exp lideranças
     if (cidadesRegiao) {
       totaisRegiao = {}
       candidatos.forEach(c => { totaisRegiao[c.chave] = 0 })
@@ -1829,10 +1832,59 @@ async function carregarIndicadorCampanha() {
             totaisRegiao[chave] += (Number(exp[chave]) || 0)
         })
       })
+
+      // Votos válidos 2024 (data.js → votosValidos)
+      const vv = typeof votosValidos !== 'undefined' ? votosValidos : {}
+      let votosValidosRegiao = 0
+      cidadesRegiao.forEach(c => { votosValidosRegiao += (vv[c] || 0) })
+
+      // Votos históricos por candidato (votosCelia.js → window.votosHistoricos)
+      const hist = window.votosHistoricos || {}
+      const normStr = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase()
+      const votosHist = {}
+      candidatos.forEach(cand => {
+        if (!hist[cand.chave]) return
+        let soma = 0
+        cidadesRegiao.forEach(c => { soma += (hist[cand.chave][normStr(c)] || 0) })
+        votosHist[cand.chave] = soma
+      })
+
+      // Exp. lideranças por candidato para a região
+      const expLid = {}
+      candidatos.forEach(c => { expLid[c.chave] = 0 })
+      try {
+        const lidRes = await fetch(API_URL + '/api/liderancas', {
+          headers: { Authorization: 'Bearer ' + token }
+        })
+        if (lidRes.ok) {
+          const lidData = await lidRes.json()  // [{ cidade, liderancas: [...] }]
+          lidData.forEach(row => {
+            if (!cidadesRegiao.has(row.cidade)) return
+            ;(row.liderancas || []).forEach(l => {
+              const vp = l.vinculo_politico || 'ambos'
+              const ev = Number(l.expectativa_votos || 0)
+              if (ev <= 0) return
+              if (vp === 'ambos') {
+                candidatos.forEach(c => { expLid[c.chave] = (expLid[c.chave] || 0) + ev })
+              } else if (expLid[vp] !== undefined) {
+                expLid[vp] = (expLid[vp] || 0) + ev
+              }
+            })
+          })
+        }
+      } catch (_) {}
+
+      dadosRegiao = {
+        label:    regiaoInfo.label,
+        nCidades: cidadesRegiao.size,
+        votosValidos: votosValidosRegiao,
+        votosHist,
+        expLid,
+      }
     }
 
     // 4. Renderiza: 1º card = global, 2º card = regional (se houver)
-    renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao, regiaoInfo)
+    renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao, regiaoInfo, dadosRegiao)
 
   } catch (e) { /* silencioso */ }
 }
@@ -1840,8 +1892,9 @@ async function carregarIndicadorCampanha() {
 // totaisGlobal  = sempre calculado (todos os municípios)
 // totaisRegiao  = calculado só quando há região vinculada (pode ser null)
 // regiaoInfo    = { chave, label } quando há região vinculada (pode ser null)
+// dadosRegiao   = { label, nCidades, votosValidos, votosHist, expLid } ou null
 // 1º card usa totaisGlobal; 2º card usa totaisRegiao (se disponível)
-function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, regiaoInfo = null) {
+function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, regiaoInfo = null, dadosRegiao = null) {
   const panel   = document.getElementById('campaign-indicator')
   const body    = document.getElementById('ci-body')
   const updated = document.getElementById('ci-updated')
@@ -1943,7 +1996,47 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
     </div>`
   })
 
-  // Bloco total — sempre global
+  // Bloco total — sempre global + painel regional (só para líderes de região)
+  const fmtN = n => (n || 0).toLocaleString('pt-BR')
+
+  let regiaoBlock = ''
+  if (dadosRegiao) {
+    const dr = dadosRegiao
+    regiaoBlock = `
+    <div class="ci-total-divider"></div>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.5);margin-bottom:6px;">
+      📍 ${escHome(dr.label)} · ${dr.nCidades} municípios
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+        <span style="color:rgba(255,255,255,.7);">🗳️ Votos válidos 2024</span>
+        <b style="color:#fff;">${fmtN(dr.votosValidos)}</b>
+      </div>
+      ${candidatos.map(c => {
+        const hist = dr.votosHist[c.chave]
+        const meta = totaisRegiao ? (totaisRegiao[c.chave] || 0) : 0
+        const lid  = dr.expLid[c.chave] || 0
+        const cor  = escHome(c.cor_texto || '#fff')
+        return `
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-top:2px;">
+        <span style="color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">${escHome(c.nome)}</span>
+      </div>
+      ${hist !== undefined ? `<div style="display:flex;justify-content:space-between;font-size:11px;">
+        <span style="color:rgba(255,255,255,.6);">🗳️ Votos 2022</span>
+        <b style="color:${cor};">${fmtN(hist)}</b>
+      </div>` : ''}
+      <div style="display:flex;justify-content:space-between;font-size:11px;">
+        <span style="color:rgba(255,255,255,.6);">🎯 Meta 2026</span>
+        <b style="color:${cor};">${fmtN(meta)}</b>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;">
+        <span style="color:rgba(255,255,255,.6);">👥 Exp. Lideranças</span>
+        <b style="color:${cor};">${fmtN(lid)}</b>
+      </div>`
+      }).join('')}
+    </div>`
+  }
+
   html += `
   <div class="ci-total">
     <div class="ci-total-label">Total geral</div>
@@ -1951,6 +2044,7 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
     <div class="ci-total-sub">expectativa de votos</div>
     <div class="ci-total-divider"></div>
     <div class="ci-total-label">${escHome(String(candidatos.length))} campanha${candidatos.length !== 1 ? 's' : ''} ativa${candidatos.length !== 1 ? 's' : ''}</div>
+    ${regiaoBlock}
   </div>`
 
   body.innerHTML = html
