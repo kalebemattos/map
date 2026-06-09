@@ -1999,53 +1999,56 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
   // Bloco total — sempre global + painel regional (só para líderes de região)
   const fmtN = n => (n || 0).toLocaleString('pt-BR')
 
-  let regiaoBlock = ''
   if (dadosRegiao) {
+    // Líder de região: substitui "Total geral" por painel regional completo
     const dr = dadosRegiao
-    regiaoBlock = `
-    <div class="ci-total-divider"></div>
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.5);margin-bottom:6px;">
-      📍 ${escHome(dr.label)} · ${dr.nCidades} municípios
-    </div>
-    <div style="display:flex;flex-direction:column;gap:5px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
-        <span style="color:rgba(255,255,255,.7);">🗳️ Votos válidos 2024</span>
-        <b style="color:#fff;">${fmtN(dr.votosValidos)}</b>
+    html += `
+    <div class="ci-total">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:rgba(255,255,255,.5);margin-bottom:2px;">Sua Região</div>
+      <div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:1px;">${escHome(dr.label)}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.45);margin-bottom:10px;">${dr.nCidades} municípios</div>
+      <div class="ci-total-divider"></div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+          <span style="color:rgba(255,255,255,.65);">🗳️ Votos válidos 2024</span>
+          <b style="color:#fff;">${fmtN(dr.votosValidos)}</b>
+        </div>
+        ${candidatos.map(c => {
+          const hist = dr.votosHist[c.chave]
+          const meta = totaisRegiao ? (totaisRegiao[c.chave] || 0) : 0
+          const lid  = dr.expLid[c.chave] || 0
+          const cor  = escHome(c.cor_texto || '#fff')
+          const bg   = escHome(c.cor_fundo || 'rgba(255,255,255,.08)')
+          return `
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:7px 9px;margin-top:4px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:${cor};margin-bottom:5px;">${escHome(c.nome)}</div>
+          ${hist !== undefined ? `<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+            <span style="color:rgba(255,255,255,.55);">🗳️ Votos 2022</span>
+            <b style="color:#fff;">${fmtN(hist)}</b>
+          </div>` : ''}
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+            <span style="color:rgba(255,255,255,.55);">🎯 Meta 2026</span>
+            <b style="color:${cor};">${fmtN(meta)}</b>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;">
+            <span style="color:rgba(255,255,255,.55);">👥 Exp. Lideranças</span>
+            <b style="color:${cor};">${fmtN(lid)}</b>
+          </div>
+        </div>`
+        }).join('')}
       </div>
-      ${candidatos.map(c => {
-        const hist = dr.votosHist[c.chave]
-        const meta = totaisRegiao ? (totaisRegiao[c.chave] || 0) : 0
-        const lid  = dr.expLid[c.chave] || 0
-        const cor  = escHome(c.cor_texto || '#fff')
-        return `
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-top:2px;">
-        <span style="color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">${escHome(c.nome)}</span>
-      </div>
-      ${hist !== undefined ? `<div style="display:flex;justify-content:space-between;font-size:11px;">
-        <span style="color:rgba(255,255,255,.6);">🗳️ Votos 2022</span>
-        <b style="color:${cor};">${fmtN(hist)}</b>
-      </div>` : ''}
-      <div style="display:flex;justify-content:space-between;font-size:11px;">
-        <span style="color:rgba(255,255,255,.6);">🎯 Meta 2026</span>
-        <b style="color:${cor};">${fmtN(meta)}</b>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;">
-        <span style="color:rgba(255,255,255,.6);">👥 Exp. Lideranças</span>
-        <b style="color:${cor};">${fmtN(lid)}</b>
-      </div>`
-      }).join('')}
+    </div>`
+  } else {
+    // Usuário sem região: exibe total geral normal
+    html += `
+    <div class="ci-total">
+      <div class="ci-total-label">Total geral</div>
+      <div class="ci-total-value" id="ci-total-value">0</div>
+      <div class="ci-total-sub">expectativa de votos</div>
+      <div class="ci-total-divider"></div>
+      <div class="ci-total-label">${escHome(String(candidatos.length))} campanha${candidatos.length !== 1 ? 's' : ''} ativa${candidatos.length !== 1 ? 's' : ''}</div>
     </div>`
   }
-
-  html += `
-  <div class="ci-total">
-    <div class="ci-total-label">Total geral</div>
-    <div class="ci-total-value" id="ci-total-value">0</div>
-    <div class="ci-total-sub">expectativa de votos</div>
-    <div class="ci-total-divider"></div>
-    <div class="ci-total-label">${escHome(String(candidatos.length))} campanha${candidatos.length !== 1 ? 's' : ''} ativa${candidatos.length !== 1 ? 's' : ''}</div>
-    ${regiaoBlock}
-  </div>`
 
   body.innerHTML = html
 
@@ -2091,7 +2094,7 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
         }
       }
     })
-    animarContador('ci-total-value', totalGeral)
+    if (!dadosRegiao) animarContador('ci-total-value', totalGeral)
   })
 
   // Hora de atualização
