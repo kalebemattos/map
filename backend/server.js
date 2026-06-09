@@ -4332,16 +4332,22 @@ app.get('/api/turn-credentials', auth, async (req, res) => {
   const keyId = process.env.CF_TURN_KEY_ID;
   const token = process.env.CF_TURN_API_TOKEN;
 
+  // TURN via Open Relay Project (Metered.ca) — mais confiável que freestun.net
+  // Funciona em Android 4G/5G (NAT simétrico de operadoras) sem configuração extra.
+  const TURN_FALLBACK = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun.cloudflare.com:3478' },
+    // Open Relay Project — TURN público confiável (Metered.ca)
+    { urls: 'turn:openrelay.metered.ca:80',            username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443',           username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turns:openrelay.metered.ca:443',          username: 'openrelayproject', credential: 'openrelayproject' },
+  ];
+
   if (!keyId || !token) {
-    // Sem credenciais Cloudflare configuradas — usa STUN + TURN gratuitos como fallback.
-    // TURN é necessário para Android em 4G/5G (NAT simétrico de operadoras bloqueia STUN).
-    return res.json({ iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun.cloudflare.com:3478' },
-      { urls: 'turn:freestun.net:3479',  username: 'free', credential: 'free' },
-      { urls: 'turns:freestun.net:5350', username: 'free', credential: 'free' },
-    ]});
+    // Sem credenciais Cloudflare — usa fallback confiável
+    return res.json({ iceServers: TURN_FALLBACK });
   }
 
   try {
@@ -4359,23 +4365,29 @@ app.get('/api/turn-credentials', auth, async (req, res) => {
 
     if (!cfRes.ok) {
       const err = await cfRes.text();
-      console.error('[TURN] Cloudflare error:', cfRes.status, err);
-      return res.status(502).json({ error: 'Falha ao obter credenciais TURN' });
+      console.error('[TURN] Cloudflare error:', cfRes.status, '— usando fallback');
+      // Retorna 200 com fallback confiável em vez de 502
+      return res.json({ iceServers: TURN_FALLBACK, fonte: 'fallback' });
     }
 
     const data = await cfRes.json();
     // Cloudflare retorna iceServers como objeto único — precisa ser array para RTCPeerConnection
     const cfIce = data.iceServers;
+    if (!cfIce) {
+      console.warn('[TURN] CF retornou sem iceServers — usando fallback');
+      return res.json({ iceServers: TURN_FALLBACK, fonte: 'fallback' });
+    }
     const iceServers = [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun.cloudflare.com:3478' },
       ...(Array.isArray(cfIce) ? cfIce : [cfIce])
     ];
-    return res.json({ iceServers });
+    return res.json({ iceServers, fonte: 'cloudflare' });
 
   } catch (err) {
-    console.error('[TURN] Erro:', err);
-    return res.status(500).json({ error: 'Erro interno ao buscar TURN' });
+    console.error('[TURN] Erro ao buscar CF — usando fallback:', err.message);
+    // Nunca retorna erro para o cliente — sempre entrega servidores funcionais
+    return res.json({ iceServers: TURN_FALLBACK, fonte: 'fallback' });
   }
 });
 app.get('/api/ia/contexto', auth, withTenant, async (req, res) => {

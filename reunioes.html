@@ -638,15 +638,16 @@ const API_URL = 'https://map-backend-j88s.onrender.com';
 // ICE servers
 // ICE servers são obtidos dinamicamente do backend (Cloudflare TURN)
 // Este array é o fallback caso a requisição falhe
+// Fallback ICE — Open Relay Project (Metered.ca), muito mais confiável que freestun.net
+// Funciona em Android 4G/5G onde STUN puro não atravessa NAT simétrico de operadora
 const ICE_SERVERS_FALLBACK = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
   { urls: 'stun:stun.cloudflare.com:3478' },
-  // Servidores TURN gratuitos — necessários para Android em 4G / redes móveis
-  // (STUN sozinho não atravessa NAT simétrico de operadoras)
-  { urls: 'turn:freestun.net:3479',  username: 'free', credential: 'free' },
-  { urls: 'turns:freestun.net:5350', username: 'free', credential: 'free' },
+  { urls: 'turn:openrelay.metered.ca:80',                username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443',               username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turns:openrelay.metered.ca:443',              username: 'openrelayproject', credential: 'openrelayproject' },
 ];
 let _iceServersCache = null;
 let _iceServersCacheTs = 0;
@@ -846,8 +847,10 @@ function conectarSocket() {
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
       await flushIceCandidates(deId);
       const ans = await pc.createAnswer();
+      // Prefere VP8 — universalmente suportado no Android
+      ans.sdp = preferVP8(ans.sdp);
       await pc.setLocalDescription(ans);
-      socket.emit('answer', { paraId: deId, answer: ans });
+      socket.emit('answer', { paraId: deId, answer: pc.localDescription });
     } catch (e) {
       console.warn('offer handler error:', e);
     }
@@ -1361,28 +1364,61 @@ async function entrarSala(salaId, salaNome) {
   renderOnline();
 }
 
+/**
+ * Reordena o SDP para colocar VP8 como primeiro codec de vídeo.
+ * VP8 é universalmente suportado no Android (H.264 falha em alguns dispositivos).
+ */
+function preferVP8(sdp) {
+  const lines = sdp.split('\r\n');
+  let vp8Pt = [];
+  let inVideo = false;
+  // 1ª passagem: coleta payload types de VP8
+  for (const line of lines) {
+    if (line.startsWith('m=video')) { inVideo = true; continue; }
+    if (inVideo && line.startsWith('m=')) { inVideo = false; }
+    if (inVideo && /^a=rtpmap:\d+ VP8/i.test(line)) {
+      vp8Pt.push(line.match(/^a=rtpmap:(\d+)/)[1]);
+    }
+  }
+  if (!vp8Pt.length) return sdp;
+  // 2ª passagem: reordena a linha m=video para VP8 primeiro
+  return lines.map(line => {
+    if (!line.startsWith('m=video')) return line;
+    const parts = line.split(' ');
+    const hdr = parts.slice(0, 3);
+    const pts = parts.slice(3);
+    const outros = pts.filter(p => !vp8Pt.includes(p));
+    return [...hdr, ...vp8Pt, ...outros].join(' ');
+  }).join('\r\n');
+}
+
 async function criarPC(peerId, deveOfertar) {
   const iceServers = await getIceServers();
-  const pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 10 });
+  const pc = new RTCPeerConnection({
+    iceServers,
+    iceCandidatePoolSize: 10,
+    // bundlePolicy max-bundle: consolida audio+video em um único canal ICE
+    // (crítico para Android — reduz o número de candidatos necessários)
+    bundlePolicy: 'max-bundle',
+    rtcpMuxPolicy: 'require',
+  });
   peers[peerId] = pc;
   localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
   pc.ontrack = (e) => {
-    // Android Chrome recente passa e.streams=[] vazio — nunca ignorar o track
+    // Android Chrome passa e.streams=[] vazio — nunca ignorar o track
     let stream;
     if (e.streams && e.streams[0]) {
       stream = e.streams[0];
     } else {
-      // Cria/reutiliza uma MediaStream manual para este peer
       if (!peerStreams[peerId]) peerStreams[peerId] = new MediaStream();
       peerStreams[peerId].addTrack(e.track);
       stream = peerStreams[peerId];
     }
-
     peerStreams[peerId] = stream;
     adicionarThumb(peerId, peerNomes[peerId] || peerId, stream, false);
     atualizarContagem();
 
-    // Atualiza spotlight sempre que uma track chegar (audio ou video)
     if (spotlightPeerId === peerId) {
       const vid = document.getElementById('vc-bg');
       if (vid) setSrcAndPlay(vid, stream, { muted: false });
@@ -1390,23 +1426,53 @@ async function criarPC(peerId, deveOfertar) {
       renderSpotlight(peerId);
     }
   };
-  pc.onicecandidate = (e) => { if (e.candidate) socket.emit('ice-candidate', { paraId: peerId, candidate: e.candidate }); };
-  pc.oniceconnectionstatechange = () => {
-    console.log(`[ICE:${peerId.substr(0,8)}] ice=${pc.iceConnectionState} conn=${pc.connectionState}`);
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate) socket.emit('ice-candidate', { paraId: peerId, candidate: e.candidate });
   };
+
+  // ICE state change — detecta falha mais cedo que connectionState no Android
+  let _iceReconectou = false;
+  pc.oniceconnectionstatechange = () => {
+    const s = pc.iceConnectionState;
+    console.log(`[ICE:${peerId.substr(0,8)}] ice=${s} conn=${pc.connectionState}`);
+    if ((s === 'failed' || s === 'disconnected') && !_iceReconectou) {
+      _iceReconectou = true;
+      // Aguarda 1s antes de tentar — evita falso positivo em troca de candidatos
+      setTimeout(() => {
+        _iceReconectou = false;
+        if (pc.iceConnectionState !== 'connected' && pc.iceConnectionState !== 'completed') {
+          tentarReconexao(peerId, deveOfertar);
+        }
+      }, 1500);
+    }
+  };
+
   pc.onicegatheringstatechange = () => {
     console.log(`[ICE:${peerId.substr(0,8)}] gathering=${pc.iceGatheringState}`);
   };
+
   pc.onconnectionstatechange = () => {
-    if (pc.connectionState === 'connected') { if (qualidadeAtual !== 'good') aplicarQualidade(qualidadeAtual); }
-    if (pc.connectionState === 'disconnected') { notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>️ Conexão instável com ' + (peerNomes[peerId] || 'participante'), 'warn'); tentarReconexao(peerId, deveOfertar); }
-    if (pc.connectionState === 'failed') { notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Falha de conexão com ' + (peerNomes[peerId] || 'participante'), 'warn'); tentarReconexao(peerId, deveOfertar); }
-    if (pc.connectionState === 'closed') removerPeer(peerId);
+    const s = pc.connectionState;
+    console.log(`[CONN:${peerId.substr(0,8)}] state=${s}`);
+    if (s === 'connected') { if (qualidadeAtual !== 'good') aplicarQualidade(qualidadeAtual); }
+    if (s === 'disconnected') {
+      notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>️ Conexão instável com ' + (peerNomes[peerId] || 'participante'), 'warn');
+      tentarReconexao(peerId, deveOfertar);
+    }
+    if (s === 'failed') {
+      notif('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Falha de conexão com ' + (peerNomes[peerId] || 'participante'), 'warn');
+      tentarReconexao(peerId, deveOfertar);
+    }
+    if (s === 'closed') removerPeer(peerId);
   };
+
   if (deveOfertar) {
     const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+    // Prefere VP8 — universalmente suportado no Android
+    offer.sdp = preferVP8(offer.sdp);
     await pc.setLocalDescription(offer);
-    socket.emit('offer', { paraId: peerId, offer });
+    socket.emit('offer', { paraId: peerId, offer: pc.localDescription });
   }
   return pc;
 }
