@@ -1318,15 +1318,19 @@ async function salvarSistema() {
       body: JSON.stringify({ dados: sistema, cardSize: sistema.cardSize })
     });
     if (!res.ok) {
-      const msg = await res.json().then(d => d.error).catch(() => res.status);
-      throw new Error(msg);
+      let errMsg = `HTTP ${res.status}`;
+      try { const j = await res.json(); errMsg = j.error || errMsg; } catch {}
+      console.error('[salvar] servidor retornou:', res.status, errMsg);
+      throw new Error(`${res.status}: ${errMsg}`);
     }
     toast('✅ Organograma salvo!');
   } catch (err) {
-    console.error('[salvar]', err);
+    console.error('[salvar] erro completo:', err);
     // Fallback: salva localmente se API falhar
     try { localStorage.setItem('paralax_org_' + sistema.tenant_id, JSON.stringify(sistema)); } catch {}
-    toast('⚠️ Salvo localmente (sem conexão)');
+    // Toast mostra o código do erro para facilitar diagnóstico
+    const info = err.message?.startsWith('HTTP') || err.message?.match(/^\d{3}:/) ? err.message : 'sem conexão';
+    toast(`⚠️ Local (${info})`);
   }
 }
 
