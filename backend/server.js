@@ -4935,7 +4935,7 @@ app.put('/api/organograma', auth, withTenant, allow('dono', 'admin'), async (req
          card_size  = EXCLUDED.card_size,
          updated_at = NOW(),
          updated_by = EXCLUDED.updated_by`,
-      [req.tenantId, JSON.stringify(dados), cardSize || 200, req.user.id]
+      [req.tenantId, JSON.stringify(dados), cardSize || 200, String(req.user.id)]
     );
     res.json({ ok: true });
   } catch (err) {
@@ -5202,10 +5202,23 @@ server.listen(PORT, async () => {
         dados      JSONB   NOT NULL DEFAULT '{}',
         card_size  INTEGER NOT NULL DEFAULT 200,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_by INTEGER
+        updated_by TEXT
       )
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_organograma_tenant ON organograma(tenant_id)`);
+    // Migra coluna updated_by de INTEGER para TEXT caso já exista como INTEGER
+    await pool.query(`
+      DO $$ BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'organograma'
+            AND column_name = 'updated_by'
+            AND data_type = 'integer'
+        ) THEN
+          ALTER TABLE organograma ALTER COLUMN updated_by TYPE TEXT USING updated_by::TEXT;
+        END IF;
+      END $$;
+    `);
     console.log('[migration] organograma OK');
   } catch (e) {
     console.warn('[migration] organograma:', e.message);
