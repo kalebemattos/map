@@ -6,7 +6,6 @@
 <title>Paralax — Organograma Político</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  /* Heroicons helper */
   .hi { display:inline-block; vertical-align:middle; flex-shrink:0; }
   .hi-dot { display:inline-block; width:9px; height:9px; border-radius:50%; flex-shrink:0; vertical-align:middle; }
 :root {
@@ -37,6 +36,7 @@
   --shadow: 0 8px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
   --font-head: 'Sora', sans-serif;
   --font-body: 'DM Sans', sans-serif;
+  --slot-card-w: 200px;
 }
 
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
@@ -103,6 +103,29 @@ body {
   background-color:rgba(255,255,255,.07); border-radius:6px; padding:2px 10px;
 }
 .nav-actions { display:flex; gap:8px; align-items:center; }
+
+/* SIZE CONTROL */
+.size-control {
+  display:flex; align-items:center; gap:6px;
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+  border-radius:20px; padding:4px 10px 4px 8px;
+}
+.size-control-icon { font-size:13px; color:rgba(255,255,255,.5); user-select:none; }
+.size-slider {
+  -webkit-appearance:none; appearance:none;
+  width:80px; height:3px; border-radius:99px;
+  background:rgba(255,255,255,.18); outline:none; cursor:pointer;
+}
+.size-slider::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:13px; height:13px; border-radius:50%;
+  background:#60a5fa; cursor:pointer;
+  box-shadow:0 0 6px rgba(96,165,250,.6);
+}
+.size-slider::-moz-range-thumb {
+  width:13px; height:13px; border-radius:50%;
+  background:#60a5fa; cursor:pointer; border:none;
+}
 
 /* BUTTONS */
 .btn {
@@ -173,7 +196,6 @@ body {
   gap:14px;
 }
 
-/* Card da área */
 .area-card {
   background:rgba(8,22,58,.58); backdrop-filter:blur(18px);
   border:1px solid rgba(255,255,255,.12); border-radius:18px;
@@ -193,7 +215,6 @@ body {
 }
 .area-card:hover { border-color:rgba(96,165,250,.28); background:rgba(12,32,78,.65); transform:translateY(-2px); }
 
-/* Avatar / foto */
 .area-avatar-wrap { position:relative; margin-bottom:12px; }
 .area-avatar {
   width:64px; height:64px; border-radius:50%;
@@ -205,7 +226,6 @@ body {
 }
 .area-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
 
-/* Badge de área */
 .area-badge {
   font-size:9px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;
   padding:3px 10px; border-radius:var(--r-pill);
@@ -213,7 +233,6 @@ body {
   margin-bottom:8px; position:relative; z-index:1;
 }
 
-/* Campos de texto */
 .area-nome {
   font-family:var(--font-head); font-size:14px; font-weight:700;
   color:rgba(255,255,255,.97); outline:none; margin-bottom:3px;
@@ -234,7 +253,6 @@ body {
 }
 .area-funcao[contenteditable="true"]:focus { background:rgba(255,255,255,.04); border-radius:3px; padding:0 4px; font-style:normal; }
 
-/* Contato */
 .area-contato-row {
   display:flex; align-items:center; gap:5px;
   background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
@@ -249,7 +267,6 @@ body {
 }
 .area-contato:focus { color:rgba(255,255,255,.85); }
 
-/* Input de URL da foto (só em edição) */
 .area-foto-url {
   position:absolute; bottom:-28px; left:50%; transform:translateX(-50%);
   width:160px; background:rgba(7,14,30,.9); border:1px solid rgba(255,255,255,.15);
@@ -260,7 +277,6 @@ body {
 .area-card:hover .area-foto-url,
 .area-foto-url:focus { opacity:1; pointer-events:auto; }
 
-/* Botão remover */
 .area-remove {
   position:absolute; top:10px; right:10px;
   width:22px; height:22px; border-radius:50%;
@@ -271,7 +287,6 @@ body {
 }
 .area-card:hover .area-remove { opacity:1; }
 
-/* Card "adicionar área" */
 .area-add-card {
   background:transparent; border:1px dashed rgba(255,255,255,.16); border-radius:18px;
   padding:18px 16px; cursor:pointer; transition:all .2s;
@@ -318,46 +333,113 @@ body {
 
 /* SLOT GRID */
 .slots-grid { display:flex; gap:12px; flex-wrap:wrap; position:relative; z-index:1; }
+
+/* SLOT CARD — com foto, função, nome, 3 campos */
 .slot-card {
   background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
-  border-radius:16px; padding:16px 18px;
-  min-width:175px; flex:1; position:relative;
+  border-radius:16px; padding:16px 14px 14px;
+  width: var(--slot-card-w, 200px);
+  flex: 0 0 var(--slot-card-w, 200px);
+  position:relative;
   transition:transform .22s cubic-bezier(.34,1.56,.64,1), border-color .2s, background .2s, box-shadow .2s;
   animation:fadeUp .4s ease both;
+  text-align:center;
 }
 .slot-card:hover {
-  transform:translateY(-3px) scale(1.01); background:rgba(255,255,255,.07);
+  transform:translateY(-3px); background:rgba(255,255,255,.07);
   border-color:rgba(96,165,250,.28);
   box-shadow:0 12px 32px rgba(0,0,0,.35), 0 0 18px rgba(21,101,192,.1);
 }
-.slot-name { font-family:var(--font-head); font-size:14px; font-weight:700; color:rgba(255,255,255,.97); outline:none; display:block; }
-.slot-name[contenteditable="true"]:focus { background:rgba(255,255,255,.06); border-radius:3px; padding:0 4px; }
-.slot-resp { font-size:12px; color:rgba(255,255,255,.45); outline:none; display:block; margin-top:2px; }
-.slot-resp[contenteditable="true"]:focus { background:rgba(255,255,255,.05); border-radius:3px; }
-.slot-numbers { display:flex; gap:8px; margin-top:10px; }
+
+/* Foto */
+.slot-foto-wrap { display:flex; flex-direction:column; align-items:center; margin-bottom:10px; position:relative; }
+.slot-foto-circle {
+  width:64px; height:64px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-head); font-size:22px; font-weight:800; color:#fff;
+  border:2px solid rgba(255,255,255,.2);
+  overflow:hidden; flex-shrink:0;
+  box-shadow:0 4px 14px rgba(0,0,0,.4);
+  transition:border-color .2s, transform .15s;
+  cursor:default;
+}
+.slot-foto-circle img { width:100%; height:100%; object-fit:cover; display:block; }
+
+.slot-foto-input {
+  margin-top:6px;
+  width:100%; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+  border-radius:8px; padding:4px 8px; font-size:10px; color:rgba(255,255,255,.6);
+  font-family:var(--font-body); outline:none; text-align:center;
+  transition:all .15s;
+}
+.slot-foto-input:focus { border-color:rgba(96,165,250,.4); color:rgba(255,255,255,.85); background:rgba(21,101,192,.08); }
+.slot-foto-input::placeholder { color:rgba(255,255,255,.25); }
+
+/* Campos texto */
+.slot-funcao {
+  font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+  color:rgba(96,165,250,.75); outline:none; width:100%;
+  margin-bottom:4px; line-height:1.4;
+}
+.slot-funcao[contenteditable="true"]:focus {
+  background:rgba(255,255,255,.06); border-radius:3px; padding:1px 5px;
+  color:rgba(255,255,255,.85); text-transform:none; letter-spacing:0;
+}
+
+.slot-nome-pessoa {
+  font-family:var(--font-head); font-size:14px; font-weight:700;
+  color:rgba(255,255,255,.95); outline:none; width:100%;
+  margin-bottom:10px;
+}
+.slot-nome-pessoa[contenteditable="true"]:focus {
+  background:rgba(255,255,255,.06); border-radius:3px; padding:0 4px;
+}
+
+/* 3 campos numéricos */
+.slot-numbers { display:flex; gap:4px; margin-bottom:8px; }
 .slot-input-wrap { flex:1; display:flex; flex-direction:column; gap:2px; }
-.slot-input-label { font-size:9px; color:rgba(255,255,255,.3); text-transform:uppercase; letter-spacing:.1em; }
+.slot-input-label {
+  font-size:8px; color:rgba(255,255,255,.3); text-transform:uppercase;
+  letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
 .slot-input {
   background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
-  border-radius:8px; padding:5px 8px;
-  color:rgba(255,255,255,.9); font-family:var(--font-body); font-size:13px; font-weight:500;
-  width:100%; outline:none; transition:all .15s;
+  border-radius:7px; padding:5px 4px;
+  color:rgba(255,255,255,.9); font-family:var(--font-body); font-size:12px; font-weight:500;
+  width:100%; outline:none; transition:all .15s; text-align:center;
 }
 .slot-input:focus { border-color:rgba(96,165,250,.5); background:rgba(21,101,192,.08); }
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; }
 input[type=number] { -moz-appearance:textfield; }
-.slot-bar-wrap { margin-top:10px; }
+
+/* Barra de progresso */
+.slot-bar-wrap { margin-top:2px; }
 .slot-bar-bg { height:3px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; }
 .slot-bar-fill { height:100%; border-radius:99px; transition:width .4s ease, background .4s ease; }
 .slot-bar-pct { font-size:10px; text-align:right; margin-top:3px; font-variant-numeric:tabular-nums; }
+
+/* Botão remover */
 .slot-remove {
-  position:absolute; top:10px; right:10px;
+  position:absolute; top:8px; right:8px;
   width:20px; height:20px; border-radius:50%;
-  background:rgba(248,113,113,.15); color:#f87171; border:none; cursor:pointer; font-size:12px;
-  display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .15s;
+  background:rgba(248,113,113,.15); color:#f87171; border:none; cursor:pointer; font-size:11px;
+  display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .15s; z-index:2;
 }
 .slot-card:hover .slot-remove { opacity:1; }
+
+/* Card "adicionar" */
+.slot-add-card {
+  background:transparent; border:1px dashed rgba(255,255,255,.16); border-radius:16px;
+  padding:16px 14px; cursor:pointer; transition:all .2s;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px; min-height:220px;
+  color:rgba(255,255,255,.3); font-size:12px;
+  width: var(--slot-card-w, 200px);
+  flex: 0 0 var(--slot-card-w, 200px);
+}
+.slot-add-card:hover { border-color:rgba(96,165,250,.5); color:rgba(96,165,250,.8); background:rgba(21,101,192,.06); }
+.slot-add-card-icon { font-size:26px; opacity:.5; }
 
 /* LISTA */
 .lista-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:12px; position:relative; z-index:1; }
@@ -410,7 +492,7 @@ input[type=number] { -moz-appearance:textfield; }
   padding:10px 40px; display:flex; align-items:center; justify-content:space-between;
 }
 .totals-label { font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.3); }
-.totals-numbers { display:flex; gap:32px; }
+.totals-numbers { display:flex; gap:28px; }
 .total-item { display:flex; flex-direction:column; align-items:center; gap:1px; }
 .total-val  { font-family:var(--font-head); font-size:20px; font-weight:800; color:#60a5fa; }
 .total-key  { font-size:10px; color:rgba(255,255,255,.3); text-transform:uppercase; letter-spacing:.1em; }
@@ -438,6 +520,9 @@ body.view-only .edit-only { display:none !important; }
 body.view-only .slot-remove, body.view-only .lista-zona-remove, body.view-only .area-remove { display:none !important; }
 body.view-only .area-contato { pointer-events:none; }
 body.view-only .area-foto-url { display:none !important; }
+body.view-only .slot-foto-input { display:none !important; }
+body.view-only .slot-add-card { display:none !important; }
+body.view-only .size-control { display:none !important; }
 
 ::-webkit-scrollbar { width:5px; }
 ::-webkit-scrollbar-track { background:transparent; }
@@ -447,10 +532,12 @@ body.view-only .area-foto-url { display:none !important; }
   .top-nav { padding:14px 18px; }
   .nav-center { display:none; }
   .blocos-wrap,.add-bloco-row { padding-left:14px; padding-right:14px; }
-  .slots-grid { flex-direction:column; }
+  .slots-grid { flex-wrap:wrap; }
+  .slot-card,.slot-add-card { width:100% !important; flex:0 0 100% !important; }
   .lista-grid { grid-template-columns:1fr; }
-  .totals-numbers { gap:18px; }
+  .totals-numbers { gap:14px; }
   .total-val { font-size:16px; }
+  .size-control { display:none !important; }
 }
 </style>
 </head>
@@ -460,7 +547,7 @@ body.view-only .area-foto-url { display:none !important; }
 <div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(8,18,48,0.65);backdrop-filter:blur(8px);align-items:center;justify-content:center;z-index:9000;">
   <div style="width:360px;background:white;border-radius:22px;padding:36px 32px;box-shadow:0 30px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;gap:16px;animation:modalIn .25s cubic-bezier(0.34,1.56,0.64,1);">
     <div style="text-align:center;">
-      <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 10a48.36 48.36 0 0 0-7.5-.332V21m0 0h15M3 9h18"/></svg>️</div>
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;box-shadow:0 6px 18px rgba(21,101,192,0.4);">🏛️</div>
       <h2 style="margin:0;font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:#0f172a;">Organograma Político</h2>
       <p style="margin:6px 0 0;font-size:13px;color:#64748b;">Insira suas credenciais para continuar</p>
     </div>
@@ -490,7 +577,7 @@ body.view-only .area-foto-url { display:none !important; }
 
 <!-- ===== BLOCKER ===== -->
 <div id="blocker" style="position:fixed;inset:0;background:#071426;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:8000;">
-  <div style="font-size:36px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 10a48.36 48.36 0 0 0-7.5-.332V21m0 0h15M3 9h18"/></svg>️</div>
+  <div style="font-size:36px;">🏛️</div>
   <p style="margin:0;font-size:14px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando organograma...</p>
 </div>
 
@@ -502,12 +589,12 @@ body.view-only .area-foto-url { display:none !important; }
 <div class="orb orb-2" id="orb-2"></div>
 <div class="orb orb-3" id="orb-3"></div>
 
-<div class="toast" id="toast"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/></svg> <span id="toast-msg">Salvo!</span></div>
+<div class="toast" id="toast">⚡ <span id="toast-msg">Salvo!</span></div>
 
 <div id="app">
   <nav class="top-nav">
     <div class="nav-brand">
-      <div class="nav-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 10a48.36 48.36 0 0 0-7.5-.332V21m0 0h15M3 9h18"/></svg>️</div>
+      <div class="nav-logo">🏛️</div>
       <div class="nav-name">Paralax</div>
       <div class="nav-badge">Organograma</div>
     </div>
@@ -515,10 +602,15 @@ body.view-only .area-foto-url { display:none !important; }
       <div class="campaign-title" id="campaign-title" contenteditable="false" spellcheck="false">CAMPANHA 2026</div>
     </div>
     <div class="nav-actions">
+      <!-- Controle de tamanho dos cards -->
+      <div class="size-control edit-only" title="Tamanho dos cards de liderança">
+        <span class="size-control-icon">⊞</span>
+        <input type="range" class="size-slider" id="card-size-slider" min="160" max="380" value="200" step="10">
+      </div>
       <span id="user-chip" style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);padding:4px 12px;border-radius:20px;display:none;"></span>
       <span class="badge-role badge-viewer" id="role-badge">Carregando</span>
-      <button class="btn btn-ghost btn-sm edit-only" onclick="carregarSistema()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3"/></svg> Carregar</button>
-      <button class="btn btn-primary btn-sm edit-only" onclick="salvarSistema()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"/></svg> Salvar</button>
+      <button class="btn btn-ghost btn-sm edit-only" onclick="carregarSistema()">↓ Carregar</button>
+      <button class="btn btn-primary btn-sm edit-only" onclick="salvarSistema()">↑ Salvar</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()" title="Sair" style="color:rgba(255,255,255,.5);">Sair</button>
     </div>
   </nav>
@@ -553,7 +645,11 @@ body.view-only .area-foto-url { display:none !important; }
   <div class="totals-numbers">
     <div class="total-item">
       <div class="total-val" id="total-votos">0</div>
-      <div class="total-key">Total Votos</div>
+      <div class="total-key">V. Válidos</div>
+    </div>
+    <div class="total-item">
+      <div class="total-val" id="total-celia" style="color:#a78bfa;">0</div>
+      <div class="total-key">Célia '22</div>
     </div>
     <div class="total-item">
       <div class="total-val" id="total-meta" style="color:rgba(255,255,255,.35)">0</div>
@@ -571,23 +667,10 @@ body.view-only .area-foto-url { display:none !important; }
 <script>
 // ===== BOOT — definido ANTES do auth.js =====
 window.iniciarAplicacao = function () {
-  // Lê usuário do localStorage (salvo pelo auth.js no login)
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-  // Chip de usuário
   const chip = document.getElementById('user-chip');
-  if (chip && user.usuario) {
-    chip.textContent = user.usuario;
-    chip.style.display = 'inline-block';
-  }
-
-  // Define nível real a partir do JWT
+  if (chip && user.usuario) { chip.textContent = user.usuario; chip.style.display = 'inline-block'; }
   window.USUARIO_NIVEL = user.nivel || 'visualizador';
-
-  // Define tenant real a partir do tenant.js
-  // window.TENANT_ID já está definido por tenant.js (carregado antes)
-
-  // Inicia a aplicação do organograma
   init();
 };
 </script>
@@ -605,53 +688,59 @@ let sistema = {
   titulo: 'CAMPANHA 2026',
   coordenacao: 'Nome do Coordenador',
   areas: [],
-  blocos: []
+  blocos: [],
+  cardSize: 200
 };
 let podeEditar = false;
 
 function init() {
   const nivel = window.USUARIO_NIVEL || 'visualizador';
   sistema.tenant_id = window.TENANT_ID || 'default';
-
   podeEditar = nivel === 'dono' || nivel === 'admin';
 
-  // Badge de papel
   const badge = document.getElementById('role-badge');
   if (nivel === 'dono')        { badge.textContent = 'Dono';  badge.className = 'badge-role badge-dono'; }
   else if (nivel === 'admin')  { badge.textContent = 'Admin'; badge.className = 'badge-role badge-admin'; }
   else { badge.textContent = nivel || 'Visualizador'; badge.className = 'badge-role badge-viewer'; }
 
-  // Aplica modo visualização se não pode editar
   if (!podeEditar) document.body.classList.add('view-only');
 
-  // Tenta carregar do localStorage; se vazio, cria blocos demo
   const raw = localStorage.getItem('paralax_org_' + sistema.tenant_id);
   if (raw) {
     try {
       const saved = JSON.parse(raw);
       sistema = { ...sistema, ...saved, tenant_id: window.TENANT_ID || 'default' };
-      // Compatibilidade retroativa: áreas eram strings simples <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg> converte para objetos
+      // Retrocompat: áreas como strings
       if (Array.isArray(sistema.areas) && sistema.areas.length > 0 && typeof sistema.areas[0] === 'string') {
         sistema.areas = sistema.areas.map(nome => ({
           id: uid(), nome, responsavel: 'Responsável', funcao: 'Função na campanha', contato: '', foto: ''
         }));
       }
-      // Se não tem áreas depois do carregamento, cria as padrão
-      if (!sistema.areas || sistema.areas.length === 0) {
-        criarBlocosIniciais();
-      }
+      if (!sistema.areas || sistema.areas.length === 0) criarBlocosIniciais();
+      // Retrocompat: slots antigos (campos resp/votos → funcao/nome/votosValidos)
+      sistema.blocos.forEach(b => {
+        if (b.tipo === 'slot' && Array.isArray(b.slots)) {
+          b.slots.forEach(s => {
+            if (s.resp !== undefined && s.funcao === undefined) {
+              s.funcao = s.nome || 'Liderança';
+              s.nome   = s.resp || 'Responsável';
+              s.votosValidos = s.votos || 0;
+              if (s.votosCelia === undefined) s.votosCelia = 0;
+              delete s.resp;
+              delete s.votos;
+            }
+          });
+        }
+      });
     } catch { criarBlocosIniciais(); }
   } else {
     criarBlocosIniciais();
   }
 
-  // Habilita edição inline no título e coordenação apenas para quem pode editar
   const titleEl = document.getElementById('campaign-title');
   const coordEl = document.getElementById('coord-nome');
-
   titleEl.textContent = sistema.titulo;
   coordEl.textContent = sistema.coordenacao;
-
   if (podeEditar) {
     titleEl.setAttribute('contenteditable', 'true');
     coordEl.setAttribute('contenteditable', 'true');
@@ -659,37 +748,49 @@ function init() {
     coordEl.addEventListener('input', e => { sistema.coordenacao = e.target.textContent.trim(); });
   }
 
+  // Controle de tamanho dos cards
+  const slider = document.getElementById('card-size-slider');
+  if (slider) {
+    const w = sistema.cardSize || 200;
+    slider.value = w;
+    document.documentElement.style.setProperty('--slot-card-w', w + 'px');
+    slider.addEventListener('input', e => {
+      const v = parseInt(e.target.value);
+      sistema.cardSize = v;
+      document.documentElement.style.setProperty('--slot-card-w', v + 'px');
+    });
+  }
+
   renderAreas();
   renderTodosBlocos();
   atualizarTotais();
-
   setTimeout(() => document.querySelectorAll('.orb').forEach((o, i) => setTimeout(() => o.classList.add('visible'), i * 300)), 300);
 }
 
 function criarBlocosIniciais() {
   sistema.areas = [
-    { id: uid(), nome: 'Financeiro',   responsavel: 'Nome do Responsável', funcao: 'Gestão financeira e prestação de contas',       contato: '', foto: '' },
-    { id: uid(), nome: 'Comunicação',  responsavel: 'Nome do Responsável', funcao: 'Redes sociais, imprensa e material gráfico',     contato: '', foto: '' },
-    { id: uid(), nome: 'Jurídico',     responsavel: 'Nome do Responsável', funcao: 'Assessoria jurídica eleitoral e compliance',      contato: '', foto: '' },
-    { id: uid(), nome: 'Saúde',        responsavel: 'Nome do Responsável', funcao: 'Mobilização e eventos na área da saúde',          contato: '', foto: '' },
-    { id: uid(), nome: 'Educação',     responsavel: 'Nome do Responsável', funcao: 'Articulação com escolas e educadores',            contato: '', foto: '' },
-    { id: uid(), nome: 'Mobilização',  responsavel: 'Nome do Responsável', funcao: 'Coordenação de voluntários e ações de campo',     contato: '', foto: '' },
+    { id: uid(), nome: 'Financeiro',   responsavel: 'Nome do Responsável', funcao: 'Gestão financeira e prestação de contas',      contato: '', foto: '' },
+    { id: uid(), nome: 'Comunicação',  responsavel: 'Nome do Responsável', funcao: 'Redes sociais, imprensa e material gráfico',    contato: '', foto: '' },
+    { id: uid(), nome: 'Jurídico',     responsavel: 'Nome do Responsável', funcao: 'Assessoria jurídica eleitoral e compliance',     contato: '', foto: '' },
+    { id: uid(), nome: 'Saúde',        responsavel: 'Nome do Responsável', funcao: 'Mobilização e eventos na área da saúde',         contato: '', foto: '' },
+    { id: uid(), nome: 'Educação',     responsavel: 'Nome do Responsável', funcao: 'Articulação com escolas e educadores',           contato: '', foto: '' },
+    { id: uid(), nome: 'Mobilização',  responsavel: 'Nome do Responsável', funcao: 'Coordenação de voluntários e ações de campo',    contato: '', foto: '' },
   ];
   sistema.blocos = [
     { id: uid(), tipo: 'slot', titulo: 'Coordenação Municipal', slots: [
-      { id: uid(), nome: 'Zona Norte',  resp: 'Ricardo Almeida', votos: 1200, meta: 2000 },
-      { id: uid(), nome: 'Zona Sul',    resp: 'Fernanda Costa',  votos: 980,  meta: 1500 },
-      { id: uid(), nome: 'Zona Leste',  resp: 'Paulo Mendes',    votos: 740,  meta: 1200 },
-      { id: uid(), nome: 'Zona Oeste',  resp: 'Ana Souza',       votos: 620,  meta: 1000 },
-      { id: uid(), nome: 'Centro',      resp: 'Carlos Lima',     votos: 890,  meta: 1100 },
+      { id: uid(), funcao: 'Coord. Zona Norte',  nome: 'Ricardo Almeida', foto: '', votosValidos: 1200, votosCelia: 950,  meta: 2000 },
+      { id: uid(), funcao: 'Coord. Zona Sul',    nome: 'Fernanda Costa',  foto: '', votosValidos: 980,  votosCelia: 810,  meta: 1500 },
+      { id: uid(), funcao: 'Coord. Zona Leste',  nome: 'Paulo Mendes',    foto: '', votosValidos: 740,  votosCelia: 620,  meta: 1200 },
+      { id: uid(), funcao: 'Coord. Zona Oeste',  nome: 'Ana Souza',       foto: '', votosValidos: 620,  votosCelia: 500,  meta: 1000 },
+      { id: uid(), funcao: 'Coord. Centro',      nome: 'Carlos Lima',     foto: '', votosValidos: 890,  votosCelia: 730,  meta: 1100 },
     ]},
     { id: uid(), tipo: 'slot', titulo: 'Líderes Distritais', slots: [
-      { id: uid(), nome: 'Distrito 1', resp: 'Marcos Vieira',  votos: 310, meta: 500 },
-      { id: uid(), nome: 'Distrito 2', resp: 'Juliana Prado',  votos: 280, meta: 450 },
-      { id: uid(), nome: 'Distrito 3', resp: 'Diego Ramos',    votos: 195, meta: 400 },
-      { id: uid(), nome: 'Distrito 4', resp: 'Letícia Cunha',  votos: 420, meta: 600 },
-      { id: uid(), nome: 'Distrito 5', resp: 'Thiago Borges',  votos: 350, meta: 550 },
-      { id: uid(), nome: 'Distrito 6', resp: 'Camila Nunes',   votos: 270, meta: 480 },
+      { id: uid(), funcao: 'Líder Distrito 1', nome: 'Marcos Vieira',  foto: '', votosValidos: 310, votosCelia: 260, meta: 500 },
+      { id: uid(), funcao: 'Líder Distrito 2', nome: 'Juliana Prado',  foto: '', votosValidos: 280, votosCelia: 220, meta: 450 },
+      { id: uid(), funcao: 'Líder Distrito 3', nome: 'Diego Ramos',    foto: '', votosValidos: 195, votosCelia: 180, meta: 400 },
+      { id: uid(), funcao: 'Líder Distrito 4', nome: 'Letícia Cunha',  foto: '', votosValidos: 420, votosCelia: 360, meta: 600 },
+      { id: uid(), funcao: 'Líder Distrito 5', nome: 'Thiago Borges',  foto: '', votosValidos: 350, votosCelia: 300, meta: 550 },
+      { id: uid(), funcao: 'Líder Distrito 6', nome: 'Camila Nunes',   foto: '', votosValidos: 270, votosCelia: 230, meta: 480 },
     ]},
     { id: uid(), tipo: 'lista', titulo: 'Zonas & Bairros', zonas: [
       { id: uid(), nome: 'Zona 1 — Norte',  bairros: ['Bairro Alto','Vila Formosa','Jardim Esperança'], votos: 850, meta: 1200 },
@@ -711,15 +812,14 @@ function barColor(p) {
 }
 function pctColor(p) { if (p >= 80) return '#34d399'; if (p >= 50) return '#fbbf24'; return '#f87171'; }
 
-/* ── Paleta de cores dos avatares ── */
 const AREA_COLORS = ['#1a56db','#7c3aed','#059669','#dc2626','#d97706','#0891b2','#be185d','#0f766e','#4f46e5','#b45309'];
 function areaColor(idx) { return AREA_COLORS[idx % AREA_COLORS.length]; }
 
 function areaAvatarHTML(area, idx) {
-  if (area.foto && area.foto.trim()) {
-    return `<img src="${escOrg(area.foto)}" alt="${escOrg(area.responsavel)}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;">${escOrg((area.responsavel||'?')[0].toUpperCase())}</span>`;
-  }
   const ini = (area.responsavel || area.nome || '?')[0].toUpperCase();
+  if (area.foto && area.foto.trim()) {
+    return `<img src="${escOrg(area.foto)}" alt="${escOrg(area.responsavel)}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;">${ini}</span>`;
+  }
   return `<span>${ini}</span>`;
 }
 
@@ -727,93 +827,56 @@ function areaAvatarHTML(area, idx) {
 function renderAreas() {
   const grid = document.getElementById('areas-grid');
   grid.innerHTML = '';
-
   sistema.areas.forEach((area, i) => {
     const cor = areaColor(i);
     const card = document.createElement('div');
     card.className = 'area-card';
     card.id = 'area-card-' + (area.id || i);
-
     card.innerHTML = `
-      ${podeEditar ? `<button class="area-remove edit-only" onclick="removerArea(${i})" title="Remover área"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>` : ''}
-
+      ${podeEditar ? `<button class="area-remove edit-only" onclick="removerArea(${i})" title="Remover área">✕</button>` : ''}
       <div class="area-avatar-wrap">
         <div class="area-avatar" style="background:${cor};">
           ${areaAvatarHTML(area, i)}
         </div>
         ${podeEditar ? `<input type="text" class="area-foto-url edit-only" placeholder="URL da foto..." value="${escOrg(area.foto||'')}" data-area-idx="${i}">` : ''}
       </div>
-
       <div class="area-badge">${escOrg(area.nome)}</div>
-
-      <div class="area-nome"
-           ${podeEditar ? 'contenteditable="true"' : ''}
-           spellcheck="false"
-           data-field="nome" data-area-idx="${i}">${escOrg(area.nome)}</div>
-
-      <div class="area-responsavel"
-           ${podeEditar ? 'contenteditable="true"' : ''}
-           spellcheck="false"
-           data-field="responsavel" data-area-idx="${i}">${escOrg(area.responsavel||'Responsável')}</div>
-
-      <div class="area-funcao"
-           ${podeEditar ? 'contenteditable="true"' : ''}
-           spellcheck="false"
-           data-field="funcao" data-area-idx="${i}">${escOrg(area.funcao||'Função na campanha')}</div>
-
+      <div class="area-nome" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false" data-field="nome" data-area-idx="${i}">${escOrg(area.nome)}</div>
+      <div class="area-responsavel" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false" data-field="responsavel" data-area-idx="${i}">${escOrg(area.responsavel||'Responsável')}</div>
+      <div class="area-funcao" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false" data-field="funcao" data-area-idx="${i}">${escOrg(area.funcao||'Função na campanha')}</div>
       <div class="area-contato-row">
-        <span class="area-contato-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.338c0 5.033 2.952 9.367 7.222 11.437m0 0c.16.072.322.141.485.207m-.485-.207-.007-.003m.007.003.007.003M9.472 17.775c.507-.226 1.01-.46 1.511-.7A8.952 8.952 0 0 1 12 16.5c.628 0 1.235.08 1.812.23m-5.34 1.045c.149-.066.298-.135.448-.205m5.34-1.045a8.965 8.965 0 0 0 2.525-1.756M9.472 17.775c-.507.227-1.01.46-1.51.7m0 0c-.507.226-1.01.46-1.51.7m3.02-1.4a9.014 9.014 0 0 1-1.509.7"/></svg></span>
-        <input type="text" class="area-contato"
-               placeholder="Contato / WhatsApp"
-               value="${escOrg(area.contato||'')}"
-               ${!podeEditar ? 'readonly' : ''}
-               data-area-idx="${i}">
+        <span class="area-contato-icon">📱</span>
+        <input type="text" class="area-contato" placeholder="Contato / WhatsApp" value="${escOrg(area.contato||'')}" ${!podeEditar ? 'readonly' : ''} data-area-idx="${i}">
       </div>
     `;
-
-    // Listeners para campos contenteditable
     card.querySelectorAll('[contenteditable="true"][data-field]').forEach(el => {
       el.addEventListener('input', e => {
         const idx  = parseInt(e.target.dataset.areaIdx);
         const field = e.target.dataset.field;
         sistema.areas[idx][field] = e.target.textContent.trim();
-        // Atualiza o badge se o nome mudou
         if (field === 'nome') {
           const badgeEl = card.querySelector('.area-badge');
           if (badgeEl) badgeEl.textContent = e.target.textContent.trim();
         }
-        // Atualiza a inicial do avatar se o responsavel mudou
-        if (field === 'responsavel' && (!sistema.areas[idx].foto)) {
+        if (field === 'responsavel' && !sistema.areas[idx].foto) {
           const av = card.querySelector('.area-avatar span');
           if (av) av.textContent = (e.target.textContent.trim() || '?')[0].toUpperCase();
         }
       });
     });
-
-    // Listener para input de contato
     const contatoInput = card.querySelector('.area-contato');
-    if (contatoInput) {
-      contatoInput.addEventListener('input', e => {
-        sistema.areas[parseInt(e.target.dataset.areaIdx)].contato = e.target.value;
-      });
-    }
-
-    // Listener para URL da foto
+    if (contatoInput) contatoInput.addEventListener('input', e => { sistema.areas[parseInt(e.target.dataset.areaIdx)].contato = e.target.value; });
     const fotoInput = card.querySelector('.area-foto-url');
     if (fotoInput) {
       fotoInput.addEventListener('input', e => {
         const idx = parseInt(e.target.dataset.areaIdx);
         sistema.areas[idx].foto = e.target.value.trim();
-        // Re-renderiza só o avatar
         const av = card.querySelector('.area-avatar');
         if (av) av.innerHTML = areaAvatarHTML(sistema.areas[idx], idx);
       });
     }
-
     grid.appendChild(card);
   });
-
-  // Botão "adicionar área" (só em modo edição)
   if (podeEditar) {
     const addCard = document.createElement('div');
     addCard.className = 'area-add-card edit-only';
@@ -857,12 +920,10 @@ function renderBloco(bloco) {
       </div>
       ${podeEditar ? `<div class="bloco-actions edit-only">
         <button class="btn btn-ghost btn-sm" onclick="duplicarBloco('${bloco.id}')">⧉ Duplicar</button>
-        <button class="btn btn-danger btn-sm" onclick="removerBloco('${bloco.id}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>
+        <button class="btn btn-danger btn-sm" onclick="removerBloco('${bloco.id}')">✕ Remover</button>
       </div>` : ''}
     </div>
     <div id="body-${bloco.id}"></div>
-    ${podeEditar && tipo === 'slot'  ? `<div style="margin-top:12px;position:relative;z-index:1"><button class="btn btn-ghost btn-sm edit-only" onclick="adicionarSlot('${bloco.id}')">＋ Slot</button></div>` : ''}
-    ${podeEditar && tipo === 'lista' ? `<div style="margin-top:12px;position:relative;z-index:1"><button class="btn btn-ghost btn-sm edit-only" onclick="adicionarZona('${bloco.id}')">＋ Zona</button></div>` : ''}
   `;
   div.querySelector('.bloco-title')?.addEventListener('input', e => { bloco.titulo = e.target.textContent.trim(); });
   const body = div.querySelector(`#body-${bloco.id}`);
@@ -871,59 +932,146 @@ function renderBloco(bloco) {
   return div;
 }
 
-/* ── Slots ── */
+/* ── Slots (cards de pessoa) ── */
+const SLOT_COLORS = ['#1a56db','#7c3aed','#059669','#0891b2','#d97706','#dc2626','#be185d','#0f766e','#4f46e5','#b45309'];
+function slotColor(idx) { return SLOT_COLORS[idx % SLOT_COLORS.length]; }
+
+function buildFotoCircle(slot) {
+  if (slot.foto && slot.foto.trim()) {
+    return `<img src="${escOrg(slot.foto)}" alt="${escOrg(slot.nome)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:22px;font-weight:800;">${escOrg((slot.nome||'?')[0].toUpperCase())}</span>`;
+  }
+  return `<span style="font-size:22px;font-weight:800;">${escOrg((slot.nome||'?')[0].toUpperCase())}</span>`;
+}
+
 function renderSlotsGrid(container, bloco) {
   container.innerHTML = '';
   const grid = document.createElement('div');
   grid.className = 'slots-grid';
-  (bloco.slots || []).forEach(slot => {
-    const p = pct(slot.votos, slot.meta);
+
+  (bloco.slots || []).forEach((slot, si) => {
+    const p   = pct(slot.votosValidos, slot.meta);
+    const cor = slotColor(si);
     const card = document.createElement('div');
     card.className = 'slot-card';
     card.id = 'slot-' + slot.id;
+
     card.innerHTML = `
-      ${podeEditar ? `<button class="slot-remove edit-only" onclick="removerSlot('${bloco.id}','${slot.id}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>` : ''}
-      <span class="slot-name" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${slot.nome}</span>
-      <span class="slot-resp" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${slot.resp}</span>
+      ${podeEditar ? `<button class="slot-remove edit-only" onclick="removerSlot('${bloco.id}','${slot.id}')">✕</button>` : ''}
+
+      <div class="slot-foto-wrap">
+        <div class="slot-foto-circle" style="background:${cor};">${buildFotoCircle(slot)}</div>
+        ${podeEditar
+          ? `<input type="text" class="slot-foto-input edit-only" placeholder="Cole URL da foto aqui..." value="${escOrg(slot.foto||'')}" data-slot-id="${slot.id}">`
+          : ''}
+      </div>
+
+      <div class="slot-funcao"
+           ${podeEditar ? 'contenteditable="true"' : ''}
+           spellcheck="false"
+           data-field="funcao" data-slot-id="${slot.id}">${escOrg(slot.funcao||'Função / Cargo')}</div>
+
+      <div class="slot-nome-pessoa"
+           ${podeEditar ? 'contenteditable="true"' : ''}
+           spellcheck="false"
+           data-field="nome" data-slot-id="${slot.id}">${escOrg(slot.nome||'Nome da Pessoa')}</div>
+
       <div class="slot-numbers">
-        <div class="slot-input-wrap"><span class="slot-input-label">Votos</span>
-          <input class="slot-input" type="number" value="${slot.votos}" ${!podeEditar ? 'readonly' : ''} data-field="votos" data-bloco="${bloco.id}" data-slot="${slot.id}">
+        <div class="slot-input-wrap">
+          <span class="slot-input-label">V. Válidos</span>
+          <input class="slot-input" type="number" value="${slot.votosValidos||0}"
+                 ${!podeEditar ? 'readonly' : ''}
+                 data-field="votosValidos" data-bloco="${bloco.id}" data-slot="${slot.id}">
         </div>
-        <div class="slot-input-wrap"><span class="slot-input-label">Meta</span>
-          <input class="slot-input" type="number" value="${slot.meta}" ${!podeEditar ? 'readonly' : ''} data-field="meta" data-bloco="${bloco.id}" data-slot="${slot.id}">
+        <div class="slot-input-wrap">
+          <span class="slot-input-label">Célia '22</span>
+          <input class="slot-input" type="number" value="${slot.votosCelia||0}"
+                 ${!podeEditar ? 'readonly' : ''}
+                 data-field="votosCelia" data-bloco="${bloco.id}" data-slot="${slot.id}">
+        </div>
+        <div class="slot-input-wrap">
+          <span class="slot-input-label">Meta</span>
+          <input class="slot-input" type="number" value="${slot.meta||0}"
+                 ${!podeEditar ? 'readonly' : ''}
+                 data-field="meta" data-bloco="${bloco.id}" data-slot="${slot.id}">
         </div>
       </div>
+
       <div class="slot-bar-wrap">
         <div class="slot-bar-bg"><div class="slot-bar-fill" style="width:${p}%;background:${barColor(p)}"></div></div>
         <div class="slot-bar-pct" style="color:${pctColor(p)}">${p}%</div>
-      </div>`;
+      </div>
+    `;
+
+    // Campos de texto editáveis
+    card.querySelectorAll('[contenteditable="true"][data-field]').forEach(el => {
+      el.addEventListener('input', e => {
+        const f   = e.target.dataset.field;
+        const sid = e.target.dataset.slotId;
+        const s   = (bloco.slots||[]).find(s => s.id === sid);
+        if (!s) return;
+        s[f] = e.target.textContent.trim();
+        // Atualiza inicial do avatar se o nome mudou e não há foto
+        if (f === 'nome' && !s.foto) {
+          const circle = card.querySelector('.slot-foto-circle');
+          const span   = circle?.querySelector('span');
+          if (span) span.textContent = (s.nome||'?')[0].toUpperCase();
+        }
+      });
+    });
+
+    // Inputs numéricos
     card.querySelectorAll('.slot-input').forEach(inp => inp.addEventListener('input', e => {
-      slot[e.target.dataset.field] = parseInt(e.target.value) || 0;
-      atualizarBarraSlot(bloco.id, slot.id);
+      const sid = e.target.dataset.slot;
+      const s   = (bloco.slots||[]).find(s => s.id === sid);
+      if (!s) return;
+      s[e.target.dataset.field] = parseInt(e.target.value) || 0;
+      atualizarBarraSlot(bloco.id, sid);
       atualizarTotais();
     }));
-    card.querySelector('.slot-name')?.addEventListener('input', e => { slot.nome = e.target.textContent.trim(); });
-    card.querySelector('.slot-resp')?.addEventListener('input', e => { slot.resp = e.target.textContent.trim(); });
+
+    // URL da foto
+    const fotoInput = card.querySelector('.slot-foto-input');
+    if (fotoInput) {
+      fotoInput.addEventListener('input', e => {
+        const sid = e.target.dataset.slotId;
+        const s   = (bloco.slots||[]).find(s => s.id === sid);
+        if (!s) return;
+        s.foto = e.target.value.trim();
+        const circle = card.querySelector('.slot-foto-circle');
+        if (circle) circle.innerHTML = buildFotoCircle(s);
+      });
+    }
+
     grid.appendChild(card);
   });
+
+  // Card "Adicionar"
+  if (podeEditar) {
+    const addCard = document.createElement('div');
+    addCard.className = 'slot-add-card edit-only';
+    addCard.innerHTML = `<div class="slot-add-card-icon">＋</div><div>Adicionar Card</div>`;
+    addCard.onclick = () => adicionarSlot(bloco.id);
+    grid.appendChild(addCard);
+  }
+
   container.appendChild(grid);
 }
 
 function atualizarBarraSlot(bId, sId) {
-  const b = sistema.blocos.find(b => b.id === bId);
-  const s = (b?.slots || []).find(s => s.id === sId);
+  const b    = sistema.blocos.find(b => b.id === bId);
+  const s    = (b?.slots || []).find(s => s.id === sId);
   const card = document.getElementById('slot-' + sId);
   if (!s || !card) return;
-  const p = pct(s.votos, s.meta);
-  card.querySelector('.slot-bar-fill').style.width = p + '%';
-  card.querySelector('.slot-bar-fill').style.background = barColor(p);
-  card.querySelector('.slot-bar-pct').textContent = p + '%';
-  card.querySelector('.slot-bar-pct').style.color = pctColor(p);
+  const p    = pct(s.votosValidos, s.meta);
+  const fill = card.querySelector('.slot-bar-fill');
+  const pctEl= card.querySelector('.slot-bar-pct');
+  if (fill)  { fill.style.width = p + '%'; fill.style.background = barColor(p); }
+  if (pctEl) { pctEl.textContent = p + '%'; pctEl.style.color = pctColor(p); }
 }
 
 function adicionarSlot(bId) {
   const b = sistema.blocos.find(b => b.id === bId); if (!b) return;
-  b.slots.push({ id: uid(), nome: 'Novo Slot', resp: 'Responsável', votos: 0, meta: 300 });
+  b.slots.push({ id: uid(), funcao: 'Função / Cargo', nome: 'Nova Pessoa', foto: '', votosValidos: 0, votosCelia: 0, meta: 300 });
   renderSlotsGrid(document.getElementById('body-' + bId), b);
   atualizarTotais();
 }
@@ -946,7 +1094,7 @@ function renderListaGrid(container, bloco) {
     card.innerHTML = `
       <div class="lista-card-header">
         <span class="lista-zona-name" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${zona.nome}</span>
-        ${podeEditar ? `<button class="btn btn-danger btn-sm lista-zona-remove edit-only" onclick="removerZona('${bloco.id}','${zona.id}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>` : ''}
+        ${podeEditar ? `<button class="btn btn-danger btn-sm lista-zona-remove edit-only" onclick="removerZona('${bloco.id}','${zona.id}')">✕</button>` : ''}
       </div>
       <div class="lista-items" id="items-${zona.id}"></div>
       ${podeEditar ? `<button class="lista-add-bairro edit-only" onclick="adicionarBairro('${bloco.id}','${zona.id}')">+ bairro</button>` : ''}
@@ -984,7 +1132,7 @@ function renderBairros(container, bloco, zona) {
     const item = document.createElement('div');
     item.className = 'lista-item';
     item.innerHTML = `<span class="lista-item-text" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${b}</span>` +
-      (podeEditar ? `<button class="lista-item-del edit-only" onclick="removerBairro('${bloco.id}','${zona.id}',${bi})"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>` : '');
+      (podeEditar ? `<button class="lista-item-del edit-only" onclick="removerBairro('${bloco.id}','${zona.id}',${bi})">✕</button>` : '');
     item.querySelector('.lista-item-text')?.addEventListener('input', e => { zona.bairros[bi] = e.target.textContent.trim(); });
     container.appendChild(item);
   });
@@ -1022,7 +1170,7 @@ function adicionarBloco(tipo) {
   const novo = {
     id: uid(), tipo,
     titulo: tipo === 'slot' ? 'Novo Bloco de Lideranças' : 'Novo Bloco de Zonas',
-    slots: tipo === 'slot'  ? [{ id: uid(), nome: 'Slot 1', resp: 'Responsável', votos: 0, meta: 300 }] : undefined,
+    slots: tipo === 'slot'  ? [{ id: uid(), funcao: 'Função / Cargo', nome: 'Nova Pessoa', foto: '', votosValidos: 0, votosCelia: 0, meta: 300 }] : undefined,
     zonas: tipo === 'lista' ? [{ id: uid(), nome: 'Zona 1', bairros: ['Bairro A'], votos: 0, meta: 200 }] : undefined
   };
   sistema.blocos.push(novo);
@@ -1050,14 +1198,15 @@ function duplicarBloco(id) {
 
 /* ── Totais ── */
 function atualizarTotais() {
-  let tv = 0, tm = 0;
+  let tv = 0, tc = 0, tm = 0;
   sistema.blocos.forEach(b => {
-    if (b.tipo === 'slot')  (b.slots || []).forEach(s => { tv += s.votos || 0; tm += s.meta || 0; });
+    if (b.tipo === 'slot')  (b.slots || []).forEach(s => { tv += s.votosValidos || 0; tc += s.votosCelia || 0; tm += s.meta || 0; });
     if (b.tipo === 'lista') (b.zonas || []).forEach(z => { tv += z.votos || 0; tm += z.meta || 0; });
   });
   const p = pct(tv, tm);
   document.getElementById('total-votos').textContent = tv.toLocaleString('pt-BR');
-  document.getElementById('total-meta').textContent  = tm.toLocaleString('pt-BR');
+  document.getElementById('total-celia').textContent  = tc.toLocaleString('pt-BR');
+  document.getElementById('total-meta').textContent   = tm.toLocaleString('pt-BR');
   const pEl = document.getElementById('total-pct');
   pEl.textContent = p + '%';
   pEl.style.color = pctColor(p);
@@ -1065,12 +1214,13 @@ function atualizarTotais() {
 
 /* ── Salvar / Carregar ── */
 function salvarSistema() {
-  sistema.titulo       = document.getElementById('campaign-title').textContent.trim();
-  sistema.coordenacao  = document.getElementById('coord-nome').textContent.trim();
+  sistema.titulo      = document.getElementById('campaign-title').textContent.trim();
+  sistema.coordenacao = document.getElementById('coord-nome').textContent.trim();
+  sistema.cardSize    = parseInt(document.getElementById('card-size-slider')?.value || 200);
   try {
     localStorage.setItem('paralax_org_' + sistema.tenant_id, JSON.stringify(sistema));
   } catch {}
-  toast('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Organograma salvo!');
+  toast('✅ Organograma salvo!');
 }
 
 function carregarSistema() {
@@ -1081,15 +1231,19 @@ function carregarSistema() {
       sistema = { ...sistema, ...saved, tenant_id: sistema.tenant_id };
       document.getElementById('campaign-title').textContent = sistema.titulo;
       document.getElementById('coord-nome').textContent     = sistema.coordenacao;
+      const w = sistema.cardSize || 200;
+      const slider = document.getElementById('card-size-slider');
+      if (slider) slider.value = w;
+      document.documentElement.style.setProperty('--slot-card-w', w + 'px');
       renderAreas();
       renderTodosBlocos();
       atualizarTotais();
-      toast('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"/></svg> Carregado com sucesso!');
+      toast('📂 Carregado com sucesso!');
     } else {
-      toast('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>️ Nenhum dado salvo.');
+      toast('⚠️ Nenhum dado salvo.');
     }
   } catch {
-    toast('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Erro ao carregar.');
+    toast('❌ Erro ao carregar.');
   }
 }
 
