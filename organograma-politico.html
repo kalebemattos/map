@@ -221,17 +221,22 @@ body {
   display:flex; align-items:center; justify-content:center;
   font-family:var(--font-head); font-size:22px; font-weight:800; color:#fff;
   border:2px solid rgba(255,255,255,.18);
-  overflow:hidden; flex-shrink:0;
+  overflow:hidden; flex-shrink:0; position:relative;
   box-shadow:0 4px 14px rgba(0,0,0,.4);
+  transition:border-color .2s;
 }
 .area-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.area-avatar-edit .area-avatar { cursor:pointer; }
+.area-avatar-edit .area-avatar:hover { border-color:rgba(96,165,250,.6); }
 
-.area-badge {
-  font-size:9px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;
-  padding:3px 10px; border-radius:var(--r-pill);
-  background:rgba(var(--c-blue),.18); color:#60a5fa; border:1px solid rgba(var(--c-blue),.28);
-  margin-bottom:8px; position:relative; z-index:1;
+/* Overlay câmera ao passar o mouse (modo edição) */
+.area-foto-overlay {
+  position:absolute; inset:0; background:rgba(0,0,0,.52);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; opacity:0; transition:opacity .18s; pointer-events:none;
+  border-radius:50%;
 }
+.area-avatar-edit .area-avatar:hover .area-foto-overlay { opacity:1; }
 
 .area-nome {
   font-family:var(--font-head); font-size:14px; font-weight:700;
@@ -267,13 +272,8 @@ body {
 }
 .area-contato:focus { color:rgba(255,255,255,.85); }
 
-.area-foto-url {
-  position:absolute; bottom:-28px; left:50%; transform:translateX(-50%);
-  width:160px; background:rgba(7,14,30,.9); border:1px solid rgba(255,255,255,.15);
-  border-radius:8px; padding:4px 8px; font-size:10px; color:rgba(255,255,255,.6);
-  font-family:var(--font-body); outline:none; text-align:center; opacity:0;
-  transition:opacity .2s; pointer-events:none;
-}
+/* slot legado — não usado mais */
+.area-foto-url { display:none; }
 .area-card:hover .area-foto-url,
 .area-foto-url:focus { opacity:1; pointer-events:auto; }
 
@@ -358,22 +358,22 @@ body {
   display:flex; align-items:center; justify-content:center;
   font-family:var(--font-head); font-size:22px; font-weight:800; color:#fff;
   border:2px solid rgba(255,255,255,.2);
-  overflow:hidden; flex-shrink:0;
+  overflow:hidden; flex-shrink:0; position:relative;
   box-shadow:0 4px 14px rgba(0,0,0,.4);
   transition:border-color .2s, transform .15s;
-  cursor:default;
 }
 .slot-foto-circle img { width:100%; height:100%; object-fit:cover; display:block; }
+.slot-foto-circle.slot-foto-edit { cursor:pointer; }
+.slot-foto-circle.slot-foto-edit:hover { border-color:rgba(96,165,250,.6); }
 
-.slot-foto-input {
-  margin-top:6px;
-  width:100%; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
-  border-radius:8px; padding:4px 8px; font-size:10px; color:rgba(255,255,255,.6);
-  font-family:var(--font-body); outline:none; text-align:center;
-  transition:all .15s;
+/* Overlay câmera no slot */
+.slot-foto-cam-overlay {
+  position:absolute; inset:0; background:rgba(0,0,0,.52);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; opacity:0; transition:opacity .18s; pointer-events:none;
+  border-radius:50%;
 }
-.slot-foto-input:focus { border-color:rgba(96,165,250,.4); color:rgba(255,255,255,.85); background:rgba(21,101,192,.08); }
-.slot-foto-input::placeholder { color:rgba(255,255,255,.25); }
+.slot-foto-edit:hover .slot-foto-cam-overlay { opacity:1; }
 
 /* Campos texto */
 .slot-funcao {
@@ -520,7 +520,8 @@ body.view-only .edit-only { display:none !important; }
 body.view-only .slot-remove, body.view-only .lista-zona-remove, body.view-only .area-remove { display:none !important; }
 body.view-only .area-contato { pointer-events:none; }
 body.view-only .area-foto-url { display:none !important; }
-body.view-only .slot-foto-input { display:none !important; }
+body.view-only .slot-foto-file { display:none !important; }
+body.view-only .area-foto-file { display:none !important; }
 body.view-only .slot-add-card { display:none !important; }
 body.view-only .size-control { display:none !important; }
 
@@ -834,13 +835,13 @@ function renderAreas() {
     card.id = 'area-card-' + (area.id || i);
     card.innerHTML = `
       ${podeEditar ? `<button class="area-remove edit-only" onclick="removerArea(${i})" title="Remover área">✕</button>` : ''}
-      <div class="area-avatar-wrap">
+      <div class="area-avatar-wrap${podeEditar ? ' area-avatar-edit' : ''}">
         <div class="area-avatar" style="background:${cor};">
           ${areaAvatarHTML(area, i)}
+          ${podeEditar ? `<div class="area-foto-overlay edit-only">📷</div>` : ''}
         </div>
-        ${podeEditar ? `<input type="text" class="area-foto-url edit-only" placeholder="URL da foto..." value="${escOrg(area.foto||'')}" data-area-idx="${i}">` : ''}
+        ${podeEditar ? `<input type="file" accept="image/*" class="area-foto-file edit-only" style="display:none;" data-area-idx="${i}">` : ''}
       </div>
-      <div class="area-badge">${escOrg(area.nome)}</div>
       <div class="area-nome" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false" data-field="nome" data-area-idx="${i}">${escOrg(area.nome)}</div>
       <div class="area-responsavel" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false" data-field="responsavel" data-area-idx="${i}">${escOrg(area.responsavel||'Responsável')}</div>
       <div class="area-funcao" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false" data-field="funcao" data-area-idx="${i}">${escOrg(area.funcao||'Função na campanha')}</div>
@@ -866,15 +867,32 @@ function renderAreas() {
     });
     const contatoInput = card.querySelector('.area-contato');
     if (contatoInput) contatoInput.addEventListener('input', e => { sistema.areas[parseInt(e.target.dataset.areaIdx)].contato = e.target.value; });
-    const fotoInput = card.querySelector('.area-foto-url');
-    if (fotoInput) {
-      fotoInput.addEventListener('input', e => {
+
+    // Upload de foto do dispositivo
+    const fileInput = card.querySelector('.area-foto-file');
+    if (fileInput && podeEditar) {
+      // Clique no avatar abre o seletor de arquivo
+      const avatarEl = card.querySelector('.area-avatar');
+      if (avatarEl) avatarEl.addEventListener('click', () => fileInput.click());
+
+      fileInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
         const idx = parseInt(e.target.dataset.areaIdx);
-        sistema.areas[idx].foto = e.target.value.trim();
-        const av = card.querySelector('.area-avatar');
-        if (av) av.innerHTML = areaAvatarHTML(sistema.areas[idx], idx);
+        const reader = new FileReader();
+        reader.onload = ev => {
+          sistema.areas[idx].foto = ev.target.result; // base64 data URL
+          const av = card.querySelector('.area-avatar');
+          if (av) {
+            // Mantém o overlay de câmera ao recriar o conteúdo
+            av.innerHTML = areaAvatarHTML(sistema.areas[idx], idx) +
+              `<div class="area-foto-overlay edit-only">📷</div>`;
+          }
+        };
+        reader.readAsDataURL(file);
       });
     }
+
     grid.appendChild(card);
   });
   if (podeEditar) {
@@ -959,10 +977,11 @@ function renderSlotsGrid(container, bloco) {
       ${podeEditar ? `<button class="slot-remove edit-only" onclick="removerSlot('${bloco.id}','${slot.id}')">✕</button>` : ''}
 
       <div class="slot-foto-wrap">
-        <div class="slot-foto-circle" style="background:${cor};">${buildFotoCircle(slot)}</div>
-        ${podeEditar
-          ? `<input type="text" class="slot-foto-input edit-only" placeholder="Cole URL da foto aqui..." value="${escOrg(slot.foto||'')}" data-slot-id="${slot.id}">`
-          : ''}
+        <div class="slot-foto-circle${podeEditar ? ' slot-foto-edit' : ''}" style="background:${cor};">
+          ${buildFotoCircle(slot)}
+          ${podeEditar ? `<div class="slot-foto-cam-overlay edit-only">📷</div>` : ''}
+        </div>
+        ${podeEditar ? `<input type="file" accept="image/*" class="slot-foto-file edit-only" style="display:none;" data-slot-id="${slot.id}">` : ''}
       </div>
 
       <div class="slot-funcao"
@@ -1029,16 +1048,26 @@ function renderSlotsGrid(container, bloco) {
       atualizarTotais();
     }));
 
-    // URL da foto
-    const fotoInput = card.querySelector('.slot-foto-input');
-    if (fotoInput) {
-      fotoInput.addEventListener('input', e => {
+    // Upload de foto do dispositivo
+    const slotFileInput = card.querySelector('.slot-foto-file');
+    if (slotFileInput && podeEditar) {
+      const circleEl = card.querySelector('.slot-foto-circle');
+      if (circleEl) circleEl.addEventListener('click', () => slotFileInput.click());
+
+      slotFileInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
         const sid = e.target.dataset.slotId;
         const s   = (bloco.slots||[]).find(s => s.id === sid);
         if (!s) return;
-        s.foto = e.target.value.trim();
-        const circle = card.querySelector('.slot-foto-circle');
-        if (circle) circle.innerHTML = buildFotoCircle(s);
+        const reader = new FileReader();
+        reader.onload = ev => {
+          s.foto = ev.target.result;
+          const circle = card.querySelector('.slot-foto-circle');
+          if (circle) circle.innerHTML = buildFotoCircle(s) +
+            `<div class="slot-foto-cam-overlay edit-only">📷</div>`;
+        };
+        reader.readAsDataURL(file);
       });
     }
 
