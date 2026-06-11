@@ -408,9 +408,6 @@ body {
   width:100%; outline:none; transition:all .15s; text-align:center;
 }
 .slot-input:focus { border-color:rgba(96,165,250,.5); background:rgba(21,101,192,.08); }
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; }
-input[type=number] { -moz-appearance:textfield; }
 
 /* Barra de progresso */
 .slot-bar-wrap { margin-top:2px; }
@@ -427,11 +424,9 @@ input[type=number] { -moz-appearance:textfield; }
 }
 .slot-card:hover .slot-remove { opacity:1; }
 
-/* Card "adicionar" */
+/* Card "adicionar" — mantido apenas para referência mobile */
 .slot-add-card {
-  background:transparent; border:1px dashed rgba(255,255,255,.16); border-radius:16px;
-  padding:16px 14px; cursor:pointer; transition:all .2s;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  display:none;
   gap:8px; min-height:220px;
   color:rgba(255,255,255,.3); font-size:12px;
   width: var(--slot-card-w, 200px);
@@ -849,6 +844,10 @@ function criarBlocosIniciais() {
 /* ── Utilidades ── */
 function uid() { return '_' + Math.random().toString(36).substr(2, 9); }
 function pct(v, m) { if (!m) return 0; return Math.min(100, Math.round((v / m) * 100)); }
+// Formata número com ponto como separador de milhar (padrão brasileiro): 36454 → "36.454"
+function fmtNum(n) { return (parseInt(n) || 0).toLocaleString('pt-BR'); }
+// Converte string formatada de volta para inteiro: "36.454" → 36454
+function parseNum(s) { return parseInt(String(s).replace(/\./g, '').replace(/,/g, '')) || 0; }
 function barColor(p) {
   if (p >= 80) return 'linear-gradient(90deg,#34d399,#5eead4)';
   if (p >= 50) return 'linear-gradient(90deg,#fbbf24,#34d399)';
@@ -989,6 +988,7 @@ function renderBloco(bloco) {
         <span class="bloco-title" ${podeEditar ? 'contenteditable="true"' : ''} spellcheck="false">${bloco.titulo}</span>
       </div>
       ${podeEditar ? `<div class="bloco-actions edit-only">
+        ${tipo === 'slot' ? `<button class="btn btn-ghost btn-sm" onclick="adicionarSlot('${bloco.id}')">＋ Adicionar</button>` : ''}
         <button class="btn btn-ghost btn-sm" onclick="duplicarBloco('${bloco.id}')">⧉ Duplicar</button>
         <button class="btn btn-danger btn-sm" onclick="removerBloco('${bloco.id}')">✕ Remover</button>
       </div>` : ''}
@@ -1049,19 +1049,19 @@ function renderSlotsGrid(container, bloco) {
       <div class="slot-numbers">
         <div class="slot-input-wrap">
           <span class="slot-input-label">V. Válidos</span>
-          <input class="slot-input" type="number" value="${slot.votosValidos||0}"
+          <input class="slot-input" type="text" inputmode="numeric" value="${fmtNum(slot.votosValidos)}"
                  ${!podeEditar ? 'readonly' : ''}
                  data-field="votosValidos" data-bloco="${bloco.id}" data-slot="${slot.id}">
         </div>
         <div class="slot-input-wrap">
           <span class="slot-input-label">Célia '22</span>
-          <input class="slot-input" type="number" value="${slot.votosCelia||0}"
+          <input class="slot-input" type="text" inputmode="numeric" value="${fmtNum(slot.votosCelia)}"
                  ${!podeEditar ? 'readonly' : ''}
                  data-field="votosCelia" data-bloco="${bloco.id}" data-slot="${slot.id}">
         </div>
         <div class="slot-input-wrap">
           <span class="slot-input-label">Meta</span>
-          <input class="slot-input" type="number" value="${slot.meta||0}"
+          <input class="slot-input" type="text" inputmode="numeric" value="${fmtNum(slot.meta)}"
                  ${!podeEditar ? 'readonly' : ''}
                  data-field="meta" data-bloco="${bloco.id}" data-slot="${slot.id}">
         </div>
@@ -1090,15 +1090,24 @@ function renderSlotsGrid(container, bloco) {
       });
     });
 
-    // Inputs numéricos
-    card.querySelectorAll('.slot-input').forEach(inp => inp.addEventListener('input', e => {
-      const sid = e.target.dataset.slot;
-      const s   = (bloco.slots||[]).find(s => s.id === sid);
-      if (!s) return;
-      s[e.target.dataset.field] = parseInt(e.target.value) || 0;
-      atualizarBarraSlot(bloco.id, sid);
-      atualizarTotais();
-    }));
+    // Inputs numéricos (aceita "36.454" com ponto como milhar)
+    card.querySelectorAll('.slot-input').forEach(inp => {
+      inp.addEventListener('input', e => {
+        const sid = e.target.dataset.slot;
+        const s   = (bloco.slots||[]).find(s => s.id === sid);
+        if (!s) return;
+        s[e.target.dataset.field] = parseNum(e.target.value);
+        atualizarBarraSlot(bloco.id, sid);
+        atualizarTotais();
+      });
+      // Ao sair do campo, reformata o número com pontos de milhar
+      inp.addEventListener('blur', e => {
+        const sid = e.target.dataset.slot;
+        const s   = (bloco.slots||[]).find(s => s.id === sid);
+        if (!s) return;
+        e.target.value = fmtNum(s[e.target.dataset.field]);
+      });
+    });
 
     // Upload de foto do dispositivo
     const slotFileInput = card.querySelector('.slot-foto-file');
@@ -1138,14 +1147,6 @@ function renderSlotsGrid(container, bloco) {
     grid.appendChild(card);
   });
 
-  // Card "Adicionar"
-  if (podeEditar) {
-    const addCard = document.createElement('div');
-    addCard.className = 'slot-add-card edit-only';
-    addCard.innerHTML = `<div class="slot-add-card-icon">＋</div><div>Adicionar Card</div>`;
-    addCard.onclick = () => adicionarSlot(bloco.id);
-    grid.appendChild(addCard);
-  }
 
   container.appendChild(grid);
 }
