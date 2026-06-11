@@ -4901,6 +4901,81 @@ ${linhas}
   }
 });
 
+/* ─────────────────────────────────────────────────────────────
+ * ORGANOGRAMA — GET / PUT / upload foto
+ * ───────────────────────────────────────────────────────────── */
+
+// GET /api/organograma — carrega dados do organograma do tenant
+app.get('/api/organograma', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const row = await dbGet(
+      'SELECT dados, card_size FROM organograma WHERE tenant_id = $1',
+      [req.tenantId]
+    );
+    if (!row) return res.json({ dados: null, cardSize: 200 });
+    res.json({ dados: row.dados, cardSize: row.card_size });
+  } catch (err) {
+    console.error('[GET /api/organograma]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/organograma — salva dados do organograma (dono e admin)
+app.put('/api/organograma', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
+  try {
+    const { dados, cardSize } = req.body;
+    if (!dados || typeof dados !== 'object') {
+      return res.status(400).json({ error: 'Dados inválidos' });
+    }
+    await pool.query(
+      `INSERT INTO organograma (tenant_id, dados, card_size, updated_at, updated_by)
+       VALUES ($1, $2, $3, NOW(), $4)
+       ON CONFLICT (tenant_id) DO UPDATE SET
+         dados      = EXCLUDED.dados,
+         card_size  = EXCLUDED.card_size,
+         updated_at = NOW(),
+         updated_by = EXCLUDED.updated_by`,
+      [req.tenantId, JSON.stringify(dados), cardSize || 200, req.user.id]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[PUT /api/organograma]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/organograma/foto — faz upload de uma foto, retorna URL pública
+app.post('/api/organograma/foto', auth, withTenant, allow('dono', 'admin'), upload.single('foto'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+
+    const tempPath = req.file.path;
+    const outPath  = tempPath + '.webp';
+
+    await sharp(tempPath)
+      .resize({ width: 300, height: 300, fit: 'cover', position: 'center' })
+      .webp({ quality: 82 })
+      .toFile(outPath);
+    try { fs.unlinkSync(tempPath); } catch {}
+
+    const fileBuffer = fs.readFileSync(outPath);
+    const fileName   = `${req.tenantId}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.webp`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from('organograma-fotos')
+      .upload(fileName, fileBuffer, { contentType: 'image/webp', upsert: false });
+    try { fs.unlinkSync(outPath); } catch {}
+
+    if (uploadErr) throw uploadErr;
+
+    const { data } = supabase.storage.from('organograma-fotos').getPublicUrl(fileName);
+    res.json({ ok: true, url: data.publicUrl });
+  } catch (err) {
+    console.error('[POST /api/organograma/foto]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 server.listen(PORT, async () => {
   console.log("Backend rodando em http://localhost:" + PORT);
   // Migrations automáticas — seguras de rodar múltiplas vezes (IF NOT EXISTS)
@@ -5117,6 +5192,24 @@ server.listen(PORT, async () => {
     await pool.query(`ALTER TABLE tenant_candidatos ADD COLUMN IF NOT EXISTS cargo_bq TEXT`);
     console.log('[migration] tenant_candidatos.cargo_bq OK');
   } catch (e) { console.warn('[migration] tenant_candidatos.cargo_bq:', e.message); }
+
+  // ── ORGANOGRAMA ──────────────────────────────────────────────────────────
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS organograma (
+        id         SERIAL PRIMARY KEY,
+        tenant_id  INTEGER NOT NULL UNIQUE,
+        dados      JSONB   NOT NULL DEFAULT '{}',
+        card_size  INTEGER NOT NULL DEFAULT 200,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_by INTEGER
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_organograma_tenant ON organograma(tenant_id)`);
+    console.log('[migration] organograma OK');
+  } catch (e) {
+    console.warn('[migration] organograma:', e.message);
+  }
 
   // ── AUTO-CADASTRO TOKENS ──────────────────────────────────────────────────
   try {

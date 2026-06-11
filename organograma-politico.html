@@ -684,6 +684,28 @@ window.iniciarAplicacao = function () {
    ORGANOGRAMA — lógica principal
    ═══════════════════════════════════════════════════════ */
 
+const API = window.API_URL || 'https://map-backend-j88s.onrender.com/api';
+function authHdr() {
+  return { Authorization: 'Bearer ' + (localStorage.getItem('token') || '') };
+}
+
+// Faz upload de um File para o bucket de fotos do organograma
+async function uploadFoto(file) {
+  const fd = new FormData();
+  fd.append('foto', file);
+  const res = await fetch(`${API}/organograma/foto`, {
+    method: 'POST',
+    headers: authHdr(),   // NÃO incluir Content-Type; o browser define boundary do multipart
+    body: fd
+  });
+  if (!res.ok) {
+    const msg = await res.json().then(d => d.error).catch(() => res.status);
+    throw new Error(msg);
+  }
+  const { url } = await res.json();
+  return url;
+}
+
 let sistema = {
   tenant_id: null,
   titulo: 'CAMPANHA 2026',
@@ -694,7 +716,7 @@ let sistema = {
 };
 let podeEditar = false;
 
-function init() {
+async function init() {
   const nivel = window.USUARIO_NIVEL || 'visualizador';
   sistema.tenant_id = window.TENANT_ID || 'default';
   podeEditar = nivel === 'dono' || nivel === 'admin';
@@ -706,37 +728,8 @@ function init() {
 
   if (!podeEditar) document.body.classList.add('view-only');
 
-  const raw = localStorage.getItem('paralax_org_' + sistema.tenant_id);
-  if (raw) {
-    try {
-      const saved = JSON.parse(raw);
-      sistema = { ...sistema, ...saved, tenant_id: window.TENANT_ID || 'default' };
-      // Retrocompat: áreas como strings
-      if (Array.isArray(sistema.areas) && sistema.areas.length > 0 && typeof sistema.areas[0] === 'string') {
-        sistema.areas = sistema.areas.map(nome => ({
-          id: uid(), nome, responsavel: 'Responsável', funcao: 'Função na campanha', contato: '', foto: ''
-        }));
-      }
-      if (!sistema.areas || sistema.areas.length === 0) criarBlocosIniciais();
-      // Retrocompat: slots antigos (campos resp/votos → funcao/nome/votosValidos)
-      sistema.blocos.forEach(b => {
-        if (b.tipo === 'slot' && Array.isArray(b.slots)) {
-          b.slots.forEach(s => {
-            if (s.resp !== undefined && s.funcao === undefined) {
-              s.funcao = s.nome || 'Liderança';
-              s.nome   = s.resp || 'Responsável';
-              s.votosValidos = s.votos || 0;
-              if (s.votosCelia === undefined) s.votosCelia = 0;
-              delete s.resp;
-              delete s.votos;
-            }
-          });
-        }
-      });
-    } catch { criarBlocosIniciais(); }
-  } else {
-    criarBlocosIniciais();
-  }
+  // Carrega do servidor (silencioso no boot)
+  await carregarDoServidor(true);
 
   const titleEl = document.getElementById('campaign-title');
   const coordEl = document.getElementById('coord-nome');
@@ -766,6 +759,57 @@ function init() {
   renderTodosBlocos();
   atualizarTotais();
   setTimeout(() => document.querySelectorAll('.orb').forEach((o, i) => setTimeout(() => o.classList.add('visible'), i * 300)), 300);
+}
+
+// Aplica dados salvos no objeto sistema (com retrocompat)
+function aplicarDadosSalvos(saved) {
+  sistema = { ...sistema, ...saved, tenant_id: window.TENANT_ID || 'default' };
+  // Retrocompat: áreas como strings
+  if (Array.isArray(sistema.areas) && sistema.areas.length > 0 && typeof sistema.areas[0] === 'string') {
+    sistema.areas = sistema.areas.map(nome => ({
+      id: uid(), nome, responsavel: 'Responsável', funcao: 'Função na campanha', contato: '', foto: ''
+    }));
+  }
+  if (!sistema.areas || sistema.areas.length === 0) criarBlocosIniciais();
+  // Retrocompat: slots antigos (resp/votos → funcao/nome/votosValidos)
+  (sistema.blocos || []).forEach(b => {
+    if (b.tipo === 'slot' && Array.isArray(b.slots)) {
+      b.slots.forEach(s => {
+        if (s.resp !== undefined && s.funcao === undefined) {
+          s.funcao = s.nome || 'Liderança';
+          s.nome   = s.resp || 'Responsável';
+          s.votosValidos = s.votos || 0;
+          if (s.votosCelia === undefined) s.votosCelia = 0;
+          delete s.resp;
+          delete s.votos;
+        }
+      });
+    }
+  });
+}
+
+// Carrega do servidor; se falhar tenta localStorage; se nada, cria demo
+async function carregarDoServidor(silent = false) {
+  try {
+    const res = await fetch(`${API}/organograma`, { headers: authHdr() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const { dados, cardSize } = await res.json();
+    if (dados && (dados.blocos?.length || dados.areas?.length)) {
+      aplicarDadosSalvos({ ...dados, cardSize: cardSize || dados.cardSize || 200 });
+    } else {
+      // Servidor sem dados — tenta localStorage como fallback de migração
+      const raw = localStorage.getItem('paralax_org_' + sistema.tenant_id);
+      if (raw) { try { aplicarDadosSalvos(JSON.parse(raw)); } catch { criarBlocosIniciais(); } }
+      else { criarBlocosIniciais(); }
+    }
+    if (!silent) toast('📂 Carregado com sucesso!');
+  } catch (err) {
+    console.warn('[carregar]', err);
+    const raw = localStorage.getItem('paralax_org_' + sistema.tenant_id);
+    if (raw) { try { aplicarDadosSalvos(JSON.parse(raw)); } catch { criarBlocosIniciais(); } }
+    else { criarBlocosIniciais(); }
+    if (!silent) toast('⚠️ Sem conexão — dados locais');
+  }
 }
 
 function criarBlocosIniciais() {
@@ -875,21 +919,30 @@ function renderAreas() {
       const avatarEl = card.querySelector('.area-avatar');
       if (avatarEl) avatarEl.addEventListener('click', () => fileInput.click());
 
-      fileInput.addEventListener('change', e => {
+      fileInput.addEventListener('change', async e => {
         const file = e.target.files[0];
         if (!file) return;
         const idx = parseInt(e.target.dataset.areaIdx);
+        // Preview imediato via base64 enquanto faz upload
         const reader = new FileReader();
         reader.onload = ev => {
-          sistema.areas[idx].foto = ev.target.result; // base64 data URL
+          sistema.areas[idx].foto = ev.target.result;
           const av = card.querySelector('.area-avatar');
-          if (av) {
-            // Mantém o overlay de câmera ao recriar o conteúdo
-            av.innerHTML = areaAvatarHTML(sistema.areas[idx], idx) +
-              `<div class="area-foto-overlay edit-only">📷</div>`;
-          }
+          if (av) av.innerHTML = areaAvatarHTML(sistema.areas[idx], idx) +
+            `<div class="area-foto-overlay edit-only">📷</div>`;
         };
         reader.readAsDataURL(file);
+        // Upload real para o servidor
+        try {
+          const url = await uploadFoto(file);
+          sistema.areas[idx].foto = url;
+          const av = card.querySelector('.area-avatar');
+          if (av) av.innerHTML = areaAvatarHTML(sistema.areas[idx], idx) +
+            `<div class="area-foto-overlay edit-only">📷</div>`;
+        } catch (err) {
+          console.warn('[upload area foto]', err);
+          toast('⚠️ Foto salva localmente (sem upload)');
+        }
       });
     }
 
@@ -1054,12 +1107,13 @@ function renderSlotsGrid(container, bloco) {
       const circleEl = card.querySelector('.slot-foto-circle');
       if (circleEl) circleEl.addEventListener('click', () => slotFileInput.click());
 
-      slotFileInput.addEventListener('change', e => {
+      slotFileInput.addEventListener('change', async e => {
         const file = e.target.files[0];
         if (!file) return;
         const sid = e.target.dataset.slotId;
         const s   = (bloco.slots||[]).find(s => s.id === sid);
         if (!s) return;
+        // Preview imediato via base64 enquanto faz upload
         const reader = new FileReader();
         reader.onload = ev => {
           s.foto = ev.target.result;
@@ -1068,6 +1122,17 @@ function renderSlotsGrid(container, bloco) {
             `<div class="slot-foto-cam-overlay edit-only">📷</div>`;
         };
         reader.readAsDataURL(file);
+        // Upload real para o servidor
+        try {
+          const url = await uploadFoto(file);
+          s.foto = url;
+          const circle = card.querySelector('.slot-foto-circle');
+          if (circle) circle.innerHTML = buildFotoCircle(s) +
+            `<div class="slot-foto-cam-overlay edit-only">📷</div>`;
+        } catch (err) {
+          console.warn('[upload slot foto]', err);
+          toast('⚠️ Foto salva localmente (sem upload)');
+        }
       });
     }
 
@@ -1242,38 +1307,40 @@ function atualizarTotais() {
 }
 
 /* ── Salvar / Carregar ── */
-function salvarSistema() {
+async function salvarSistema() {
   sistema.titulo      = document.getElementById('campaign-title').textContent.trim();
   sistema.coordenacao = document.getElementById('coord-nome').textContent.trim();
   sistema.cardSize    = parseInt(document.getElementById('card-size-slider')?.value || 200);
   try {
-    localStorage.setItem('paralax_org_' + sistema.tenant_id, JSON.stringify(sistema));
-  } catch {}
-  toast('✅ Organograma salvo!');
+    const res = await fetch(`${API}/organograma`, {
+      method: 'PUT',
+      headers: { ...authHdr(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dados: sistema, cardSize: sistema.cardSize })
+    });
+    if (!res.ok) {
+      const msg = await res.json().then(d => d.error).catch(() => res.status);
+      throw new Error(msg);
+    }
+    toast('✅ Organograma salvo!');
+  } catch (err) {
+    console.error('[salvar]', err);
+    // Fallback: salva localmente se API falhar
+    try { localStorage.setItem('paralax_org_' + sistema.tenant_id, JSON.stringify(sistema)); } catch {}
+    toast('⚠️ Salvo localmente (sem conexão)');
+  }
 }
 
-function carregarSistema() {
-  try {
-    const raw = localStorage.getItem('paralax_org_' + sistema.tenant_id);
-    if (raw) {
-      const saved = JSON.parse(raw);
-      sistema = { ...sistema, ...saved, tenant_id: sistema.tenant_id };
-      document.getElementById('campaign-title').textContent = sistema.titulo;
-      document.getElementById('coord-nome').textContent     = sistema.coordenacao;
-      const w = sistema.cardSize || 200;
-      const slider = document.getElementById('card-size-slider');
-      if (slider) slider.value = w;
-      document.documentElement.style.setProperty('--slot-card-w', w + 'px');
-      renderAreas();
-      renderTodosBlocos();
-      atualizarTotais();
-      toast('📂 Carregado com sucesso!');
-    } else {
-      toast('⚠️ Nenhum dado salvo.');
-    }
-  } catch {
-    toast('❌ Erro ao carregar.');
-  }
+async function carregarSistema() {
+  await carregarDoServidor(false);
+  const w = sistema.cardSize || 200;
+  const slider = document.getElementById('card-size-slider');
+  if (slider) slider.value = w;
+  document.documentElement.style.setProperty('--slot-card-w', w + 'px');
+  document.getElementById('campaign-title').textContent = sistema.titulo;
+  document.getElementById('coord-nome').textContent     = sistema.coordenacao;
+  renderAreas();
+  renderTodosBlocos();
+  atualizarTotais();
 }
 
 /* ── Toast ── */
