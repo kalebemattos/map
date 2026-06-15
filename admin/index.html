@@ -1219,6 +1219,25 @@ async function iniciarPainel() {
       carregarCidadesPorRegiao();
     }
   }
+
+  if (user.nivel === 'lider_capital') {
+    const campoRegiao = document.getElementById('regiao');
+    const campoCidade = document.getElementById('cidade');
+    if (campoRegiao) {
+      const regiaoRJ = getRegiaoParaCidade('Rio de Janeiro');
+      if (regiaoRJ) {
+        campoRegiao.value = regiaoRJ;
+        campoRegiao.disabled = true;
+        carregarCidadesPorRegiao();
+      }
+    }
+    if (campoCidade) {
+      campoCidade.value = 'Rio de Janeiro';
+      campoCidade.disabled = true;
+      atualizarSeletorBairro();
+      carregarLiderancas();
+    }
+  }
 }
 
 
