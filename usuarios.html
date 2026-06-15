@@ -408,6 +408,12 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
           <option value="costaVerde">Costa Verde</option>
         </select>
       </div>
+      <div class="form-group" id="div_capital" style="display:none;">
+        <label>Escopo de acesso</label>
+        <input type="text" value="Rio de Janeiro Capital" disabled
+               style="opacity:.7;cursor:not-allowed;background:rgba(255,255,255,.04);">
+        <small style="color:rgba(255,255,255,.4);font-size:11px;">Fixo — este nível acessa apenas o mapa da Capital.</small>
+      </div>
       <!-- divs de sub-região por mapa injetadas por carregarConfig() -->
       <div id="mapa-divs-criar"></div>
     </div>
@@ -475,6 +481,12 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
           <option value="medioParaiba">Médio Paraíba</option>
           <option value="costaVerde">Costa Verde</option>
         </select>
+      </div>
+      <div class="form-group" id="edit-div-capital" style="display:none;">
+        <label>Escopo de acesso</label>
+        <input type="text" value="Rio de Janeiro Capital" disabled
+               style="opacity:.7;cursor:not-allowed;background:rgba(255,255,255,.04);">
+        <small style="color:rgba(255,255,255,.4);font-size:11px;">Fixo — este nível acessa apenas o mapa da Capital.</small>
       </div>
       <!-- divs de sub-região por mapa injetadas por carregarConfig() -->
       <div id="mapa-divs-editar"></div>
@@ -679,7 +691,8 @@ function voltarHome() { location.href = '../index.html' }
 // ── UI helpers ────────────────────────────────────────────
 function toggleRegiao() {
   const nivel = document.getElementById('u_nivel').value
-  document.getElementById('div_regiao').style.display = nivel === 'lider_regiao' ? 'block' : 'none'
+  document.getElementById('div_regiao').style.display      = nivel === 'lider_regiao'  ? 'block' : 'none'
+  document.getElementById('div_capital').style.display     = nivel === 'lider_capital' ? 'block' : 'none'
   configSistema.mapas.forEach(m => {
     const div = document.getElementById('div_mapa_' + m.id)
     if (div) div.style.display = nivel === m.nivel_usuario ? 'block' : 'none'
@@ -688,7 +701,8 @@ function toggleRegiao() {
 
 function toggleRegiaoModal() {
   const nivel = document.getElementById('edit-nivel').value
-  document.getElementById('edit-div-regiao').style.display = nivel === 'lider_regiao' ? 'block' : 'none'
+  document.getElementById('edit-div-regiao').style.display   = nivel === 'lider_regiao'  ? 'block' : 'none'
+  document.getElementById('edit-div-capital').style.display  = nivel === 'lider_capital' ? 'block' : 'none'
   configSistema.mapas.forEach(m => {
     const div = document.getElementById('edit-div-mapa-' + m.id)
     if (div) div.style.display = nivel === m.nivel_usuario ? 'block' : 'none'
