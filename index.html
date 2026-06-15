@@ -4500,6 +4500,12 @@ window.iniciarAplicacao = async function () {
 
   const usuario = JSON.parse(localStorage.getItem('user'));
 
+  // lider_capital acessa apenas o mapa do RJ Capital
+  if (usuario && usuario.nivel === 'lider_capital') {
+    window.location.replace('./rjcapital/');
+    return;
+  }
+
   if (usuario && usuario.nivel === 'lider_regiao') {
 
     const regionSelect = document.getElementById('regionSelect');

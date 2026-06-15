@@ -68,14 +68,14 @@ function invalidateTenantCache(tenantId) {
 
 // Níveis de boot (derivados do config.js estático — usados antes do banco responder)
 const NIVEIS_MAPA   = config.mapas.map(m => m.nivel_usuario);
-const NIVEIS_TODOS  = ['dono', 'admin', 'visualizador', 'lider_regiao', ...NIVEIS_MAPA];
+const NIVEIS_TODOS  = ['dono', 'admin', 'visualizador', 'lider_regiao', 'lider_capital', ...NIVEIS_MAPA];
 
 // NIVEIS_TODOS dinâmico por tenant (inclui níveis de mapas cadastrados no banco)
 async function getNiveisTenant(tenantId) {
   try {
     const cfg = await getConfigTenant(tenantId);
     const niveisMapa = cfg.mapas.map(m => m.nivel_usuario);
-    return ['dono', 'admin', 'visualizador', 'lider_regiao', ...niveisMapa];
+    return ['dono', 'admin', 'visualizador', 'lider_regiao', 'lider_capital', ...niveisMapa];
   } catch {
     return NIVEIS_TODOS;
   }
@@ -1534,9 +1534,10 @@ app.post('/api/usuarios',
   try {
     const { usuario, senha, nome, nivel, regiao_vinculada } = req.body;
     // 🔎 Validação básica
-    // Região obrigatória apenas para lider_regiao e niveis de mapa (não para admin/dono/visualizador)
+    // Região obrigatória apenas para lider_regiao e níveis de mapa (não para admin/dono/visualizador/lider_capital)
     const niveisPermitidos = NIVEIS_TODOS;
-    const precisaRegiao = nivel === 'lider_regiao' || (niveisPermitidos.includes(nivel) && nivel !== 'admin' && nivel !== 'dono' && nivel !== 'visualizador');
+    const semRegiao = ['admin', 'dono', 'visualizador', 'lider_capital'];
+    const precisaRegiao = nivel === 'lider_regiao' || (niveisPermitidos.includes(nivel) && !semRegiao.includes(nivel));
     if (!usuario || !senha || !nivel || (precisaRegiao && !regiao_vinculada)) {
       return res.status(400).json({
         error: precisaRegiao
@@ -3673,6 +3674,16 @@ app.get('/api/eleicoes/perfil-eleitorado', auth, withTenant, allowAll(), async (
  */
 function regiaoFilter(req) {
   if (isPrivileged(req.user.nivel)) return { sql: '', params: [] };
+
+  // lider_capital vê TODOS os dados do mapa RJ Capital (todas as zonas)
+  if (req.user.nivel === 'lider_capital') {
+    const rjMapa = config.mapas.find(m => m.id === 'rjcapital');
+    const zonas  = rjMapa?.subregioes ?? [];
+    if (!zonas.length) return { sql: ' AND 1=0', params: [] };
+    // Usa array PostgreSQL: regiao = ANY($N::text[])
+    return { sql: ' AND regiao = ANY($__REG__::text[])', params: [zonas] };
+  }
+
   const reg = req.user.regiao ?? null;
   if (!reg) return { sql: ' AND 1=0', params: [] }; // sem região = sem acesso
   return { sql: ' AND regiao = $__REG__', params: [reg] };

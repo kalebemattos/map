@@ -388,6 +388,7 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
         <select id="u_nivel" onchange="toggleRegiao()">
           <option value="visualizador">Visualizador</option>
           <option value="lider_regiao">Líder de Região</option>
+          <option value="lider_capital">Líder Capital (RJ)</option>
           <!-- opções de mapa injetadas por carregarConfig() -->
           <option value="admin">Administrador</option>
           <option value="dono">Dono</option>
@@ -455,6 +456,7 @@ input::placeholder { color: var(--slate-400); font-weight: 400; }
         <select id="edit-nivel" onchange="toggleRegiaoModal()">
           <option value="visualizador">Visualizador</option>
           <option value="lider_regiao">Líder de Região</option>
+          <option value="lider_capital">Líder Capital (RJ)</option>
           <!-- opções de mapa injetadas por carregarConfig() -->
           <option value="admin">Administrador</option>
           <option value="dono">Dono</option>
@@ -576,10 +578,11 @@ const REGIOES_LABEL = {
 
 // Níveis fixos — os de mapa são adicionados dinamicamente por injetarMapas()
 const NIVEL_LABEL = {
-  dono:         'Dono',
-  admin:        'Administrador',
-  lider_regiao: 'Líder de Região',
-  visualizador: 'Visualizador',
+  dono:          'Dono',
+  admin:         'Administrador',
+  lider_regiao:  'Líder de Região',
+  lider_capital: 'Líder Capital (RJ)',
+  visualizador:  'Visualizador',
 }
 
 // Usuários que exibem "Suporte" no badge (apenas visual — permissões reais não mudam)
@@ -833,11 +836,12 @@ async function carregarUsuarios() {
 
     usuarios.forEach(u => {
       const initials = (u.nome || u.usuario || '?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase()
-      const _nivelBase = { dono:'nivel-dono', admin:'nivel-admin', lider_regiao:'nivel-lider', visualizador:'nivel-visualizador' }
+      const _nivelBase = { dono:'nivel-dono', admin:'nivel-admin', lider_regiao:'nivel-lider', lider_capital:'nivel-capital', visualizador:'nivel-visualizador' }
       const ehSuporte  = SUPORTE_USUARIOS.has(u.usuario)
       const nivelClass = ehSuporte ? 'nivel-suporte' : (_nivelBase[u.nivel] || 'nivel-mapa')
       const mapaNivel  = !ehSuporte && configSistema.mapas.find(m => m.nivel_usuario === u.nivel)
-      const badgeStyle = mapaNivel ? `style="background:${mapaNivel.badge_fundo};color:${mapaNivel.badge_texto}"` : ''
+      const capitalStyle = u.nivel === 'lider_capital' ? 'style="background:#dbeafe;color:#1e3a8a"' : ''
+      const badgeStyle = mapaNivel ? `style="background:${mapaNivel.badge_fundo};color:${mapaNivel.badge_texto}"` : capitalStyle
       const badgeLabel = ehSuporte ? 'Suporte' : (NIVEL_LABEL[u.nivel] || u.nivel)
       const regiaoLabel = u.regiao_vinculada ? (REGIOES_LABEL[u.regiao_vinculada] || u.regiao_vinculada) : ''
       const isSelf = String(u.id) === String(meId)
