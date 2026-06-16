@@ -3966,32 +3966,44 @@ document.getElementById('toggleLiderancasPins').onclick = () => {
 /* ===== PINS DE LIDERANÇA NO MAPA ===== */
 function criarIconeLideranca(l) {
   const cands = configSistema.candidatos || [];
-  const cand = cands.find(c => c.chave === l.vinculo_politico);
-  const borderColor = cand ? (cand.cor_fundo || '#1565c0') : '#64748b';
-  const bgColor    = cand ? (cand.cor_fundo || '#1565c0') + '33' : '#e2e8f0';
-  const inicial    = (l.nome || '?')[0].toUpperCase();
+  const cand  = cands.find(c => c.chave === l.vinculo_politico);
+  const cor   = cand ? (cand.cor_fundo || '#1565c0') : '#64748b';
+  const bgHex = cand ? (cand.cor_fundo || '#1565c0') : '#94a3b8';
+  const uid   = 'lc' + String(l.id).replace(/\W/g, '');
+  const inicial = (l.nome || '?')[0].toUpperCase();
 
-  // <img> com border-radius:50% + object-fit:cover é a forma mais confiável
-  // dentro de divIcon — não precisa de wrapper overflow:hidden
-  const fotoHtml = l.foto
-    ? `<img src="${l.foto}" style="position:absolute;top:5px;left:7px;width:20px;height:20px;border-radius:50%;object-fit:cover;border:2px solid ${borderColor};box-sizing:border-box;">`
-    : `<div style="position:absolute;top:5px;left:7px;width:20px;height:20px;border-radius:50%;border:2px solid ${borderColor};background:${bgColor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:${borderColor};box-sizing:border-box;">${inicial}</div>`;
+  // Tudo em SVG puro — única abordagem 100% confiável em divIcon do Leaflet.
+  // <clipPath> recorta a foto em círculo sem depender de CSS externo.
+  const fotoLayer = l.foto
+    ? `<image href="${l.foto}" x="7" y="5" width="20" height="20"
+         clip-path="url(#${uid})" preserveAspectRatio="xMidYMid slice"/>`
+    : `<circle cx="17" cy="15" r="10" fill="${bgHex}22"/>
+       <text x="17" y="19" text-anchor="middle" font-size="9" font-weight="800"
+             font-family="DM Sans,sans-serif" fill="${cor}">${inicial}</text>`;
 
-  const html = `
-    <div style="position:relative;width:34px;height:44px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
-      <svg width="34" height="44" viewBox="0 0 34 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;">
-        <path d="M17 1C8.716 1 2 7.716 2 16C2 26.5 17 43 17 43C17 43 32 26.5 32 16C32 7.716 25.284 1 17 1Z"
-              fill="white" stroke="${borderColor}" stroke-width="2.5"/>
-      </svg>
-      ${fotoHtml}
-    </div>`;
+  const svg = `
+    <svg width="34" height="44" viewBox="0 0 34 44" xmlns="http://www.w3.org/2000/svg"
+         style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+      <defs>
+        <clipPath id="${uid}">
+          <circle cx="17" cy="15" r="10"/>
+        </clipPath>
+      </defs>
+      <!-- corpo do pin -->
+      <path d="M17 1C8.716 1 2 7.716 2 16C2 26.5 17 43 17 43C17 43 32 26.5 32 16C32 7.716 25.284 1 17 1Z"
+            fill="white" stroke="${cor}" stroke-width="2.5"/>
+      <!-- foto ou inicial -->
+      ${fotoLayer}
+      <!-- borda do círculo da foto -->
+      <circle cx="17" cy="15" r="10" fill="none" stroke="${cor}" stroke-width="2"/>
+    </svg>`;
 
   return L.divIcon({
     className: '',
-    html,
-    iconSize: [34, 44],
+    html: svg,
+    iconSize:   [34, 44],
     iconAnchor: [17, 43],
-    popupAnchor: [0, -44]
+    popupAnchor:[0, -44]
   });
 }
 
