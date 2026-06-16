@@ -4011,9 +4011,28 @@ function renderLiderancasNoMapa() {
   Object.entries(dataCache).forEach(([cidade, cidadeData]) => {
     if (!Array.isArray(cidadeData.liderancas)) return;
 
+    // Centroide da cidade como fallback quando liderança não tem lat/lng
+    const cidadeLayer = layersPorCidade[cidade];
+    const centroide = cidadeLayer ? cidadeLayer.getBounds().getCenter() : null;
+
     cidadeData.liderancas.forEach(l => {
-      if (!l.lat || !l.lng) return;  // só plota se tiver coordenadas
       if (l.status === 'inativa') return;
+
+      // Usa lat/lng da liderança se existir, senão usa centroide da cidade com jitter
+      let lat, lng;
+      if (l.lat && l.lng) {
+        lat = l.lat;
+        lng = l.lng;
+      } else if (centroide) {
+        // Jitter determinístico baseado no id da liderança para não empilhar e não "saltar"
+        const seed = (typeof l.id === 'number' ? l.id : String(l.id).split('').reduce((a, c) => a + c.charCodeAt(0), 0));
+        const jLat = ((seed * 9301 + 49297) % 233280) / 233280 - 0.5;
+        const jLng = ((seed * 7927 + 13849) % 233280) / 233280 - 0.5;
+        lat = centroide.lat + jLat * 0.04;
+        lng = centroide.lng + jLng * 0.04;
+      } else {
+        return; // cidade sem polígono no mapa — pula
+      }
 
       // Aplica filtro de campanha
       if (filtroCampanha !== 'ambos' && l.vinculo_politico !== filtroCampanha && l.vinculo_politico !== 'ambos') return;
@@ -4022,7 +4041,7 @@ function renderLiderancasNoMapa() {
       const borderColor = cand ? (cand.cor_fundo || '#1565c0') : '#64748b';
       const candNome = cand ? cand.nome : (l.vinculo_politico === 'ambos' ? 'Ambos' : l.vinculo_politico || '—');
 
-      const marker = L.marker([l.lat, l.lng], {
+      const marker = L.marker([lat, lng], {
         icon: criarIconeLideranca(l),
         zIndexOffset: 1000  // fica acima dos outros pins
       });
