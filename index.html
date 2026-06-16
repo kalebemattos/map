@@ -2079,6 +2079,7 @@ function injetarCandidatos() {
         repaintMap();
         updateLegendByMode();
         atualizarTotalGeralOverlay();
+        renderLiderancasNoMapa();
         if (cidadeSelecionada) renderLiderancas(cidadeSelecionada);
       });
     });
@@ -3967,26 +3968,22 @@ function criarIconeLideranca(l) {
   const cands = configSistema.candidatos || [];
   const cand = cands.find(c => c.chave === l.vinculo_politico);
   const borderColor = cand ? (cand.cor_fundo || '#1565c0') : '#64748b';
-  const bgColor = cand ? (cand.cor_fundo || '#1565c0') + '33' : '#e2e8f0';
-  const inicial = (l.nome || '?')[0].toUpperCase();
+  const bgColor    = cand ? (cand.cor_fundo || '#1565c0') + '33' : '#e2e8f0';
+  const inicial    = (l.nome || '?')[0].toUpperCase();
 
-  // Usa background-image para garantir clip circular correto no divIcon do Leaflet
-  const fotoStyle = l.foto
-    ? `background-image:url('${l.foto}');background-size:cover;background-position:center;background-color:white;`
-    : `background:${bgColor};`;
+  // <img> com border-radius:50% + object-fit:cover é a forma mais confiável
+  // dentro de divIcon — não precisa de wrapper overflow:hidden
+  const fotoHtml = l.foto
+    ? `<img src="${l.foto}" style="position:absolute;top:5px;left:7px;width:20px;height:20px;border-radius:50%;object-fit:cover;border:2px solid ${borderColor};box-sizing:border-box;">`
+    : `<div style="position:absolute;top:5px;left:7px;width:20px;height:20px;border-radius:50%;border:2px solid ${borderColor};background:${bgColor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:${borderColor};box-sizing:border-box;">${inicial}</div>`;
 
-  const inicialHtml = l.foto ? '' : `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:${borderColor};">${inicial}</span>`;
-
-  // Pin menor: 34×44px, círculo de foto 20px centralizado
   const html = `
     <div style="position:relative;width:34px;height:44px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
       <svg width="34" height="44" viewBox="0 0 34 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;">
         <path d="M17 1C8.716 1 2 7.716 2 16C2 26.5 17 43 17 43C17 43 32 26.5 32 16C32 7.716 25.284 1 17 1Z"
               fill="white" stroke="${borderColor}" stroke-width="2.5"/>
       </svg>
-      <div style="position:absolute;top:5px;left:7px;width:20px;height:20px;border-radius:50%;border:2px solid ${borderColor};${fotoStyle};box-sizing:border-box;overflow:hidden;">
-        ${inicialHtml}
-      </div>
+      ${fotoHtml}
     </div>`;
 
   return L.divIcon({
@@ -4034,36 +4031,10 @@ function renderLiderancasNoMapa() {
       // Aplica filtro de campanha
       if (filtroCampanha !== 'ambos' && l.vinculo_politico !== filtroCampanha && l.vinculo_politico !== 'ambos') return;
 
-      const cand = cands.find(c => c.chave === l.vinculo_politico);
-      const borderColor = cand ? (cand.cor_fundo || '#1565c0') : '#64748b';
-      const candNome = cand ? cand.nome : (l.vinculo_politico === 'ambos' ? 'Ambos' : l.vinculo_politico || '—');
-
       const marker = L.marker([lat, lng], {
         icon: criarIconeLideranca(l),
         zIndexOffset: 1000  // fica acima dos outros pins
       });
-
-      const fotoHtml = l.foto
-        ? `<img src="${l.foto}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ${borderColor};flex-shrink:0;">`
-        : `<div style="width:44px;height:44px;border-radius:50%;background:#f1f5f9;border:2px solid ${borderColor};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:${borderColor};flex-shrink:0;">${(l.nome||'?')[0].toUpperCase()}</div>`;
-
-      marker.bindPopup(`
-        <div style="font-family:'DM Sans',sans-serif;min-width:200px;padding:4px 2px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-            ${fotoHtml}
-            <div>
-              <div style="font-weight:700;font-size:14px;color:#0f172a;">${l.nome || '—'}</div>
-              <div style="font-size:11px;font-weight:600;color:${borderColor};text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">${candNome}</div>
-            </div>
-          </div>
-          <div style="font-size:12px;color:#475569;display:flex;flex-direction:column;gap:4px;">
-            ${l.perfil ? `<span>🏷️ ${l.perfil}</span>` : ''}
-            ${l.contato ? `<span>📱 ${l.contato}</span>` : ''}
-            ${l.expectativa_votos ? `<span>🗳️ <b>${Number(l.expectativa_votos).toLocaleString('pt-BR')}</b> votos esperados</span>` : ''}
-            <span style="color:#94a3b8;font-size:11px;">📍 ${cidade}</span>
-          </div>
-        </div>
-      `, { maxWidth: 260 });
 
       liderancasMapLayer.addLayer(marker);
     });
