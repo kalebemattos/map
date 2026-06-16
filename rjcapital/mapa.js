@@ -143,6 +143,10 @@ let bairroAtual      = null
 let layerSelecionado = null
 let filtroCampanha   = "ambos"
 
+const layersPorBairro = {}
+let liderancasMapLayer   = null
+let liderancasMapVisiveis = true
+
 // Cache local: { "CENTRO": { liderancas:[], expectativaCidade:{ [chave]: 0, ... } }, ... }
 const dataCache = {}
 
@@ -257,6 +261,7 @@ function injetarCandidatosRJ() {
         }
         if (bairroAtual) renderLiderancas(bairroAtual)
         repaintMapa()
+        renderLiderancasNoMapa()
       })
     })
   }
@@ -889,6 +894,7 @@ async function excluirLideranca(l, bairro) {
     await apiFetch(`/liderancas/${l.id}`, { method: 'DELETE' })
     await carregarTudo()
     repaintMapa()
+    renderLiderancasNoMapa()
     renderLiderancas(bairro)
   } catch (err) {
     console.error(err)
@@ -967,6 +973,7 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
 
     await carregarTudo()
     repaintMapa()
+    renderLiderancasNoMapa()
     if (bairroAtual) renderLiderancas(bairroAtual)
   } catch (err) {
     console.error(err)
@@ -1274,6 +1281,7 @@ window.iniciarMapa = async function() {
   await carregarConfig()
   map = L.map('map', { minZoom: 9, maxZoom: 18 }).setView([-22.91, -43.17], 11)
   window.map = map   // expõe para index.html (pins, invalidateSize, etc.)
+  liderancasMapLayer = L.layerGroup().addTo(map)
   setTimeout(() => map.invalidateSize(), 200)
 
   fetch("geo/riobairros.geojson")
@@ -1291,6 +1299,7 @@ window.iniciarMapa = async function() {
         onEachFeature: (feature, layer) => {
 
           const bairro = feature.properties[BAIRRO_PROP]
+          if (bairro) layersPorBairro[bairro] = layer
 
           // clique no bairro (intercepta modo adicionar pin antes de selecionar)
           layer.on("click", (e) => {
@@ -1334,6 +1343,7 @@ window.iniciarMapa = async function() {
     })
     .then(() => {
       repaintMapa()
+      renderLiderancasNoMapa()
       // Se o usuário é lider_zona_rj, aplica o filtro da sua zona
       if (window._zonaFixa) {
         filtrarDistrito(window._zonaFixa)
@@ -1388,6 +1398,7 @@ document.getElementById('edit-salvar-btn').addEventListener('click', async () =>
     fecharModalEditar()
     await carregarTudo()
     repaintMapa()
+    renderLiderancasNoMapa()
     renderLiderancas(bairroAtual)
   } catch (err) {
     console.error(err)
@@ -1402,9 +1413,88 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') fecharModalEditar()
 })
 
+// ─────────────────────────────────────────────
+// PINS DE LIDERANÇA NO MAPA
+// ─────────────────────────────────────────────
+function criarIconeLideranca(l) {
+  const cands = configSistema.candidatos || []
+  const cand  = cands.find(c => c.chave === l.vinculo_politico)
+  const cor   = cand ? (cand.cor_fundo || '#1565c0') : '#64748b'
+  const bgHex = cand ? (cand.cor_fundo || '#1565c0') : '#94a3b8'
+  const uid   = 'lc' + String(l.id).replace(/\W/g, '')
+  const inicial = (l.nome || '?')[0].toUpperCase()
+
+  const fotoLayer = l.foto
+    ? `<image href="${l.foto}" x="7" y="5" width="20" height="20"
+           clip-path="url(#${uid})" preserveAspectRatio="xMidYMid slice"/>`
+    : `<circle cx="17" cy="15" r="10" fill="${bgHex}22"/>
+       <text x="17" y="19" text-anchor="middle" font-size="9" font-weight="800"
+             font-family="DM Sans,sans-serif" fill="${cor}">${inicial}</text>`
+
+  const svg = `
+    <svg width="34" height="44" viewBox="0 0 34 44" xmlns="http://www.w3.org/2000/svg"
+         style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+      <defs>
+        <clipPath id="${uid}">
+          <circle cx="17" cy="15" r="10"/>
+        </clipPath>
+      </defs>
+      <path d="M17 1C8.716 1 2 7.716 2 16C2 26.5 17 43 17 43C17 43 32 26.5 32 16C32 7.716 25.284 1 17 1Z"
+            fill="white" stroke="${cor}" stroke-width="2.5"/>
+      ${fotoLayer}
+      <circle cx="17" cy="15" r="10" fill="none" stroke="${cor}" stroke-width="2"/>
+    </svg>`
+
+  return L.divIcon({
+    className: '',
+    html: svg,
+    iconSize:   [34, 44],
+    iconAnchor: [17, 43],
+    popupAnchor:[0, -44]
+  })
+}
+
+function renderLiderancasNoMapa() {
+  if (!liderancasMapLayer) return
+  liderancasMapLayer.clearLayers()
+  if (!liderancasMapVisiveis) return
+  Object.entries(dataCache).forEach(([bairro, bairroData]) => {
+    if (!Array.isArray(bairroData.liderancas)) return
+    const bairroLayer = layersPorBairro[bairro]
+    const centroide = bairroLayer ? bairroLayer.getBounds().getCenter() : null
+    bairroData.liderancas.forEach(l => {
+      if (l.status === 'inativa') return
+      let lat, lng
+      if (l.lat && l.lng) {
+        lat = l.lat; lng = l.lng
+      } else if (centroide) {
+        const seed = (typeof l.id === 'number' ? l.id : String(l.id).split('').reduce((a, c) => a + c.charCodeAt(0), 0))
+        const jLat = ((seed * 9301 + 49297) % 233280) / 233280 - 0.5
+        const jLng = ((seed * 7927 + 13849) % 233280) / 233280 - 0.5
+        lat = centroide.lat + jLat * 0.005
+        lng = centroide.lng + jLng * 0.005
+      } else { return }
+      if (filtroCampanha !== 'ambos' && l.vinculo_politico !== filtroCampanha && l.vinculo_politico !== 'ambos') return
+      const marker = L.marker([lat, lng], {
+        icon: criarIconeLideranca(l),
+        zIndexOffset: 1000
+      })
+      liderancasMapLayer.addLayer(marker)
+    })
+  })
+}
+
 // ── Exposição de globais para GeoMode ──────────────────────────────────────
 window.repaintMapa      = repaintMapa
 window.renderLiderancas = renderLiderancas
+window.renderLiderancasNoMapa = renderLiderancasNoMapa
+window.toggleLiderancasMapLayer = function(visible) {
+  liderancasMapVisiveis = visible
+  if (liderancasMapLayer) {
+    if (visible) { liderancasMapLayer.addTo(map); renderLiderancasNoMapa() }
+    else map.removeLayer(liderancasMapLayer)
+  }
+}
 Object.defineProperty(window, 'bairroAtual', {
   get: () => bairroAtual,
   set: v => { bairroAtual = v },

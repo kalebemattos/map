@@ -998,6 +998,14 @@ body.sidebar-closed .logo-container { right: 20px; }
     </div>
   </div>
 
+  <!-- Lideranças pins -->
+  <div class="ctrl-card">
+    <div class="ctrl-titulo">👥 Lideranças</div>
+    <div class="ctrl-pins-row">
+      <button id="toggleLiderancasPins" class="ctrl-pin-btn ctrl-pin-ativo">ON</button>
+    </div>
+  </div>
+
 </div>
 
 <!-- TOGGLE -->
@@ -1665,6 +1673,15 @@ document.getElementById('togglePinsOverlay').addEventListener('click', () => {
   else              { if (pinsLayer && window.map) window.map.removeLayer(pinsLayer); }
   syncBotoesPins();
 });
+
+// ---------- toggle lideranças pins ----------
+document.getElementById('toggleLiderancasPins').addEventListener('click', () => {
+  const btn = document.getElementById('toggleLiderancasPins')
+  const visible = !btn.classList.contains('ctrl-pin-ativo')
+  if (visible) { btn.classList.add('ctrl-pin-ativo'); btn.textContent = 'ON' }
+  else { btn.classList.remove('ctrl-pin-ativo'); btn.textContent = 'OFF' }
+  if (window.toggleLiderancasMapLayer) window.toggleLiderancasMapLayer(visible)
+})
 
 // ---------- modo adicionar ----------
 document.getElementById('addPinOverlay').addEventListener('click', () => {
