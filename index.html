@@ -929,27 +929,35 @@ body.sidebar-closed .logo-container { right: 20px; }
   z-index: 1500;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  scrollbar-width: none;
 }
+#map-controls::-webkit-scrollbar { display: none; }
 
 .control-card {
   background: rgba(255,255,255,0.94);
   backdrop-filter: blur(8px);
-  border-radius: 14px;
-  padding: 12px 14px;
-  min-width: 190px;
+  border-radius: 11px;
+  padding: 8px 10px;
+  min-width: 160px;
   box-shadow: var(--shadow-md);
   border: 1px solid rgba(255,255,255,0.5);
 }
 
 .control-title {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
   color: var(--slate-500);
-  margin-bottom: 8px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
+.control-title svg { width: 13px; height: 13px; }
 
 .control-value {
   font-family: 'Sora', sans-serif;
@@ -964,26 +972,26 @@ body.sidebar-closed .logo-container { right: 20px; }
 }
 
 /* ─── Expectativa overlay blocos por candidato ─── */
-.exp-overlay-bloco { display:flex; flex-direction:column; gap:3px; }
+.exp-overlay-bloco { display:flex; flex-direction:column; gap:2px; }
 .exp-overlay-cand-nome {
-  font-size:10px; font-weight:700; text-transform:uppercase;
-  letter-spacing:0.5px; color:var(--slate-500); margin-bottom:2px;
+  font-size:9px; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.5px; color:var(--slate-500); margin-bottom:1px;
 }
 .exp-overlay-row {
-  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  display:flex; align-items:center; justify-content:space-between; gap:6px;
 }
 .exp-overlay-label {
-  font-size:11px; color:var(--slate-500); font-weight:500; white-space:nowrap;
+  font-size:10px; color:var(--slate-500); font-weight:500; white-space:nowrap;
 }
-.exp-overlay-val { font-size:13px; }
+.exp-overlay-val { font-size:12px; }
 .exp-overlay-cobertura {
-  font-size:12px; font-weight:700; font-family:'Sora',sans-serif;
+  font-size:11px; font-weight:700; font-family:'Sora',sans-serif;
 }
 
 .mode-btn {
   flex: 1;
-  padding: 6px 6px;
-  font-size: 11px;
+  padding: 4px 6px;
+  font-size: 10px;
   font-weight: 700;
   font-family: inherit;
   border-radius: 20px;
@@ -993,6 +1001,7 @@ body.sidebar-closed .logo-container { right: 20px; }
   cursor: pointer;
   transition: all 0.18s;
   white-space: nowrap;
+  line-height: 1.4;
 }
 
 .mode-btn:hover { background: var(--blue-light); border-color: rgba(21,101,192,0.3); color: var(--blue-main); }
@@ -1006,8 +1015,8 @@ body.sidebar-closed .logo-container { right: 20px; }
 
 .icon-btn {
   flex: 1;
-  padding: 7px 6px;
-  font-size: 13px;
+  padding: 4px 8px;
+  font-size: 11px;
   font-weight: 800;
   font-family: inherit;
   border-radius: 20px;
@@ -1016,6 +1025,7 @@ body.sidebar-closed .logo-container { right: 20px; }
   cursor: pointer;
   transition: all 0.18s;
   color: var(--slate-700);
+  line-height: 1.4;
 }
 
 .icon-btn:hover { background: var(--slate-100); }
@@ -1414,11 +1424,11 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
     justify-content: center;
   }
 
-  .control-card { min-width: auto; padding: 10px 12px; flex: 1; min-width: 0; }
+  .control-card { min-width: auto; padding: 6px 8px; flex: 1; min-width: 0; }
   .control-title { display: none; }
-  .control-value { font-size: 12px; }
-  .mode-btn { font-size: 10px; padding: 5px 5px; }
-  .icon-btn { padding: 7px; }
+  .control-value { font-size: 11px; }
+  .mode-btn { font-size: 10px; padding: 4px 4px; }
+  .icon-btn { padding: 4px 6px; }
 
   /* Mapa título: menor, não atrapalha */
   .map-title-overlay {
