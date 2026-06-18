@@ -1705,19 +1705,18 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
       </div>
     </div>
 
-    <!-- LIDERANÇAS NO MAPA -->
+    <!-- LIDERANÇAS + DOBRADAS NO MAPA (mesmo card) -->
     <div class="control-card">
-      <div class="control-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/></svg> Lideranças</div>
-      <div class="control-group">
-        <button id="toggleLiderancasPins" class="icon-btn active">ON</button>
-      </div>
-    </div>
-
-    <!-- DOBRADAS NO MAPA -->
-    <div class="control-card">
-      <div class="control-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg> Dobradas</div>
-      <div class="control-group">
-        <button id="toggleDobradasPins" class="icon-btn active">ON</button>
+      <div class="control-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/></svg> Pessoas</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span style="font-size:11px;color:var(--slate-500);font-weight:600;">Lideranças</span>
+          <button id="toggleLiderancasPins" class="icon-btn active" style="min-width:44px;">ON</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span style="font-size:11px;color:var(--slate-500);font-weight:600;">Dobradas</span>
+          <button id="toggleDobradasPins" class="icon-btn active" style="min-width:44px;">ON</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1867,17 +1866,23 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
             </select>
           </div>
 
-          <!-- Nome do parceiro -->
-          <input id="dobrada-parceiro-nome" type="text" placeholder="Nome do parceiro" style="margin-bottom:6px;width:100%;box-sizing:border-box;">
+          <!-- Foto + Nome lado a lado -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <!-- Picker de foto circular -->
+            <div id="dobrada-foto-circle"
+                 onclick="document.getElementById('dobrada-foto-input').click()"
+                 style="width:48px;height:48px;border-radius:50%;border:2px dashed #cbd5e1;background:#f8fafc;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;flex-shrink:0;overflow:hidden;transition:border-color .15s;">👤</div>
+            <input id="dobrada-foto-input" type="file" accept="image/*" style="display:none;">
+            <div style="flex:1;min-width:0;">
+              <input id="dobrada-parceiro-nome" type="text" placeholder="Nome do parceiro" style="width:100%;box-sizing:border-box;margin-bottom:0;">
+            </div>
+          </div>
 
           <!-- Cargo -->
           <input id="dobrada-parceiro-cargo" type="text" placeholder="Cargo (ex: Vereador, Deputado)" style="margin-bottom:6px;width:100%;box-sizing:border-box;">
 
           <!-- Votos oferecidos -->
-          <input id="dobrada-votos" type="number" min="0" placeholder="Votos oferecidos" style="margin-bottom:6px;width:100%;box-sizing:border-box;">
-
-          <!-- Foto URL do parceiro -->
-          <input id="dobrada-parceiro-foto" type="text" placeholder="URL da foto do parceiro (opcional)" style="margin-bottom:8px;width:100%;box-sizing:border-box;">
+          <input id="dobrada-votos" type="number" min="0" placeholder="Votos oferecidos" style="margin-bottom:8px;width:100%;box-sizing:border-box;">
 
           <button id="add-dobrada" style="width:100%;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;box-shadow:0 4px 12px rgba(21,101,192,0.3);">
             + Adicionar Dobrada
@@ -4227,100 +4232,95 @@ async function excluirDobrada(id) {
   }
 }
 
-// ── Ícone dobrada no mapa (dois quadradinhos SVG) ────────────
-function criarIconeDobrada(dobradasDaCidade) {
+// ── Ícone de uma dobrada — dois quadradinhos SVG lado a lado ─
+function criarIconeDobrada(d) {
   const cands = configSistema.candidatos || [];
+  const cand  = cands.find(c => c.chave === d.vinculo_politico);
+  const cor   = cand ? (cand.cor_fundo || '#1565c0') : '#64748b';
+  const candFoto = cand ? `../img/${cand.chave}.jpg` : '';
+  const candInicial = (cand ? cand.nome : 'C')[0].toUpperCase();
+  const parcInicial = (d.parceiro_nome || '?')[0].toUpperCase();
 
-  // Para cada dobrada, dois quadradinhos lado a lado
-  // Agrupamos por candidato para alinhar visualmente
-  const pares = dobradasDaCidade.slice(0, 3); // máx 3 pares para não poluir
-  const SZ = 22; // tamanho de cada quadradinho
-  const GAP = 2;
-  const PAIR_W = SZ * 2 + GAP;
-  const totalW = pares.length * (PAIR_W + 4);
-  const totalH = SZ + 4;
+  const SZ  = 24;   // lado do quadradinho
+  const GAP = 3;    // espaço entre os dois
+  const W   = SZ * 2 + GAP;
+  const H   = SZ;
 
-  let svgContent = '';
-  pares.forEach((d, i) => {
-    const cand = cands.find(c => c.chave === d.vinculo_politico);
-    const cor  = cand ? (cand.cor_fundo || '#1565c0') : '#64748b';
-    const candFoto = cand ? `../img/${cand.chave}.jpg` : '';
-    const pNome = (d.parceiro_nome || '?')[0].toUpperCase();
-    const candNome = (cand ? cand.nome : 'C')[0].toUpperCase();
-    const xOffset = i * (PAIR_W + 4) + 2;
+  const uid1 = `db1_${d.id}`;
+  const uid2 = `db2_${d.id}`;
 
-    const uid1 = `dc1_${d.id}`;
-    const uid2 = `dc2_${d.id}`;
-
-    svgContent += `
+  const svg = `
+    <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
+         style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));">
       <defs>
-        <clipPath id="${uid1}"><rect x="${xOffset}" y="2" width="${SZ}" height="${SZ}" rx="4"/></clipPath>
-        <clipPath id="${uid2}"><rect x="${xOffset + SZ + GAP}" y="2" width="${SZ}" height="${SZ}" rx="4"/></clipPath>
+        <clipPath id="${uid1}"><rect x="0"          y="0" width="${SZ}" height="${SZ}" rx="5"/></clipPath>
+        <clipPath id="${uid2}"><rect x="${SZ+GAP}"  y="0" width="${SZ}" height="${SZ}" rx="5"/></clipPath>
       </defs>
+
       <!-- quadrado candidato principal -->
-      <rect x="${xOffset}" y="2" width="${SZ}" height="${SZ}" rx="4" fill="white" stroke="${cor}" stroke-width="1.5"/>
+      <rect x="0" y="0" width="${SZ}" height="${SZ}" rx="5" fill="white" stroke="${cor}" stroke-width="2"/>
       ${candFoto
-        ? `<image href="${candFoto}" x="${xOffset}" y="2" width="${SZ}" height="${SZ}" clip-path="url(#${uid1})" preserveAspectRatio="xMidYMid slice"/>`
-        : `<text x="${xOffset + SZ/2}" y="${2 + SZ/2 + 4}" text-anchor="middle" font-size="9" font-weight="800" font-family="DM Sans,sans-serif" fill="${cor}">${candNome}</text>`}
-      <rect x="${xOffset}" y="2" width="${SZ}" height="${SZ}" rx="4" fill="none" stroke="${cor}" stroke-width="1.5"/>
+        ? `<image href="${candFoto}" x="0" y="0" width="${SZ}" height="${SZ}" clip-path="url(#${uid1})" preserveAspectRatio="xMidYMid slice"/>`
+        : `<text x="${SZ/2}" y="${SZ/2+4}" text-anchor="middle" font-size="11" font-weight="800" font-family="DM Sans,sans-serif" fill="${cor}">${candInicial}</text>`}
+      <rect x="0" y="0" width="${SZ}" height="${SZ}" rx="5" fill="none" stroke="${cor}" stroke-width="2"/>
 
       <!-- quadrado parceiro -->
-      <rect x="${xOffset + SZ + GAP}" y="2" width="${SZ}" height="${SZ}" rx="4" fill="white" stroke="${cor}" stroke-width="1.5"/>
+      <rect x="${SZ+GAP}" y="0" width="${SZ}" height="${SZ}" rx="5" fill="white" stroke="${cor}" stroke-width="2"/>
       ${d.parceiro_foto
-        ? `<image href="${d.parceiro_foto}" x="${xOffset + SZ + GAP}" y="2" width="${SZ}" height="${SZ}" clip-path="url(#${uid2})" preserveAspectRatio="xMidYMid slice"/>`
-        : `<text x="${xOffset + SZ + GAP + SZ/2}" y="${2 + SZ/2 + 4}" text-anchor="middle" font-size="9" font-weight="800" font-family="DM Sans,sans-serif" fill="${cor}">${pNome}</text>`}
-      <rect x="${xOffset + SZ + GAP}" y="2" width="${SZ}" height="${SZ}" rx="4" fill="none" stroke="${cor}" stroke-width="1.5"/>
-    `;
-  });
-
-  const svg = `<svg width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}"
-       xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25));">
-    ${svgContent}
-  </svg>`;
+        ? `<image href="${d.parceiro_foto}" x="${SZ+GAP}" y="0" width="${SZ}" height="${SZ}" clip-path="url(#${uid2})" preserveAspectRatio="xMidYMid slice"/>`
+        : `<text x="${SZ+GAP+SZ/2}" y="${SZ/2+4}" text-anchor="middle" font-size="11" font-weight="800" font-family="DM Sans,sans-serif" fill="${cor}">${parcInicial}</text>`}
+      <rect x="${SZ+GAP}" y="0" width="${SZ}" height="${SZ}" rx="5" fill="none" stroke="${cor}" stroke-width="2"/>
+    </svg>`;
 
   return L.divIcon({
     className: '',
     html: svg,
-    iconSize:   [totalW, totalH],
-    iconAnchor: [totalW / 2, totalH + 2],
-    popupAnchor:[0, -(totalH + 2)]
+    iconSize:   [W, H],
+    iconAnchor: [W / 2, H],    // ancora na base central do ícone
+    popupAnchor:[0, -(H + 4)]
   });
 }
 
-// ── Renderizar pins de dobradas no mapa ──────────────────────
+// ── Renderizar pins de dobradas no mapa (um marker por dobrada, com jitter) ─
 function renderDobradasNoMapa() {
   if (!dobradasMapLayer) return;
   dobradasMapLayer.clearLayers();
   if (!dobradasMapVisiveis) return;
 
-  // Agrupar dobradas por cidade, já filtradas por campanha
-  const porCidade = {};
+  const cands = configSistema.candidatos || [];
+
   dobradasCache.forEach(d => {
+    // Filtro de campanha
     if (filtroCampanha !== 'ambos' && d.vinculo_politico !== filtroCampanha) return;
-    if (!porCidade[d.cidade]) porCidade[d.cidade] = [];
-    porCidade[d.cidade].push(d);
-  });
 
-  Object.entries(porCidade).forEach(([cidade, dobradas]) => {
-    const cidadeLayer = layersPorCidade[cidade];
+    const cidadeLayer = layersPorCidade[d.cidade];
     if (!cidadeLayer) return;
-    const centro = cidadeLayer.getBounds().getCenter();
+    const centroide = cidadeLayer.getBounds().getCenter();
 
-    // Posiciona ligeiramente acima do centroide para não sobrepor lideranças
-    const marker = L.marker([centro.lat + 0.01, centro.lng], {
-      icon: criarIconeDobrada(dobradas),
-      zIndexOffset: 900
+    // Jitter determinístico pelo id da dobrada
+    const seed = typeof d.id === 'number' ? d.id : String(d.id).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    const jLat = ((seed * 9301 + 49297) % 233280) / 233280 - 0.5;
+    const jLng = ((seed * 7927 + 13849) % 233280) / 233280 - 0.5;
+    const lat  = centroide.lat + jLat * 0.035;
+    const lng  = centroide.lng + jLng * 0.035;
+
+    const marker = L.marker([lat, lng], {
+      icon: criarIconeDobrada(d),
+      zIndexOffset: 950
     });
 
-    // Tooltip com resumo
-    const cands = configSistema.candidatos || [];
-    const linhas = dobradas.map(d => {
-      const cand = cands.find(c => c.chave === d.vinculo_politico);
-      return `<b style="color:${cand?.cor_fundo||'#1565c0'}">${cand?.nome||d.vinculo_politico}</b> + ${d.parceiro_nome}${d.votos_oferecidos ? ' · ' + Number(d.votos_oferecidos).toLocaleString('pt-BR') + ' votos' : ''}`;
-    }).join('<br>');
-    marker.bindTooltip(`<div style="font-family:'DM Sans',sans-serif;font-size:12px;"><b>${cidade}</b><br>${linhas}</div>`, {
-      permanent: false, direction: 'top'
-    });
+    // Tooltip resumido
+    const cand = cands.find(c => c.chave === d.vinculo_politico);
+    const cor  = cand?.cor_fundo || '#1565c0';
+    marker.bindTooltip(
+      `<div style="font-family:'DM Sans',sans-serif;font-size:12px;line-height:1.4;">
+         <b style="color:${cor}">${cand?.nome || d.vinculo_politico}</b> + <b>${d.parceiro_nome}</b>
+         ${d.parceiro_cargo ? `<br><span style="color:#64748b">${d.parceiro_cargo}</span>` : ''}
+         ${d.votos_oferecidos ? `<br><span style="color:#1565c0;font-weight:700">${Number(d.votos_oferecidos).toLocaleString('pt-BR')} votos</span>` : ''}
+         <br><span style="color:#94a3b8;font-size:10px">${d.cidade}</span>
+       </div>`,
+      { permanent: false, direction: 'top', offset: [0, -4] }
+    );
 
     dobradasMapLayer.addLayer(marker);
   });
@@ -4341,17 +4341,30 @@ document.getElementById('toggleDobradasPins').onclick = () => {
   }
 };
 
+// ── Preview de foto do parceiro ──────────────────────────────
+document.getElementById('dobrada-foto-input').addEventListener('change', function() {
+  const file = this.files[0];
+  const circle = document.getElementById('dobrada-foto-circle');
+  if (!file) { circle.innerHTML = '👤'; circle.style.backgroundImage = ''; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    circle.innerHTML = '';
+    circle.style.cssText += ';background-image:url(' + e.target.result + ');background-size:cover;background-position:center;';
+  };
+  reader.readAsDataURL(file);
+});
+
 // ── Form: Adicionar dobrada ──────────────────────────────────
 document.getElementById('add-dobrada').addEventListener('click', async () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   if (user.nivel === 'visualizador') { alert('Acesso negado.'); return; }
   if (!cidadeSelecionada) { alert('Selecione uma cidade primeiro.'); return; }
 
-  const vinculo        = document.getElementById('dobrada-vinculo').value;
-  const parceiroNome   = document.getElementById('dobrada-parceiro-nome').value.trim();
-  const parceiroCargo  = document.getElementById('dobrada-parceiro-cargo').value.trim();
-  const votos          = document.getElementById('dobrada-votos').value;
-  const parceiroFoto   = document.getElementById('dobrada-parceiro-foto').value.trim();
+  const vinculo       = document.getElementById('dobrada-vinculo').value;
+  const parceiroNome  = document.getElementById('dobrada-parceiro-nome').value.trim();
+  const parceiroCargo = document.getElementById('dobrada-parceiro-cargo').value.trim();
+  const votos         = document.getElementById('dobrada-votos').value;
+  const fotoInput     = document.getElementById('dobrada-foto-input');
 
   if (!parceiroNome) { alert('Informe o nome do parceiro.'); return; }
 
@@ -4359,23 +4372,28 @@ document.getElementById('add-dobrada').addEventListener('click', async () => {
   btn.disabled = true; btn.textContent = 'Salvando…';
 
   try {
-    await apiFetch('/dobradas', {
+    const fd = new FormData();
+    fd.append('cidade',           cidadeSelecionada);
+    fd.append('vinculo_politico', vinculo);
+    fd.append('parceiro_nome',    parceiroNome);
+    fd.append('parceiro_cargo',   parceiroCargo);
+    fd.append('votos_oferecidos', String(Number(votos) || 0));
+    if (fotoInput.files[0]) fd.append('foto', fotoInput.files[0]);
+
+    const token = localStorage.getItem('token');
+    await fetch(`${window.API_URL}/dobradas`, {
       method: 'POST',
-      body: JSON.stringify({
-        cidade:           cidadeSelecionada,
-        vinculo_politico: vinculo,
-        parceiro_nome:    parceiroNome,
-        parceiro_cargo:   parceiroCargo,
-        votos_oferecidos: Number(votos) || 0,
-        parceiro_foto:    parceiroFoto || null
-      })
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd
     });
 
     // Limpar form
     document.getElementById('dobrada-parceiro-nome').value  = '';
     document.getElementById('dobrada-parceiro-cargo').value = '';
     document.getElementById('dobrada-votos').value          = '';
-    document.getElementById('dobrada-parceiro-foto').value  = '';
+    fotoInput.value = '';
+    const circle = document.getElementById('dobrada-foto-circle');
+    circle.innerHTML = '👤'; circle.style.backgroundImage = '';
 
     await carregarDobradas();
     renderDobradasSidebar(cidadeSelecionada);

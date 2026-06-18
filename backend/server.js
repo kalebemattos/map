@@ -1971,18 +1971,29 @@ app.get('/api/dobradas', auth, withTenant, async (req, res) => {
   }
 });
 
-// POST nova dobrada
-app.post('/api/dobradas', auth, withTenant, allowAll(), async (req, res) => {
-  const { cidade, vinculo_politico, parceiro_nome, parceiro_foto, parceiro_cargo, votos_oferecidos } = req.body;
+// POST nova dobrada (aceita foto via multipart)
+app.post('/api/dobradas', auth, withTenant, allowAll(), upload.single('foto'), async (req, res) => {
+  const { cidade, vinculo_politico, parceiro_nome, parceiro_cargo, votos_oferecidos } = req.body;
   if (!cidade || !vinculo_politico || !parceiro_nome) {
     return res.status(400).json({ error: 'Campos obrigatórios: cidade, vinculo_politico, parceiro_nome' });
   }
   try {
+    let parceiro_foto = null;
+    if (req.file) {
+      const caminhoOtimizado = await otimizarImagem(req.file.path);
+      const fileBuffer = fs.readFileSync(caminhoOtimizado);
+      const fileName = `dobrada_${Date.now()}.webp`;
+      const { error } = await supabase.storage
+        .from('liderancas').upload(fileName, fileBuffer, { contentType: 'image/webp', upsert: false });
+      if (error) throw error;
+      parceiro_foto = supabase.storage.from('liderancas').getPublicUrl(fileName).data.publicUrl;
+      try { fs.unlinkSync(caminhoOtimizado); } catch (_) {}
+    }
     const row = await dbGet(
       `INSERT INTO dobradas (tenant_id, cidade, vinculo_politico, parceiro_nome, parceiro_foto, parceiro_cargo, votos_oferecidos)
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
       [req.tenantId, cidade.trim(), vinculo_politico.trim(), parceiro_nome.trim(),
-       parceiro_foto || null, parceiro_cargo || null, Number(votos_oferecidos) || 0]
+       parceiro_foto, parceiro_cargo || null, Number(votos_oferecidos) || 0]
     );
     res.json(row);
   } catch (err) {
