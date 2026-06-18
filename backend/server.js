@@ -1936,6 +1936,96 @@ app.delete("/api/salas-video/:id",
   }
 );
 
+// ─────────────────────────────────────────────
+// DOBRADAS
+// ─────────────────────────────────────────────
+
+// Auto-criação da tabela se não existir
+pool.query(`
+  CREATE TABLE IF NOT EXISTS dobradas (
+    id SERIAL PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    cidade TEXT NOT NULL,
+    vinculo_politico TEXT NOT NULL,
+    parceiro_nome TEXT NOT NULL,
+    parceiro_foto TEXT,
+    parceiro_cargo TEXT,
+    votos_oferecidos INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  )
+`).catch(e => console.error('Erro criando tabela dobradas:', e));
+
+// GET todas as dobradas (para mapa + sidebar)
+app.get('/api/dobradas', auth, withTenant, async (req, res) => {
+  try {
+    const { cidade } = req.query;
+    let sql = 'SELECT * FROM dobradas WHERE tenant_id = $1';
+    const params = [req.tenantId];
+    if (cidade) { sql += ' AND LOWER(cidade) = LOWER($2)'; params.push(cidade); }
+    sql += ' ORDER BY cidade, id';
+    const rows = await dbAll(sql, params);
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro GET /api/dobradas:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+// POST nova dobrada
+app.post('/api/dobradas', auth, withTenant, allowAll(), async (req, res) => {
+  const { cidade, vinculo_politico, parceiro_nome, parceiro_foto, parceiro_cargo, votos_oferecidos } = req.body;
+  if (!cidade || !vinculo_politico || !parceiro_nome) {
+    return res.status(400).json({ error: 'Campos obrigatórios: cidade, vinculo_politico, parceiro_nome' });
+  }
+  try {
+    const row = await dbGet(
+      `INSERT INTO dobradas (tenant_id, cidade, vinculo_politico, parceiro_nome, parceiro_foto, parceiro_cargo, votos_oferecidos)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [req.tenantId, cidade.trim(), vinculo_politico.trim(), parceiro_nome.trim(),
+       parceiro_foto || null, parceiro_cargo || null, Number(votos_oferecidos) || 0]
+    );
+    res.json(row);
+  } catch (err) {
+    console.error('Erro POST /api/dobradas:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+// PUT editar dobrada
+app.put('/api/dobradas/:id', auth, withTenant, allowAll(), async (req, res) => {
+  const { parceiro_nome, parceiro_foto, parceiro_cargo, votos_oferecidos, vinculo_politico } = req.body;
+  try {
+    const row = await dbGet(
+      `UPDATE dobradas SET
+         parceiro_nome = COALESCE($1, parceiro_nome),
+         parceiro_foto = COALESCE($2, parceiro_foto),
+         parceiro_cargo = COALESCE($3, parceiro_cargo),
+         votos_oferecidos = COALESCE($4, votos_oferecidos),
+         vinculo_politico = COALESCE($5, vinculo_politico)
+       WHERE id = $6 AND tenant_id = $7 RETURNING *`,
+      [parceiro_nome || null, parceiro_foto || null, parceiro_cargo || null,
+       votos_oferecidos !== undefined ? Number(votos_oferecidos) : null,
+       vinculo_politico || null, req.params.id, req.tenantId]
+    );
+    if (!row) return res.status(404).json({ error: 'Dobrada não encontrada' });
+    res.json(row);
+  } catch (err) {
+    console.error('Erro PUT /api/dobradas/:id:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+// DELETE dobrada
+app.delete('/api/dobradas/:id', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    await dbRun('DELETE FROM dobradas WHERE id = $1 AND tenant_id = $2', [req.params.id, req.tenantId]);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Erro DELETE /api/dobradas/:id:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
 /* ================= HTTP SERVER + SOCKET.IO ================= */
 
 const server = http.createServer(app);

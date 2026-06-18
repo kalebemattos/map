@@ -1712,6 +1712,14 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
         <button id="toggleLiderancasPins" class="icon-btn active">ON</button>
       </div>
     </div>
+
+    <!-- DOBRADAS NO MAPA -->
+    <div class="control-card">
+      <div class="control-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg> Dobradas</div>
+      <div class="control-group">
+        <button id="toggleDobradasPins" class="icon-btn active">ON</button>
+      </div>
+    </div>
   </div>
 
   <!-- TOGGLE SIDEBAR -->
@@ -1830,6 +1838,49 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
           <input id="lideranca-foto-file" type="file" accept="image/*" style="margin-bottom:8px;">
           <button id="add-lideranca" style="width:100%;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;box-shadow:0 4px 12px rgba(21,101,192,0.3);">
             + Adicionar Liderança
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOBRADAS -->
+    <div id="dobradas-container" class="city-card" style="display:none;">
+      <div class="collapsible-header">
+        <h3 style="margin-bottom:0;">
+          Dobradas
+          <span id="dobradas-count" style="font-size:12px;font-weight:500;color:#64748b;margin-left:4px;">(0)</span>
+        </h3>
+        <button class="collapse-btn" data-target="dobradas-content" data-state="expanded">Minimizar</button>
+      </div>
+
+      <div id="dobradas-content">
+        <div id="dobradas-list"></div>
+
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f5f9;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:8px;">Nova Dobrada</div>
+
+          <!-- Candidato principal -->
+          <div style="margin-bottom:6px;">
+            <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:3px;">Candidato</label>
+            <select id="dobrada-vinculo" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;">
+              <!-- preenchido dinamicamente -->
+            </select>
+          </div>
+
+          <!-- Nome do parceiro -->
+          <input id="dobrada-parceiro-nome" type="text" placeholder="Nome do parceiro" style="margin-bottom:6px;width:100%;box-sizing:border-box;">
+
+          <!-- Cargo -->
+          <input id="dobrada-parceiro-cargo" type="text" placeholder="Cargo (ex: Vereador, Deputado)" style="margin-bottom:6px;width:100%;box-sizing:border-box;">
+
+          <!-- Votos oferecidos -->
+          <input id="dobrada-votos" type="number" min="0" placeholder="Votos oferecidos" style="margin-bottom:6px;width:100%;box-sizing:border-box;">
+
+          <!-- Foto URL do parceiro -->
+          <input id="dobrada-parceiro-foto" type="text" placeholder="URL da foto do parceiro (opcional)" style="margin-bottom:8px;width:100%;box-sizing:border-box;">
+
+          <button id="add-dobrada" style="width:100%;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;box-shadow:0 4px 12px rgba(21,101,192,0.3);">
+            + Adicionar Dobrada
           </button>
         </div>
       </div>
@@ -2080,6 +2131,7 @@ function injetarCandidatos() {
         updateLegendByMode();
         atualizarTotalGeralOverlay();
         renderLiderancasNoMapa();
+        renderDobradasNoMapa();
         if (cidadeSelecionada) renderLiderancas(cidadeSelecionada);
       });
     });
@@ -2214,6 +2266,7 @@ if (filtroCampanhaSelect) {
   }
 
   renderLiderancasNoMapa();
+  renderDobradasNoMapa();
   repaintMap();               // <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z"/></svg> repinta o mapa
   atualizarTotalGeralOverlay(); // <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z"/></svg> atualiza totais
 
@@ -2887,6 +2940,11 @@ try {
   console.error('Erro ao carregar expectativas:', e);
 }
 
+  // =====================
+  // DOBRADAS
+  // =====================
+  await carregarDobradas();
+
 }
 
 
@@ -3043,6 +3101,7 @@ function restoreSidebarDefault() {
   
   if (typeof renderLiderancas === 'function') renderLiderancas(null);
   if (typeof renderObservacoes === 'function') renderObservacoes(null);
+  if (typeof renderDobradasSidebar === 'function') renderDobradasSidebar(null);
 
   // <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg> Só reseta tudo se NÃO houver região ativa
 if (layerRJ && regiaoAtiva === 'all') {
@@ -3076,6 +3135,7 @@ const normalized = normalizeCityName(cityName);
   });
   renderLiderancas(cityName);
   renderObservacoes(cityName);
+  renderDobradasSidebar(cityName);
 
   // Chip flutuante Alice — mostra cidade selecionada fora do sidebar
   if (window.IACampanha) {
@@ -3319,7 +3379,9 @@ document.getElementById('add-lideranca').onclick = async function () {
       repaintMap();
       atualizarTotalGeralOverlay();
       renderLiderancasNoMapa();
+      renderDobradasNoMapa();
       renderLiderancas(cidadeSelecionada);
+      renderDobradasSidebar(cidadeSelecionada);
 
     } catch (err) {
       console.error(err);
@@ -4052,6 +4114,279 @@ function renderLiderancasNoMapa() {
     });
   });
 }
+
+// ══════════════════════════════════════════════════════
+// DOBRADAS
+// ══════════════════════════════════════════════════════
+let dobradasCache = [];   // todas as dobradas da campanha
+let dobradasMapLayer = null;
+let dobradasMapVisiveis = true;
+
+// Inicializa layer (chamado após map estar pronto)
+function iniciarDobradasLayer() {
+  if (!dobradasMapLayer) {
+    dobradasMapLayer = L.layerGroup().addTo(map);
+  }
+}
+
+// ── Carregar do backend ──────────────────────────────────────
+async function carregarDobradas() {
+  try {
+    const res = await apiFetch('/dobradas');
+    dobradasCache = await res.json();
+    if (!Array.isArray(dobradasCache)) dobradasCache = [];
+  } catch (e) {
+    console.error('Erro ao carregar dobradas:', e);
+    dobradasCache = [];
+  }
+}
+
+// ── Renderizar sidebar da cidade selecionada ─────────────────
+function renderDobradasSidebar(cidade) {
+  const container = document.getElementById('dobradas-container');
+  const listEl    = document.getElementById('dobradas-list');
+  const countEl   = document.getElementById('dobradas-count');
+  if (!container || !listEl) return;
+
+  const cands = configSistema.candidatos || [];
+
+  // Preenche select de candidatos no form
+  const sel = document.getElementById('dobrada-vinculo');
+  if (sel && !sel.options.length) {
+    cands.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.chave;
+      opt.textContent = c.nome;
+      sel.appendChild(opt);
+    });
+  }
+
+  if (!cidade) { container.style.display = 'none'; return; }
+
+  const lista = dobradasCache.filter(d => d.cidade === cidade);
+  container.style.display = '';
+  if (countEl) countEl.textContent = `(${lista.length})`;
+
+  if (!lista.length) {
+    listEl.innerHTML = '<p style="font-size:13px;color:#94a3b8;margin:0;">Nenhuma dobrada cadastrada.</p>';
+    return;
+  }
+
+  listEl.innerHTML = lista.map(d => {
+    const cand = cands.find(c => c.chave === d.vinculo_politico);
+    const cor  = cand ? (cand.cor_fundo || '#1565c0') : '#64748b';
+    const candFoto = cand ? `../img/${cand.chave}.jpg` : '';
+    const candNome = cand ? cand.nome : d.vinculo_politico;
+
+    const parceiroInicialSvg = `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <rect width="32" height="32" rx="6" fill="${cor}22"/>
+      <text x="16" y="21" text-anchor="middle" font-size="14" font-weight="800"
+            font-family="DM Sans,sans-serif" fill="${cor}">${(d.parceiro_nome||'?')[0].toUpperCase()}</text>
+    </svg>`;
+
+    return `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9;" data-dobrada-id="${d.id}">
+      <!-- Dois quadradinhos -->
+      <div style="display:flex;gap:4px;flex-shrink:0;">
+        <div style="width:36px;height:36px;border-radius:7px;border:2px solid ${cor};overflow:hidden;background:#f8fafc;">
+          <img src="${candFoto}" onerror="this.style.display='none'" alt=""
+               style="width:100%;height:100%;object-fit:cover;display:block;">
+        </div>
+        <div style="width:36px;height:36px;border-radius:7px;border:2px solid ${cor};overflow:hidden;background:#f8fafc;display:flex;align-items:center;justify-content:center;">
+          ${d.parceiro_foto
+            ? `<img src="${d.parceiro_foto}" onerror="this.style.display='none';this.parentNode.insertAdjacentHTML('beforeend','${parceiroInicialSvg}')" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`
+            : parceiroInicialSvg}
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;font-weight:700;color:${cor};text-transform:uppercase;letter-spacing:.4px;">${candNome}</div>
+        <div style="font-size:13px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.parceiro_nome}</div>
+        ${d.parceiro_cargo ? `<div style="font-size:11px;color:#64748b;">${d.parceiro_cargo}</div>` : ''}
+        ${d.votos_oferecidos ? `<div style="font-size:12px;color:#1565c0;font-weight:700;">${Number(d.votos_oferecidos).toLocaleString('pt-BR')} votos</div>` : ''}
+      </div>
+
+      <!-- Excluir -->
+      <button onclick="excluirDobrada(${d.id})"
+              style="flex-shrink:0;width:28px;height:28px;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ── Excluir dobrada ──────────────────────────────────────────
+async function excluirDobrada(id) {
+  if (!confirm('Excluir esta dobrada?')) return;
+  try {
+    await apiFetch(`/dobradas/${id}`, { method: 'DELETE' });
+    await carregarDobradas();
+    renderDobradasSidebar(cidadeSelecionada);
+    renderDobradasNoMapa();
+  } catch (e) {
+    alert('Erro ao excluir dobrada');
+  }
+}
+
+// ── Ícone dobrada no mapa (dois quadradinhos SVG) ────────────
+function criarIconeDobrada(dobradasDaCidade) {
+  const cands = configSistema.candidatos || [];
+
+  // Para cada dobrada, dois quadradinhos lado a lado
+  // Agrupamos por candidato para alinhar visualmente
+  const pares = dobradasDaCidade.slice(0, 3); // máx 3 pares para não poluir
+  const SZ = 22; // tamanho de cada quadradinho
+  const GAP = 2;
+  const PAIR_W = SZ * 2 + GAP;
+  const totalW = pares.length * (PAIR_W + 4);
+  const totalH = SZ + 4;
+
+  let svgContent = '';
+  pares.forEach((d, i) => {
+    const cand = cands.find(c => c.chave === d.vinculo_politico);
+    const cor  = cand ? (cand.cor_fundo || '#1565c0') : '#64748b';
+    const candFoto = cand ? `../img/${cand.chave}.jpg` : '';
+    const pNome = (d.parceiro_nome || '?')[0].toUpperCase();
+    const candNome = (cand ? cand.nome : 'C')[0].toUpperCase();
+    const xOffset = i * (PAIR_W + 4) + 2;
+
+    const uid1 = `dc1_${d.id}`;
+    const uid2 = `dc2_${d.id}`;
+
+    svgContent += `
+      <defs>
+        <clipPath id="${uid1}"><rect x="${xOffset}" y="2" width="${SZ}" height="${SZ}" rx="4"/></clipPath>
+        <clipPath id="${uid2}"><rect x="${xOffset + SZ + GAP}" y="2" width="${SZ}" height="${SZ}" rx="4"/></clipPath>
+      </defs>
+      <!-- quadrado candidato principal -->
+      <rect x="${xOffset}" y="2" width="${SZ}" height="${SZ}" rx="4" fill="white" stroke="${cor}" stroke-width="1.5"/>
+      ${candFoto
+        ? `<image href="${candFoto}" x="${xOffset}" y="2" width="${SZ}" height="${SZ}" clip-path="url(#${uid1})" preserveAspectRatio="xMidYMid slice"/>`
+        : `<text x="${xOffset + SZ/2}" y="${2 + SZ/2 + 4}" text-anchor="middle" font-size="9" font-weight="800" font-family="DM Sans,sans-serif" fill="${cor}">${candNome}</text>`}
+      <rect x="${xOffset}" y="2" width="${SZ}" height="${SZ}" rx="4" fill="none" stroke="${cor}" stroke-width="1.5"/>
+
+      <!-- quadrado parceiro -->
+      <rect x="${xOffset + SZ + GAP}" y="2" width="${SZ}" height="${SZ}" rx="4" fill="white" stroke="${cor}" stroke-width="1.5"/>
+      ${d.parceiro_foto
+        ? `<image href="${d.parceiro_foto}" x="${xOffset + SZ + GAP}" y="2" width="${SZ}" height="${SZ}" clip-path="url(#${uid2})" preserveAspectRatio="xMidYMid slice"/>`
+        : `<text x="${xOffset + SZ + GAP + SZ/2}" y="${2 + SZ/2 + 4}" text-anchor="middle" font-size="9" font-weight="800" font-family="DM Sans,sans-serif" fill="${cor}">${pNome}</text>`}
+      <rect x="${xOffset + SZ + GAP}" y="2" width="${SZ}" height="${SZ}" rx="4" fill="none" stroke="${cor}" stroke-width="1.5"/>
+    `;
+  });
+
+  const svg = `<svg width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}"
+       xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25));">
+    ${svgContent}
+  </svg>`;
+
+  return L.divIcon({
+    className: '',
+    html: svg,
+    iconSize:   [totalW, totalH],
+    iconAnchor: [totalW / 2, totalH + 2],
+    popupAnchor:[0, -(totalH + 2)]
+  });
+}
+
+// ── Renderizar pins de dobradas no mapa ──────────────────────
+function renderDobradasNoMapa() {
+  if (!dobradasMapLayer) return;
+  dobradasMapLayer.clearLayers();
+  if (!dobradasMapVisiveis) return;
+
+  // Agrupar dobradas por cidade, já filtradas por campanha
+  const porCidade = {};
+  dobradasCache.forEach(d => {
+    if (filtroCampanha !== 'ambos' && d.vinculo_politico !== filtroCampanha) return;
+    if (!porCidade[d.cidade]) porCidade[d.cidade] = [];
+    porCidade[d.cidade].push(d);
+  });
+
+  Object.entries(porCidade).forEach(([cidade, dobradas]) => {
+    const cidadeLayer = layersPorCidade[cidade];
+    if (!cidadeLayer) return;
+    const centro = cidadeLayer.getBounds().getCenter();
+
+    // Posiciona ligeiramente acima do centroide para não sobrepor lideranças
+    const marker = L.marker([centro.lat + 0.01, centro.lng], {
+      icon: criarIconeDobrada(dobradas),
+      zIndexOffset: 900
+    });
+
+    // Tooltip com resumo
+    const cands = configSistema.candidatos || [];
+    const linhas = dobradas.map(d => {
+      const cand = cands.find(c => c.chave === d.vinculo_politico);
+      return `<b style="color:${cand?.cor_fundo||'#1565c0'}">${cand?.nome||d.vinculo_politico}</b> + ${d.parceiro_nome}${d.votos_oferecidos ? ' · ' + Number(d.votos_oferecidos).toLocaleString('pt-BR') + ' votos' : ''}`;
+    }).join('<br>');
+    marker.bindTooltip(`<div style="font-family:'DM Sans',sans-serif;font-size:12px;"><b>${cidade}</b><br>${linhas}</div>`, {
+      permanent: false, direction: 'top'
+    });
+
+    dobradasMapLayer.addLayer(marker);
+  });
+}
+
+window.renderDobradasNoMapa = renderDobradasNoMapa;
+
+// ── Toggle button ────────────────────────────────────────────
+document.getElementById('toggleDobradasPins').onclick = () => {
+  dobradasMapVisiveis = !dobradasMapVisiveis;
+  const btn = document.getElementById('toggleDobradasPins');
+  if (dobradasMapVisiveis) {
+    if (dobradasMapLayer) dobradasMapLayer.addTo(map);
+    btn.textContent = 'ON'; btn.classList.add('active');
+  } else {
+    if (dobradasMapLayer) map.removeLayer(dobradasMapLayer);
+    btn.textContent = 'OFF'; btn.classList.remove('active');
+  }
+};
+
+// ── Form: Adicionar dobrada ──────────────────────────────────
+document.getElementById('add-dobrada').addEventListener('click', async () => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (user.nivel === 'visualizador') { alert('Acesso negado.'); return; }
+  if (!cidadeSelecionada) { alert('Selecione uma cidade primeiro.'); return; }
+
+  const vinculo        = document.getElementById('dobrada-vinculo').value;
+  const parceiroNome   = document.getElementById('dobrada-parceiro-nome').value.trim();
+  const parceiroCargo  = document.getElementById('dobrada-parceiro-cargo').value.trim();
+  const votos          = document.getElementById('dobrada-votos').value;
+  const parceiroFoto   = document.getElementById('dobrada-parceiro-foto').value.trim();
+
+  if (!parceiroNome) { alert('Informe o nome do parceiro.'); return; }
+
+  const btn = document.getElementById('add-dobrada');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  try {
+    await apiFetch('/dobradas', {
+      method: 'POST',
+      body: JSON.stringify({
+        cidade:           cidadeSelecionada,
+        vinculo_politico: vinculo,
+        parceiro_nome:    parceiroNome,
+        parceiro_cargo:   parceiroCargo,
+        votos_oferecidos: Number(votos) || 0,
+        parceiro_foto:    parceiroFoto || null
+      })
+    });
+
+    // Limpar form
+    document.getElementById('dobrada-parceiro-nome').value  = '';
+    document.getElementById('dobrada-parceiro-cargo').value = '';
+    document.getElementById('dobrada-votos').value          = '';
+    document.getElementById('dobrada-parceiro-foto').value  = '';
+
+    await carregarDobradas();
+    renderDobradasSidebar(cidadeSelecionada);
+    renderDobradasNoMapa();
+  } catch (e) {
+    alert('Erro ao adicionar dobrada.');
+  } finally {
+    btn.disabled = false; btn.textContent = '+ Adicionar Dobrada';
+  }
+});
+
 document.getElementById('addPinBtn').onclick = () => {
   modoAdicionarPin = !modoAdicionarPin;
 
@@ -4096,7 +4431,10 @@ async function salvarExpectativaCidade() {
     await carregarTudo();
     repaintMap();
     atualizarTotalGeralOverlay();
+    renderLiderancasNoMapa();
+    renderDobradasNoMapa();
     renderLiderancas(cidadeSelecionada);
+    renderDobradasSidebar(cidadeSelecionada);
 
   } catch (err) {
     console.error('Erro na requisição:', err);
@@ -4183,6 +4521,7 @@ function initializeMapAndApp() {
     window.map = map;   // expõe para GeoModeEstado
     pinsLayer = L.layerGroup().addTo(map);
     liderancasMapLayer = L.layerGroup().addTo(map);
+    iniciarDobradasLayer();
 
     map.on('click', function (e) {
 
@@ -4619,6 +4958,7 @@ window.iniciarAplicacao = async function () {
   initializeMapAndApp();
   await carregarPins();
   renderLiderancasNoMapa();
+  renderDobradasNoMapa();
   initLiderancaSearch();
 
   const usuario = JSON.parse(localStorage.getItem('user'));
@@ -4669,7 +5009,9 @@ document.addEventListener('visibilitychange', async () => {
     repaintMap();
     atualizarTotalGeralOverlay();
     renderLiderancasNoMapa();
+    renderDobradasNoMapa();
     if (cidadeSelecionada) renderLiderancas(cidadeSelecionada);
+    if (cidadeSelecionada) renderDobradasSidebar(cidadeSelecionada);
   }
 });
 
