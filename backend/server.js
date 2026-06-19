@@ -2008,20 +2008,33 @@ app.post('/api/dobradas', auth, withTenant, allowAll(), upload.single('foto'), a
 });
 
 // PUT editar dobrada
-app.put('/api/dobradas/:id', auth, withTenant, allowAll(), async (req, res) => {
-  const { parceiro_nome, parceiro_foto, parceiro_cargo, responsavel, votos_oferecidos, vinculo_politico } = req.body;
+app.put('/api/dobradas/:id', auth, withTenant, allow('dono', 'admin'), upload.single('foto'), async (req, res) => {
+  const { parceiro_nome, parceiro_cargo, responsavel, votos_oferecidos, vinculo_politico } = req.body;
   try {
+    // Se uma nova foto foi enviada, faz upload no Supabase
+    let novaFoto = null;
+    if (req.file) {
+      const caminhoOtimizado = await otimizarImagem(req.file.path);
+      const fileBuffer = fs.readFileSync(caminhoOtimizado);
+      const fileName = `dobrada_${Date.now()}.webp`;
+      const { error } = await supabase.storage
+        .from('liderancas').upload(fileName, fileBuffer, { contentType: 'image/webp', upsert: false });
+      if (error) throw error;
+      novaFoto = supabase.storage.from('liderancas').getPublicUrl(fileName).data.publicUrl;
+      try { fs.unlinkSync(caminhoOtimizado); } catch (_) {}
+    }
+
     const row = await dbGet(
       `UPDATE dobradas SET
-         parceiro_nome = COALESCE($1, parceiro_nome),
-         parceiro_foto = COALESCE($2, parceiro_foto),
-         parceiro_cargo = COALESCE($3, parceiro_cargo),
-         responsavel = COALESCE($4, responsavel),
+         parceiro_nome    = COALESCE($1, parceiro_nome),
+         parceiro_foto    = COALESCE($2, parceiro_foto),
+         parceiro_cargo   = COALESCE($3, parceiro_cargo),
+         responsavel      = COALESCE($4, responsavel),
          votos_oferecidos = COALESCE($5, votos_oferecidos),
          vinculo_politico = COALESCE($6, vinculo_politico)
        WHERE id = $7 AND tenant_id = $8 RETURNING *`,
-      [parceiro_nome || null, parceiro_foto || null, parceiro_cargo || null,
-       responsavel || null,
+      [parceiro_nome || null, novaFoto,
+       parceiro_cargo || null, responsavel || null,
        votos_oferecidos !== undefined ? Number(votos_oferecidos) : null,
        vinculo_politico || null, req.params.id, req.tenantId]
     );
@@ -2034,7 +2047,7 @@ app.put('/api/dobradas/:id', auth, withTenant, allowAll(), async (req, res) => {
 });
 
 // DELETE dobrada
-app.delete('/api/dobradas/:id', auth, withTenant, allowAll(), async (req, res) => {
+app.delete('/api/dobradas/:id', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
   try {
     await dbRun('DELETE FROM dobradas WHERE id = $1 AND tenant_id = $2', [req.params.id, req.tenantId]);
     res.json({ ok: true });

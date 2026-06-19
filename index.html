@@ -4187,6 +4187,8 @@ function renderDobradasSidebar(cidade) {
   if (!container || !listEl) return;
 
   const cands = configSistema.candidatos || [];
+  const user  = JSON.parse(localStorage.getItem('user') || '{}');
+  const podeEditar = user.nivel === 'dono' || user.nivel === 'admin';
 
   // Preenche select de candidatos no form
   const sel = document.getElementById('dobrada-vinculo');
@@ -4247,15 +4249,24 @@ function renderDobradasSidebar(cidade) {
         ${d.votos_oferecidos ? `<div style="font-size:12px;color:#1565c0;font-weight:700;">${Number(d.votos_oferecidos).toLocaleString('pt-BR')} votos</div>` : ''}
       </div>
 
-      <!-- Excluir -->
-      <button onclick="excluirDobrada(${d.id})"
-              style="flex-shrink:0;width:28px;height:28px;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      <!-- Ações (só dono/admin) -->
+      ${podeEditar ? `
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button onclick="abrirEditarDobrada(${d.id})"
+                title="Editar"
+                style="width:28px;height:28px;border:none;border-radius:6px;background:#dbeafe;color:#1565c0;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✏️</button>
+        <button onclick="excluirDobrada(${d.id})"
+                title="Excluir"
+                style="width:28px;height:28px;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>` : ''}
     </div>`;
   }).join('');
 }
 
 // ── Excluir dobrada ──────────────────────────────────────────
 async function excluirDobrada(id) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (user.nivel !== 'dono' && user.nivel !== 'admin') { alert('Acesso negado.'); return; }
   if (!confirm('Excluir esta dobrada?')) return;
   try {
     await apiFetch(`/dobradas/${id}`, { method: 'DELETE' });
@@ -4264,6 +4275,111 @@ async function excluirDobrada(id) {
     renderDobradasNoMapa();
   } catch (e) {
     alert('Erro ao excluir dobrada');
+  }
+}
+
+// ── Abrir modal de edição ─────────────────────────────────────
+function abrirEditarDobrada(id) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (user.nivel !== 'dono' && user.nivel !== 'admin') { alert('Acesso negado.'); return; }
+
+  const d = dobradasCache.find(x => x.id === id);
+  if (!d) return;
+
+  const cands = configSistema.candidatos || [];
+
+  // Preenche select de candidatos
+  const sel = document.getElementById('edit-dobrada-vinculo');
+  sel.innerHTML = '';
+  cands.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.chave;
+    opt.textContent = c.nome;
+    if (c.chave === d.vinculo_politico) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  // Preenche campos
+  document.getElementById('edit-dobrada-id').value              = d.id;
+  document.getElementById('edit-dobrada-parceiro-nome').value   = d.parceiro_nome || '';
+  document.getElementById('edit-dobrada-responsavel').value     = d.responsavel   || '';
+  document.getElementById('edit-dobrada-parceiro-cargo').value  = d.parceiro_cargo || '';
+  document.getElementById('edit-dobrada-votos').value           = d.votos_oferecidos || '';
+
+  // Preview de foto atual
+  const circle = document.getElementById('edit-dobrada-foto-circle');
+  if (d.parceiro_foto) {
+    circle.innerHTML = '';
+    circle.style.backgroundImage = `url(${d.parceiro_foto})`;
+    circle.style.backgroundSize  = 'cover';
+    circle.style.backgroundPosition = 'center';
+  } else {
+    circle.innerHTML = '👤';
+    circle.style.backgroundImage = '';
+  }
+  document.getElementById('edit-dobrada-foto-input').value = '';
+
+  document.getElementById('modal-dobrada-editar').style.display = 'flex';
+}
+
+function fecharModalDobrada() {
+  document.getElementById('modal-dobrada-editar').style.display = 'none';
+}
+
+// ── Preview de foto no modal de edição ────────────────────────
+document.getElementById('edit-dobrada-foto-input').addEventListener('change', function() {
+  const file = this.files[0];
+  const circle = document.getElementById('edit-dobrada-foto-circle');
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    circle.innerHTML = '';
+    circle.style.backgroundImage = `url(${e.target.result})`;
+    circle.style.backgroundSize = 'cover';
+    circle.style.backgroundPosition = 'center';
+  };
+  reader.readAsDataURL(file);
+});
+
+// ── Salvar edição ─────────────────────────────────────────────
+async function salvarEdicaoDobrada() {
+  const id            = document.getElementById('edit-dobrada-id').value;
+  const vinculo       = document.getElementById('edit-dobrada-vinculo').value;
+  const parceiroNome  = document.getElementById('edit-dobrada-parceiro-nome').value.trim();
+  const responsavel   = document.getElementById('edit-dobrada-responsavel').value.trim();
+  const parceiroCargo = document.getElementById('edit-dobrada-parceiro-cargo').value.trim();
+  const votos         = document.getElementById('edit-dobrada-votos').value;
+  const fotoInput     = document.getElementById('edit-dobrada-foto-input');
+
+  if (!parceiroNome) { alert('Informe o nome do parceiro.'); return; }
+
+  const btn = document.getElementById('edit-dobrada-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  try {
+    const fd = new FormData();
+    fd.append('vinculo_politico', vinculo);
+    fd.append('parceiro_nome',    parceiroNome);
+    fd.append('responsavel',      responsavel);
+    fd.append('parceiro_cargo',   parceiroCargo);
+    fd.append('votos_oferecidos', String(Number(votos) || 0));
+    if (fotoInput.files[0]) fd.append('foto', fotoInput.files[0]);
+
+    const token = localStorage.getItem('token');
+    await fetch(`${window.API_URL}/dobradas/${id}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd
+    });
+
+    fecharModalDobrada();
+    await carregarDobradas();
+    renderDobradasSidebar(cidadeSelecionada);
+    renderDobradasNoMapa();
+  } catch (e) {
+    alert('Erro ao salvar dobrada.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salvar alterações';
   }
 }
 
@@ -5966,6 +6082,41 @@ function mostrarLiderRegiao(regiaoKey) {
   btnGeo.addEventListener('click', setModoGeografico)
 })()
 </script>
+<!-- ===== MODAL EDITAR DOBRADA ===== -->
+<div id="modal-dobrada-editar" class="modal-overlay" style="display:none;" onclick="if(event.target===this)fecharModalDobrada()">
+  <div class="modal-card" style="max-width:400px;width:100%;padding:24px;box-sizing:border-box;">
+    <button class="modal-close" onclick="fecharModalDobrada()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>
+    <h3 style="margin:0 0 16px;font-family:'Sora',sans-serif;font-size:16px;color:#0f172a;">Editar Dobrada</h3>
+
+    <input id="edit-dobrada-id" type="hidden">
+
+    <div style="margin-bottom:8px;">
+      <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:3px;">Candidato</label>
+      <select id="edit-dobrada-vinculo" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;"></select>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div id="edit-dobrada-foto-circle"
+           onclick="document.getElementById('edit-dobrada-foto-input').click()"
+           style="width:48px;height:48px;border-radius:50%;border:2px dashed #cbd5e1;background:#f8fafc;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;flex-shrink:0;overflow:hidden;">👤</div>
+      <input id="edit-dobrada-foto-input" type="file" accept="image/*" style="display:none;">
+      <div style="flex:1;min-width:0;">
+        <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:3px;">Parceiro</label>
+        <input id="edit-dobrada-parceiro-nome" type="text" placeholder="Nome do parceiro" style="width:100%;box-sizing:border-box;">
+      </div>
+    </div>
+
+    <input id="edit-dobrada-responsavel"  type="text" placeholder="Responsável pela dobrada"        style="margin-bottom:6px;width:100%;box-sizing:border-box;">
+    <input id="edit-dobrada-parceiro-cargo" type="text" placeholder="Cargo (ex: Vereador, Deputado)" style="margin-bottom:6px;width:100%;box-sizing:border-box;">
+    <input id="edit-dobrada-votos" type="number" min="0" placeholder="Votos oferecidos"              style="margin-bottom:14px;width:100%;box-sizing:border-box;">
+
+    <div style="display:flex;gap:8px;">
+      <button onclick="fecharModalDobrada()" style="flex:1;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-size:13px;cursor:pointer;">Cancelar</button>
+      <button id="edit-dobrada-salvar" onclick="salvarEdicaoDobrada()" style="flex:2;padding:8px;border:none;border-radius:8px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;font-size:13px;font-weight:700;cursor:pointer;">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-pin" class="modal-overlay" style="display:none;">
   <div class="modal-card">
 
