@@ -1950,10 +1950,15 @@ pool.query(`
     parceiro_nome TEXT NOT NULL,
     parceiro_foto TEXT,
     parceiro_cargo TEXT,
+    responsavel TEXT,
     votos_oferecidos INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
   )
 `).catch(e => console.error('Erro criando tabela dobradas:', e));
+
+// Migração: adiciona coluna responsavel se ainda não existir (tabelas criadas antes desta versão)
+pool.query(`ALTER TABLE dobradas ADD COLUMN IF NOT EXISTS responsavel TEXT`)
+  .catch(e => console.error('Erro migrando coluna responsavel:', e));
 
 // GET todas as dobradas (para mapa + sidebar)
 app.get('/api/dobradas', auth, withTenant, async (req, res) => {
@@ -1973,7 +1978,7 @@ app.get('/api/dobradas', auth, withTenant, async (req, res) => {
 
 // POST nova dobrada (aceita foto via multipart)
 app.post('/api/dobradas', auth, withTenant, allowAll(), upload.single('foto'), async (req, res) => {
-  const { cidade, vinculo_politico, parceiro_nome, parceiro_cargo, votos_oferecidos } = req.body;
+  const { cidade, vinculo_politico, parceiro_nome, parceiro_cargo, responsavel, votos_oferecidos } = req.body;
   if (!cidade || !vinculo_politico || !parceiro_nome) {
     return res.status(400).json({ error: 'Campos obrigatórios: cidade, vinculo_politico, parceiro_nome' });
   }
@@ -1990,10 +1995,10 @@ app.post('/api/dobradas', auth, withTenant, allowAll(), upload.single('foto'), a
       try { fs.unlinkSync(caminhoOtimizado); } catch (_) {}
     }
     const row = await dbGet(
-      `INSERT INTO dobradas (tenant_id, cidade, vinculo_politico, parceiro_nome, parceiro_foto, parceiro_cargo, votos_oferecidos)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      `INSERT INTO dobradas (tenant_id, cidade, vinculo_politico, parceiro_nome, parceiro_foto, parceiro_cargo, responsavel, votos_oferecidos)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
       [req.tenantId, cidade.trim(), vinculo_politico.trim(), parceiro_nome.trim(),
-       parceiro_foto, parceiro_cargo || null, Number(votos_oferecidos) || 0]
+       parceiro_foto, parceiro_cargo || null, responsavel?.trim() || null, Number(votos_oferecidos) || 0]
     );
     res.json(row);
   } catch (err) {
@@ -2004,17 +2009,19 @@ app.post('/api/dobradas', auth, withTenant, allowAll(), upload.single('foto'), a
 
 // PUT editar dobrada
 app.put('/api/dobradas/:id', auth, withTenant, allowAll(), async (req, res) => {
-  const { parceiro_nome, parceiro_foto, parceiro_cargo, votos_oferecidos, vinculo_politico } = req.body;
+  const { parceiro_nome, parceiro_foto, parceiro_cargo, responsavel, votos_oferecidos, vinculo_politico } = req.body;
   try {
     const row = await dbGet(
       `UPDATE dobradas SET
          parceiro_nome = COALESCE($1, parceiro_nome),
          parceiro_foto = COALESCE($2, parceiro_foto),
          parceiro_cargo = COALESCE($3, parceiro_cargo),
-         votos_oferecidos = COALESCE($4, votos_oferecidos),
-         vinculo_politico = COALESCE($5, vinculo_politico)
-       WHERE id = $6 AND tenant_id = $7 RETURNING *`,
+         responsavel = COALESCE($4, responsavel),
+         votos_oferecidos = COALESCE($5, votos_oferecidos),
+         vinculo_politico = COALESCE($6, vinculo_politico)
+       WHERE id = $7 AND tenant_id = $8 RETURNING *`,
       [parceiro_nome || null, parceiro_foto || null, parceiro_cargo || null,
+       responsavel || null,
        votos_oferecidos !== undefined ? Number(votos_oferecidos) : null,
        vinculo_politico || null, req.params.id, req.tenantId]
     );
