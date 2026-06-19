@@ -4376,7 +4376,8 @@ function abrirEditarDobrada(id) {
   document.getElementById('edit-dobrada-parceiro-nome').value   = d.parceiro_nome || '';
   document.getElementById('edit-dobrada-responsavel').value     = d.responsavel   || '';
   document.getElementById('edit-dobrada-parceiro-cargo').value  = d.parceiro_cargo || '';
-  document.getElementById('edit-dobrada-votos').value           = d.votos_oferecidos || '';
+  document.getElementById('edit-dobrada-votos').value                = d.votos_oferecidos || '';
+  document.getElementById('edit-dobrada-votos-candidato').value      = d.votos_candidato   || '';
 
   // Preview de foto atual
   const circle = document.getElementById('edit-dobrada-foto-circle');
@@ -4422,8 +4423,9 @@ async function salvarEdicaoDobrada() {
   const parceiroNome  = document.getElementById('edit-dobrada-parceiro-nome').value.trim();
   const responsavel   = document.getElementById('edit-dobrada-responsavel').value.trim();
   const parceiroCargo = document.getElementById('edit-dobrada-parceiro-cargo').value.trim();
-  const votos         = document.getElementById('edit-dobrada-votos').value;
-  const fotoInput     = document.getElementById('edit-dobrada-foto-input');
+  const votos          = document.getElementById('edit-dobrada-votos').value;
+  const votosCandidato = document.getElementById('edit-dobrada-votos-candidato').value;
+  const fotoInput      = document.getElementById('edit-dobrada-foto-input');
 
   if (!parceiroNome) { alert('Informe o nome do parceiro.'); return; }
 
@@ -4437,6 +4439,7 @@ async function salvarEdicaoDobrada() {
     fd.append('responsavel',      responsavel);
     fd.append('parceiro_cargo',   parceiroCargo);
     fd.append('votos_oferecidos', String(Number(votos) || 0));
+    fd.append('votos_candidato',  String(Number(votosCandidato) || 0));
     if (fotoInput.files[0]) fd.append('foto', fotoInput.files[0]);
 
     const token = localStorage.getItem('token');
@@ -6191,7 +6194,8 @@ function mostrarLiderRegiao(regiaoKey) {
 
     <input id="edit-dobrada-responsavel"  type="text" placeholder="Responsável pela dobrada"        style="margin-bottom:6px;width:100%;box-sizing:border-box;">
     <input id="edit-dobrada-parceiro-cargo" type="text" placeholder="Cargo (ex: Vereador, Deputado)" style="margin-bottom:6px;width:100%;box-sizing:border-box;">
-    <input id="edit-dobrada-votos" type="number" min="0" placeholder="Votos oferecidos"              style="margin-bottom:14px;width:100%;box-sizing:border-box;">
+    <input id="edit-dobrada-votos" type="number" min="0" placeholder="Votos oferecidos (parceiro)"   style="margin-bottom:6px;width:100%;box-sizing:border-box;">
+    <input id="edit-dobrada-votos-candidato" type="number" min="0" placeholder="Votos do candidato (nossa oferta)" style="margin-bottom:14px;width:100%;box-sizing:border-box;">
 
     <div style="display:flex;gap:8px;">
       <button onclick="fecharModalDobrada()" style="flex:1;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-size:13px;cursor:pointer;">Cancelar</button>

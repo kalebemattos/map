@@ -1952,13 +1952,16 @@ pool.query(`
     parceiro_cargo TEXT,
     responsavel TEXT,
     votos_oferecidos INTEGER DEFAULT 0,
+    votos_candidato INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
   )
 `).catch(e => console.error('Erro criando tabela dobradas:', e));
 
-// Migração: adiciona coluna responsavel se ainda não existir (tabelas criadas antes desta versão)
+// Migrações de colunas para tabelas criadas antes desta versão
 pool.query(`ALTER TABLE dobradas ADD COLUMN IF NOT EXISTS responsavel TEXT`)
   .catch(e => console.error('Erro migrando coluna responsavel:', e));
+pool.query(`ALTER TABLE dobradas ADD COLUMN IF NOT EXISTS votos_candidato INTEGER DEFAULT 0`)
+  .catch(e => console.error('Erro migrando coluna votos_candidato:', e));
 
 // GET todas as dobradas (para mapa + sidebar)
 app.get('/api/dobradas', auth, withTenant, async (req, res) => {
@@ -1978,7 +1981,7 @@ app.get('/api/dobradas', auth, withTenant, async (req, res) => {
 
 // POST nova dobrada (aceita foto via multipart)
 app.post('/api/dobradas', auth, withTenant, allowAll(), upload.single('foto'), async (req, res) => {
-  const { cidade, vinculo_politico, parceiro_nome, parceiro_cargo, responsavel, votos_oferecidos } = req.body;
+  const { cidade, vinculo_politico, parceiro_nome, parceiro_cargo, responsavel, votos_oferecidos, votos_candidato } = req.body;
   if (!cidade || !vinculo_politico || !parceiro_nome) {
     return res.status(400).json({ error: 'Campos obrigatórios: cidade, vinculo_politico, parceiro_nome' });
   }
@@ -1995,10 +1998,11 @@ app.post('/api/dobradas', auth, withTenant, allowAll(), upload.single('foto'), a
       try { fs.unlinkSync(caminhoOtimizado); } catch (_) {}
     }
     const row = await dbGet(
-      `INSERT INTO dobradas (tenant_id, cidade, vinculo_politico, parceiro_nome, parceiro_foto, parceiro_cargo, responsavel, votos_oferecidos)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      `INSERT INTO dobradas (tenant_id, cidade, vinculo_politico, parceiro_nome, parceiro_foto, parceiro_cargo, responsavel, votos_oferecidos, votos_candidato)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
       [req.tenantId, cidade.trim(), vinculo_politico.trim(), parceiro_nome.trim(),
-       parceiro_foto, parceiro_cargo || null, responsavel?.trim() || null, Number(votos_oferecidos) || 0]
+       parceiro_foto, parceiro_cargo || null, responsavel?.trim() || null,
+       Number(votos_oferecidos) || 0, Number(votos_candidato) || 0]
     );
     res.json(row);
   } catch (err) {
@@ -2009,7 +2013,7 @@ app.post('/api/dobradas', auth, withTenant, allowAll(), upload.single('foto'), a
 
 // PUT editar dobrada
 app.put('/api/dobradas/:id', auth, withTenant, allow('dono', 'admin'), upload.single('foto'), async (req, res) => {
-  const { parceiro_nome, parceiro_cargo, responsavel, votos_oferecidos, vinculo_politico } = req.body;
+  const { parceiro_nome, parceiro_cargo, responsavel, votos_oferecidos, votos_candidato, vinculo_politico } = req.body;
   try {
     // Se uma nova foto foi enviada, faz upload no Supabase
     let novaFoto = null;
@@ -2031,11 +2035,13 @@ app.put('/api/dobradas/:id', auth, withTenant, allow('dono', 'admin'), upload.si
          parceiro_cargo   = COALESCE($3, parceiro_cargo),
          responsavel      = COALESCE($4, responsavel),
          votos_oferecidos = COALESCE($5, votos_oferecidos),
-         vinculo_politico = COALESCE($6, vinculo_politico)
-       WHERE id = $7 AND tenant_id = $8 RETURNING *`,
+         votos_candidato  = COALESCE($6, votos_candidato),
+         vinculo_politico = COALESCE($7, vinculo_politico)
+       WHERE id = $8 AND tenant_id = $9 RETURNING *`,
       [parceiro_nome || null, novaFoto,
        parceiro_cargo || null, responsavel || null,
        votos_oferecidos !== undefined ? Number(votos_oferecidos) : null,
+       votos_candidato !== undefined ? Number(votos_candidato) : null,
        vinculo_politico || null, req.params.id, req.tenantId]
     );
     if (!row) return res.status(404).json({ error: 'Dobrada não encontrada' });

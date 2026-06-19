@@ -965,6 +965,202 @@
     }
 
     @media (max-width:600px) { .cad-row { grid-template-columns:1fr; } }
+
+    /* ======= TABS ======= */
+    .tabs-nav {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--white);
+      border-radius: 14px;
+      box-shadow: var(--shadow-sm);
+      width: fit-content;
+      margin: 0 0 20px 0;
+    }
+    .tab-btn {
+      padding: 8px 22px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--slate-500);
+      cursor: pointer;
+      transition: all 0.18s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tab-btn.ativo {
+      background: linear-gradient(135deg, var(--blue-deep), var(--blue-main));
+      color: white;
+      box-shadow: 0 4px 12px rgba(21,101,192,0.3);
+    }
+    .tab-btn:not(.ativo):hover { background: var(--slate-100); color: var(--slate-700); }
+
+    /* ======= DOBRADAS LIST ======= */
+    #secao-dobradas { display: none; }
+
+    .dobrada-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+      margin-top: 4px;
+    }
+    .dobrada-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .dobrada-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+
+    .dobrada-card-header {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+    }
+    .dobrada-lado {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 18px 12px 14px;
+      gap: 6px;
+      min-width: 0;
+    }
+    .dobrada-lado.esq { border-right: 1px solid #f1f5f9; }
+    .dobrada-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+    .dobrada-avatar-ph {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 800;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+    .dobrada-nome {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--slate-900);
+      text-align: center;
+      line-height: 1.2;
+    }
+    .dobrada-cargo {
+      font-size: 11px;
+      color: var(--slate-500);
+      text-align: center;
+    }
+    .dobrada-votos {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--blue-main);
+      text-align: center;
+    }
+    .dobrada-votos-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--slate-500);
+      text-align: center;
+    }
+    .dobrada-x {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      flex-shrink: 0;
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--slate-300);
+      padding: 0;
+    }
+    .dobrada-card-footer {
+      border-top: 1px solid #f1f5f9;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: var(--slate-500);
+    }
+    .dobrada-footer-chip {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .dobrada-edit-btn {
+      margin-left: auto;
+      background: #dbeafe;
+      border: none;
+      border-radius: 8px;
+      padding: 5px 10px;
+      color: var(--blue-main);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+    .dobrada-edit-btn:hover { background: #bfdbfe; }
+
+    .dobrada-votos-input-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .dobrada-votos-edit-input {
+      width: 80px;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--blue-main);
+      border: 2px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 2px 4px;
+      background: #eff6ff;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .dobrada-votos-edit-input:focus { outline: none; border-color: var(--blue-main); }
+
+    .dob-filter-bar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: white;
+      border-radius: 14px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+      flex-wrap: wrap;
+    }
+    .dob-filter-label { font-size: 12px; font-weight: 600; color: var(--slate-500); }
+    .dob-count { font-size: 13px; color: var(--slate-500); margin-left: auto; }
+
+    @media (max-width: 600px) {
+      .dobrada-grid { grid-template-columns: 1fr; }
+      .tabs-nav { width: 100%; }
+      .tab-btn { flex: 1; justify-content: center; padding: 8px 10px; }
+    }
   </style>
 </head>
 <body>
@@ -998,6 +1194,21 @@
         <button class="btn btn-ghost" onclick="logout()">Sair</button>
       </div>
     </div>
+
+    <!-- TABS -->
+    <div class="tabs-nav">
+      <button class="tab-btn ativo" id="tab-liderancas" onclick="mudarTab('liderancas')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg>
+        Lideranças
+      </button>
+      <button class="tab-btn" id="tab-dobradas" onclick="mudarTab('dobradas')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>
+        Dobradas
+      </button>
+    </div>
+
+    <!-- SECAO LIDERANCAS -->
+    <div id="secao-liderancas">
 
     <!-- STATS -->
     <div class="stats-bar" id="stats-bar">
@@ -1120,7 +1331,63 @@
       <div class="result-count" id="result-count"></div>
     </div>
 
-  </div>
+    </div><!-- /secao-liderancas -->
+
+    <!-- SECAO DOBRADAS -->
+    <div id="secao-dobradas">
+
+      <!-- Stats dobradas -->
+      <div class="stats-bar" id="stats-bar-dob">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#eff6ff;">🤝</div>
+          <div class="stat-info">
+            <div class="stat-number" id="dob-stat-total">–</div>
+            <div class="stat-label">Total de dobradas</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#dcfce7;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number" id="dob-stat-votos-parceiro">–</div>
+            <div class="stat-label">Votos dos parceiros</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fef9c3;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number" id="dob-stat-votos-candidato">–</div>
+            <div class="stat-label">Votos dos candidatos</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#f3e8ff;">📍</div>
+          <div class="stat-info">
+            <div class="stat-number" id="dob-stat-cidades">–</div>
+            <div class="stat-label">Cidades</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtro campanha dobradas -->
+      <div class="dob-filter-bar">
+        <span class="dob-filter-label">Campanha</span>
+        <select id="dob-filtro-campanha" style="font-family:inherit;font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid #e2e8f0;background:white;cursor:pointer;">
+          <option value="todas">Todas</option>
+          <!-- preenchido por injetarCandidatosLiderancas() -->
+        </select>
+        <span class="dob-count" id="dob-count-label"></span>
+      </div>
+
+      <!-- Cards -->
+      <div class="dobrada-grid" id="dobrada-grid"></div>
+
+    </div><!-- /secao-dobradas -->
+
+  </div><!-- /conteudo-lista -->
 
   <!-- MODAL VISUALIZAÇÃO -->
   <div id="modal-lideranca" class="modal-overlay" style="display:none;" onclick="fecharModalFora(event)">
@@ -1888,8 +2155,307 @@
       }
     }
 
+    // ===== TABS =====
+    let abaAtiva = 'liderancas';
+
+    function mudarTab(aba) {
+      abaAtiva = aba;
+      document.getElementById('tab-liderancas').classList.toggle('ativo', aba === 'liderancas');
+      document.getElementById('tab-dobradas').classList.toggle('ativo', aba === 'dobradas');
+      document.getElementById('secao-liderancas').style.display = aba === 'liderancas' ? '' : 'none';
+      document.getElementById('secao-dobradas').style.display   = aba === 'dobradas'   ? '' : 'none';
+      if (aba === 'dobradas' && !dobradasCarregadas) carregarDobradas();
+    }
+
+    // ===== DOBRADAS =====
+    let todasDobradas = [];
+    let dobradasCarregadas = false;
+
+    async function carregarDobradas() {
+      try {
+        const res = await apiFetch('/dobradas');
+        todasDobradas = await res.json();
+        if (!Array.isArray(todasDobradas)) todasDobradas = [];
+        dobradasCarregadas = true;
+        atualizarStatsDobradas();
+        renderDobradas();
+      } catch(e) {
+        console.error('Erro ao carregar dobradas:', e);
+      }
+    }
+
+    function atualizarStatsDobradas() {
+      const lista = filtrarDobradas();
+      document.getElementById('dob-stat-total').textContent       = lista.length;
+      document.getElementById('dob-stat-votos-parceiro').textContent =
+        lista.reduce((s, d) => s + Number(d.votos_oferecidos || 0), 0).toLocaleString('pt-BR');
+      document.getElementById('dob-stat-votos-candidato').textContent =
+        lista.reduce((s, d) => s + Number(d.votos_candidato || 0), 0).toLocaleString('pt-BR');
+      const cidades = new Set(lista.map(d => d.cidade).filter(Boolean));
+      document.getElementById('dob-stat-cidades').textContent = cidades.size;
+    }
+
+    function filtrarDobradas() {
+      const camp = document.getElementById('dob-filtro-campanha').value;
+      return todasDobradas.filter(d => camp === 'todas' || d.vinculo_politico === camp);
+    }
+
+    document.getElementById('dob-filtro-campanha').addEventListener('change', () => {
+      atualizarStatsDobradas();
+      renderDobradas();
+    });
+
+    function renderDobradas() {
+      const lista = filtrarDobradas();
+      const grid  = document.getElementById('dobrada-grid');
+      const cands = configSistema.candidatos || [];
+      const user  = JSON.parse(localStorage.getItem('user') || '{}');
+      const podeEditar = user.nivel === 'dono' || user.nivel === 'admin';
+
+      document.getElementById('dob-count-label').textContent =
+        lista.length === todasDobradas.length
+          ? `${lista.length} dobradas`
+          : `${lista.length} de ${todasDobradas.length} (filtrado)`;
+
+      if (!lista.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--slate-500);">
+          <div style="font-size:32px;margin-bottom:8px;">🤝</div>
+          <p>Nenhuma dobrada encontrada</p>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = '';
+      lista.forEach(d => {
+        const cand = cands.find(c => c.chave === d.vinculo_politico);
+        const outroCand = cands.find(c => c.chave !== d.vinculo_politico);
+
+        // Lado esquerdo = nosso candidato (quem é o dono da dobrada)
+        const candNome = cand ? cand.nome : d.vinculo_politico;
+        const candCor  = cand ? (cand.cor_fundo || '#1565c0') : '#1565c0';
+        const candTexto = cand ? (cand.cor_texto || '#fff') : '#fff';
+        const candFoto  = cand ? (cand.foto_url || '') : '';
+        const candIniciais = candNome ? candNome.split(' ').map(w=>w[0]).slice(0,2).join('') : '?';
+
+        // Avatar do candidato (esquerda)
+        const avCand = candFoto
+          ? `<img src="${candFoto}" class="dobrada-avatar" alt="${candNome}" onerror="this.outerHTML='<div class=dobrada-avatar-ph style=background:${candCor};color:${candTexto}>${candIniciais}</div>'">`
+          : `<div class="dobrada-avatar-ph" style="background:${candCor};color:${candTexto};">${candIniciais}</div>`;
+
+        // Avatar do parceiro (direita)
+        const pInicial = (d.parceiro_nome || '?')[0].toUpperCase();
+        const avParc = d.parceiro_foto
+          ? `<img src="${d.parceiro_foto}" class="dobrada-avatar" alt="${d.parceiro_nome}" onerror="this.outerHTML='<div class=dobrada-avatar-ph style=background:#e2e8f0;color:#475569>${pInicial}</div>'">`
+          : `<div class="dobrada-avatar-ph" style="background:#e2e8f0;color:#475569;">${pInicial}</div>`;
+
+        // Votos candidato — editável para dono/admin
+        const votosCandHtml = podeEditar
+          ? `<div class="dobrada-votos-input-wrap">
+               <input type="number" min="0" class="dobrada-votos-edit-input"
+                      value="${d.votos_candidato || 0}"
+                      data-id="${d.id}"
+                      onchange="salvarVotosCandidato(this)"
+                      title="Votos do candidato nesta dobrada">
+               <span class="dobrada-votos-label">votos nossos</span>
+             </div>`
+          : `<div><div class="dobrada-votos">${(d.votos_candidato || 0).toLocaleString('pt-BR')}</div><div class="dobrada-votos-label">votos nossos</div></div>`;
+
+        const card = document.createElement('div');
+        card.className = 'dobrada-card';
+        card.innerHTML = `
+          <div class="dobrada-card-header">
+            <div class="dobrada-lado esq">
+              ${avCand}
+              <div class="dobrada-nome">${candNome}</div>
+              ${votosCandHtml}
+            </div>
+            <div class="dobrada-x">×</div>
+            <div class="dobrada-lado">
+              ${avParc}
+              <div class="dobrada-nome">${d.parceiro_nome || '—'}</div>
+              ${d.parceiro_cargo ? `<div class="dobrada-cargo">${d.parceiro_cargo}</div>` : ''}
+              <div><div class="dobrada-votos">${(d.votos_oferecidos || 0).toLocaleString('pt-BR')}</div>
+              <div class="dobrada-votos-label">votos deles</div></div>
+            </div>
+          </div>
+          <div class="dobrada-card-footer">
+            ${d.cidade ? `<span class="dobrada-footer-chip">📍 ${d.cidade}</span>` : ''}
+            ${d.responsavel ? `<span class="dobrada-footer-chip">👤 ${d.responsavel}</span>` : ''}
+            ${podeEditar ? `<button class="dobrada-edit-btn" onclick="abrirEditarDobradaLista(${d.id})">✏️ Editar</button>` : ''}
+          </div>`;
+        grid.appendChild(card);
+      });
+    }
+
+    // Salva votos_candidato via PATCH/PUT direto
+    async function salvarVotosCandidato(input) {
+      const id    = input.dataset.id;
+      const valor = Number(input.value) || 0;
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/dobradas/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ votos_candidato: valor })
+        });
+        if (!res.ok) throw new Error();
+        const updated = await res.json();
+        // Atualiza cache local
+        const idx = todasDobradas.findIndex(d => d.id == id);
+        if (idx >= 0) todasDobradas[idx] = updated;
+        atualizarStatsDobradas();
+        input.style.borderColor = '#22c55e';
+        setTimeout(() => { input.style.borderColor = ''; }, 1200);
+      } catch(e) {
+        alert('Erro ao salvar votos.');
+        input.value = (todasDobradas.find(d=>d.id==id)?.votos_candidato) || 0;
+      }
+    }
+
+    // Abre modal de edição completa da dobrada (reusa o modal do index.html não disponível aqui)
+    // Aqui abrimos um modal dedicado
+    function abrirEditarDobradaLista(id) {
+      const d = todasDobradas.find(x => x.id === id);
+      if (!d) return;
+      const cands = configSistema.candidatos || [];
+      const modal = document.getElementById('modal-editar-dobrada-lista');
+
+      document.getElementById('mdl-dob-id').value                  = d.id;
+      document.getElementById('mdl-dob-vinculo').innerHTML          =
+        cands.map(c => `<option value="${c.chave}" ${c.chave===d.vinculo_politico?'selected':''}>${c.nome}</option>`).join('');
+      document.getElementById('mdl-dob-parceiro-nome').value        = d.parceiro_nome || '';
+      document.getElementById('mdl-dob-parceiro-cargo').value       = d.parceiro_cargo || '';
+      document.getElementById('mdl-dob-responsavel').value          = d.responsavel || '';
+      document.getElementById('mdl-dob-votos-oferecidos').value     = d.votos_oferecidos || 0;
+      document.getElementById('mdl-dob-votos-candidato').value      = d.votos_candidato || 0;
+
+      // Preview foto
+      const fotoEl = document.getElementById('mdl-dob-foto-preview');
+      fotoEl.innerHTML = d.parceiro_foto
+        ? `<img src="${d.parceiro_foto}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #e2e8f0;">`
+        : `<div style="width:64px;height:64px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#475569;">${(d.parceiro_nome||'?')[0].toUpperCase()}</div>`;
+
+      modal.style.display = 'flex';
+    }
+
+    async function salvarEdicaoDobradaLista() {
+      const id    = document.getElementById('mdl-dob-id').value;
+      const btn   = document.getElementById('mdl-dob-salvar');
+      const cands = configSistema.candidatos || [];
+
+      const fd = new FormData();
+      fd.append('vinculo_politico',  document.getElementById('mdl-dob-vinculo').value);
+      fd.append('parceiro_nome',     document.getElementById('mdl-dob-parceiro-nome').value.trim());
+      fd.append('parceiro_cargo',    document.getElementById('mdl-dob-parceiro-cargo').value.trim());
+      fd.append('responsavel',       document.getElementById('mdl-dob-responsavel').value.trim());
+      fd.append('votos_oferecidos',  String(Number(document.getElementById('mdl-dob-votos-oferecidos').value) || 0));
+      fd.append('votos_candidato',   String(Number(document.getElementById('mdl-dob-votos-candidato').value) || 0));
+      const fotoInput = document.getElementById('mdl-dob-foto-input');
+      if (fotoInput.files[0]) fd.append('foto', fotoInput.files[0]);
+
+      btn.disabled = true; btn.textContent = 'Salvando…';
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/dobradas/${id}`, {
+          method: 'PUT',
+          headers: { Authorization: 'Bearer ' + token },
+          body: fd
+        });
+        if (!res.ok) throw new Error();
+        const updated = await res.json();
+        const idx = todasDobradas.findIndex(d => d.id == id);
+        if (idx >= 0) todasDobradas[idx] = updated;
+        atualizarStatsDobradas();
+        renderDobradas();
+        fecharModalDobradaLista();
+      } catch(e) {
+        alert('Erro ao salvar dobrada.');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Salvar';
+      }
+    }
+
+    function fecharModalDobradaLista() {
+      document.getElementById('modal-editar-dobrada-lista').style.display = 'none';
+    }
+
+    // Preenche o select de filtro de campanha das dobradas junto com o das lideranças
+    const _injetarOrig = injetarCandidatosLiderancas;
+    injetarCandidatosLiderancas = function() {
+      _injetarOrig();
+      const cands = configSistema.candidatos || [];
+      const sel = document.getElementById('dob-filtro-campanha');
+      if (sel) {
+        // remove anteriores exceto "todas"
+        Array.from(sel.options).filter(o => o.value !== 'todas').forEach(o => o.remove());
+        cands.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.chave; opt.textContent = c.nome;
+          sel.appendChild(opt);
+        });
+      }
+    };
+
     verificarLogin();
   </script>
 <script src="./assets/icons.js"></script>
+
+<!-- MODAL EDITAR DOBRADA (lista) -->
+<div id="modal-editar-dobrada-lista" class="modal-overlay" style="display:none;" onclick="if(event.target===this)fecharModalDobradaLista()">
+  <div class="modal-card" style="max-width:420px;padding:24px;gap:12px;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <h3 style="font-family:'Sora',sans-serif;font-size:17px;font-weight:700;color:#0f172a;">Editar Dobrada</h3>
+      <button onclick="fecharModalDobradaLista()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b;line-height:1;">✕</button>
+    </div>
+
+    <input id="mdl-dob-id" type="hidden">
+
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;">Candidato</label>
+      <select id="mdl-dob-vinculo" style="padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-family:inherit;font-size:13px;background:white;"></select>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center;">
+      <div id="mdl-dob-foto-preview" style="flex-shrink:0;cursor:pointer;" onclick="document.getElementById('mdl-dob-foto-input').click()"></div>
+      <div style="flex:1;font-size:12px;color:#64748b;">Clique na foto para trocar</div>
+      <input id="mdl-dob-foto-input" type="file" accept="image/*" style="display:none;">
+    </div>
+
+    <input id="mdl-dob-parceiro-nome"  type="text"   placeholder="Nome do parceiro"         style="padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-family:inherit;font-size:13px;">
+    <input id="mdl-dob-parceiro-cargo" type="text"   placeholder="Cargo (Vereador, Dep...)" style="padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-family:inherit;font-size:13px;">
+    <input id="mdl-dob-responsavel"    type="text"   placeholder="Responsável pela dobrada" style="padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-family:inherit;font-size:13px;">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;">Votos dos parceiros</label>
+        <input id="mdl-dob-votos-oferecidos" type="number" min="0" placeholder="0" style="padding:8px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-family:inherit;font-size:13px;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:.5px;">Votos do candidato</label>
+        <input id="mdl-dob-votos-candidato" type="number" min="0" placeholder="0" style="padding:8px 10px;border-radius:8px;border:1.5px solid #bfdbfe;background:#eff6ff;font-family:inherit;font-size:13px;">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button onclick="fecharModalDobradaLista()" style="flex:1;padding:9px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-family:inherit;font-size:13px;cursor:pointer;">Cancelar</button>
+      <button id="mdl-dob-salvar" onclick="salvarEdicaoDobradaLista()" style="flex:2;padding:9px;border:none;border-radius:8px;background:linear-gradient(135deg,#0d2d6b,#1565c0);color:white;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Preview de foto no modal de edição de dobrada
+document.addEventListener('change', function(e) {
+  if (e.target.id !== 'mdl-dob-foto-input') return;
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('mdl-dob-foto-preview').innerHTML =
+      `<img src="${ev.target.result}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #e2e8f0;cursor:pointer;" onclick="document.getElementById('mdl-dob-foto-input').click()">`;
+  };
+  reader.readAsDataURL(file);
+});
+</script>
 </body>
 </html>
