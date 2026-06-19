@@ -4327,7 +4327,7 @@ function fecharModalDobrada() {
 }
 
 // ── Preview de foto no modal de edição ────────────────────────
-// Usa event delegation no document porque o elemento existe APÓS o </script>
+// Usa event delegation no document porque o modal existe após a tag de fechamento do script
 document.addEventListener('change', function(e) {
   if (e.target.id !== 'edit-dobrada-foto-input') return;
   const file = e.target.files[0];
