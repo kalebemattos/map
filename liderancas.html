@@ -2162,8 +2162,8 @@
       abaAtiva = aba;
       document.getElementById('tab-liderancas').classList.toggle('ativo', aba === 'liderancas');
       document.getElementById('tab-dobradas').classList.toggle('ativo', aba === 'dobradas');
-      document.getElementById('secao-liderancas').style.display = aba === 'liderancas' ? '' : 'none';
-      document.getElementById('secao-dobradas').style.display   = aba === 'dobradas'   ? '' : 'none';
+      document.getElementById('secao-liderancas').style.display = aba === 'liderancas' ? 'block' : 'none';
+      document.getElementById('secao-dobradas').style.display   = aba === 'dobradas'   ? 'block' : 'none';
       if (aba === 'dobradas' && !dobradasCarregadas) carregarDobradas();
     }
 
