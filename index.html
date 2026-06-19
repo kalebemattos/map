@@ -4327,14 +4327,16 @@ function fecharModalDobrada() {
 }
 
 // ── Preview de foto no modal de edição ────────────────────────
-document.getElementById('edit-dobrada-foto-input').addEventListener('change', function() {
-  const file = this.files[0];
+// Usa event delegation no document porque o elemento existe APÓS o </script>
+document.addEventListener('change', function(e) {
+  if (e.target.id !== 'edit-dobrada-foto-input') return;
+  const file = e.target.files[0];
   const circle = document.getElementById('edit-dobrada-foto-circle');
-  if (!file) return;
+  if (!file || !circle) return;
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = ev => {
     circle.innerHTML = '';
-    circle.style.backgroundImage = `url(${e.target.result})`;
+    circle.style.backgroundImage = 'url(' + ev.target.result + ')';
     circle.style.backgroundSize = 'cover';
     circle.style.backgroundPosition = 'center';
   };
