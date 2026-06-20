@@ -2248,18 +2248,6 @@
           ? `<img src="${d.parceiro_foto}" class="dobrada-avatar" alt="${d.parceiro_nome}" onerror="this.outerHTML='<div class=dobrada-avatar-ph style=background:#e2e8f0;color:#475569>${pInicial}</div>'">`
           : `<div class="dobrada-avatar-ph" style="background:#e2e8f0;color:#475569;">${pInicial}</div>`;
 
-        // Votos candidato — editável para dono/admin
-        const votosCandHtml = podeEditar
-          ? `<div class="dobrada-votos-input-wrap">
-               <input type="number" min="0" class="dobrada-votos-edit-input"
-                      value="${d.votos_candidato || 0}"
-                      data-id="${d.id}"
-                      onchange="salvarVotosCandidato(this)"
-                      title="Votos do candidato nesta dobrada">
-               <span class="dobrada-votos-label">votos nossos</span>
-             </div>`
-          : `<div><div class="dobrada-votos">${(d.votos_candidato || 0).toLocaleString('pt-BR')}</div><div class="dobrada-votos-label">votos nossos</div></div>`;
-
         const card = document.createElement('div');
         card.className = 'dobrada-card';
         card.innerHTML = `
@@ -2267,7 +2255,6 @@
             <div class="dobrada-lado esq">
               ${avCand}
               <div class="dobrada-nome">${candNome}</div>
-              ${votosCandHtml}
             </div>
             <div class="dobrada-x">×</div>
             <div class="dobrada-lado">
@@ -2275,12 +2262,11 @@
               <div class="dobrada-nome">${d.parceiro_nome || '—'}</div>
               ${d.parceiro_cargo ? `<div class="dobrada-cargo">${d.parceiro_cargo}</div>` : ''}
               <div><div class="dobrada-votos">${(d.votos_oferecidos || 0).toLocaleString('pt-BR')}</div>
-              <div class="dobrada-votos-label">votos deles</div></div>
+              <div class="dobrada-votos-label">votos</div></div>
             </div>
           </div>
           <div class="dobrada-card-footer">
             ${d.cidade ? `<span class="dobrada-footer-chip">📍 ${d.cidade}</span>` : ''}
-            ${d.responsavel ? `<span class="dobrada-footer-chip">👤 ${d.responsavel}</span>` : ''}
             ${podeEditar ? `<button class="dobrada-edit-btn" onclick="abrirEditarDobradaLista(${d.id})">✏️ Editar</button>` : ''}
           </div>`;
         grid.appendChild(card);

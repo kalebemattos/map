@@ -936,6 +936,54 @@ body.sidebar-closed .logo-container { right: 20px; }
 }
 #map-controls::-webkit-scrollbar { display: none; }
 
+/* ===== PAINEL COBERTURA CIDADES ===== */
+#cobertura-cidades {
+  position: absolute;
+  bottom: 28px;
+  left: 12px;
+  z-index: 1400;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  font-family: 'DM Sans', sans-serif;
+  min-width: 160px;
+}
+#cobertura-cidades .cob-title {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+#cobertura-cidades .cob-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+  color: #334155;
+  padding: 2px 0;
+}
+#cobertura-cidades .cob-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+#cobertura-cidades .cob-label {
+  flex: 1;
+  font-size: 11px;
+  color: #475569;
+}
+#cobertura-cidades .cob-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
 .control-card {
   background: rgba(255,255,255,0.94);
   backdrop-filter: blur(8px);
@@ -1707,6 +1755,25 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
 
   <div id="map"></div>
 
+  <!-- PAINEL COBERTURA CIDADES -->
+  <div id="cobertura-cidades" style="display:none;">
+    <div class="cob-title">🗺️ Cobertura de cidades</div>
+    <div class="cob-row">
+      <div class="cob-dot" style="background:#059669;"></div>
+      <span class="cob-label">Com lid. ou dob.</span>
+      <span class="cob-val" id="cob-com">—</span>
+    </div>
+    <div class="cob-row">
+      <div class="cob-dot" style="background:#e2e8f0;border:1px solid #cbd5e1;"></div>
+      <span class="cob-label">Sem cobertura</span>
+      <span class="cob-val" id="cob-sem">—</span>
+    </div>
+    <div style="border-top:1px solid #e2e8f0;margin-top:5px;padding-top:5px;" class="cob-row">
+      <span class="cob-label" style="color:#1e293b;font-weight:600;">Total RJ</span>
+      <span class="cob-val" id="cob-total">—</span>
+    </div>
+  </div>
+
   <!-- MAP CONTROLS -->
   <div id="map-controls">
     <button id="mobileControlsBtn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>️</button>
@@ -2182,7 +2249,7 @@ function injetarCandidatos() {
         filtroCampanha = el.dataset.campanha;
         repaintMap();
         updateLegendByMode();
-        atualizarTotalGeralOverlay();
+        atualizarTotalGeralOverlay(); atualizarCoberturaCidades();
         renderLiderancasNoMapa();
         renderDobradasNoMapa();
         if (cidadeSelecionada) renderLiderancas(cidadeSelecionada);
@@ -2338,7 +2405,7 @@ if (filtroCampanhaSelect) {
   renderLiderancasNoMapa();
   renderDobradasNoMapa();
   repaintMap();               // <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z"/></svg> repinta o mapa
-  atualizarTotalGeralOverlay(); // <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z"/></svg> atualiza totais
+  atualizarTotalGeralOverlay(); atualizarCoberturaCidades(); // <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z"/></svg> atualiza totais
 
 });
 }
@@ -2443,6 +2510,38 @@ function atualizarTotalGeralOverlay() {
     if (elVTotal) elVTotal.textContent = f(votosTotal);
   });
 }
+function atualizarCoberturaCidades() {
+  const painel = document.getElementById('cobertura-cidades');
+  if (!painel) return;
+
+  // Total de cidades do RJ (a partir de votosValidos)
+  const todasCidades = Object.keys(votosValidos || {});
+  const total = todasCidades.length;
+  if (total === 0) return;
+
+  // Cidades com cobertura = pelo menos 1 liderança OU 1 dobrada
+  const comCobertura = new Set();
+  Object.keys(dataCache).forEach(cidade => {
+    const lids = dataCache[cidade]?.liderancas || [];
+    if (lids.length > 0) comCobertura.add(normalizeCityName(cidade));
+  });
+  (dobradasCache || []).forEach(d => {
+    if (d.cidade) comCobertura.add(normalizeCityName(d.cidade));
+  });
+
+  const semCobertura = total - todasCidades.filter(c => comCobertura.has(normalizeCityName(c))).length;
+
+  const elCom   = document.getElementById('cob-com');
+  const elSem   = document.getElementById('cob-sem');
+  const elTotal = document.getElementById('cob-total');
+
+  if (elCom)   elCom.textContent   = comCobertura.size;
+  if (elSem)   elSem.textContent   = semCobertura;
+  if (elTotal) elTotal.textContent = total;
+
+  painel.style.display = 'block';
+}
+
 function getColor(votos) {
   return votos > 500000 ? '#d73027' :
          votos > 200000 ? '#fc8d59' :
@@ -3393,7 +3492,7 @@ if (filtroCampanha !== "ambos"){
 
     await carregarTudo();
     repaintMap();
-    atualizarTotalGeralOverlay();
+    atualizarTotalGeralOverlay(); atualizarCoberturaCidades();
     renderLiderancasNoMapa();
     renderLiderancas(city);
 
@@ -3412,7 +3511,7 @@ if (filtroCampanha !== "ambos"){
 
             await carregarTudo();
             repaintMap();
-            atualizarTotalGeralOverlay();
+            atualizarTotalGeralOverlay(); atualizarCoberturaCidades();
             renderLiderancasNoMapa();
             renderLiderancas(city);
         });
@@ -3475,7 +3574,7 @@ document.getElementById('add-lideranca').onclick = async function () {
 
       await carregarTudo();
       repaintMap();
-      atualizarTotalGeralOverlay();
+      atualizarTotalGeralOverlay(); atualizarCoberturaCidades();
       renderLiderancasNoMapa();
       renderDobradasNoMapa();
       renderLiderancas(cidadeSelecionada);
@@ -3944,7 +4043,7 @@ document.getElementById('add-lideranca').onclick = async function () {
     // <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg> Atualiza dados
     await carregarTudo();
     repaintMap();
-    atualizarTotalGeralOverlay();
+    atualizarTotalGeralOverlay(); atualizarCoberturaCidades();
     renderLiderancasNoMapa();
     renderLiderancas(city);
 
@@ -4682,7 +4781,7 @@ async function salvarExpectativaCidade() {
 
     await carregarTudo();
     repaintMap();
-    atualizarTotalGeralOverlay();
+    atualizarTotalGeralOverlay(); atualizarCoberturaCidades();
     renderLiderancasNoMapa();
     renderDobradasNoMapa();
     renderLiderancas(cidadeSelecionada);
@@ -5241,7 +5340,7 @@ window.iniciarAplicacao = async function () {
   await carregarConfig();          // carrega candidatos/cores/mapas antes de tudo
   await carregarLideresRegiao();   // carrega líderes de região da gestão de acesso
   await carregarTudo();
-  atualizarTotalGeralOverlay();
+  atualizarTotalGeralOverlay(); atualizarCoberturaCidades();
   initializeMapAndApp();
   await carregarPins();
   renderLiderancasNoMapa();
@@ -5294,7 +5393,7 @@ document.addEventListener('visibilitychange', async () => {
   if (typeof carregarTudo === 'function') {
     await carregarTudo();
     repaintMap();
-    atualizarTotalGeralOverlay();
+    atualizarTotalGeralOverlay(); atualizarCoberturaCidades();
     renderLiderancasNoMapa();
     renderDobradasNoMapa();
     if (cidadeSelecionada) renderLiderancas(cidadeSelecionada);
