@@ -260,8 +260,10 @@ function injetarCandidatosRJ() {
           }
         }
         if (bairroAtual) renderLiderancas(bairroAtual)
+        if (bairroAtual) renderDobradasSidebar(bairroAtual)
         repaintMapa()
         renderLiderancasNoMapa()
+        renderDobradasNoMapa()
       })
     })
   }
@@ -415,10 +417,18 @@ function renderDobradasSidebar(bairro) {
     })
   }
 
-  if (!bairro || filtroCampanha === 'ambos') { container.style.display = 'none'; return }
+  if (!bairro) { container.style.display = 'none'; return }
 
-  const lista = dobradasCache.filter(d => d.cidade === bairro && d.vinculo_politico === filtroCampanha)
   container.style.display = ''
+
+  // No form "Adicionar" hide when in Ambos mode
+  const formEl = document.getElementById('add-dobrada-form')
+  if (formEl) formEl.style.display = filtroCampanha === 'ambos' ? 'none' : ''
+
+  const lista = filtroCampanha === 'ambos'
+    ? dobradasCache.filter(d => d.cidade === bairro)
+    : dobradasCache.filter(d => d.cidade === bairro && d.vinculo_politico === filtroCampanha)
+
   if (countEl) countEl.textContent = lista.length
 
   if (!lista.length) {
