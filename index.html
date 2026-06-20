@@ -2523,22 +2523,26 @@ function atualizarCoberturaCidades() {
   if (total === 0) return;
 
   // Cidades com cobertura = pelo menos 1 liderança OU 1 dobrada
+  // Só conta cidades que existem em votosValidos (estado do RJ), ignora bairros da capital
+  const cidadesEstadoNorm = new Set(todasCidades.map(c => normalizeCityName(c)));
   const comCobertura = new Set();
   Object.keys(dataCache).forEach(cidade => {
     const lids = dataCache[cidade]?.liderancas || [];
     if (lids.length > 0) comCobertura.add(normalizeCityName(cidade));
   });
   (dobradasCache || []).forEach(d => {
-    if (d.cidade) comCobertura.add(normalizeCityName(d.cidade));
+    const norm = normalizeCityName(d.cidade || '');
+    if (norm && cidadesEstadoNorm.has(norm)) comCobertura.add(norm);
   });
 
-  const semCobertura = total - todasCidades.filter(c => comCobertura.has(normalizeCityName(c))).length;
+  const comCoberturaCount = todasCidades.filter(c => comCobertura.has(normalizeCityName(c))).length;
+  const semCobertura = total - comCoberturaCount;
 
   const elCom   = document.getElementById('cob-com');
   const elSem   = document.getElementById('cob-sem');
   const elTotal = document.getElementById('cob-total');
 
-  if (elCom)   elCom.textContent   = comCobertura.size;
+  if (elCom)   elCom.textContent   = comCoberturaCount;
   if (elSem)   elSem.textContent   = semCobertura;
   if (elTotal) elTotal.textContent = total;
 
