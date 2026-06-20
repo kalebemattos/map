@@ -1339,6 +1339,13 @@ body.sidebar-closed #toggleSidebar { right:16px; }
       <button id="toggleLiderancasPins" class="ctrl-pin-btn ctrl-pin-ativo">ON</button>
     </div>
   </div>
+
+  <div class="ctrl-card">
+    <div class="ctrl-titulo">🤝 Dobradas</div>
+    <div class="ctrl-pins-row">
+      <button id="toggleDobradasPins" class="ctrl-pin-btn">OFF</button>
+    </div>
+  </div>
 </div>
 
 <!-- TOGGLE -->
@@ -1531,8 +1538,73 @@ body.sidebar-closed #toggleSidebar { right:16px; }
       </div>
     </div>
 
+    <!-- DOBRADAS -->
+    <div id="dobradas-container" class="sidebar-block" style="display:none;">
+      <div class="collapsible-header">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <h3 style="margin:0;">Dobradas</h3>
+          <span id="dobradas-count" class="count-badge">0</span>
+        </div>
+        <button class="collapse-btn" data-target="dobradas-content" data-state="expanded">−</button>
+      </div>
+
+      <div id="dobradas-content">
+        <div id="dobradas-list"></div>
+
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f5f9;" id="add-dobrada-form">
+          <div class="form-divider">Adicionar dobrada</div>
+
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Candidato</label>
+          <select id="dobrada-vinculo" class="form-input" style="margin-bottom:6px;">
+            <!-- preenchido dinamicamente -->
+          </select>
+
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div id="dobrada-foto-circle"
+                 onclick="document.getElementById('dobrada-foto-input').click()"
+                 style="width:48px;height:48px;border-radius:50%;border:2px dashed #cbd5e1;background:#f8fafc;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;">👤</div>
+            <input id="dobrada-foto-input" type="file" accept="image/*" style="display:none;">
+            <input id="dobrada-parceiro-nome" type="text" placeholder="Nome do parceiro" class="form-input" style="flex:1;">
+          </div>
+
+          <input id="dobrada-responsavel"    type="text"   placeholder="Responsável pela dobrada" class="form-input" style="margin-bottom:6px;">
+          <input id="dobrada-parceiro-cargo" type="text"   placeholder="Cargo (ex: Vereador, Deputado)" class="form-input" style="margin-bottom:6px;">
+          <input id="dobrada-votos"          type="number" min="0" placeholder="Votos oferecidos" class="form-input" style="margin-bottom:8px;">
+
+          <button id="add-dobrada" class="btn-add">+ Adicionar Dobrada</button>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /sidebar-body -->
 </div><!-- /sidebar -->
+
+<!-- MODAL EDITAR DOBRADA -->
+<div id="modal-dobrada-editar" class="modal-overlay" style="display:none;" onclick="if(event.target===this)fecharModalDobrada()">
+  <div class="modal-card" style="max-width:420px;width:95%;">
+    <button class="modal-close" onclick="fecharModalDobrada()">✕</button>
+    <h3 style="margin:0 0 14px;font-family:'Sora',sans-serif;font-size:15px;">Editar Dobrada</h3>
+    <input type="hidden" id="edit-dobrada-id">
+
+    <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;letter-spacing:.5px;">Candidato</label>
+    <select id="edit-dobrada-vinculo" class="form-input" style="margin-bottom:10px;"></select>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <div id="edit-dobrada-foto-circle"
+           onclick="document.getElementById('edit-dobrada-foto-input').click()"
+           style="width:48px;height:48px;border-radius:50%;border:2px dashed #cbd5e1;background:#f8fafc;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;flex-shrink:0;background-size:cover;background-position:center;">👤</div>
+      <input id="edit-dobrada-foto-input" type="file" accept="image/*" style="display:none;">
+      <input id="edit-dobrada-parceiro-nome" type="text" placeholder="Nome do parceiro" class="form-input" style="flex:1;">
+    </div>
+
+    <input id="edit-dobrada-responsavel"    type="text"   placeholder="Responsável pela dobrada"     class="form-input" style="margin-bottom:6px;">
+    <input id="edit-dobrada-parceiro-cargo" type="text"   placeholder="Cargo"                        class="form-input" style="margin-bottom:6px;">
+    <input id="edit-dobrada-votos"          type="number" min="0" placeholder="Votos oferecidos"     class="form-input" style="margin-bottom:6px;">
+    <input id="edit-dobrada-votos-candidato" type="number" min="0" placeholder="Votos do candidato (nossa oferta)" class="form-input" style="margin-bottom:14px;">
+
+    <button id="edit-dobrada-salvar" class="btn-add" onclick="salvarEdicaoDobrada()">Salvar alterações</button>
+  </div>
+</div>
 
 <!-- MODAL LIDERANÇA -->
 <div id="modal-lideranca" class="modal-overlay" onclick="if(event.target===this)fecharModalLideranca()">

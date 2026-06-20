@@ -364,9 +364,391 @@ async function carregarTudo() {
     }
   } catch (e) { console.error('Erro expectativas:', e) }
 
+  // Carrega dobradas junto
+  await carregarDobradas()
+
   // Atualiza painel de cobertura de bairros após carregar dados
   atualizarCoberturaBairros()
 }
+
+// ══════════════════════════════════════════════════════
+// DOBRADAS
+// ══════════════════════════════════════════════════════
+let dobradasCache       = []
+let dobradasMapLayer    = null
+let dobradasMapVisiveis = false
+
+function iniciarDobradasLayer() {
+  if (!dobradasMapLayer) {
+    dobradasMapLayer = L.layerGroup()
+  }
+}
+
+async function carregarDobradas() {
+  try {
+    const res = await apiFetch('/dobradas')
+    dobradasCache = await res.json()
+    if (!Array.isArray(dobradasCache)) dobradasCache = []
+  } catch (e) {
+    console.error('Erro ao carregar dobradas:', e)
+    dobradasCache = []
+  }
+}
+
+function renderDobradasSidebar(bairro) {
+  const container = document.getElementById('dobradas-container')
+  const listEl    = document.getElementById('dobradas-list')
+  const countEl   = document.getElementById('dobradas-count')
+  if (!container || !listEl) return
+
+  const cands = configSistema.candidatos || []
+  const user  = JSON.parse(localStorage.getItem('user') || '{}')
+  const podeEditar = user.nivel === 'dono' || user.nivel === 'admin'
+
+  // Preenche select de candidatos no form (só uma vez)
+  const sel = document.getElementById('dobrada-vinculo')
+  if (sel && !sel.options.length) {
+    cands.forEach(c => {
+      const opt = document.createElement('option')
+      opt.value = c.chave; opt.textContent = c.nome
+      sel.appendChild(opt)
+    })
+  }
+
+  if (!bairro || filtroCampanha === 'ambos') { container.style.display = 'none'; return }
+
+  const lista = dobradasCache.filter(d => d.cidade === bairro && d.vinculo_politico === filtroCampanha)
+  container.style.display = ''
+  if (countEl) countEl.textContent = lista.length
+
+  if (!lista.length) {
+    listEl.innerHTML = '<p style="font-size:13px;color:#94a3b8;margin:0;">Nenhuma dobrada cadastrada.</p>'
+    return
+  }
+
+  listEl.innerHTML = lista.map(d => {
+    const cand     = cands.find(c => c.chave === d.vinculo_politico)
+    const cor      = cand ? (cand.cor_fundo || '#1565c0') : '#64748b'
+    const candFoto = cand ? `../img/${cand.chave}.jpg` : ''
+    const candNome = cand ? cand.nome : d.vinculo_politico
+    const parcInicial = (d.parceiro_nome || '?')[0].toUpperCase()
+
+    const parceiroSvg = `<svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+      <rect width="36" height="36" rx="7" fill="${cor}22"/>
+      <text x="18" y="24" text-anchor="middle" font-size="15" font-weight="800" font-family="DM Sans,sans-serif" fill="${cor}">${parcInicial}</text>
+    </svg>`
+
+    return `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9;">
+      <div style="display:flex;gap:4px;flex-shrink:0;">
+        <div style="width:36px;height:36px;border-radius:7px;border:2px solid ${cor};overflow:hidden;background:#f8fafc;">
+          <img src="${candFoto}" onerror="this.style.display='none'" alt="" style="width:100%;height:100%;object-fit:cover;">
+        </div>
+        <div style="width:36px;height:36px;border-radius:7px;border:2px solid ${cor};overflow:hidden;background:#f8fafc;display:flex;align-items:center;justify-content:center;">
+          ${d.parceiro_foto
+            ? `<img src="${d.parceiro_foto}" onerror="this.outerHTML='${parceiroSvg}'" alt="" style="width:100%;height:100%;object-fit:cover;">`
+            : parceiroSvg}
+        </div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;font-weight:700;color:${cor};text-transform:uppercase;letter-spacing:.4px;">${candNome}</div>
+        <div style="font-size:13px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.parceiro_nome}</div>
+        ${d.parceiro_cargo ? `<div style="font-size:11px;color:#64748b;">${d.parceiro_cargo}</div>` : ''}
+        ${d.responsavel ? `<div style="font-size:11px;color:#475569;">👤 Resp.: <b>${d.responsavel}</b></div>` : ''}
+        ${d.votos_oferecidos ? `<div style="font-size:12px;color:#1565c0;font-weight:700;">${Number(d.votos_oferecidos).toLocaleString('pt-BR')} votos</div>` : ''}
+      </div>
+      ${podeEditar ? `
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button onclick="abrirEditarDobrada(${d.id})" title="Editar"
+                style="width:28px;height:28px;border:none;border-radius:6px;background:#dbeafe;color:#1565c0;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✏️</button>
+        <button onclick="excluirDobrada(${d.id})" title="Excluir"
+                style="width:28px;height:28px;border:none;border-radius:6px;background:#fee2e2;color:#dc2626;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>` : ''}
+    </div>`
+  }).join('')
+}
+
+async function excluirDobrada(id) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  if (user.nivel !== 'dono' && user.nivel !== 'admin') { alert('Acesso negado.'); return }
+  if (!confirm('Excluir esta dobrada?')) return
+  try {
+    await apiFetch(`/dobradas/${id}`, { method: 'DELETE' })
+    await carregarDobradas()
+    renderDobradasSidebar(bairroAtual)
+    renderDobradasNoMapa()
+    atualizarCoberturaBairros()
+  } catch (e) { alert('Erro ao excluir dobrada') }
+}
+
+function abrirEditarDobrada(id) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  if (user.nivel !== 'dono' && user.nivel !== 'admin') { alert('Acesso negado.'); return }
+  const d = dobradasCache.find(x => x.id === id)
+  if (!d) return
+
+  const cands = configSistema.candidatos || []
+  const sel = document.getElementById('edit-dobrada-vinculo')
+  sel.innerHTML = ''
+  cands.forEach(c => {
+    const opt = document.createElement('option')
+    opt.value = c.chave; opt.textContent = c.nome
+    if (c.chave === d.vinculo_politico) opt.selected = true
+    sel.appendChild(opt)
+  })
+
+  document.getElementById('edit-dobrada-id').value               = d.id
+  document.getElementById('edit-dobrada-parceiro-nome').value    = d.parceiro_nome || ''
+  document.getElementById('edit-dobrada-responsavel').value      = d.responsavel   || ''
+  document.getElementById('edit-dobrada-parceiro-cargo').value   = d.parceiro_cargo || ''
+  document.getElementById('edit-dobrada-votos').value            = d.votos_oferecidos || ''
+  document.getElementById('edit-dobrada-votos-candidato').value  = d.votos_candidato  || ''
+
+  const circle = document.getElementById('edit-dobrada-foto-circle')
+  if (d.parceiro_foto) {
+    circle.innerHTML = ''
+    circle.style.backgroundImage = `url(${d.parceiro_foto})`
+  } else {
+    circle.innerHTML = '👤'
+    circle.style.backgroundImage = ''
+  }
+  document.getElementById('edit-dobrada-foto-input').value = ''
+  document.getElementById('modal-dobrada-editar').style.display = 'flex'
+}
+
+function fecharModalDobrada() {
+  document.getElementById('modal-dobrada-editar').style.display = 'none'
+}
+
+document.addEventListener('change', function(e) {
+  if (e.target.id === 'edit-dobrada-foto-input') {
+    const file = e.target.files[0]
+    const circle = document.getElementById('edit-dobrada-foto-circle')
+    if (!file || !circle) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      circle.innerHTML = ''
+      circle.style.backgroundImage = 'url(' + ev.target.result + ')'
+      circle.style.backgroundSize = 'cover'
+      circle.style.backgroundPosition = 'center'
+    }
+    reader.readAsDataURL(file)
+  }
+  if (e.target.id === 'dobrada-foto-input') {
+    const file = e.target.files[0]
+    const circle = document.getElementById('dobrada-foto-circle')
+    if (!file || !circle) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      circle.innerHTML = ''
+      circle.style.backgroundImage = 'url(' + ev.target.result + ')'
+      circle.style.backgroundSize = 'cover'
+      circle.style.backgroundPosition = 'center'
+    }
+    reader.readAsDataURL(file)
+  }
+})
+
+async function salvarEdicaoDobrada() {
+  const id             = document.getElementById('edit-dobrada-id').value
+  const vinculo        = document.getElementById('edit-dobrada-vinculo').value
+  const parceiroNome   = document.getElementById('edit-dobrada-parceiro-nome').value.trim()
+  const responsavel    = document.getElementById('edit-dobrada-responsavel').value.trim()
+  const parceiroCargo  = document.getElementById('edit-dobrada-parceiro-cargo').value.trim()
+  const votos          = document.getElementById('edit-dobrada-votos').value
+  const votosCandidato = document.getElementById('edit-dobrada-votos-candidato').value
+  const fotoInput      = document.getElementById('edit-dobrada-foto-input')
+
+  if (!parceiroNome) { alert('Informe o nome do parceiro.'); return }
+
+  const btn = document.getElementById('edit-dobrada-salvar')
+  btn.disabled = true; btn.textContent = 'Salvando…'
+
+  try {
+    const fd = new FormData()
+    fd.append('vinculo_politico', vinculo)
+    fd.append('parceiro_nome',    parceiroNome)
+    fd.append('responsavel',      responsavel)
+    fd.append('parceiro_cargo',   parceiroCargo)
+    fd.append('votos_oferecidos', String(Number(votos) || 0))
+    fd.append('votos_candidato',  String(Number(votosCandidato) || 0))
+    if (fotoInput.files[0]) fd.append('foto', fotoInput.files[0])
+
+    const token = localStorage.getItem('token')
+    await fetch(`${window.API_URL}/dobradas/${id}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd
+    })
+
+    fecharModalDobrada()
+    await carregarDobradas()
+    renderDobradasSidebar(bairroAtual)
+    renderDobradasNoMapa()
+    atualizarCoberturaBairros()
+  } catch (e) {
+    alert('Erro ao salvar dobrada.')
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salvar alterações'
+  }
+}
+
+function criarIconeDobrada(d) {
+  const cands = configSistema.candidatos || []
+  const cand  = cands.find(c => c.chave === d.vinculo_politico)
+  const cor   = cand ? (cand.cor_fundo || '#1565c0') : '#64748b'
+  const candFoto    = cand ? `../img/${cand.chave}.jpg` : ''
+  const candInicial = (cand ? cand.nome : 'C')[0].toUpperCase()
+  const parcInicial = (d.parceiro_nome || '?')[0].toUpperCase()
+
+  const SZ = 24, GAP = 3, W = SZ * 2 + GAP, H = SZ
+  const uid1 = `db1_${d.id}`, uid2 = `db2_${d.id}`
+
+  const svg = `
+    <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
+         style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));">
+      <defs>
+        <clipPath id="${uid1}"><rect x="0"         y="0" width="${SZ}" height="${SZ}" rx="5"/></clipPath>
+        <clipPath id="${uid2}"><rect x="${SZ+GAP}" y="0" width="${SZ}" height="${SZ}" rx="5"/></clipPath>
+      </defs>
+      <rect x="0" y="0" width="${SZ}" height="${SZ}" rx="5" fill="white" stroke="${cor}" stroke-width="2"/>
+      ${candFoto
+        ? `<image href="${candFoto}" x="0" y="0" width="${SZ}" height="${SZ}" clip-path="url(#${uid1})" preserveAspectRatio="xMidYMid slice"/>`
+        : `<text x="${SZ/2}" y="${SZ/2+4}" text-anchor="middle" font-size="11" font-weight="800" font-family="DM Sans,sans-serif" fill="${cor}">${candInicial}</text>`}
+      <rect x="0" y="0" width="${SZ}" height="${SZ}" rx="5" fill="none" stroke="${cor}" stroke-width="2"/>
+      <rect x="${SZ+GAP}" y="0" width="${SZ}" height="${SZ}" rx="5" fill="white" stroke="${cor}" stroke-width="2"/>
+      ${d.parceiro_foto
+        ? `<image href="${d.parceiro_foto}" x="${SZ+GAP}" y="0" width="${SZ}" height="${SZ}" clip-path="url(#${uid2})" preserveAspectRatio="xMidYMid slice"/>`
+        : `<text x="${SZ+GAP+SZ/2}" y="${SZ/2+4}" text-anchor="middle" font-size="11" font-weight="800" font-family="DM Sans,sans-serif" fill="${cor}">${parcInicial}</text>`}
+      <rect x="${SZ+GAP}" y="0" width="${SZ}" height="${SZ}" rx="5" fill="none" stroke="${cor}" stroke-width="2"/>
+    </svg>`
+
+  return L.divIcon({
+    className: '',
+    html: svg,
+    iconSize:   [W, H],
+    iconAnchor: [W / 2, H],
+    popupAnchor:[0, -(H + 4)]
+  })
+}
+
+function renderDobradasNoMapa() {
+  if (!dobradasMapLayer) return
+  dobradasMapLayer.clearLayers()
+  if (!dobradasMapVisiveis || filtroCampanha === 'ambos') return
+
+  const cands = configSistema.candidatos || []
+
+  dobradasCache.forEach(d => {
+    if (d.vinculo_politico !== filtroCampanha) return
+
+    const bairroLayer = layersPorBairro[d.cidade]
+    if (!bairroLayer) return
+    const centroide = bairroLayer.getBounds().getCenter()
+
+    const seed = typeof d.id === 'number' ? d.id : String(d.id).split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+    const jLat = ((seed * 9301 + 49297) % 233280) / 233280 - 0.5
+    const jLng = ((seed * 7927 + 13849) % 233280) / 233280 - 0.5
+    const lat  = centroide.lat + jLat * 0.004
+    const lng  = centroide.lng + jLng * 0.004
+
+    const marker = L.marker([lat, lng], { icon: criarIconeDobrada(d), zIndexOffset: 950 })
+
+    const cand = cands.find(c => c.chave === d.vinculo_politico)
+    const cor  = cand?.cor_fundo || '#1565c0'
+    marker.bindTooltip(
+      `<div style="font-family:'DM Sans',sans-serif;font-size:12px;line-height:1.4;">
+         <b style="color:${cor}">${cand?.nome || d.vinculo_politico}</b> + <b>${d.parceiro_nome}</b>
+         ${d.parceiro_cargo ? `<br><span style="color:#64748b">${d.parceiro_cargo}</span>` : ''}
+         ${d.responsavel ? `<br><span style="color:#475569">👤 ${d.responsavel}</span>` : ''}
+         ${d.votos_oferecidos ? `<br><span style="color:#1565c0;font-weight:700">${Number(d.votos_oferecidos).toLocaleString('pt-BR')} votos</span>` : ''}
+         <br><span style="color:#94a3b8;font-size:10px">${d.cidade}</span>
+       </div>`,
+      { permanent: false, direction: 'top', offset: [0, -4] }
+    )
+    dobradasMapLayer.addLayer(marker)
+  })
+}
+
+// Toggle button dobradas
+document.addEventListener('DOMContentLoaded', () => {
+  const btnDob = document.getElementById('toggleDobradasPins')
+  if (btnDob) {
+    btnDob.onclick = () => {
+      dobradasMapVisiveis = !dobradasMapVisiveis
+      if (dobradasMapVisiveis) {
+        if (dobradasMapLayer) { dobradasMapLayer.addTo(window.map); renderDobradasNoMapa() }
+        btnDob.textContent = 'ON'; btnDob.classList.add('ctrl-pin-ativo')
+      } else {
+        if (dobradasMapLayer) window.map.removeLayer(dobradasMapLayer)
+        btnDob.textContent = 'OFF'; btnDob.classList.remove('ctrl-pin-ativo')
+      }
+    }
+  }
+
+  // Form: adicionar dobrada
+  const btnAdd = document.getElementById('add-dobrada')
+  if (btnAdd) {
+    btnAdd.addEventListener('click', async () => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      if (user.nivel === 'visualizador') { alert('Acesso negado.'); return }
+      if (!bairroAtual) { alert('Selecione um bairro primeiro.'); return }
+
+      const vinculo       = document.getElementById('dobrada-vinculo').value
+      const parceiroNome  = document.getElementById('dobrada-parceiro-nome').value.trim()
+      const responsavel   = document.getElementById('dobrada-responsavel').value.trim()
+      const parceiroCargo = document.getElementById('dobrada-parceiro-cargo').value.trim()
+      const votos         = document.getElementById('dobrada-votos').value
+      const fotoInput     = document.getElementById('dobrada-foto-input')
+
+      if (!parceiroNome) { alert('Informe o nome do parceiro.'); return }
+
+      btnAdd.disabled = true; btnAdd.textContent = 'Salvando…'
+
+      try {
+        const fd = new FormData()
+        fd.append('cidade',           bairroAtual)
+        fd.append('vinculo_politico', vinculo)
+        fd.append('parceiro_nome',    parceiroNome)
+        fd.append('responsavel',      responsavel)
+        fd.append('parceiro_cargo',   parceiroCargo)
+        fd.append('votos_oferecidos', String(Number(votos) || 0))
+        if (fotoInput.files[0]) fd.append('foto', fotoInput.files[0])
+
+        const token = localStorage.getItem('token')
+        await fetch(`${window.API_URL}/dobradas`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd
+        })
+
+        // Limpar form
+        document.getElementById('dobrada-parceiro-nome').value  = ''
+        document.getElementById('dobrada-responsavel').value    = ''
+        document.getElementById('dobrada-parceiro-cargo').value = ''
+        document.getElementById('dobrada-votos').value          = ''
+        fotoInput.value = ''
+        const circle = document.getElementById('dobrada-foto-circle')
+        circle.innerHTML = '👤'; circle.style.backgroundImage = ''
+
+        await carregarDobradas()
+        renderDobradasSidebar(bairroAtual)
+        renderDobradasNoMapa()
+        atualizarCoberturaBairros()
+      } catch (e) {
+        alert('Erro ao adicionar dobrada.')
+      } finally {
+        btnAdd.disabled = false; btnAdd.textContent = '+ Adicionar Dobrada'
+      }
+    })
+  }
+})
+
+window.abrirEditarDobrada  = abrirEditarDobrada
+window.fecharModalDobrada  = fecharModalDobrada
+window.salvarEdicaoDobrada = salvarEdicaoDobrada
+window.excluirDobrada      = excluirDobrada
+window.renderDobradasNoMapa = renderDobradasNoMapa
 
 // ─────────────────────────────────────────────
 // PAINEL COBERTURA DE BAIRROS
@@ -386,15 +768,19 @@ function atualizarCoberturaBairros() {
   })
   if (total === 0) return
 
-  // Bairros com pelo menos 1 liderança no dataCache
+  // Bairros com pelo menos 1 liderança OU 1 dobrada
   const normB = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim()
-  const comLid = new Set()
+  const comCoberturaNorm = new Set()
+
   Object.keys(dataCache).forEach(bairro => {
     const lids = dataCache[bairro]?.liderancas || []
-    if (lids.length > 0) comLid.add(normB(bairro))
+    if (lids.length > 0) comCoberturaNorm.add(normB(bairro))
+  });
+  (dobradasCache || []).forEach(d => {
+    if (d.cidade) comCoberturaNorm.add(normB(d.cidade))
   })
 
-  const comCobertura = todosBairros.filter(b => comLid.has(normB(b))).length
+  const comCobertura = todosBairros.filter(b => comCoberturaNorm.has(normB(b))).length
   const semCobertura = total - comCobertura
 
   const elCom   = document.getElementById('cob-com')
@@ -937,7 +1323,9 @@ async function excluirLideranca(l, bairro) {
     await carregarTudo()
     repaintMapa()
     renderLiderancasNoMapa()
+    renderDobradasNoMapa()
     renderLiderancas(bairro)
+    renderDobradasSidebar(bairro)
   } catch (err) {
     console.error(err)
     alert('Erro ao excluir liderança')
@@ -1016,7 +1404,9 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
     await carregarTudo()
     repaintMapa()
     renderLiderancasNoMapa()
+    renderDobradasNoMapa()
     if (bairroAtual) renderLiderancas(bairroAtual)
+    if (bairroAtual) renderDobradasSidebar(bairroAtual)
   } catch (err) {
     console.error(err)
     alert('Erro ao adicionar liderança')
@@ -1092,6 +1482,7 @@ function selecionarBairro(bairroNome, layer) {
     `<b>Zona:</b> ${getDistritoDoBairro(bairroNome)}`
 
   renderLiderancas(bairroNome)
+  renderDobradasSidebar(bairroNome)
 }
 
 // ─────────────────────────────────────────────
@@ -1324,6 +1715,7 @@ window.iniciarMapa = async function() {
   map = L.map('map', { minZoom: 9, maxZoom: 18 }).setView([-22.91, -43.17], 11)
   window.map = map   // expõe para index.html (pins, invalidateSize, etc.)
   liderancasMapLayer = L.layerGroup().addTo(map)
+  iniciarDobradasLayer()
   setTimeout(() => map.invalidateSize(), 200)
 
   fetch("geo/riobairros.geojson")
@@ -1441,7 +1833,9 @@ document.getElementById('edit-salvar-btn').addEventListener('click', async () =>
     await carregarTudo()
     repaintMapa()
     renderLiderancasNoMapa()
+    renderDobradasNoMapa()
     renderLiderancas(bairroAtual)
+    renderDobradasSidebar(bairroAtual)
   } catch (err) {
     console.error(err)
     alert('Erro ao salvar')
