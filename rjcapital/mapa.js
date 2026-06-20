@@ -898,7 +898,14 @@ function getTotalExpectativa(bairro) {
     return (l.vinculo_politico === filtroCampanha || l.vinculo_politico === 'ambos') ? s + v : s
   }, 0)
 
-  return expCidade + somaLiderancas
+  const somaDobradas = (dobradasCache || []).reduce((s, d) => {
+    if (d.cidade !== bairro) return s
+    const v = Number(d.votos_oferecidos || 0)
+    if (filtroCampanha === 'ambos') return s + v
+    return d.vinculo_politico === filtroCampanha ? s + v : s
+  }, 0)
+
+  return expCidade + somaLiderancas + somaDobradas
 }
 
 function calcularTotalGeral() {
