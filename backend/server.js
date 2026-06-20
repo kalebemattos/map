@@ -791,11 +791,9 @@ app.post('/api/liderancas',
     // lideranças de bairros cujos nomes não constam em tenant_regioes.cidades.
     const regiaoFinal = regiaoBody || req.user.regiao
       || await resolverRegiao(req.tenantId, cidade)
-      || mapa;  // fallback: submapa como região (ex: 'angra', 'rjcapital')
-    if (!regiaoFinal) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Região não encontrada para esta cidade. Selecione a região manualmente.' });
-    }
+      || mapa  // fallback: submapa como região (ex: 'angra', 'rjcapital')
+      || null; // permite salvar sem região (não rejeita mais)
+    // Não rejeita se regiaoFinal for null — salva sem região para não perder a liderança
 
     // Cria vínculo pessoa ↔ cidade
     await client.query(`
@@ -808,8 +806,8 @@ app.post('/api/liderancas',
             status            = EXCLUDED.status,
             responsavel       = EXCLUDED.responsavel,
             vinculo_politico  = EXCLUDED.vinculo_politico,
-            regiao            = EXCLUDED.regiao,
-            mapa              = EXCLUDED.mapa,
+            regiao            = COALESCE(EXCLUDED.regiao, liderancas.regiao),
+            mapa              = COALESCE(liderancas.mapa, EXCLUDED.mapa),
             cep               = COALESCE(EXCLUDED.cep,    liderancas.cep),
             bairro            = COALESCE(EXCLUDED.bairro, liderancas.bairro),
             lat               = COALESCE(EXCLUDED.lat,    liderancas.lat),
@@ -988,10 +986,11 @@ app.put('/api/liderancas/:id', auth, withTenant, allowAll(), upload.single('foto
 app.get('/api/liderancas', auth, withTenant, async (req, res) => {
   try {
     const mapaFiltro = req.query.mapa || null;
-    // Sem filtro de mapa → mapa estadual: retorna apenas lideranças sem submapa (mapa IS NULL)
-    // Com filtro de mapa → submapa específico: retorna lideranças daquele submapa
+    // Com filtro de mapa → submapa específico (ex: angra, rjcapital)
+    // Sem filtro de mapa → mapa estadual: retorna TODAS as lideranças da cidade,
+    //   independente de qual mapa foram criadas (mapa = 'angra', null, etc.)
     const params = mapaFiltro ? [req.tenantId, mapaFiltro] : [req.tenantId];
-    const mapaClause = mapaFiltro ? 'AND l.mapa = $2' : 'AND l.mapa IS NULL';
+    const mapaClause = mapaFiltro ? 'AND l.mapa = $2' : '';
 
     const { rows } = await pool.query(`
       SELECT
