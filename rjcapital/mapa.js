@@ -363,6 +363,48 @@ async function carregarTudo() {
       })
     }
   } catch (e) { console.error('Erro expectativas:', e) }
+
+  // Atualiza painel de cobertura de bairros após carregar dados
+  atualizarCoberturaBairros()
+}
+
+// ─────────────────────────────────────────────
+// PAINEL COBERTURA DE BAIRROS
+// ─────────────────────────────────────────────
+function atualizarCoberturaBairros() {
+  const painel = document.getElementById('cobertura-bairros')
+  if (!painel) return
+
+  // Total de bairros a partir de distritos.js
+  let total = 0
+  const todosBairros = []
+  Object.values(distritos || {}).forEach(d => {
+    ;(d.bairros || []).forEach(b => {
+      todosBairros.push(b)
+      total++
+    })
+  })
+  if (total === 0) return
+
+  // Bairros com pelo menos 1 liderança no dataCache
+  const normB = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim()
+  const comLid = new Set()
+  Object.keys(dataCache).forEach(bairro => {
+    const lids = dataCache[bairro]?.liderancas || []
+    if (lids.length > 0) comLid.add(normB(bairro))
+  })
+
+  const comCobertura = todosBairros.filter(b => comLid.has(normB(b))).length
+  const semCobertura = total - comCobertura
+
+  const elCom   = document.getElementById('cob-com')
+  const elSem   = document.getElementById('cob-sem')
+  const elTotal = document.getElementById('cob-total')
+  if (elCom)   elCom.textContent   = comCobertura
+  if (elSem)   elSem.textContent   = semCobertura
+  if (elTotal) elTotal.textContent = total
+
+  painel.style.display = 'block'
 }
 
 // ─────────────────────────────────────────────

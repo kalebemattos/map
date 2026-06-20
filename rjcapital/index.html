@@ -1030,8 +1030,18 @@ body.sidebar-closed #sidebar { transform:translateX(100%); }
 #toggleSidebar:hover { background:var(--blue-deep); transform:translateY(-1px); }
 body.sidebar-closed #toggleSidebar { right:16px; }
 
+/* --- BOTTOM-LEFT BAR (legenda + cobertura lado a lado) --- */
+#bottom-left-bar { position:absolute; bottom:20px; left:20px; z-index:1000; display:flex; flex-direction:row; align-items:flex-end; gap:8px; }
 /* --- LEGEND --- */
-#legenda { position:absolute; bottom:20px; left:20px; z-index:1000; background:rgba(255,255,255,0.97); backdrop-filter:blur(10px); padding:14px 16px; border-radius:16px; box-shadow:var(--shadow-lg); font-family:'DM Sans',sans-serif; min-width:200px; border:1px solid rgba(255,255,255,0.6); }
+#legenda { background:rgba(255,255,255,0.97); backdrop-filter:blur(10px); padding:14px 16px; border-radius:16px; box-shadow:var(--shadow-lg); font-family:'DM Sans',sans-serif; min-width:200px; border:1px solid rgba(255,255,255,0.6); }
+
+/* --- COBERTURA BAIRROS --- */
+#cobertura-bairros { background:rgba(255,255,255,0.92); backdrop-filter:blur(8px); border-radius:10px; padding:8px 12px; box-shadow:0 2px 12px rgba(0,0,0,0.15); font-family:'DM Sans',sans-serif; min-width:155px; display:none; }
+#cobertura-bairros .cob-title { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#64748b; margin-bottom:6px; }
+#cobertura-bairros .cob-row { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:11px; color:#334155; padding:2px 0; }
+#cobertura-bairros .cob-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+#cobertura-bairros .cob-label { flex:1; font-size:11px; color:#475569; }
+#cobertura-bairros .cob-val { font-size:12px; font-weight:700; color:#1e293b; }
 .legenda-title { display:flex; align-items:center; gap:7px; margin-bottom:13px; }
 .legenda-icon { width:26px; height:26px; border-radius:7px; background:var(--blue-light); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
 .legenda-title span:last-child { font-family:'Sora',sans-serif; font-size:12px; font-weight:700; color:var(--slate-800); }
@@ -1122,7 +1132,7 @@ body.sidebar-closed #toggleSidebar { right:16px; }
   .ctrl-card, #overlay-total { min-width:auto; padding:10px 12px; flex:1; }
   .ctrl-titulo, .overlay-label { display:none; }
   .modo-btn { font-size:10px; padding:5px 4px; }
-  #legenda { display:none; }
+  #bottom-left-bar { display:none; }
   .map-title-overlay { top:12px; padding:6px 14px; white-space:nowrap; }
   .map-title-overlay h1 { font-size:11px; }
   .logo-container { right:12px !important; bottom:80px; }
@@ -1180,8 +1190,8 @@ body.sidebar-closed #toggleSidebar { right:16px; }
 .geo-mode-active .geo-tile-layer { filter:brightness(0.48) saturate(0.55) sepia(0.15); }
 .geo-border-glow { filter:drop-shadow(0 0 5px rgba(56,189,248,0.75)) drop-shadow(0 0 14px rgba(56,189,248,0.40)); }
 .geo-mode-active .leaflet-container { background:#020b1a !important; }
-.geo-mode-active #legenda { opacity:0.60; transition:opacity .3s; }
-.geo-mode-active #legenda:hover { opacity:1; }
+.geo-mode-active #bottom-left-bar { opacity:0.60; transition:opacity .3s; }
+.geo-mode-active #bottom-left-bar:hover { opacity:1; }
 .geo-mode-active #map-left-controls { opacity:0.80; transition:opacity .3s; }
 .geo-mode-active #map-left-controls:hover { opacity:1; }
 .geo-mode-active .leaflet-marker-pane > * div { color:rgba(255,255,255,0.85) !important; text-shadow:0 0 8px rgba(0,0,0,0.9),0 1px 3px rgba(0,0,0,0.8) !important; }
@@ -1344,23 +1354,43 @@ body.sidebar-closed #toggleSidebar { right:16px; }
   <div id="map"></div>
 </div>
 
-<!-- LEGENDA -->
-<div id="legenda">
-  <div class="legenda-title">
-    <span class="legenda-icon">📊</span>
-    <span id="legenda-titulo">Expectativa</span>
+<!-- LEGENDA + COBERTURA BAIRROS (lado a lado, canto inferior esquerdo) -->
+<div id="bottom-left-bar">
+  <div id="legenda">
+    <div class="legenda-title">
+      <span class="legenda-icon">📊</span>
+      <span id="legenda-titulo">Expectativa</span>
+    </div>
+    <div id="legenda-grad-bar" class="legenda-gradient-bar" style="background:linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d);"></div>
+    <div id="legenda-grad-labels" class="legenda-gradient-labels">
+      <span>0</span><span>300</span><span>1k</span><span>5k+</span>
+    </div>
+    <div id="legenda-steps" class="legenda-steps">
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#67000d;"></div><span>5.000+ <small>muito alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#a50f15;"></div><span>2.000–4.999 <small>alto</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#cb181d;"></div><span>1.000–1.999 <small>moderado</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#fb6a4a;"></div><span>300–999 <small>baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#fcae91;"></div><span>1–299 <small>muito baixo</small></span></div>
+      <div class="legenda-row"><div class="legenda-swatch" style="background:#fee5d9;"></div><span>0 <small>sem expectativa</small></span></div>
+    </div>
   </div>
-  <div id="legenda-grad-bar" class="legenda-gradient-bar" style="background:linear-gradient(to right,#fee5d9,#fcae91,#fb6a4a,#cb181d,#a50f15,#67000d);"></div>
-  <div id="legenda-grad-labels" class="legenda-gradient-labels">
-    <span>0</span><span>300</span><span>1k</span><span>5k+</span>
-  </div>
-  <div id="legenda-steps" class="legenda-steps">
-    <div class="legenda-row"><div class="legenda-swatch" style="background:#67000d;"></div><span>5.000+ <small>muito alto</small></span></div>
-    <div class="legenda-row"><div class="legenda-swatch" style="background:#a50f15;"></div><span>2.000–4.999 <small>alto</small></span></div>
-    <div class="legenda-row"><div class="legenda-swatch" style="background:#cb181d;"></div><span>1.000–1.999 <small>moderado</small></span></div>
-    <div class="legenda-row"><div class="legenda-swatch" style="background:#fb6a4a;"></div><span>300–999 <small>baixo</small></span></div>
-    <div class="legenda-row"><div class="legenda-swatch" style="background:#fcae91;"></div><span>1–299 <small>muito baixo</small></span></div>
-    <div class="legenda-row"><div class="legenda-swatch" style="background:#fee5d9;"></div><span>0 <small>sem expectativa</small></span></div>
+
+  <div id="cobertura-bairros">
+    <div class="cob-title">🗺️ Cobertura de bairros</div>
+    <div class="cob-row">
+      <div class="cob-dot" style="background:#059669;"></div>
+      <span class="cob-label">Com lideranças</span>
+      <span class="cob-val" id="cob-com">—</span>
+    </div>
+    <div class="cob-row">
+      <div class="cob-dot" style="background:#e2e8f0;border:1px solid #cbd5e1;"></div>
+      <span class="cob-label">Sem cobertura</span>
+      <span class="cob-val" id="cob-sem">—</span>
+    </div>
+    <div style="border-top:1px solid #e2e8f0;margin-top:5px;padding-top:5px;" class="cob-row">
+      <span class="cob-label" style="color:#1e293b;font-weight:600;">Total bairros</span>
+      <span class="cob-val" id="cob-total">—</span>
+    </div>
   </div>
 </div>
 
