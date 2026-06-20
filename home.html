@@ -1961,16 +1961,15 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
     const totalAtivo   = isRegional ? totalRegiao  : totalGeral
 
     const pal      = PALETA[i % PALETA.length]
-    const votos    = totaisAtivos[cand.chave] || 0
     const ini      = (cand.nome || '?')[0].toUpperCase()
     const avatarBg = cand.cor_texto || pal.solid
 
-    // Meta: usa meta_geral se disponível, senão meta_votos, senão 0
+    // Meta fixa: meta_geral tem prioridade, fallback meta_votos
     const metaGeral = cand.meta_geral && Number(cand.meta_geral) > 0
       ? Number(cand.meta_geral)
       : (cand.meta_votos && Number(cand.meta_votos) > 0 ? Number(cand.meta_votos) : 0)
 
-    // Votos lid + dob (apenas para cards globais)
+    // Votos lid + dob
     const votosLid   = !isRegional ? (totaisLidGlobal[cand.chave] || 0) : (dadosRegiao?.expLid?.[cand.chave] || 0)
     const votosDob   = !isRegional ? (totaisDobGlobal[cand.chave] || 0) : 0
     const votosTotal = votosLid + votosDob
@@ -1989,13 +1988,6 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
     // Badge de região aparece apenas no 2º card
     const regiaoTag = isRegional
       ? `<div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.55);letter-spacing:.3px;margin-top:1px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg> ${escHome(regiaoInfo.label)}</div>`
-      : ''
-
-    const metaRow = metaGeral > 0
-      ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
-           <span style="font-size:9.5px;font-weight:600;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.5px;">🎯 Meta</span>
-           <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,.5);">${metaGeral.toLocaleString('pt-BR')}</span>
-         </div>`
       : ''
 
     const cobRow = `
@@ -2023,8 +2015,7 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
           ${regiaoTag}
           <div style="margin-top:10px;">
             <div id="ci-votos-${escHome(cand.chave)}" style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:rgba(255,255,255,.96);letter-spacing:-.5px;line-height:1;">0</div>
-            <div style="font-size:9.5px;font-weight:600;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">${isRegional ? 'Exp. região' : 'Expectativa'}</div>
-            ${metaRow}
+            <div style="font-size:9.5px;font-weight:600;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Meta</div>
           </div>
         </div>
       </div>
@@ -2106,12 +2097,13 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
   // Aguarda o próximo frame para as barras animarem (precisa estar no DOM)
   requestAnimationFrame(() => {
     candidatos.forEach((cand, i) => {
-      const isRegional   = (i >= 1 && totaisRegiao !== null && regiaoInfo !== null)
-      const totaisAtivos = isRegional ? totaisRegiao : totaisGlobal
-      const totalAtivo   = isRegional ? totalRegiao  : totalGeral
+      const isRegional = (i >= 1 && totaisRegiao !== null && regiaoInfo !== null)
 
-      const votos = totaisAtivos[cand.chave] || 0
-      animarContador(`ci-votos-${cand.chave}`, votos)
+      // Número principal = meta fixa
+      const metaGeral = cand.meta_geral && Number(cand.meta_geral) > 0
+        ? Number(cand.meta_geral)
+        : (cand.meta_votos && Number(cand.meta_votos) > 0 ? Number(cand.meta_votos) : 0)
+      animarContador(`ci-votos-${cand.chave}`, metaGeral)
 
       // Anima total lid+dob e barra de progresso
       const votosLid   = !isRegional ? (totaisLidGlobal[cand.chave] || 0) : (dadosRegiao?.expLid?.[cand.chave] || 0)
@@ -2119,10 +2111,7 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
       const votosTotal = votosLid + votosDob
       animarContador(`ci-votos-total-${cand.chave}`, votosTotal)
 
-      // Anima barra
-      const metaGeral = cand.meta_geral && Number(cand.meta_geral) > 0
-        ? Number(cand.meta_geral)
-        : (cand.meta_votos && Number(cand.meta_votos) > 0 ? Number(cand.meta_votos) : 0)
+      // Anima barra de cobertura
       const cobPct = metaGeral > 0 ? Math.min(Math.round((votosTotal / metaGeral) * 100), 100) : 0
       const barEl = document.getElementById(`ci-bar-${cand.chave}`)
       if (barEl) setTimeout(() => { barEl.style.width = cobPct + '%' }, 80)
