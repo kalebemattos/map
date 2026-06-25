@@ -2244,24 +2244,59 @@ app.get('/api/dashboard/kpis', auth, withTenant, allow('dono', 'admin'), async (
       }
     }
 
+    // Dobradas por candidato: contagem + votos_oferecidos
+    const dobradasPorCandidato = {};
+    for (const c of candidatos) {
+      const row = await dbGet(
+        `SELECT COUNT(*) as total, COALESCE(SUM(votos_oferecidos),0) as votos
+         FROM dobradas WHERE tenant_id = $1 AND LOWER(vinculo_politico) = LOWER($2)`,
+        [t, c.chave]
+      );
+      dobradasPorCandidato[c.chave] = {
+        count: parseInt(row.total),
+        votos: parseInt(row.votos)
+      };
+    }
+
+    // Totais globais de dobradas
+    const dobTotaisRow = await dbGet(
+      'SELECT COUNT(*) as total, COALESCE(SUM(votos_oferecidos),0) as votos FROM dobradas WHERE tenant_id = $1',
+      [t]
+    );
+
+    // Contagem de cidades/bairros com cobertura (liderança OU dobrada)
+    const [cidadesComLid, cidadesComDob] = await Promise.all([
+      dbAll('SELECT DISTINCT LOWER(cidade) as cidade FROM liderancas WHERE tenant_id = $1 AND cidade IS NOT NULL', [t]),
+      dbAll('SELECT DISTINCT LOWER(cidade) as cidade FROM dobradas WHERE tenant_id = $1 AND cidade IS NOT NULL', [t]),
+    ]);
+    const cidadesCobertas = new Set([
+      ...cidadesComLid.map(r => r.cidade),
+      ...cidadesComDob.map(r => r.cidade),
+    ]).size;
+
     const porCandidato = candidatos.map(c => ({
-      chave:      c.chave,
-      nome:       c.nome,
-      liderancas: liderancasPorCandidato[c.chave] || 0,
-      cidades:    Math.round(cidadesPorCandidato[c.chave] || 0),
+      chave:         c.chave,
+      nome:          c.nome,
+      liderancas:    liderancasPorCandidato[c.chave] || 0,
+      cidades:       Math.round(cidadesPorCandidato[c.chave] || 0),
+      dobradas:      dobradasPorCandidato[c.chave]?.count || 0,
+      votosDobradas: dobradasPorCandidato[c.chave]?.votos || 0,
     }));
 
     res.json({
-      totalLiderancas: parseInt(totalLiderancas.total),
-      ativas:          parseInt(ativasCount.total),
-      inativas:        parseInt(inativasCount.total),
-      regioesAtivas:   parseInt(regioesAtivas.total),
-      gastosTotal:     parseFloat(gastosTotal.total),
-      gastosUlt30:     parseFloat(gastosUlt30.total),
+      totalLiderancas:  parseInt(totalLiderancas.total),
+      ativas:           parseInt(ativasCount.total),
+      inativas:         parseInt(inativasCount.total),
+      regioesAtivas:    parseInt(regioesAtivas.total),
+      gastosTotal:      parseFloat(gastosTotal.total),
+      gastosUlt30:      parseFloat(gastosUlt30.total),
+      totalDobradas:    parseInt(dobTotaisRow.total),
+      totalVotosDobradas: parseInt(dobTotaisRow.votos),
+      cidadesCobertas,
       statusBreakdown,
       votosPorVinculo,
-      liderancasTotal: parseInt(votosTotal.total),
-      cidadesTotal:    porCandidato.reduce((s, c) => s + c.cidades, 0),
+      liderancasTotal:  parseInt(votosTotal.total),
+      cidadesTotal:     porCandidato.reduce((s, c) => s + c.cidades, 0),
       porCandidato,
     });
   } catch (err) {
