@@ -1965,60 +1965,101 @@ function renderPerfilEleitorado(data) {
 
 function renderPerfilEleitoradoLocal(json) {
   const conteudo = document.getElementById('mp-conteudo');
-  const genero      = json.genero      || {};
+  const genero       = json.genero       || {};
   const faixa_etaria = json.faixa_etaria || {};
   const escolaridade = json.escolaridade || {};
-  const estado_civil  = json.estado_civil  || {};
+  const estado_civil = json.estado_civil || {};
 
-  function renderBarGroup(title, obj, cor) {
-    const entries = Object.entries(obj).sort((a, b) => b[1] - a[1]);
-    const total = entries.reduce((s, [,v]) => s + (Number(v) || 0), 0);
-    const maxV  = Math.max(...entries.map(([,v]) => Number(v) || 0), 1);
-    let h = `<div style="margin-bottom:18px;">
-      <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:8px;">${title}</div>`;
+  const fmt = n => Number(n).toLocaleString('pt-BR');
+
+  // ── Total eleitores (soma dos gêneros)
+  const genEntries = Object.entries(genero);
+  const totalAptos = genEntries.reduce((s, [,v]) => s + (Number(v)||0), 0);
+
+  // ── Gênero cards
+  const genCores  = { 'FEMININO': '#ec4899', 'MASCULINO': '#3b82f6', 'NÃO INFORMADO': '#94a3b8' };
+  const genIcons  = { 'FEMININO': '♀', 'MASCULINO': '♂', 'NÃO INFORMADO': '—' };
+  const genLabels = { 'FEMININO': 'Feminino', 'MASCULINO': 'Masculino', 'NÃO INFORMADO': 'N/I' };
+
+  // header com total
+  let html = `
+    <div style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1px solid #bae6fd;border-radius:14px;padding:14px 18px;margin-bottom:20px;">
+      <div style="width:40px;height:40px;border-radius:50%;background:#0ea5e9;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👥</div>
+      <div>
+        <div style="font-size:22px;font-weight:800;font-family:'Sora',sans-serif;color:#0c4a6e;line-height:1;">${fmt(totalAptos)}</div>
+        <div style="font-size:11px;font-weight:600;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Eleitores Aptos</div>
+      </div>
+    </div>`;
+
+  // Gênero section
+  html += `<div style="margin-bottom:22px;">
+    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;">Gênero</div>
+    <div style="display:flex;border-radius:8px;overflow:hidden;height:8px;margin-bottom:12px;gap:1px;">`;
+  genEntries.forEach(([g, v]) => {
+    const pct = totalAptos > 0 ? (Number(v)/totalAptos*100).toFixed(1) : 0;
+    const cor = genCores[g.toUpperCase()] || '#6366f1';
+    html += `<div style="width:${pct}%;background:${cor};transition:width .5s ease;" title="${g}: ${pct}%"></div>`;
+  });
+  html += `</div><div style="display:flex;flex-wrap:wrap;gap:10px;">`;
+  genEntries.forEach(([g, v]) => {
+    const val = Number(v) || 0;
+    const pct = totalAptos > 0 ? (val/totalAptos*100).toFixed(1) : '0.0';
+    const cor = genCores[g.toUpperCase()] || '#6366f1';
+    const ico = genIcons[g.toUpperCase()] || '•';
+    const lbl = genLabels[g.toUpperCase()] || g;
+    html += `<div style="flex:1;min-width:100px;background:${cor}18;border:1px solid ${cor}33;border-radius:12px;padding:10px 14px;">
+      <div style="font-size:20px;color:${cor};font-weight:800;line-height:1;">${ico}</div>
+      <div style="font-size:18px;font-weight:800;color:${cor};font-family:'Sora',sans-serif;margin-top:4px;">${pct}%</div>
+      <div style="font-size:11px;color:#475569;font-weight:600;margin-top:1px;">${fmt(val)}</div>
+      <div style="font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">${lbl}</div>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  // ── Função para seção de barras com contagem absoluta
+  function renderSecao(titulo, obj, cor, corLight) {
+    const entries = Object.entries(obj).sort((a, b) => Number(b[1]) - Number(a[1]));
+    const total   = entries.reduce((s, [,v]) => s + (Number(v)||0), 0);
+    const maxV    = Math.max(...entries.map(([,v]) => Number(v)||0), 1);
+
+    let h = `<div style="margin-bottom:22px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;">${titulo}</div>
+        <div style="font-size:11px;font-weight:600;color:#94a3b8;">${fmt(total)} eleitores</div>
+      </div>`;
+
     entries.forEach(([label, val]) => {
       const v   = Number(val) || 0;
       const pct = total > 0 ? (v / total * 100).toFixed(1) : '0.0';
       const w   = (v / maxV * 100).toFixed(1);
-      h += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-        <div style="min-width:140px;font-size:11px;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${label}">${label}</div>
-        <div style="flex:1;background:#e2e8f0;border-radius:4px;height:10px;overflow:hidden;">
-          <div style="width:${w}%;height:100%;background:${cor};border-radius:4px;"></div>
+      // abreviações de escolaridade
+      const labelCurto = label
+        .replace('ENSINO FUNDAMENTAL INCOMPLETO', 'Fund. Incompleto')
+        .replace('ENSINO FUNDAMENTAL COMPLETO',   'Fund. Completo')
+        .replace('ENSINO MÉDIO INCOMPLETO',       'Médio Incompleto')
+        .replace('ENSINO MÉDIO COMPLETO',         'Médio Completo')
+        .replace('SUPERIOR INCOMPLETO',           'Superior Incompleto')
+        .replace('SUPERIOR COMPLETO',             'Superior Completo')
+        .replace('NÃO INFORMADO',                 'N/I')
+        .replace('LÊ E ESCREVE',                  'Lê e Escreve')
+        .replace('SEPARADO JUDICIALMENTE',        'Separado Jud.');
+
+      h += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
+        <div style="width:150px;font-size:11px;color:#334155;font-weight:500;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${label}">${labelCurto}</div>
+        <div style="flex:1;background:#f1f5f9;border-radius:6px;height:16px;overflow:hidden;">
+          <div style="width:${w}%;height:100%;background:linear-gradient(90deg,${cor},${corLight});border-radius:6px;transition:width .5s ease;"></div>
         </div>
-        <div style="min-width:40px;font-size:11px;color:${cor};text-align:right;font-weight:600;">${pct}%</div>
+        <div style="width:38px;font-size:11px;font-weight:700;color:${cor};text-align:right;flex-shrink:0;">${pct}%</div>
+        <div style="width:60px;font-size:10px;color:#94a3b8;text-align:right;flex-shrink:0;">${fmt(v)}</div>
       </div>`;
     });
     h += '</div>';
     return h;
   }
 
-  // Gênero donut-style summary bar
-  const genEntries = Object.entries(genero);
-  const genTotal   = genEntries.reduce((s, [,v]) => s + (Number(v)||0), 0);
-  const genCores   = { 'FEMININO': '#ec4899', 'MASCULINO': '#3b82f6', 'NÃO INFORMADO': '#94a3b8' };
-  let genBar = `<div style="margin-bottom:18px;">
-    <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:8px;">Gênero · ${genTotal.toLocaleString('pt-BR')} eleitores aptos</div>
-    <div style="display:flex;border-radius:6px;overflow:hidden;height:18px;margin-bottom:6px;">`;
-  genEntries.forEach(([g, v]) => {
-    const pct = genTotal > 0 ? (Number(v)/genTotal*100).toFixed(1) : 0;
-    const cor = genCores[g.toUpperCase()] || '#6366f1';
-    genBar += `<div style="width:${pct}%;background:${cor};" title="${g}: ${pct}%"></div>`;
-  });
-  genBar += '</div><div style="display:flex;flex-wrap:wrap;gap:10px;">';
-  genEntries.forEach(([g, v]) => {
-    const pct = genTotal > 0 ? (Number(v)/genTotal*100).toFixed(1) : 0;
-    const cor = genCores[g.toUpperCase()] || '#6366f1';
-    genBar += `<div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#475569;">
-      <div style="width:10px;height:10px;border-radius:2px;background:${cor};"></div>
-      ${g}: <strong>${pct}%</strong>
-    </div>`;
-  });
-  genBar += '</div></div>';
-
-  let html = genBar;
-  html += renderBarGroup('Faixa Etária', faixa_etaria, '#3b82f6');
-  html += renderBarGroup('Escolaridade', escolaridade, '#8b5cf6');
-  html += renderBarGroup('Estado Civil', estado_civil, '#06b6d4');
+  html += renderSecao('Faixa Etária',  faixa_etaria, '#3b82f6', '#60a5fa');
+  html += renderSecao('Escolaridade',  escolaridade,  '#8b5cf6', '#a78bfa');
+  html += renderSecao('Estado Civil',  estado_civil,  '#06b6d4', '#22d3ee');
 
   conteudo.innerHTML = html;
 }

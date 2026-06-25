@@ -2486,7 +2486,7 @@ function calcularVotosDobradasPor(tipo) {
 function atualizarTotalGeralOverlay() {
   const f = n => n.toLocaleString('pt-BR');
   (configSistema.candidatos || []).forEach(c => {
-    const expCid  = (c.meta_geral > 0) ? c.meta_geral : calcularExpCidadesPor(c.chave);
+    const expCid  = calcularExpCidadesPor(c.chave);
     const expLid  = calcularExpLiderancasPor(c.chave);
     const cob     = expCid > 0 ? Math.round((expLid / expCid) * 100) : 0;
     const corCob  = cob >= 80 ? '#059669' : cob >= 50 ? '#d97706' : '#dc2626';

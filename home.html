@@ -1964,18 +1964,16 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
     const ini      = (cand.nome || '?')[0].toUpperCase()
     const avatarBg = cand.cor_texto || pal.solid
 
-    // Meta fixa: meta_geral tem prioridade, fallback meta_votos
-    const metaGeral = cand.meta_geral && Number(cand.meta_geral) > 0
-      ? Number(cand.meta_geral)
-      : (cand.meta_votos && Number(cand.meta_votos) > 0 ? Number(cand.meta_votos) : 0)
+    // Número principal = soma das expectativas das cidades
+    const expCidades = !isRegional ? (totaisAtivos[cand.chave] || 0) : (dadosRegiao?.expCid?.[cand.chave] || 0)
 
     // Votos lid + dob
     const votosLid   = !isRegional ? (totaisLidGlobal[cand.chave] || 0) : (dadosRegiao?.expLid?.[cand.chave] || 0)
     const votosDob   = !isRegional ? (totaisDobGlobal[cand.chave] || 0) : 0
     const votosTotal = votosLid + votosDob
 
-    // Cobertura = (lid + dob) / meta
-    const cobPct = metaGeral > 0 ? Math.min(Math.round((votosTotal / metaGeral) * 100), 100) : 0
+    // Cobertura = (lid + dob) / expectativa cidades
+    const cobPct = expCidades > 0 ? Math.min(Math.round((votosTotal / expCidades) * 100), 100) : 0
     const cobCor = cobPct >= 80 ? '#34d399' : cobPct >= 50 ? '#fbbf24' : '#f87171'
 
     const avatarHtml = cand.foto_url
@@ -2015,7 +2013,7 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
           ${regiaoTag}
           <div style="margin-top:10px;">
             <div id="ci-votos-${escHome(cand.chave)}" style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:rgba(255,255,255,.96);letter-spacing:-.5px;line-height:1;">0</div>
-            <div style="font-size:9.5px;font-weight:600;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Meta</div>
+            <div style="font-size:9.5px;font-weight:600;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Expectativa</div>
           </div>
         </div>
       </div>
@@ -2099,11 +2097,10 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
     candidatos.forEach((cand, i) => {
       const isRegional = (i >= 1 && totaisRegiao !== null && regiaoInfo !== null)
 
-      // Número principal = meta fixa
-      const metaGeral = cand.meta_geral && Number(cand.meta_geral) > 0
-        ? Number(cand.meta_geral)
-        : (cand.meta_votos && Number(cand.meta_votos) > 0 ? Number(cand.meta_votos) : 0)
-      animarContador(`ci-votos-${cand.chave}`, metaGeral)
+      // Número principal = soma das expectativas das cidades
+      const totaisAtivosAnim = isRegional ? totaisRegiao : totaisGlobal
+      const expCidadesAnim = !isRegional ? (totaisAtivosAnim[cand.chave] || 0) : (dadosRegiao?.expCid?.[cand.chave] || 0)
+      animarContador(`ci-votos-${cand.chave}`, expCidadesAnim)
 
       // Anima total lid+dob e barra de progresso
       const votosLid   = !isRegional ? (totaisLidGlobal[cand.chave] || 0) : (dadosRegiao?.expLid?.[cand.chave] || 0)
@@ -2112,7 +2109,7 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
       animarContador(`ci-votos-total-${cand.chave}`, votosTotal)
 
       // Anima barra de cobertura
-      const cobPct = metaGeral > 0 ? Math.min(Math.round((votosTotal / metaGeral) * 100), 100) : 0
+      const cobPct = expCidadesAnim > 0 ? Math.min(Math.round((votosTotal / expCidadesAnim) * 100), 100) : 0
       const barEl = document.getElementById(`ci-bar-${cand.chave}`)
       if (barEl) setTimeout(() => { barEl.style.width = cobPct + '%' }, 80)
     })
