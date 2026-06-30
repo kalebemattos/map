@@ -1995,15 +1995,26 @@
 
     // ===== EXPORTAR =====
     function exportarTodas() {
-      gerarXLSX(todasLiderancas, 'liderancas_todas');
+      if (abaAtiva === 'dobradas') {
+        if (!todasDobradas.length) { alert('Nenhuma dobrada para exportar.'); return; }
+        gerarXLSXDobradas(todasDobradas, 'dobradas_todas');
+      } else {
+        gerarXLSX(todasLiderancas, 'liderancas_todas');
+      }
     }
 
     function exportarFiltradas() {
-      if (!listaFiltrada.length) {
-        alert('Nenhuma liderança para exportar com os filtros atuais.');
-        return;
+      if (abaAtiva === 'dobradas') {
+        const listaD = filtrarDobradas();
+        if (!listaD.length) { alert('Nenhuma dobrada para exportar com o filtro atual.'); return; }
+        gerarXLSXDobradas(listaD, 'dobradas_filtradas');
+      } else {
+        if (!listaFiltrada.length) {
+          alert('Nenhuma liderança para exportar com os filtros atuais.');
+          return;
+        }
+        gerarXLSX(listaFiltrada, 'liderancas_filtradas');
       }
-      gerarXLSX(listaFiltrada, 'liderancas_filtradas');
     }
 
     // Carrega ExcelJS sob demanda (CDN carregado só quando o usuário exporta)
@@ -2155,8 +2166,137 @@
       }
     }
 
+    async function gerarXLSXDobradas(dados, nome) {
+      if (!dados.length) { alert('Nenhuma dobrada para exportar.'); return; }
+
+      const btn = document.activeElement;
+      const txtOrig = btn?.textContent;
+      if (btn?.tagName === 'BUTTON') { btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg> Gerando...'; btn.disabled = true; }
+
+      try {
+        await _carregarExcelJS();
+
+        const wb = new ExcelJS.Workbook();
+        wb.creator = 'Paralax Gestão Política';
+        wb.created = new Date();
+
+        const ws = wb.addWorksheet('Dobradas', {
+          views: [{ state: 'frozen', ySplit: 1 }]
+        });
+
+        // Resolve nome do candidato a partir de configSistema
+        const cands = (configSistema?.candidatos || []);
+        const nomeCand = chave => {
+          const c = cands.find(c => c.chave === chave);
+          return c ? c.nome : (chave || '');
+        };
+
+        ws.columns = [
+          { header: 'ID',               key: 'id',                width: 8  },
+          { header: 'Campanha',         key: 'campanha',          width: 22 },
+          { header: 'Parceiro',         key: 'parceiro_nome',     width: 28 },
+          { header: 'Cargo Parceiro',   key: 'parceiro_cargo',    width: 22 },
+          { header: 'Cidade',           key: 'cidade',            width: 22 },
+          { header: 'Votos Parceiro',   key: 'votos_oferecidos',  width: 16 },
+          { header: 'Votos Candidato',  key: 'votos_candidato',   width: 16 },
+        ];
+
+        // Cabeçalho: verde escuro + branco
+        const cabRow = ws.getRow(1);
+        cabRow.height = 24;
+        cabRow.eachCell(cell => {
+          cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF065F46' } };
+          cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Arial' };
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          cell.border    = {
+            bottom: { style: 'medium', color: { argb: 'FF059669' } },
+            left:   { style: 'thin',   color: { argb: 'FF34D399' } },
+            right:  { style: 'thin',   color: { argb: 'FF34D399' } },
+          };
+        });
+
+        dados.forEach((d, idx) => {
+          const row = ws.addRow({
+            id:               d.id ?? '',
+            campanha:         nomeCand(d.vinculo_politico),
+            parceiro_nome:    d.parceiro_nome ?? '',
+            parceiro_cargo:   d.parceiro_cargo ?? '',
+            cidade:           d.cidade ?? '',
+            votos_oferecidos: Number(d.votos_oferecidos) || 0,
+            votos_candidato:  Number(d.votos_candidato)  || 0,
+          });
+          row.height = 18;
+          const bgArgb = idx % 2 === 0 ? 'FFECFDF5' : 'FFFFFFFF';
+          row.eachCell({ includeEmpty: true }, (cell, colNum) => {
+            cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgArgb } };
+            cell.font      = { size: 10, name: 'Arial', color: { argb: 'FF1E293B' } };
+            cell.alignment = { vertical: 'middle', wrapText: false };
+            cell.border    = {
+              top:    { style: 'thin', color: { argb: 'FFE2E8F0' } },
+              bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+              left:   { style: 'thin', color: { argb: 'FFE2E8F0' } },
+              right:  { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            };
+            if (colNum === 6 || colNum === 7) {
+              cell.numFmt    = '#,##0';
+              cell.alignment = { horizontal: 'right', vertical: 'middle' };
+            }
+          });
+        });
+
+        // Linha de totais
+        const ultimaDado = dados.length + 1;
+        const totRow = ws.addRow({
+          id:               '',
+          campanha:         `Total: ${dados.length} dobradas`,
+          parceiro_nome:    '', parceiro_cargo: '', cidade: '',
+          votos_oferecidos: { formula: `SUM(F2:F${ultimaDado})` },
+          votos_candidato:  { formula: `SUM(G2:G${ultimaDado})` },
+        });
+        totRow.height = 20;
+        totRow.eachCell({ includeEmpty: true }, (cell, colNum) => {
+          cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+          cell.font   = { bold: true, size: 10, name: 'Arial', color: { argb: 'FF065F46' } };
+          cell.border = {
+            top:    { style: 'medium', color: { argb: 'FF059669' } },
+            bottom: { style: 'thin',   color: { argb: 'FFE2E8F0' } },
+            left:   { style: 'thin',   color: { argb: 'FFE2E8F0' } },
+            right:  { style: 'thin',   color: { argb: 'FFE2E8F0' } },
+          };
+          if (colNum === 6 || colNum === 7) {
+            cell.numFmt    = '#,##0';
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+          }
+        });
+
+        ws.autoFilter = {
+          from: { row: 1, column: 1 },
+          to:   { row: 1, column: ws.columns.length }
+        };
+
+        const buffer = await wb.xlsx.writeBuffer();
+        const blob   = new Blob([buffer], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href     = url;
+        link.download = `${nome || 'dobradas'}.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
+
+      } catch (e) {
+        console.error('[gerarXLSXDobradas]', e);
+        alert('Erro ao gerar Excel: ' + e.message);
+      } finally {
+        if (btn?.tagName === 'BUTTON') { btn.textContent = txtOrig; btn.disabled = false; }
+      }
+    }
+
     // ===== TABS =====
     let abaAtiva = 'liderancas';
+
+    const SVG_DOWNLOAD = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3"/></svg>`;
 
     function mudarTab(aba) {
       abaAtiva = aba;
@@ -2164,6 +2304,13 @@
       document.getElementById('tab-dobradas').classList.toggle('ativo', aba === 'dobradas');
       document.getElementById('secao-liderancas').style.display = aba === 'liderancas' ? 'block' : 'none';
       document.getElementById('secao-dobradas').style.display   = aba === 'dobradas'   ? 'block' : 'none';
+      // Atualiza rótulo do botão "Exportar todas" para deixar claro o que será exportado
+      const btnTodas = document.querySelector('.btn-outline[onclick="exportarTodas()"]');
+      if (btnTodas) {
+        btnTodas.innerHTML = aba === 'dobradas'
+          ? `${SVG_DOWNLOAD} Exportar dobradas`
+          : `${SVG_DOWNLOAD} Exportar todas`;
+      }
       if (aba === 'dobradas' && !dobradasCarregadas) carregarDobradas();
     }
 
