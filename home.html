@@ -1825,9 +1825,14 @@ async function carregarIndicadorCampanha() {
     const totaisLidGlobal = {}
     const totaisDobGlobal = {}
     candidatos.forEach(c => { totaisLidGlobal[c.chave] = 0; totaisDobGlobal[c.chave] = 0 })
+    let nLidGlobal = 0   // contagem total de lideranças
+    let nDobGlobal = 0   // contagem total de dobradas
+    let lidDataGlobal = []
+    let dobDataGlobal = []
     if (lidRes.ok) {
-      const lidData = await lidRes.json()  // [{ cidade, liderancas: [...] }]
-      lidData.forEach(row => {
+      lidDataGlobal = await lidRes.json()  // [{ cidade, liderancas: [...] }]
+      lidDataGlobal.forEach(row => {
+        nLidGlobal += (row.liderancas || []).length
         ;(row.liderancas || []).forEach(l => {
           const vp = l.vinculo_politico || 'ambos'
           const ev = Number(l.expectativa_votos || 0)
@@ -1841,8 +1846,9 @@ async function carregarIndicadorCampanha() {
       })
     }
     if (dobRes.ok) {
-      const dobData = await dobRes.json()  // [{ vinculo_politico, votos_oferecidos, ... }]
-      dobData.forEach(d => {
+      dobDataGlobal = await dobRes.json()  // [{ vinculo_politico, votos_oferecidos, cidade, ... }]
+      nDobGlobal = dobDataGlobal.length
+      dobDataGlobal.forEach(d => {
         const vp = d.vinculo_politico
         const vv = Number(d.votos_oferecidos || 0)
         if (totaisDobGlobal[vp] !== undefined) totaisDobGlobal[vp] += vv
@@ -1905,17 +1911,32 @@ async function carregarIndicadorCampanha() {
         }
       } catch (_) {}
 
+      // Contagens regionais de lideranças e dobradas
+      const normCidade = s => (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim()
+      const cidadesRegNorm = new Set([...cidadesRegiao].map(normCidade))
+      let nLidRegiao = 0
+      let nDobRegiao = 0
+      lidDataGlobal.forEach(row => {
+        if (!cidadesRegNorm.has(normCidade(row.cidade))) return
+        nLidRegiao += (row.liderancas || []).length
+      })
+      dobDataGlobal.forEach(d => {
+        if (cidadesRegNorm.has(normCidade(d.cidade))) nDobRegiao++
+      })
+
       dadosRegiao = {
         label:    regiaoInfo.label,
         nCidades: cidadesRegiao.size,
         votosValidos: votosValidosRegiao,
         votosHist,
         expLid,
+        nLiderancas: nLidRegiao,
+        nDobradas:   nDobRegiao,
       }
     }
 
     // 4. Renderiza: 1º card = global, 2º card = regional (se houver)
-    renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao, regiaoInfo, dadosRegiao, totaisLidGlobal, totaisDobGlobal)
+    renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao, regiaoInfo, dadosRegiao, totaisLidGlobal, totaisDobGlobal, nLidGlobal, nDobGlobal)
 
   } catch (e) { /* silencioso */ }
 }
@@ -1925,7 +1946,7 @@ async function carregarIndicadorCampanha() {
 // regiaoInfo    = { chave, label } quando há região vinculada (pode ser null)
 // dadosRegiao   = { label, nCidades, votosValidos, votosHist, expLid } ou null
 // 1º card usa totaisGlobal; 2º card usa totaisRegiao (se disponível)
-function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, regiaoInfo = null, dadosRegiao = null, totaisLidGlobal = {}, totaisDobGlobal = {}) {
+function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, regiaoInfo = null, dadosRegiao = null, totaisLidGlobal = {}, totaisDobGlobal = {}, nLidGlobal = 0, nDobGlobal = 0) {
   const panel   = document.getElementById('campaign-indicator')
   const body    = document.getElementById('ci-body')
   const updated = document.getElementById('ci-updated')
@@ -2033,6 +2054,17 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
       <div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:1px;">${escHome(dr.label)}</div>
       <div style="font-size:11px;color:rgba(255,255,255,.45);margin-bottom:10px;">${dr.nCidades} municípios</div>
       <div class="ci-total-divider"></div>
+      <div style="display:flex;gap:8px;margin-top:8px;margin-bottom:6px;">
+        <div style="flex:1;background:rgba(59,130,246,.13);border-radius:8px;padding:8px 10px;text-align:center;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.45);margin-bottom:2px;">👥 Lideranças</div>
+          <div class="ci-total-value" id="ci-total-lid" style="font-size:20px;line-height:1.1;">0</div>
+        </div>
+        <div style="flex:1;background:rgba(16,185,129,.13);border-radius:8px;padding:8px 10px;text-align:center;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.45);margin-bottom:2px;">🤝 Dobradas</div>
+          <div class="ci-total-value" id="ci-total-dob" style="font-size:20px;line-height:1.1;color:rgba(52,211,153,.9);">0</div>
+        </div>
+      </div>
+      <div class="ci-total-divider"></div>
       <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
           <span style="color:rgba(255,255,255,.65);">🗳️ Votos válidos 2024</span>
@@ -2043,7 +2075,6 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
           const meta = totaisRegiao ? (totaisRegiao[c.chave] || 0) : 0
           const lid  = dr.expLid[c.chave] || 0
           const cor  = escHome(c.cor_texto || '#fff')
-          const bg   = escHome(c.cor_fundo || 'rgba(255,255,255,.08)')
           return `
         <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:7px 9px;margin-top:4px;">
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:${cor};margin-bottom:5px;">${escHome(c.nome)}</div>
@@ -2064,13 +2095,32 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
       </div>
     </div>`
   } else {
-    // Usuário sem região: exibe total geral normal
+    // Usuário sem região: exibe contagens globais
     html += `
     <div class="ci-total">
-      <div class="ci-total-label">Total geral</div>
-      <div class="ci-total-value" id="ci-total-value">0</div>
-      <div class="ci-total-sub">expectativa de votos</div>
-      <div class="ci-total-divider"></div>
+      <div class="ci-total-label" style="margin-bottom:6px;">Estrutura da campanha</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:center;gap:7px;">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(59,130,246,.18);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">👥</div>
+            <div>
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.45);">Lideranças</div>
+              <div class="ci-total-value" id="ci-total-lid" style="font-size:22px;line-height:1.1;">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="ci-total-divider"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:center;gap:7px;">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(16,185,129,.18);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">🤝</div>
+            <div>
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.45);">Dobradas</div>
+              <div class="ci-total-value" id="ci-total-dob" style="font-size:22px;line-height:1.1;color:rgba(52,211,153,.9);">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ci-total-divider" style="margin-top:10px;"></div>
       <div class="ci-total-label">${escHome(String(candidatos.length))} campanha${candidatos.length !== 1 ? 's' : ''} ativa${candidatos.length !== 1 ? 's' : ''}</div>
     </div>`
   }
@@ -2113,7 +2163,14 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
       const barEl = document.getElementById(`ci-bar-${cand.chave}`)
       if (barEl) setTimeout(() => { barEl.style.width = cobPct + '%' }, 80)
     })
-    if (!dadosRegiao) animarContador('ci-total-value', totalGeral)
+    // Anima contagens de lideranças e dobradas
+    if (!dadosRegiao) {
+      animarContador('ci-total-lid', nLidGlobal)
+      animarContador('ci-total-dob', nDobGlobal)
+    } else {
+      animarContador('ci-total-lid', dadosRegiao.nLiderancas || 0)
+      animarContador('ci-total-dob', dadosRegiao.nDobradas   || 0)
+    }
   })
 
   // Hora de atualização
