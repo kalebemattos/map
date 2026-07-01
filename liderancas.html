@@ -1394,6 +1394,7 @@
   </div>
 
   <script src="tenant.js"></script>
+  <script src="data.js"></script>
   <script>
     const API = 'https://map-backend-j88s.onrender.com';
     const API_URL = 'https://map-backend-j88s.onrender.com/api';
@@ -2345,6 +2346,11 @@
           lista = lista.filter(d =>
             cidadesPermitidas.includes((d.cidade || '').toLowerCase().trim())
           );
+        }
+        // Fallback: se regions não estiver disponível, não exibe nada
+        // (evita vazar dados de outras regiões)
+        else if (typeof regions === 'undefined' || !regions) {
+          lista = [];
         }
       }
 
