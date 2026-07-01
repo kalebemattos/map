@@ -2314,8 +2314,25 @@
     async function carregarDobradas() {
       try {
         const res = await apiFetch('/dobradas');
-        todasDobradas = await res.json();
-        if (!Array.isArray(todasDobradas)) todasDobradas = [];
+        let dados = await res.json();
+        if (!Array.isArray(dados)) dados = [];
+
+        // Aplica filtro de região logo ao carregar, para que todasDobradas já seja o escopo correto
+        const userLogado = JSON.parse(localStorage.getItem('user') || '{}');
+        if (userLogado.nivel === 'lider_regiao' && userLogado.regiao) {
+          const regiaoKey = userLogado.regiao;
+          if (typeof regions !== 'undefined' && regions[regiaoKey] && regions[regiaoKey].length) {
+            const cidadesPermitidas = regions[regiaoKey].map(c => c.toLowerCase().trim());
+            dados = dados.filter(d =>
+              cidadesPermitidas.includes((d.cidade || '').toLowerCase().trim())
+            );
+          } else {
+            // regions não disponível ou chave inválida: bloqueia tudo por segurança
+            dados = [];
+          }
+        }
+
+        todasDobradas = dados;
         dobradasCarregadas = true;
         atualizarStatsDobradas();
         renderDobradas();
@@ -2336,26 +2353,9 @@
     }
 
     function filtrarDobradas() {
-      const userLogado = JSON.parse(localStorage.getItem('user') || '{}');
-      let lista = todasDobradas;
-
-      // Restringe por região quando o usuário é líder de região
-      if (userLogado.nivel === 'lider_regiao' && userLogado.regiao) {
-        if (typeof regions !== 'undefined' && regions[userLogado.regiao]) {
-          const cidadesPermitidas = regions[userLogado.regiao].map(c => c.toLowerCase().trim());
-          lista = lista.filter(d =>
-            cidadesPermitidas.includes((d.cidade || '').toLowerCase().trim())
-          );
-        }
-        // Fallback: se regions não estiver disponível, não exibe nada
-        // (evita vazar dados de outras regiões)
-        else if (typeof regions === 'undefined' || !regions) {
-          lista = [];
-        }
-      }
-
+      // todasDobradas já está restrito à região do usuário (filtrado em carregarDobradas)
       const camp = document.getElementById('dob-filtro-campanha').value;
-      return lista.filter(d => camp === 'todas' || d.vinculo_politico === camp);
+      return todasDobradas.filter(d => camp === 'todas' || d.vinculo_politico === camp);
     }
 
     document.getElementById('dob-filtro-campanha').addEventListener('change', () => {
