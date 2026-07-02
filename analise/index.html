@@ -1589,8 +1589,27 @@ async function buscarCandidatos() {
   }
 }
 
+// ── Mapa de códigos numéricos da UF para URL do TSE ─────────────────────────
+const _TSE_UF_CODES = {
+  AC:1,AL:2,AM:3,AP:4,BA:5,CE:6,DF:7,ES:8,GO:9,MA:10,
+  MS:11,MT:12,MG:13,PA:14,PB:15,PE:16,PI:17,PR:18,RJ:19,
+  RN:20,RO:21,RR:22,RS:23,SC:24,SE:25,SP:26,TO:27,BR:0
+};
+
+// Chamada pelo onerror do <img> — evita problemas de escaping inline
+function _avatarImgError(img) {
+  const wrap = img.parentNode;
+  if (!wrap) return;
+  const initials = (img.dataset.initials || '?');
+  wrap.innerHTML = `<div style="width:76px;height:76px;border-radius:50%;
+    background:rgba(255,255,255,0.18);border:3px solid rgba(255,255,255,0.3);
+    display:flex;align-items:center;justify-content:center;font-size:26px;
+    font-weight:700;color:white;font-family:'Sora',sans-serif;flex-shrink:0;"
+    >${initials}</div>`;
+}
+
 // ── Renderiza avatar do candidato ────────────────────────────────────────────
-function _renderAvatar(fotoTenant, sequencial, ano, nome) {
+function _renderAvatar(fotoTenant, sequencial, ano, nome, uf) {
   const wrap = document.getElementById('candidatoAvatarWrap');
   if (!wrap) return;
 
@@ -1601,23 +1620,29 @@ function _renderAvatar(fotoTenant, sequencial, ano, nome) {
     .map(w => w[0])
     .join('') || (nome || '?')[0];
 
-  const initialsHtml = `
-    <div style="width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,0.18);
-                border:3px solid rgba(255,255,255,0.3);display:flex;align-items:center;
-                justify-content:center;font-size:26px;font-weight:700;color:white;
-                font-family:'Sora',sans-serif;flex-shrink:0;">${initials}</div>`;
-
+  // Foto do tenant config — usa direto, onerror → iniciais via função global
   if (fotoTenant) {
-    // Foto do tenant config (já carregada) — usa direto, sem fallback TSE
-    wrap.innerHTML = `<img class="candidato-avatar" src="${fotoTenant}" alt="${nome}"
-      onerror="this.parentNode.innerHTML='${initialsHtml.replace(/'/g,'&apos;').replace(/"/g,'&quot;')}'">`;
+    wrap.innerHTML = `<img class="candidato-avatar" src="${fotoTenant}"
+      alt="${nome.replace(/"/g,'')}" data-initials="${initials}"
+      onerror="_avatarImgError(this)">`;
     return;
   }
 
-  // Sem foto do tenant: tenta foto oficial do TSE
-  const tseUrl = `https://divulgacandcontas.tse.jus.br/candidaturas/oficial/${ano}/BR/${sequencial}/foto/${sequencial}.jpeg`;
-  wrap.innerHTML = `<img class="candidato-avatar" src="${tseUrl}" alt="${nome}"
-    onerror="this.parentNode.innerHTML='${initialsHtml.replace(/'/g,'&apos;').replace(/"/g,'&quot;')}'">`;
+  // Sem foto do tenant → tenta foto oficial TSE (usa código numérico da UF)
+  const ufCode = _TSE_UF_CODES[uf] || _TSE_UF_CODES[uf?.toUpperCase()] || 0;
+  const tseUrl = ufCode
+    ? `https://divulgacandcontas.tse.jus.br/candidaturas/oficial/${ano}/BR/${ufCode}/${sequencial}/foto/${sequencial}.jpeg`
+    : null;
+
+  if (tseUrl) {
+    wrap.innerHTML = `<img class="candidato-avatar" src="${tseUrl}"
+      alt="${nome.replace(/"/g,'')}" data-initials="${initials}"
+      onerror="_avatarImgError(this)">`;
+    return;
+  }
+
+  // Sem nenhuma fonte de foto → iniciais
+  _avatarImgError({ parentNode: wrap, dataset: { initials } });
 }
 
 // ── Seleciona candidato ───────────────────────────────────────────────────────
@@ -1643,7 +1668,8 @@ function onCandidatoChange() {
     opt.dataset.fotoTenant || null,
     candidatoAtual.sequencial,
     candidatoAtual.ano,
-    candidatoAtual.nome
+    candidatoAtual.nome,
+    candidatoAtual.uf
   );
 
   _renderContextHeader(); // [NEW] atualiza context header
