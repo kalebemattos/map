@@ -1274,15 +1274,7 @@ body.modal-aberto {
 
   <!-- CANDIDATO CARD -->
   <div class="candidato-card" id="cardCandidato" style="display:none;">
-    <div id="candidatoAvatarWrap" style="position:relative;flex-shrink:0;">
-      <img id="avatarCandidatoImg" class="candidato-avatar" src="" alt=""
-           style="display:none;" onerror="this.style.display='none';document.getElementById('avatarCandidatoInitials').style.display='flex';">
-      <div id="avatarCandidatoInitials"
-           style="display:none;width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,0.15);
-                  border:3px solid rgba(255,255,255,0.25);align-items:center;justify-content:center;
-                  font-size:26px;font-weight:700;color:white;font-family:'Sora',sans-serif;flex-shrink:0;">
-      </div>
-    </div>
+    <div id="candidatoAvatarWrap" style="flex-shrink:0;"></div>
     <div class="candidato-info">
       <h3 id="nomeCandidatoDisplay"></h3>
       <div class="candidato-votos" id="totalVotosCandidato"></div>
@@ -1367,8 +1359,8 @@ function setTipoEleicao(tipo) {
   candidatoAtual = null;
   resultadosAtual = [];
   document.getElementById('cardCandidato').style.display = 'none';
-  document.getElementById('avatarCandidatoImg').style.display      = 'none';
-  document.getElementById('avatarCandidatoInitials').style.display = 'none';
+  const _wrap = document.getElementById('candidatoAvatarWrap');
+  if (_wrap) _wrap.innerHTML = '';
   document.getElementById('resultado').innerHTML = '';
   document.getElementById('resultado-cards').innerHTML = '';
   document.getElementById('result-footer').style.display = 'none';
@@ -1568,6 +1560,7 @@ async function buscarCandidatos() {
       placeholder.textContent = `— ${json.data.length} candidato(s) encontrado(s) —`;
       select.appendChild(placeholder);
 
+      const normN2 = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
       json.data.forEach(c => {
         const opt = document.createElement('option');
         opt.value           = c.sequencial;
@@ -1577,6 +1570,14 @@ async function buscarCandidatos() {
         opt.dataset.uf      = c.uf;
         opt.dataset.ano     = c.ano;
         opt.dataset.numero  = c.numero || '';
+        // Tenta encontrar foto do candidato no tenant config
+        const nomeNorm = normN2(c.nome);
+        const cfgMatch = configCandidatos.find(tc =>
+          normN2(tc.nome_urna_bq || tc.nome) === nomeNorm ||
+          nomeNorm.includes(normN2(tc.nome_urna_bq || tc.nome)) ||
+          normN2(tc.nome_urna_bq || tc.nome).includes(nomeNorm)
+        );
+        opt.dataset.fotoTenant = cfgMatch?.foto_url || '';
         select.appendChild(opt);
       });
     }
@@ -1588,16 +1589,42 @@ async function buscarCandidatos() {
   }
 }
 
+// ── Renderiza avatar do candidato ────────────────────────────────────────────
+function _renderAvatar(fotoTenant, sequencial, ano, nome) {
+  const wrap = document.getElementById('candidatoAvatarWrap');
+  if (!wrap) return;
+
+  const initials = (nome || '?')
+    .split(' ')
+    .filter(w => w.length > 2)
+    .slice(0, 2)
+    .map(w => w[0])
+    .join('') || (nome || '?')[0];
+
+  const initialsHtml = `
+    <div style="width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,0.18);
+                border:3px solid rgba(255,255,255,0.3);display:flex;align-items:center;
+                justify-content:center;font-size:26px;font-weight:700;color:white;
+                font-family:'Sora',sans-serif;flex-shrink:0;">${initials}</div>`;
+
+  if (fotoTenant) {
+    // Foto do tenant config (já carregada) — usa direto, sem fallback TSE
+    wrap.innerHTML = `<img class="candidato-avatar" src="${fotoTenant}" alt="${nome}"
+      onerror="this.parentNode.innerHTML='${initialsHtml.replace(/'/g,'&apos;').replace(/"/g,'&quot;')}'">`;
+    return;
+  }
+
+  // Sem foto do tenant: tenta foto oficial do TSE
+  const tseUrl = `https://divulgacandcontas.tse.jus.br/candidaturas/oficial/${ano}/BR/${sequencial}/foto/${sequencial}.jpeg`;
+  wrap.innerHTML = `<img class="candidato-avatar" src="${tseUrl}" alt="${nome}"
+    onerror="this.parentNode.innerHTML='${initialsHtml.replace(/'/g,'&apos;').replace(/"/g,'&quot;')}'">`;
+}
+
 // ── Seleciona candidato ───────────────────────────────────────────────────────
 function onCandidatoChange() {
   const select = document.getElementById('candidatoSelect');
   const opt    = select.options[select.selectedIndex];
   if (!opt || !opt.value) return;
-
-  const normN = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
-  const matched = configCandidatos.find(c =>
-    normN(c.nome_urna_bq || c.nome) === normN(opt.dataset.nome)
-  );
 
   candidatoAtual = {
     sequencial: opt.value,
@@ -1606,30 +1633,18 @@ function onCandidatoChange() {
     uf:         opt.dataset.uf,
     ano:        opt.dataset.ano,
     numero:     opt.dataset.numero || '',
-    foto_url:   matched?.foto_url || null,
   };
 
   document.getElementById('nomeCandidatoDisplay').textContent = candidatoAtual.nome;
   document.getElementById('cardCandidato').style.cssText = 'display:flex';
 
-  // Avatar: foto do tenant config ou iniciais
-  const imgEl      = document.getElementById('avatarCandidatoImg');
-  const initialsEl = document.getElementById('avatarCandidatoInitials');
-  if (candidatoAtual.foto_url) {
-    imgEl.src          = candidatoAtual.foto_url;
-    imgEl.style.display = '';
-    initialsEl.style.display = 'none';
-  } else {
-    imgEl.style.display      = 'none';
-    const initials = candidatoAtual.nome
-      .split(' ')
-      .filter(w => w.length > 2)
-      .slice(0, 2)
-      .map(w => w[0])
-      .join('');
-    initialsEl.textContent   = initials || candidatoAtual.nome[0];
-    initialsEl.style.display = 'flex';
-  }
+  // Avatar: 1) foto do tenant config (armazenada em dataset), 2) foto TSE, 3) iniciais
+  _renderAvatar(
+    opt.dataset.fotoTenant || null,
+    candidatoAtual.sequencial,
+    candidatoAtual.ano,
+    candidatoAtual.nome
+  );
 
   _renderContextHeader(); // [NEW] atualiza context header
   carregarResultados();
