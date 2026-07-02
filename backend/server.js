@@ -3475,6 +3475,58 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
   }
 });
 
+// ── GET /api/eleicoes/locais ─────────────────────────────────────────────────
+// Retorna locais de votação de um município (opcionalmente filtrado por bairro).
+// Fonte: perfil_eleitorado_local_votacao (campo nome_local_votacao).
+app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const { ano, uf, id_municipio, bairro } = req.query;
+    if (!ano || !uf || !id_municipio) {
+      return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: ano, uf, id_municipio' });
+    }
+
+    const params = {
+      ano:          parseInt(ano),
+      uf:           uf.trim().toUpperCase(),
+      id_municipio: String(id_municipio).trim(),
+    };
+
+    const bairroFilter = bairro
+      ? `AND UPPER(TRIM(CAST(bairro AS STRING))) = UPPER(TRIM(@bairro))`
+      : '';
+    if (bairro) params.bairro = bairro.trim();
+
+    const sql = `
+      SELECT
+        TRIM(CAST(nome_local_votacao AS STRING))          AS nome_local,
+        UPPER(TRIM(CAST(bairro AS STRING)))               AS bairro,
+        COUNT(DISTINCT CONCAT(CAST(zona AS STRING), '_', CAST(secao AS STRING))) AS num_secoes,
+        SUM(qtde_eleitores_perfil)                        AS total_eleitores
+      FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_local_votacao\`
+      WHERE ano          = @ano
+        AND sigla_uf     = @uf
+        AND id_municipio = @id_municipio
+        ${bairroFilter}
+        AND nome_local_votacao IS NOT NULL
+      GROUP BY nome_local_votacao, bairro
+      ORDER BY bairro, total_eleitores DESC
+    `;
+
+    const rows = await runBQ(sql, params);
+    const data = rows.map(r => ({
+      nome_local:      String(r.nome_local      || '—'),
+      bairro:          String(r.bairro          || '—'),
+      num_secoes:      Number(r.num_secoes)      || 0,
+      total_eleitores: Number(r.total_eleitores) || 0,
+    }));
+
+    return res.json({ ok: true, data });
+  } catch (e) {
+    console.error('[/api/eleicoes/locais]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ── GET /api/eleicoes/schema-debug ───────────────────────────────────────────
 // Retorna colunas reais de tabelas do BigQuery via INFORMATION_SCHEMA.
 app.get('/api/eleicoes/schema-debug', auth, withTenant, allow('dono', 'admin'), async (req, res) => {

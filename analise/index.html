@@ -1700,12 +1700,24 @@ function renderTabela() {
   _renderContextHeader();
 }
 
+// ── Estado para locais de votação ──────────────────────────────────────────
+let _locaisCache      = {};   // { "idMun_bairro": [{ nome_local, num_secoes, total_eleitores }] }
+let _locaisIdMunicipio = null;
+let _locaisAno        = null;
+let _locaisUf         = null;
+
 // ── Modal de Detalhe — sempre mostra votos por bairro (com fallback para zona) ──
 async function abrirModalDetalhe(municipio, idMunicipio) {
   if (!candidatoAtual) return;
   const mb       = document.getElementById('modal-bairros');
   const conteudo = document.getElementById('mb-conteudo');
   const turno    = document.getElementById('turnoSelect').value;
+
+  // Armazena contexto para os locais de votação
+  _locaisIdMunicipio = idMunicipio;
+  _locaisAno         = candidatoAtual.ano;
+  _locaisUf          = candidatoAtual.uf;
+  _locaisCache       = {};
 
   document.getElementById('mb-titulo').textContent = municipio;
   document.getElementById('mb-sub').textContent =
@@ -1724,41 +1736,63 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
   });
 
   try {
-    // Usa sempre /api/eleicoes/bairros — funciona para qualquer tipo de eleição.
-    // O endpoint tenta JOIN com tabela de locais de votação (bairro real) e,
-    // se não houver dado, cai para zona como fallback (campo por_bairro=false).
     const res  = await fetch(`${API_BASE}/api/eleicoes/bairros?${params}`, { headers: { Authorization: 'Bearer ' + (localStorage.getItem('token') || '') } });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
 
     const lista = json.data;
     if (!lista.length) {
-      conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"/></svg> Sem dados de bairros para esta cidade.</div>';
+      conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">Sem dados de bairros para esta cidade.</div>';
       return;
     }
 
-    const maxV    = Math.max(...lista.map(b => b.votos), 1);
-    const totalV  = lista.reduce((s, b) => s + b.votos, 0);
-    // por_bairro=true <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg> nomes reais de bairro; false <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg> fallback com zona
-    const rotulo  = json.por_bairro === true ? 'Bairro' : 'Zona';
+    const maxV   = Math.max(...lista.map(b => b.votos), 1);
+    const totalV = lista.reduce((s, b) => s + b.votos, 0);
+    const rotulo = json.por_bairro === true ? 'Bairro' : 'Zona';
+    // Só mostra locais se temos dados reais de bairro (não fallback de zona)
+    const temLocais = json.por_bairro === true;
 
-    const rows = lista.map(b => {
-      const barW = (b.votos / maxV * 100).toFixed(1);
-      return `<tr>
-        <td><span class="b-nome">${b.bairro}</span></td>
-        <td><span class="b-votos">${b.votos.toLocaleString('pt-BR')}</span></td>
-        <td>
-          <div class="pct-bar-wrap">
-            <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
-            <span class="pct-label">${b.percentual !== null ? b.percentual + '%' : '—'}</span>
-          </div>
-        </td>
-      </tr>`;
+    const rows = lista.map((b, idx) => {
+      const barW    = (b.votos / maxV * 100).toFixed(1);
+      const bairroId = `bairro-locais-${idx}`;
+      const chevron  = temLocais
+        ? `<span class="b-chevron" id="chev-${idx}">▸</span>`
+        : '';
+      return `
+        <tr class="b-row${temLocais ? ' b-row-clicavel' : ''}"
+            ${temLocais ? `onclick="toggleLocais('${bairroId}', '${idx}', ${JSON.stringify(b.bairro).replace(/"/g,"'")})"` : ''}>
+          <td><span class="b-nome">${chevron}${b.bairro}</span></td>
+          <td><span class="b-votos">${b.votos.toLocaleString('pt-BR')}</span></td>
+          <td>
+            <div class="pct-bar-wrap">
+              <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
+              <span class="pct-label">${b.percentual !== null ? b.percentual + '%' : '—'}</span>
+            </div>
+          </td>
+        </tr>
+        ${temLocais ? `<tr id="${bairroId}" class="b-locais-row" style="display:none;">
+          <td colspan="3" class="b-locais-cell">
+            <div class="b-locais-loading">⏳ Carregando locais...</div>
+          </td>
+        </tr>` : ''}`;
     }).join('');
 
     conteudo.innerHTML =
+      `<style>
+        .b-row-clicavel { cursor:pointer; transition:background .15s; }
+        .b-row-clicavel:hover { background:#f0f7ff !important; }
+        .b-chevron { display:inline-block; width:14px; font-size:11px; color:#3b82f6; transition:transform .2s; margin-right:3px; }
+        .b-chevron.aberto { transform:rotate(90deg); }
+        .b-locais-cell { padding:0 !important; background:#f8fafc; }
+        .b-locais-loading { padding:10px 16px; color:#94a3b8; font-size:12px; }
+        .b-locais-lista { padding:8px 16px 12px; display:flex; flex-direction:column; gap:6px; }
+        .b-local-item { display:flex; align-items:flex-start; gap:8px; padding:7px 10px; background:#fff; border-radius:8px; border:1px solid #e2e8f0; }
+        .b-local-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
+        .b-local-nome { font-size:12px; font-weight:600; color:#1e293b; line-height:1.3; }
+        .b-local-meta { font-size:11px; color:#64748b; margin-top:2px; }
+      </style>` +
       '<table class="tb"><thead><tr>' +
-        `<th>${rotulo}</th><th>Votos</th><th>% Nominais</th>` +
+        `<th>${rotulo}${temLocais ? ' <span style="font-size:10px;font-weight:400;color:#94a3b8;">(clique para ver locais)</span>' : ''}</th><th>Votos</th><th>% Nominais</th>` +
       '</tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div class="tb-footer">' +
         `<span>${lista.length} ${rotulo.toLowerCase()}s</span>` +
@@ -1766,9 +1800,66 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
       '</div>';
 
   } catch (e) {
-    conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"/></svg> Sem dados de bairros para esta cidade.</div>`;
+    conteudo.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;">Sem dados de bairros para esta cidade.</div>`;
     console.error('[abrirModalDetalhe]', e);
   }
+}
+
+// ── Expand/collapse locais de votação de um bairro ───────────────────────────
+async function toggleLocais(rowId, idx, bairro) {
+  const row   = document.getElementById(rowId);
+  const chev  = document.getElementById(`chev-${idx}`);
+  if (!row) return;
+
+  const aberto = row.style.display !== 'none';
+  if (aberto) {
+    row.style.display = 'none';
+    if (chev) chev.classList.remove('aberto');
+    return;
+  }
+
+  row.style.display = '';
+  if (chev) chev.classList.add('aberto');
+
+  const cacheKey = `${_locaisIdMunicipio}_${bairro}`;
+  if (_locaisCache[cacheKey]) {
+    row.querySelector('.b-locais-cell').innerHTML = renderLocais(_locaisCache[cacheKey]);
+    return;
+  }
+
+  // Busca do backend
+  try {
+    const params = new URLSearchParams({
+      ano:          _locaisAno,
+      uf:           _locaisUf,
+      id_municipio: _locaisIdMunicipio,
+      bairro
+    });
+    const res  = await fetch(`${API_BASE}/api/eleicoes/locais?${params}`, {
+      headers: { Authorization: 'Bearer ' + (localStorage.getItem('token') || '') }
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    _locaisCache[cacheKey] = json.data;
+    row.querySelector('.b-locais-cell').innerHTML = renderLocais(json.data);
+  } catch (e) {
+    row.querySelector('.b-locais-cell').innerHTML =
+      '<div class="b-locais-loading">Não foi possível carregar os locais.</div>';
+    console.error('[toggleLocais]', e);
+  }
+}
+
+function renderLocais(lista) {
+  if (!lista.length) return '<div class="b-locais-loading">Nenhum local encontrado para este bairro.</div>';
+  const items = lista.map(l => `
+    <div class="b-local-item">
+      <div class="b-local-icon">🏫</div>
+      <div>
+        <div class="b-local-nome">${l.nome_local}</div>
+        <div class="b-local-meta">${l.num_secoes} seção${l.num_secoes !== 1 ? 'ões' : ''} · ${Number(l.total_eleitores).toLocaleString('pt-BR')} eleitores aptos</div>
+      </div>
+    </div>`).join('');
+  return `<div class="b-locais-lista">${items}</div>`;
 }
 
 // Mantém alias para compatibilidade com qualquer referência antiga
