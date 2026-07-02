@@ -1842,14 +1842,16 @@ async function toggleLocais(rowId, idx, bairro) {
     });
     const json = await res.json();
     if (!json.ok) {
-      // Mostra colunas disponíveis para diagnóstico
       const cols = json.colunas_disponiveis?.length
-        ? `<br><small style="color:#94a3b8">Colunas: ${json.colunas_disponiveis.join(', ')}</small>`
+        ? `\nColunas disponíveis: ${json.colunas_disponiveis.join(', ')}`
         : '';
       throw new Error(json.error + cols);
     }
     _locaisCache[cacheKey] = json.data;
-    row.querySelector('.b-locais-cell').innerHTML = renderLocais(json.data);
+    const avisoHtml = json.aviso
+      ? `<div class="b-locais-loading" style="color:#f59e0b;font-size:12px;padding:6px 10px;">ℹ️ ${json.aviso}</div>`
+      : '';
+    row.querySelector('.b-locais-cell').innerHTML = avisoHtml + renderLocais(json.data);
   } catch (e) {
     row.querySelector('.b-locais-cell').innerHTML =
       `<div class="b-locais-loading" style="color:#ef4444;">⚠️ ${e.message}</div>`;
@@ -1868,7 +1870,7 @@ function renderLocais(lista) {
         <div class="b-local-nome">${l.nome_local}</div>
         <div class="b-local-meta" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:3px;">
           <span>🗳️ <b>${Number(l.votos).toLocaleString('pt-BR')}</b> votos</span>
-          ${l.num_secoes ? `<span>· ${l.num_secoes} seção${l.num_secoes !== 1 ? 'ões' : ''}</span>` : ''}
+          ${l.num_secoes ? `<span>· ${l.num_secoes} ${l.num_secoes !== 1 ? 'seções' : 'seção'}</span>` : ''}
           ${pct ? `<span>· ${pct}</span>` : ''}
         </div>
       </div>

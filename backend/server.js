@@ -3477,6 +3477,9 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
 
 // ── GET /api/eleicoes/locais ─────────────────────────────────────────────────
 // Retorna locais de votação com votos do candidato, filtrado por bairro.
+// Estratégia 1 (ideal): 3-way JOIN resultados + perfil_eleitorado_local_votacao + locais_votacao
+//   → nomes reais dos locais (ex: "CÂMARA MUNICIPAL", "ESCOLA X").
+// Estratégia 2 (fallback): 2-way JOIN resultados + perfil → só bairro como label.
 app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) => {
   try {
     const { ano, uf, id_municipio, bairro, sequencial, turno = '1' } = req.query;
@@ -3493,108 +3496,160 @@ app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) =
       bairro_filtro: (bairro || '').trim().toUpperCase(),
     };
 
-    // ── Passo 1: descobre colunas reais de perfil_eleitorado_local_votacao ──
-    let colunas = [];
-    try {
-      const schemaRows = await runBQ(`
-        SELECT column_name
-        FROM \`basedosdados.br_tse_eleicoes.INFORMATION_SCHEMA.COLUMNS\`
-        WHERE table_name = 'perfil_eleitorado_local_votacao'
-        ORDER BY ordinal_position
-      `, {});
-      colunas = schemaRows.map(r => r.column_name.toLowerCase());
-      console.log('[/api/eleicoes/locais] colunas perfil:', colunas.join(', '));
-    } catch (e) {
-      console.warn('[/api/eleicoes/locais] schema probe falhou:', e.message.split('\n')[0]);
-    }
-
-    // ── Passo 2: escolhe a melhor coluna de nome/identificador do local ─────
-    // Prioridade: nome descritivo > código numérico
-    const candidatosNome  = ['nome_local_votacao','nm_local_votacao','nome_local','ds_local_votacao','descricao_local'];
-    const candidatosCod   = ['nr_local_votacao','local_votacao','codigo_local','cd_local_votacao'];
-    const colunaAllCands  = [...candidatosNome, ...candidatosCod];
-    const colunaLocal     = colunas.length
-      ? (colunaAllCands.find(c => colunas.includes(c)) || null)
-      : null;
-
     const bairroWhere = bairro ? `AND UPPER(TRIM(CAST(loc.bairro AS STRING))) = @bairro_filtro` : '';
-
-    // Expressão de nome: coluna encontrada → bairro + " – " + nome, ou só bairro
-    const exprNome = colunaLocal
-      ? `CONCAT(UPPER(TRIM(CAST(loc.bairro AS STRING))), ' – ', UPPER(TRIM(CAST(loc.${colunaLocal} AS STRING))))`
-      : `UPPER(TRIM(CAST(loc.bairro AS STRING)))`;
-
-    const groupNome = colunaLocal
-      ? `loc.bairro, loc.${colunaLocal}`
-      : `loc.bairro`;
-
-    // ── Passo 3: tenta tabelas de resultado × detalhe (igual ao endpoint bairros) ─
     const resultTables  = ['resultados_candidato_secao', 'resultados_candidato_municipio_secao'];
     const detalheTables = ['detalhes_votacao_secao', 'detalhes_votacao_municipio_secao'];
 
-    for (const rTbl of resultTables) {
-      for (const dTbl of detalheTables) {
-        try {
-          const sql = `
-            SELECT
-              ${exprNome}                                                           AS nome_local,
-              SUM(r.votos)                                                          AS votos,
-              SUM(d.votos_nominais)                                                 AS votos_nominais,
-              COUNT(DISTINCT CONCAT(CAST(r.zona AS STRING),'_',CAST(r.secao AS STRING))) AS num_secoes
-            FROM \`basedosdados.br_tse_eleicoes.${rTbl}\` r
-            LEFT JOIN (
-              SELECT
-                CAST(zona  AS STRING) AS zona,
-                CAST(secao AS STRING) AS secao,
-                ANY_VALUE(CAST(bairro AS STRING)) AS bairro
-                ${colunaLocal ? `, ANY_VALUE(CAST(${colunaLocal} AS STRING)) AS ${colunaLocal}` : ''}
-              FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_local_votacao\`
-              WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
-              GROUP BY zona, secao
-            ) loc
-              ON CAST(r.zona AS STRING) = loc.zona AND CAST(r.secao AS STRING) = loc.secao
-            LEFT JOIN (
-              SELECT
-                CAST(zona AS STRING) AS zona, CAST(secao AS STRING) AS secao,
-                SUM(votos_nominais) AS votos_nominais
-              FROM \`basedosdados.br_tse_eleicoes.${dTbl}\`
-              WHERE ano = @ano AND turno = @turno AND sigla_uf = @uf AND id_municipio = @id_municipio
-              GROUP BY zona, secao
-            ) d ON CAST(r.zona AS STRING) = d.zona AND CAST(r.secao AS STRING) = d.secao
-            WHERE r.ano    = @ano
-              AND r.turno  = @turno
-              AND r.sigla_uf = @uf
-              AND CAST(r.sequencial_candidato AS STRING) = @sequencial
-              AND r.id_municipio = @id_municipio
-              AND r.votos IS NOT NULL
-              ${bairroWhere}
-            GROUP BY ${groupNome}
-            ORDER BY votos DESC
-            LIMIT 300
-          `;
-          const rows = await runBQ(sql, p);
-          console.log(`[/api/eleicoes/locais] ok: ${rTbl}+${dTbl}, coluna="${colunaLocal||'bairro'}", ${rows.length} locais`);
-          const data = rows.map(r => ({
-            nome_local:      String(r.nome_local      || '—'),
-            votos:           Number(r.votos)           || 0,
-            votos_nominais:  Number(r.votos_nominais)  || 0,
-            num_secoes:      Number(r.num_secoes)      || 0,
-            percentual:      r.votos_nominais > 0
-              ? ((Number(r.votos) / Number(r.votos_nominais)) * 100).toFixed(1)
-              : null,
-          }));
-          return res.json({ ok: true, data, colunas_disponiveis: colunas, coluna_local: colunaLocal });
-        } catch (e) {
-          console.warn(`[/api/eleicoes/locais] ${rTbl}+${dTbl} falhou: ${e.message.split('\n')[0]}`);
+    // ── Estratégia 1: 3-way JOIN com locais_votacao para nomes reais ──────────
+    // locais_votacao contém ds_local_votacao (ex: "CÂMARA MUNICIPAL DE RIO DE JANEIRO")
+    // perfil_eleitorado_local_votacao liga secao → nr_local_votacao
+    // locais_votacao liga (nr_zona, nr_local_votacao) → ds_local_votacao
+    const makeSql3Way = (rTbl, dTbl, nomeColLV, zoneColLV) => `
+      SELECT
+        UPPER(COALESCE(
+          NULLIF(TRIM(CAST(lv.${nomeColLV} AS STRING)), ''),
+          NULLIF(TRIM(CAST(loc.bairro       AS STRING)), ''),
+          CONCAT('Zona ', CAST(r.zona AS STRING))
+        )) AS nome_local,
+        SUM(r.votos)          AS votos,
+        SUM(d.votos_nominais) AS votos_nominais,
+        COUNT(DISTINCT CONCAT(CAST(r.zona AS STRING), '_', CAST(r.secao AS STRING))) AS num_secoes
+      FROM \`basedosdados.br_tse_eleicoes.${rTbl}\` r
+      LEFT JOIN (
+        SELECT
+          CAST(zona  AS STRING) AS zona,
+          CAST(secao AS STRING) AS secao,
+          ANY_VALUE(CAST(bairro           AS STRING)) AS bairro,
+          ANY_VALUE(CAST(nr_local_votacao AS STRING)) AS nr_local_votacao
+        FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_local_votacao\`
+        WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
+        GROUP BY zona, secao
+      ) loc ON CAST(r.zona AS STRING) = loc.zona AND CAST(r.secao AS STRING) = loc.secao
+      LEFT JOIN (
+        SELECT
+          CAST(${zoneColLV}     AS STRING) AS zona,
+          CAST(nr_local_votacao AS STRING) AS nr_local_votacao,
+          ANY_VALUE(CAST(${nomeColLV} AS STRING)) AS ${nomeColLV}
+        FROM \`basedosdados.br_tse_eleicoes.locais_votacao\`
+        WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
+        GROUP BY ${zoneColLV}, nr_local_votacao
+      ) lv ON CAST(r.zona AS STRING) = lv.zona AND loc.nr_local_votacao = lv.nr_local_votacao
+      LEFT JOIN (
+        SELECT
+          CAST(zona  AS STRING) AS zona,
+          CAST(secao AS STRING) AS secao,
+          SUM(votos_nominais)   AS votos_nominais
+        FROM \`basedosdados.br_tse_eleicoes.${dTbl}\`
+        WHERE ano = @ano AND turno = @turno AND sigla_uf = @uf AND id_municipio = @id_municipio
+        GROUP BY zona, secao
+      ) d ON CAST(r.zona AS STRING) = d.zona AND CAST(r.secao AS STRING) = d.secao
+      WHERE r.ano    = @ano
+        AND r.turno  = @turno
+        AND r.sigla_uf = @uf
+        AND CAST(r.sequencial_candidato AS STRING) = @sequencial
+        AND r.id_municipio = @id_municipio
+        AND r.votos IS NOT NULL
+        ${bairroWhere}
+      GROUP BY nome_local
+      ORDER BY votos DESC
+      LIMIT 300
+    `;
+
+    // Tenta variações de nome/zona da tabela locais_votacao (TSE usa nr_zona ou zona)
+    const attempts3Way = [
+      { nomeColLV: 'ds_local_votacao', zoneColLV: 'nr_zona' },
+      { nomeColLV: 'ds_local_votacao', zoneColLV: 'zona'    },
+      { nomeColLV: 'nm_local_votacao', zoneColLV: 'nr_zona' },
+      { nomeColLV: 'nm_local_votacao', zoneColLV: 'zona'    },
+      { nomeColLV: 'nome_local',       zoneColLV: 'zona'    },
+    ];
+
+    for (const { nomeColLV, zoneColLV } of attempts3Way) {
+      for (const rTbl of resultTables) {
+        for (const dTbl of detalheTables) {
+          try {
+            const rows = await runBQ(makeSql3Way(rTbl, dTbl, nomeColLV, zoneColLV), p);
+            console.log(`[locais] 3-way ok: ${rTbl}+locais_votacao.${nomeColLV}(${zoneColLV})+${dTbl}: ${rows.length} locais`);
+            const data = rows.map(r => ({
+              nome_local:     String(r.nome_local     || '—'),
+              votos:          Number(r.votos)          || 0,
+              votos_nominais: Number(r.votos_nominais) || 0,
+              num_secoes:     Number(r.num_secoes)     || 0,
+              percentual:     r.votos_nominais > 0
+                ? ((Number(r.votos) / Number(r.votos_nominais)) * 100).toFixed(1)
+                : null,
+            }));
+            return res.json({ ok: true, data, fonte: '3way' });
+          } catch (e) {
+            console.warn(`[locais] 3-way ${nomeColLV}/${zoneColLV} ${rTbl} falhou: ${e.message.split('\n')[0]}`);
+          }
         }
       }
     }
 
-    return res.status(500).json({
-      ok: false,
-      error: 'Nenhuma combinação de tabelas funcionou',
-      colunas_disponiveis: colunas,
-    });
+    // ── Estratégia 2: 2-way JOIN (só bairro do perfil como label) ────────────
+    const makeSql2Way = (rTbl, dTbl) => `
+      SELECT
+        UPPER(COALESCE(
+          NULLIF(TRIM(CAST(loc.bairro AS STRING)), ''),
+          CONCAT('Zona ', CAST(r.zona AS STRING))
+        )) AS nome_local,
+        SUM(r.votos)          AS votos,
+        SUM(d.votos_nominais) AS votos_nominais,
+        COUNT(DISTINCT CONCAT(CAST(r.zona AS STRING), '_', CAST(r.secao AS STRING))) AS num_secoes
+      FROM \`basedosdados.br_tse_eleicoes.${rTbl}\` r
+      LEFT JOIN (
+        SELECT
+          CAST(zona  AS STRING) AS zona,
+          CAST(secao AS STRING) AS secao,
+          ANY_VALUE(CAST(bairro AS STRING)) AS bairro
+        FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_local_votacao\`
+        WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
+        GROUP BY zona, secao
+      ) loc ON CAST(r.zona AS STRING) = loc.zona AND CAST(r.secao AS STRING) = loc.secao
+      LEFT JOIN (
+        SELECT
+          CAST(zona  AS STRING) AS zona,
+          CAST(secao AS STRING) AS secao,
+          SUM(votos_nominais)   AS votos_nominais
+        FROM \`basedosdados.br_tse_eleicoes.${dTbl}\`
+        WHERE ano = @ano AND turno = @turno AND sigla_uf = @uf AND id_municipio = @id_municipio
+        GROUP BY zona, secao
+      ) d ON CAST(r.zona AS STRING) = d.zona AND CAST(r.secao AS STRING) = d.secao
+      WHERE r.ano    = @ano
+        AND r.turno  = @turno
+        AND r.sigla_uf = @uf
+        AND CAST(r.sequencial_candidato AS STRING) = @sequencial
+        AND r.id_municipio = @id_municipio
+        AND r.votos IS NOT NULL
+        ${bairroWhere}
+      GROUP BY nome_local
+      ORDER BY votos DESC
+      LIMIT 300
+    `;
+
+    for (const rTbl of resultTables) {
+      for (const dTbl of detalheTables) {
+        try {
+          const rows = await runBQ(makeSql2Way(rTbl, dTbl), p);
+          console.log(`[locais] 2-way ok: ${rTbl}+${dTbl}: ${rows.length} locais`);
+          const data = rows.map(r => ({
+            nome_local:     String(r.nome_local     || '—'),
+            votos:          Number(r.votos)          || 0,
+            votos_nominais: Number(r.votos_nominais) || 0,
+            num_secoes:     Number(r.num_secoes)     || 0,
+            percentual:     r.votos_nominais > 0
+              ? ((Number(r.votos) / Number(r.votos_nominais)) * 100).toFixed(1)
+              : null,
+          }));
+          return res.json({ ok: true, data, fonte: '2way_bairro', aviso: 'Nomes dos locais indisponíveis — exibindo bairros' });
+        } catch (e) {
+          console.warn(`[locais] 2-way ${rTbl}+${dTbl} falhou: ${e.message.split('\n')[0]}`);
+        }
+      }
+    }
+
+    return res.status(500).json({ ok: false, error: 'Não foi possível carregar os locais de votação.' });
   } catch (e) {
     console.error('[/api/eleicoes/locais]', e.message);
     res.status(500).json({ ok: false, error: e.message });
@@ -3610,6 +3665,7 @@ app.get('/api/eleicoes/schema-debug', auth, withTenant, allow('dono', 'admin'), 
       'detalhes_votacao_municipio_zona',
       'perfil_eleitorado_municipio',
       'perfil_eleitorado_local_votacao',
+      'locais_votacao',
       'candidatos',
     ];
     const result = {};
