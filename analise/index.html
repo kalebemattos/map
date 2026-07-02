@@ -1844,7 +1844,7 @@ async function toggleLocais(rowId, idx, bairro) {
     row.querySelector('.b-locais-cell').innerHTML = renderLocais(json.data);
   } catch (e) {
     row.querySelector('.b-locais-cell').innerHTML =
-      `<div class="b-locais-loading">Erro: ${e.message}</div>`;
+      `<div class="b-locais-loading" style="color:#ef4444;">⚠️ ${e.message}</div>`;
     console.error('[toggleLocais]', e);
   }
 }
