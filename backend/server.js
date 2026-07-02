@@ -3476,8 +3476,8 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
 });
 
 // ── GET /api/eleicoes/locais ─────────────────────────────────────────────────
-// Retorna locais de votação de um município (opcionalmente filtrado por bairro).
-// Fonte: perfil_eleitorado_local_votacao (campo nome_local_votacao).
+// Retorna locais de votação de um município filtrado por bairro.
+// Tenta várias variações de nome de coluna para o local de votação.
 app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) => {
   try {
     const { ano, uf, id_municipio, bairro } = req.query;
@@ -3490,37 +3490,53 @@ app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) =
       uf:           uf.trim().toUpperCase(),
       id_municipio: String(id_municipio).trim(),
     };
-
     const bairroFilter = bairro
       ? `AND UPPER(TRIM(CAST(bairro AS STRING))) = UPPER(TRIM(@bairro))`
       : '';
     if (bairro) params.bairro = bairro.trim();
 
-    const sql = `
-      SELECT
-        TRIM(CAST(nome_local_votacao AS STRING))          AS nome_local,
-        UPPER(TRIM(CAST(bairro AS STRING)))               AS bairro,
-        COUNT(DISTINCT CONCAT(CAST(zona AS STRING), '_', CAST(secao AS STRING))) AS num_secoes,
-        SUM(qtde_eleitores_perfil)                        AS total_eleitores
-      FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_local_votacao\`
-      WHERE ano          = @ano
-        AND sigla_uf     = @uf
-        AND id_municipio = @id_municipio
-        ${bairroFilter}
-        AND nome_local_votacao IS NOT NULL
-      GROUP BY nome_local_votacao, bairro
-      ORDER BY bairro, total_eleitores DESC
-    `;
+    // Candidatos de coluna para o nome do local — testa em ordem até uma funcionar
+    const tentativas = [
+      { col: 'nome_local_votacao',    groupCol: 'nome_local_votacao' },
+      { col: 'nm_local_votacao',      groupCol: 'nm_local_votacao'   },
+      { col: 'local_votacao',         groupCol: 'local_votacao'      },
+      { col: 'nr_local_votacao',      groupCol: 'nr_local_votacao'   },
+    ];
 
-    const rows = await runBQ(sql, params);
-    const data = rows.map(r => ({
-      nome_local:      String(r.nome_local      || '—'),
-      bairro:          String(r.bairro          || '—'),
-      num_secoes:      Number(r.num_secoes)      || 0,
-      total_eleitores: Number(r.total_eleitores) || 0,
-    }));
+    for (const { col, groupCol } of tentativas) {
+      try {
+        const sql = `
+          SELECT
+            TRIM(CAST(${col} AS STRING))                                              AS nome_local,
+            UPPER(TRIM(CAST(bairro AS STRING)))                                       AS bairro,
+            COUNT(DISTINCT CONCAT(CAST(zona AS STRING), '_', CAST(secao AS STRING))) AS num_secoes,
+            SUM(qtde_eleitores_perfil)                                                AS total_eleitores
+          FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_local_votacao\`
+          WHERE ano          = @ano
+            AND sigla_uf     = @uf
+            AND id_municipio = @id_municipio
+            ${bairroFilter}
+            AND ${col} IS NOT NULL
+          GROUP BY ${groupCol}, bairro
+          ORDER BY bairro, total_eleitores DESC
+        `;
+        const rows = await runBQ(sql, params);
+        console.log(`[/api/eleicoes/locais] ok com coluna "${col}" (${rows.length} locais)`);
+        const data = rows.map(r => ({
+          nome_local:      String(r.nome_local      || '—'),
+          bairro:          String(r.bairro          || '—'),
+          num_secoes:      Number(r.num_secoes)      || 0,
+          total_eleitores: Number(r.total_eleitores) || 0,
+        }));
+        return res.json({ ok: true, data, coluna_usada: col });
+      } catch (e) {
+        console.warn(`[/api/eleicoes/locais] coluna "${col}" falhou: ${e.message.split('\n')[0]}`);
+        // tenta próxima variação
+      }
+    }
 
-    return res.json({ ok: true, data });
+    // Nenhuma variação funcionou — retorna erro com detalhes
+    return res.status(500).json({ ok: false, error: 'Nenhuma variação de coluna de local funcionou na tabela perfil_eleitorado_local_votacao' });
   } catch (e) {
     console.error('[/api/eleicoes/locais]', e.message);
     res.status(500).json({ ok: false, error: e.message });
@@ -3535,6 +3551,7 @@ app.get('/api/eleicoes/schema-debug', auth, withTenant, allow('dono', 'admin'), 
       'resultados_candidato_municipio',
       'detalhes_votacao_municipio_zona',
       'perfil_eleitorado_municipio',
+      'perfil_eleitorado_local_votacao',
       'candidatos',
     ];
     const result = {};
