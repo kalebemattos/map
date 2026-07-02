@@ -1274,6 +1274,15 @@ body.modal-aberto {
 
   <!-- CANDIDATO CARD -->
   <div class="candidato-card" id="cardCandidato" style="display:none;">
+    <div id="candidatoAvatarWrap" style="position:relative;flex-shrink:0;">
+      <img id="avatarCandidatoImg" class="candidato-avatar" src="" alt=""
+           style="display:none;" onerror="this.style.display='none';document.getElementById('avatarCandidatoInitials').style.display='flex';">
+      <div id="avatarCandidatoInitials"
+           style="display:none;width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,0.15);
+                  border:3px solid rgba(255,255,255,0.25);align-items:center;justify-content:center;
+                  font-size:26px;font-weight:700;color:white;font-family:'Sora',sans-serif;flex-shrink:0;">
+      </div>
+    </div>
     <div class="candidato-info">
       <h3 id="nomeCandidatoDisplay"></h3>
       <div class="candidato-votos" id="totalVotosCandidato"></div>
@@ -1358,6 +1367,8 @@ function setTipoEleicao(tipo) {
   candidatoAtual = null;
   resultadosAtual = [];
   document.getElementById('cardCandidato').style.display = 'none';
+  document.getElementById('avatarCandidatoImg').style.display      = 'none';
+  document.getElementById('avatarCandidatoInitials').style.display = 'none';
   document.getElementById('resultado').innerHTML = '';
   document.getElementById('resultado-cards').innerHTML = '';
   document.getElementById('result-footer').style.display = 'none';
@@ -1480,7 +1491,8 @@ function _renderCidadesCards(dados, totalVotos, maxVotos) {
 }
 
 // ── Estado ────────────────────────────────────────────────────────────────────
-let candidatoAtual = null; // { sequencial, nome, cargo, uf, ano }
+let candidatoAtual  = null; // { sequencial, nome, cargo, uf, ano, foto_url? }
+let configCandidatos = [];   // tenant_candidatos com foto_url, nome_urna_bq
 let resultadosAtual = [];  // array de { municipio, id_municipio, votos, votos_validos, percentual }
 
 // ── Utilitários ───────────────────────────────────────────────────────────────
@@ -1496,6 +1508,12 @@ function debounce(fn, ms) {
 
 // ── Event Listeners ───────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // Carrega candidatos do tenant para matchear foto_url
+  fetch(`${API_BASE}/api/config`, { headers: { Authorization: 'Bearer ' + (localStorage.getItem('token') || '') } })
+    .then(r => r.json())
+    .then(cfg => { configCandidatos = cfg.candidatos || []; })
+    .catch(() => {});
+
   // Busca automática quando muda filtros principais
   ['anoSelect', 'ufSelect', 'cargoSelect'].forEach(id => {
     document.getElementById(id).addEventListener('change', debounce(buscarCandidatos, 200));
@@ -1576,17 +1594,42 @@ function onCandidatoChange() {
   const opt    = select.options[select.selectedIndex];
   if (!opt || !opt.value) return;
 
+  const normN = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+  const matched = configCandidatos.find(c =>
+    normN(c.nome_urna_bq || c.nome) === normN(opt.dataset.nome)
+  );
+
   candidatoAtual = {
     sequencial: opt.value,
     nome:       opt.dataset.nome,
     cargo:      opt.dataset.cargo,
     uf:         opt.dataset.uf,
     ano:        opt.dataset.ano,
-    numero:     opt.dataset.numero || ''
+    numero:     opt.dataset.numero || '',
+    foto_url:   matched?.foto_url || null,
   };
 
   document.getElementById('nomeCandidatoDisplay').textContent = candidatoAtual.nome;
   document.getElementById('cardCandidato').style.cssText = 'display:flex';
+
+  // Avatar: foto do tenant config ou iniciais
+  const imgEl      = document.getElementById('avatarCandidatoImg');
+  const initialsEl = document.getElementById('avatarCandidatoInitials');
+  if (candidatoAtual.foto_url) {
+    imgEl.src          = candidatoAtual.foto_url;
+    imgEl.style.display = '';
+    initialsEl.style.display = 'none';
+  } else {
+    imgEl.style.display      = 'none';
+    const initials = candidatoAtual.nome
+      .split(' ')
+      .filter(w => w.length > 2)
+      .slice(0, 2)
+      .map(w => w[0])
+      .join('');
+    initialsEl.textContent   = initials || candidatoAtual.nome[0];
+    initialsEl.style.display = 'flex';
+  }
 
   _renderContextHeader(); // [NEW] atualiza context header
   carregarResultados();
