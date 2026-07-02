@@ -1863,11 +1863,15 @@ function renderLocais(lista) {
   if (!lista.length) return '<div class="b-locais-loading">Nenhum local encontrado para este bairro.</div>';
   const items = lista.map(l => {
     const pct = l.percentual !== null ? `<span style="color:#3b82f6;font-weight:700;">${l.percentual}%</span>` : '';
+    const endHtml = l.endereco && l.endereco !== '—'
+      ? `<div style="font-size:11px;color:#94a3b8;margin-top:2px;">📍 ${l.endereco}</div>`
+      : '';
     return `
     <div class="b-local-item">
       <div class="b-local-icon">🏫</div>
       <div style="flex:1;min-width:0;">
         <div class="b-local-nome">${l.nome_local}</div>
+        ${endHtml}
         <div class="b-local-meta" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:3px;">
           <span>🗳️ <b>${Number(l.votos).toLocaleString('pt-BR')}</b> votos</span>
           ${l.num_secoes ? `<span>· ${l.num_secoes} ${l.num_secoes !== 1 ? 'seções' : 'seção'}</span>` : ''}
