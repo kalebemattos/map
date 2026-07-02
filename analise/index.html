@@ -1856,7 +1856,7 @@ function renderLocais(lista) {
       <div class="b-local-icon">🏫</div>
       <div>
         <div class="b-local-nome">${l.nome_local}</div>
-        <div class="b-local-meta">${l.num_secoes} seção${l.num_secoes !== 1 ? 'ões' : ''} · ${Number(l.total_eleitores).toLocaleString('pt-BR')} eleitores aptos</div>
+        <div class="b-local-meta">${l.num_secoes} seção${l.num_secoes !== 1 ? 'ões' : ''}</div>
       </div>
     </div>`).join('');
   return `<div class="b-locais-lista">${items}</div>`;

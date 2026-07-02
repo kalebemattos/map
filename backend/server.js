@@ -3532,20 +3532,19 @@ app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) =
 
     const sql = `
       SELECT
-        ${exprLocal}                                AS nome_local,
-        UPPER(TRIM(CAST(p.bairro AS STRING)))       AS bairro_nome,
+        ${exprLocal}                                        AS nome_local,
+        UPPER(TRIM(CAST(p.bairro AS STRING)))               AS bairro_nome,
         COUNT(DISTINCT CONCAT(
           CAST(p.zona  AS STRING), '_',
           CAST(p.secao AS STRING)
-        ))                                          AS num_secoes,
-        SUM(p.qtde_eleitores_perfil)                AS total_eleitores
+        ))                                                  AS num_secoes
       FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_local_votacao\` p
       WHERE p.ano          = @ano
         AND p.sigla_uf     = @uf
         AND p.id_municipio = @id_municipio
         ${bairroWhere}
       GROUP BY ${groupLocal}, bairro_nome
-      ORDER BY total_eleitores DESC
+      ORDER BY num_secoes DESC
       LIMIT 200
     `;
 
@@ -3553,10 +3552,9 @@ app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) =
     console.log(`[/api/eleicoes/locais] ${rows.length} locais (coluna: ${colunaLocal || 'zona+secao'})`);
 
     const data = rows.map(r => ({
-      nome_local:      String(r.nome_local      || '—'),
-      bairro:          String(r.bairro_nome     || '—'),
-      num_secoes:      Number(r.num_secoes)      || 0,
-      total_eleitores: Number(r.total_eleitores) || 0,
+      nome_local: String(r.nome_local  || '—'),
+      bairro:     String(r.bairro_nome || '—'),
+      num_secoes: Number(r.num_secoes) || 0,
     }));
     return res.json({ ok: true, data, coluna_usada: colunaLocal || 'zona+secao' });
 
