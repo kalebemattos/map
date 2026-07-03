@@ -1647,8 +1647,24 @@ async function carregarConfig() {
   try {
     const token = getToken();
     const r = await fetch(API + '/config', { headers: token ? { Authorization: 'Bearer ' + token } : {} });
-    if (r.ok) window._configSistema = await r.json();
+    if (r.ok) {
+      window._configSistema = await r.json();
+      injetarRegioes();
+    }
   } catch {}
+}
+
+// Sobrescreve o regions do data.js com a configuração real do banco,
+// igual ao que index.html já faz via injetarRegioes().
+function injetarRegioes() {
+  const regioes = (window._configSistema || {}).regioes || [];
+  if (!regioes.length) return;
+  regions = { all: null };
+  regioes.forEach(r => {
+    let cidades = r.cidades;
+    if (typeof cidades === 'string') { try { cidades = JSON.parse(cidades); } catch { cidades = []; } }
+    regions[r.chave] = Array.isArray(cidades) ? cidades : [];
+  });
 }
 
 function safeRender(name, fn) {

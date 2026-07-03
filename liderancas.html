@@ -1433,7 +1433,48 @@
         if (!r.ok) return;
         configSistema = await r.json();
         injetarCandidatosLiderancas();
+        // Sobrescreve o regions do data.js com a configuração real do banco.
+        // Isso garante que trocar uma cidade de região nas configurações
+        // reflita imediatamente nos filtros da lista de lideranças.
+        injetarRegioesDoConfig();
       } catch (e) { console.warn('[config] não carregada:', e); }
+    }
+
+    function injetarRegioesDoConfig() {
+      const regioes = configSistema.regioes || [];
+      if (!regioes.length) return;
+
+      // 1. Atualiza o objeto `regions` (usado pelos filtros) com os dados reais do banco
+      regioes.forEach(reg => {
+        let cidades = reg.cidades;
+        if (typeof cidades === 'string') { try { cidades = JSON.parse(cidades); } catch { cidades = []; } }
+        if (Array.isArray(cidades) && cidades.length) {
+          regions[reg.chave] = cidades;
+        }
+      });
+
+      // 2. Repopula o select de filtro de região com as regiões reais do banco
+      const sel = document.getElementById('filtro-regiao');
+      if (!sel) return;
+      const valorAtual = sel.value; // preserva seleção atual
+      sel.innerHTML = '<option value="todas">Todas</option>';
+      regioes.forEach(reg => {
+        const opt = document.createElement('option');
+        opt.value = reg.chave;
+        opt.textContent = reg.label || reg.chave;
+        sel.appendChild(opt);
+      });
+      // Restaura seleção se ainda existir
+      if (valorAtual && [...sel.options].some(o => o.value === valorAtual)) {
+        sel.value = valorAtual;
+      }
+
+      // 3. Para lider_regiao: trava no valor da região dele
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.nivel === 'lider_regiao' && user.regiao) {
+        sel.value = user.regiao;
+        sel.disabled = true;
+      }
     }
 
     function injetarCandidatosLiderancas() {
