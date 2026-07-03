@@ -1440,6 +1440,25 @@
       } catch (e) { console.warn('[config] não carregada:', e); }
     }
 
+    // Retorna a chave de região ATUAL de uma cidade, consultando o regions
+    // já sobrescrito pela config do banco (não o valor gravado no registro).
+    function resolverRegiaoAtual(cidade) {
+      if (!cidade || typeof regions === 'undefined') return null;
+      const norm = (cidade || '').toLowerCase().trim();
+      for (const [chave, cidades] of Object.entries(regions)) {
+        if (chave === 'all' || !Array.isArray(cidades)) continue;
+        if (cidades.some(c => (c || '').toLowerCase().trim() === norm)) return chave;
+      }
+      return null;
+    }
+
+    // Converte chave de região (ex: "centroSulFluminense") em label legível (ex: "Centro-Sul Fluminense")
+    function getLabelRegiao(chave) {
+      const regioes = (configSistema || {}).regioes || [];
+      const r = regioes.find(r => r.chave === chave);
+      return r ? (r.label || chave) : chave;
+    }
+
     function injetarRegioesDoConfig() {
       const regioes = configSistema.regioes || [];
       if (!regioes.length) return;
@@ -1552,7 +1571,10 @@
           dados.forEach(item => {
             if (Array.isArray(item.liderancas)) {
               item.liderancas.forEach(l => {
-                todasLiderancas.push({ ...l, cidade: item.cidade || item.bairro, bairro: item.bairro || null, regiao: l.regiao || item.regiao || item.cidade || item.bairro });
+                const cidade = item.cidade || item.bairro || null;
+                // Usa a região ATUAL da cidade (do banco via API), não o valor antigo gravado no registro
+                const regiaoAtual = resolverRegiaoAtual(cidade) || l.regiao || item.regiao || cidade;
+                todasLiderancas.push({ ...l, cidade, bairro: item.bairro || null, regiao: regiaoAtual });
               });
             }
           });
@@ -1656,7 +1678,8 @@
         (l.nome || '').toLowerCase().includes(termo) ||
         (l.contato || '').toLowerCase().includes(termo) ||
         (l.cidade || '').toLowerCase().includes(termo) ||
-        (l.regiao || '').toLowerCase().includes(termo)
+        (l.regiao || '').toLowerCase().includes(termo) ||
+        getLabelRegiao(l.regiao || '').toLowerCase().includes(termo)
       );
     }
 
@@ -1856,7 +1879,7 @@
         // Região
         const regTd = document.createElement('td');
         regTd.setAttribute('data-label', 'Região');
-        regTd.textContent = l.regiao || '—';
+        regTd.textContent = l.regiao ? getLabelRegiao(l.regiao) : '—';
 
         // Votos
         const votosTd = document.createElement('td');
@@ -1933,7 +1956,7 @@
             </div>
             ${l.regiao ? `<div class="mob-card-row">
               <span class="mob-card-row-label">Região</span>
-              <span class="mob-card-row-val">${l.regiao}</span>
+              <span class="mob-card-row-val">${getLabelRegiao(l.regiao)}</span>
             </div>` : ''}
             <div class="mob-card-row">
               <span class="mob-card-row-label">Aniversário</span>
@@ -1971,7 +1994,7 @@
         <div class="modal-meta">
           <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg> ${l.cidade || '—'}</span>
           ${l.bairro ? `<span>• ${l.bairro}</span>` : ''}
-          ${l.regiao ? `<span>• ${l.regiao}</span>` : ''}
+          ${l.regiao ? `<span>• ${getLabelRegiao(l.regiao)}</span>` : ''}
           ${getBadgeCampanha(l.vinculo_politico)}
           ${getBadgeStatus(l.status)}
         </div>
