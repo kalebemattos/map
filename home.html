@@ -1855,6 +1855,26 @@ async function carregarIndicadorCampanha() {
       })
     }
 
+    // Breakdown de lideranças por vínculo político
+    let nLidAmbos = 0
+    const nLidPorCand = {}
+    candidatos.forEach(c => { nLidPorCand[c.chave] = 0 })
+    lidDataGlobal.forEach(row => {
+      ;(row.liderancas || []).forEach(l => {
+        const vp = l.vinculo_politico || 'ambos'
+        if (vp === 'ambos') nLidAmbos++
+        else if (nLidPorCand[vp] !== undefined) nLidPorCand[vp]++
+      })
+    })
+
+    // Breakdown de dobradas por vínculo político
+    const nDobPorCand = {}
+    candidatos.forEach(c => { nDobPorCand[c.chave] = 0 })
+    dobDataGlobal.forEach(d => {
+      const vp = d.vinculo_politico
+      if (nDobPorCand[vp] !== undefined) nDobPorCand[vp]++
+    })
+
     // 3b. Totais regionais (apenas municípios da região do usuário, se aplicável)
     let totaisRegiao = null
     let dadosRegiao  = null   // dados extras: votos válidos, votos 2022, exp lideranças
@@ -1916,12 +1936,25 @@ async function carregarIndicadorCampanha() {
       const cidadesRegNorm = new Set([...cidadesRegiao].map(normCidade))
       let nLidRegiao = 0
       let nDobRegiao = 0
+      let nLidAmbosRegiao = 0
+      const nLidPorCandRegiao = {}
+      const nDobPorCandRegiao = {}
+      candidatos.forEach(c => { nLidPorCandRegiao[c.chave] = 0; nDobPorCandRegiao[c.chave] = 0 })
+
       lidDataGlobal.forEach(row => {
         if (!cidadesRegNorm.has(normCidade(row.cidade))) return
-        nLidRegiao += (row.liderancas || []).length
+        ;(row.liderancas || []).forEach(l => {
+          nLidRegiao++
+          const vp = l.vinculo_politico || 'ambos'
+          if (vp === 'ambos') nLidAmbosRegiao++
+          else if (nLidPorCandRegiao[vp] !== undefined) nLidPorCandRegiao[vp]++
+        })
       })
       dobDataGlobal.forEach(d => {
-        if (cidadesRegNorm.has(normCidade(d.cidade))) nDobRegiao++
+        if (!cidadesRegNorm.has(normCidade(d.cidade))) return
+        nDobRegiao++
+        const vp = d.vinculo_politico
+        if (nDobPorCandRegiao[vp] !== undefined) nDobPorCandRegiao[vp]++
       })
 
       dadosRegiao = {
@@ -1930,13 +1963,16 @@ async function carregarIndicadorCampanha() {
         votosValidos: votosValidosRegiao,
         votosHist,
         expLid,
-        nLiderancas: nLidRegiao,
-        nDobradas:   nDobRegiao,
+        nLiderancas:      nLidRegiao,
+        nDobradas:        nDobRegiao,
+        nLidAmbos:        nLidAmbosRegiao,
+        nLidPorCand:      nLidPorCandRegiao,
+        nDobPorCand:      nDobPorCandRegiao,
       }
     }
 
     // 4. Renderiza: 1º card = global, 2º card = regional (se houver)
-    renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao, regiaoInfo, dadosRegiao, totaisLidGlobal, totaisDobGlobal, nLidGlobal, nDobGlobal)
+    renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao, regiaoInfo, dadosRegiao, totaisLidGlobal, totaisDobGlobal, nLidGlobal, nDobGlobal, nLidAmbos, nLidPorCand, nDobPorCand)
 
   } catch (e) { /* silencioso */ }
 }
@@ -1946,7 +1982,7 @@ async function carregarIndicadorCampanha() {
 // regiaoInfo    = { chave, label } quando há região vinculada (pode ser null)
 // dadosRegiao   = { label, nCidades, votosValidos, votosHist, expLid } ou null
 // 1º card usa totaisGlobal; 2º card usa totaisRegiao (se disponível)
-function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, regiaoInfo = null, dadosRegiao = null, totaisLidGlobal = {}, totaisDobGlobal = {}, nLidGlobal = 0, nDobGlobal = 0) {
+function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, regiaoInfo = null, dadosRegiao = null, totaisLidGlobal = {}, totaisDobGlobal = {}, nLidGlobal = 0, nDobGlobal = 0, nLidAmbos = 0, nLidPorCand = {}, nDobPorCand = {}) {
   const panel   = document.getElementById('campaign-indicator')
   const body    = document.getElementById('ci-body')
   const updated = document.getElementById('ci-updated')
@@ -2054,16 +2090,43 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
       <div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:1px;">${escHome(dr.label)}</div>
       <div style="font-size:11px;color:rgba(255,255,255,.45);margin-bottom:10px;">${dr.nCidades} municípios</div>
       <div class="ci-total-divider"></div>
-      <div style="display:flex;gap:8px;margin-top:8px;margin-bottom:6px;">
-        <div style="flex:1;background:rgba(59,130,246,.13);border-radius:8px;padding:8px 10px;text-align:center;">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.45);margin-bottom:2px;">👥 Lideranças</div>
+
+      <!-- Lideranças regionais com breakdown -->
+      <div style="display:flex;align-items:center;gap:7px;margin-top:10px;margin-bottom:5px;">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(59,130,246,.18);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">👥</div>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.45);">Lideranças</div>
           <div class="ci-total-value" id="ci-total-lid" style="font-size:20px;line-height:1.1;">0</div>
         </div>
-        <div style="flex:1;background:rgba(16,185,129,.13);border-radius:8px;padding:8px 10px;text-align:center;">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.45);margin-bottom:2px;">🤝 Dobradas</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px;padding-left:39px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:11px;color:rgba(255,255,255,.45);">Ambos</span>
+          <span id="ci-reg-lid-ambos" style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85);">0</span>
+        </div>
+        ${candidatos.map(c => `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:11px;color:rgba(255,255,255,.45);">${escHome(c.nome_urna || c.nome)}</span>
+          <span id="ci-reg-lid-${escHome(c.chave)}" style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85);">0</span>
+        </div>`).join('')}
+      </div>
+
+      <!-- Dobradas regionais com breakdown -->
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(16,185,129,.18);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">🤝</div>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.45);">Dobradas</div>
           <div class="ci-total-value" id="ci-total-dob" style="font-size:20px;line-height:1.1;color:rgba(52,211,153,.9);">0</div>
         </div>
       </div>
+      <div style="display:flex;flex-direction:column;gap:2px;padding-left:39px;margin-bottom:10px;">
+        ${candidatos.map(c => `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:11px;color:rgba(255,255,255,.45);">${escHome(c.nome_urna || c.nome)}</span>
+          <span id="ci-reg-dob-${escHome(c.chave)}" style="font-size:12px;font-weight:700;color:rgba(52,211,153,.85);">0</span>
+        </div>`).join('')}
+      </div>
+
       <div class="ci-total-divider"></div>
       <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
@@ -2095,31 +2158,49 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
       </div>
     </div>`
   } else {
-    // Usuário sem região: exibe contagens globais
+    // Usuário sem região: exibe contagens globais com breakdown por vínculo político
     html += `
     <div class="ci-total">
-      <div class="ci-total-label" style="margin-bottom:6px;">Estrutura da campanha</div>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <div style="display:flex;align-items:center;gap:7px;">
-            <div style="width:32px;height:32px;border-radius:8px;background:rgba(59,130,246,.18);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">👥</div>
-            <div>
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.45);">Lideranças</div>
-              <div class="ci-total-value" id="ci-total-lid" style="font-size:22px;line-height:1.1;">0</div>
-            </div>
-          </div>
-        </div>
-        <div class="ci-total-divider"></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <div style="display:flex;align-items:center;gap:7px;">
-            <div style="width:32px;height:32px;border-radius:8px;background:rgba(16,185,129,.18);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">🤝</div>
-            <div>
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.45);">Dobradas</div>
-              <div class="ci-total-value" id="ci-total-dob" style="font-size:22px;line-height:1.1;color:rgba(52,211,153,.9);">0</div>
-            </div>
-          </div>
+      <div class="ci-total-label" style="margin-bottom:8px;">Estrutura da campanha</div>
+
+      <!-- Lideranças -->
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(59,130,246,.18);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">👥</div>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.45);">Lideranças</div>
+          <div class="ci-total-value" id="ci-total-lid" style="font-size:20px;line-height:1.1;">0</div>
         </div>
       </div>
+      <div style="display:flex;flex-direction:column;gap:2px;padding-left:39px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:11px;color:rgba(255,255,255,.45);">Ambos</span>
+          <span id="ci-lid-ambos" style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85);">0</span>
+        </div>
+        ${candidatos.map(c => `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:11px;color:rgba(255,255,255,.45);">${escHome(c.nome_urna || c.nome)}</span>
+          <span id="ci-lid-${escHome(c.chave)}" style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85);">0</span>
+        </div>`).join('')}
+      </div>
+
+      <div class="ci-total-divider"></div>
+
+      <!-- Dobradas -->
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;margin-top:10px;">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(16,185,129,.18);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">🤝</div>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.45);">Dobradas</div>
+          <div class="ci-total-value" id="ci-total-dob" style="font-size:20px;line-height:1.1;color:rgba(52,211,153,.9);">0</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px;padding-left:39px;margin-bottom:4px;">
+        ${candidatos.map(c => `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:11px;color:rgba(255,255,255,.45);">${escHome(c.nome_urna || c.nome)}</span>
+          <span id="ci-dob-${escHome(c.chave)}" style="font-size:12px;font-weight:700;color:rgba(52,211,153,.85);">0</span>
+        </div>`).join('')}
+      </div>
+
       <div class="ci-total-divider" style="margin-top:10px;"></div>
       <div class="ci-total-label">${escHome(String(candidatos.length))} campanha${candidatos.length !== 1 ? 's' : ''} ativa${candidatos.length !== 1 ? 's' : ''}</div>
     </div>`
@@ -2167,9 +2248,21 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
     if (!dadosRegiao) {
       animarContador('ci-total-lid', nLidGlobal)
       animarContador('ci-total-dob', nDobGlobal)
+      // Breakdown por vínculo político
+      animarContador('ci-lid-ambos', nLidAmbos)
+      candidatos.forEach(c => {
+        animarContador(`ci-lid-${c.chave}`, nLidPorCand[c.chave] || 0)
+        animarContador(`ci-dob-${c.chave}`, nDobPorCand[c.chave] || 0)
+      })
     } else {
       animarContador('ci-total-lid', dadosRegiao.nLiderancas || 0)
       animarContador('ci-total-dob', dadosRegiao.nDobradas   || 0)
+      // Breakdown regional por vínculo político
+      animarContador('ci-reg-lid-ambos', dadosRegiao.nLidAmbos || 0)
+      candidatos.forEach(c => {
+        animarContador(`ci-reg-lid-${c.chave}`, (dadosRegiao.nLidPorCand || {})[c.chave] || 0)
+        animarContador(`ci-reg-dob-${c.chave}`, (dadosRegiao.nDobPorCand || {})[c.chave] || 0)
+      })
     }
   })
 
