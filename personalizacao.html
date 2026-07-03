@@ -541,6 +541,15 @@
         <strong>Regiões</strong> são agrupamentos de cidades/bairros usados nos filtros, rankings
         e relatórios. A <strong>chave</strong> deve ser única e sem espaços. As cidades e líderes
         associados permitem filtrar dados por região no Command Center e no mapa principal.
+        <br><br>
+        <span style="color:#92400e;">⚠️ Se você moveu cidades entre regiões e os dados (lideranças, pins, observações) ainda aparecem na região antiga, clique em <strong>Sincronizar</strong> para corrigir.</span>
+      </div>
+
+      <!-- Sincronizar regiões -->
+      <div style="margin-bottom:14px;">
+        <button class="btn-secondary" id="btn-sincronizar-regioes" onclick="sincronizarRegioes()" style="background:#fef3c7;border-color:#d97706;color:#92400e;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg> Sincronizar lideranças com as regiões atuais
+        </button>
       </div>
 
       <!-- Lista -->
@@ -1344,6 +1353,22 @@ function adicionarSubregiao(val) {
 ══════════════════════════════════════ */
 let _regiaoCidades = [];
 let _regiaoLideres = [];
+
+async function sincronizarRegioes() {
+  const btn = document.getElementById('btn-sincronizar-regioes');
+  const orig = btn.innerHTML;
+  btn.textContent = 'Sincronizando...'; btn.disabled = true;
+  try {
+    const res = await apiFetch('/admin/config/regioes/sincronizar', { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ' + res.status);
+    alert(`✅ Sincronização concluída!\n${data.registros_atualizados} registro(s) atualizado(s) nas tabelas de lideranças, observações, pins e expectativas.`);
+  } catch (e) {
+    alert('Erro ao sincronizar: ' + e.message);
+  } finally {
+    btn.innerHTML = orig; btn.disabled = false;
+  }
+}
 
 async function carregarRegioes() {
   const lista = document.getElementById('regioes-list');

@@ -2692,17 +2692,77 @@ app.get('/api/admin/config/regioes', auth, withTenant, allow('dono'), async (req
 app.post('/api/admin/config/regioes', auth, withTenant, allow('dono'), async (req, res) => {
   const { chave, label, cidades, lideres, ordem } = req.body;
   if (!chave || !label) return res.status(400).json({ error: 'chave e label são obrigatórios' });
+
+  const cidadesArray = Array.isArray(cidades) ? cidades : (cidades ?? []);
+
   await pool.query(
     `INSERT INTO tenant_regioes (tenant_id, chave, label, cidades, lideres, ordem)
      VALUES ($1,$2,$3,$4,$5,$6)
      ON CONFLICT (tenant_id, chave) DO UPDATE SET
        label = $3, cidades = $4, lideres = $5, ordem = $6`,
-    [req.tenantId, chave, label, JSON.stringify(cidades ?? []), JSON.stringify(lideres ?? []), ordem ?? 0]
+    [req.tenantId, chave, label, JSON.stringify(cidadesArray), JSON.stringify(lideres ?? []), ordem ?? 0]
   );
+
+  // ── Cascade: propaga a mudança de região para todos os registros que referenciam
+  // essas cidades. Assim, lideranças, observações, pins e expectativas sempre
+  // refletem a configuração atual de regioes, e não o valor gravado no cadastro.
+  if (cidadesArray.length > 0) {
+    const cidadesNorm  = cidadesArray.map(c => (c || '').toLowerCase().trim()).filter(Boolean);
+    // Parâmetros: $1 = tenantId, $2 = chave (nova região), $3...$N = cidades em lowercase
+    const placeholders = cidadesNorm.map((_, i) => `$${i + 3}`).join(', ');
+    const whereClause  = `tenant_id = $1 AND LOWER(TRIM(cidade)) IN (${placeholders})`;
+    const params       = [req.tenantId, chave, ...cidadesNorm];
+
+    await Promise.all([
+      pool.query(`UPDATE liderancas         SET regiao = $2 WHERE ${whereClause}`, params),
+      pool.query(`UPDATE observacoes        SET regiao = $2 WHERE ${whereClause}`, params),
+      pool.query(`UPDATE pins               SET regiao = $2 WHERE ${whereClause}`, params),
+      pool.query(`UPDATE expectativa_cidade SET regiao = $2 WHERE ${whereClause}`, params),
+    ]);
+  }
+
   invalidateTenantCache(req.tenantId);
   res.json({ ok: true });
 });
 
+
+// ── Sincroniza regiao em todas as tabelas a partir da config atual ────────────
+// Útil após uma migração de cidades entre regiões que ocorreu antes desta feature.
+app.post('/api/admin/config/regioes/sincronizar', auth, withTenant, allow('dono'), async (req, res) => {
+  try {
+    const regioes = await dbAll(
+      'SELECT chave, cidades FROM tenant_regioes WHERE tenant_id = $1',
+      [req.tenantId]
+    );
+
+    let totalAtualizados = 0;
+
+    for (const regiao of regioes) {
+      let lista = regiao.cidades;
+      if (typeof lista === 'string') { try { lista = JSON.parse(lista); } catch { lista = []; } }
+      if (!Array.isArray(lista) || lista.length === 0) continue;
+
+      const cidadesNorm  = lista.map(c => (c || '').toLowerCase().trim()).filter(Boolean);
+      const placeholders = cidadesNorm.map((_, i) => `$${i + 3}`).join(', ');
+      const whereClause  = `tenant_id = $1 AND LOWER(TRIM(cidade)) IN (${placeholders})`;
+      const params       = [req.tenantId, regiao.chave, ...cidadesNorm];
+
+      const results = await Promise.all([
+        pool.query(`UPDATE liderancas         SET regiao = $2 WHERE ${whereClause} AND (regiao IS DISTINCT FROM $2)`, params),
+        pool.query(`UPDATE observacoes        SET regiao = $2 WHERE ${whereClause} AND (regiao IS DISTINCT FROM $2)`, params),
+        pool.query(`UPDATE pins               SET regiao = $2 WHERE ${whereClause} AND (regiao IS DISTINCT FROM $2)`, params),
+        pool.query(`UPDATE expectativa_cidade SET regiao = $2 WHERE ${whereClause} AND (regiao IS DISTINCT FROM $2)`, params),
+      ]);
+      totalAtualizados += results.reduce((s, r) => s + r.rowCount, 0);
+    }
+
+    invalidateTenantCache(req.tenantId);
+    res.json({ ok: true, registros_atualizados: totalAtualizados });
+  } catch (err) {
+    console.error('[POST /api/admin/config/regioes/sincronizar]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.delete('/api/admin/config/regioes/:chave', auth, withTenant, allow('dono'), async (req, res) => {
   await pool.query(
