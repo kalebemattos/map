@@ -983,6 +983,10 @@ app.put('/api/liderancas/:id', auth, withTenant, allowAll(), upload.single('foto
 /* ================= BUSCAR LIDERANÇAS ================= */
 // Mantém o formato agrupado por cidade que o frontend espera:
 // [{ cidade, liderancas: [...] }]
+// Quando mapa está filtrado (ex: angra, rjcapital), agrupa por COALESCE(bairro, cidade)
+// e retorna como `bairro` no topo — isso garante que lideranças gravadas corretamente
+// (cidade='Angra dos Reis', bairro='CENTRO') apareçam agrupadas pelo bairro no mapa,
+// e também que registros antigos (cidade='CENTRO', bairro=NULL) continuem funcionando.
 app.get('/api/liderancas', auth, withTenant, async (req, res) => {
   try {
     const mapaFiltro = req.query.mapa || null;
@@ -992,9 +996,19 @@ app.get('/api/liderancas', auth, withTenant, async (req, res) => {
     const params = mapaFiltro ? [req.tenantId, mapaFiltro] : [req.tenantId];
     const mapaClause = mapaFiltro ? 'AND l.mapa = $2' : '';
 
+    // Para submapas: agrupa pelo bairro (ou cidade se bairro for nulo) — compatível com
+    // dados antigos (bairro=NULL, cidade='CENTRO') e novos (bairro='CENTRO', cidade='Angra dos Reis').
+    // Para o mapa estadual: mantém agrupamento por cidade.
+    const groupKey = mapaFiltro
+      ? `COALESCE(l.bairro, l.cidade)`
+      : `l.cidade`;
+    const selectKey = mapaFiltro
+      ? `COALESCE(l.bairro, l.cidade) AS bairro`
+      : `l.cidade`;
+
     const { rows } = await pool.query(`
       SELECT
-        l.cidade,
+        ${selectKey},
         json_agg(json_build_object(
           'id',               l.id,
           'cidade',           l.cidade,
@@ -1022,8 +1036,8 @@ app.get('/api/liderancas', auth, withTenant, async (req, res) => {
       FROM liderancas l
       JOIN pessoas p ON p.id = l.pessoa_id
       WHERE l.tenant_id = $1 ${mapaClause}
-      GROUP BY l.cidade
-      ORDER BY l.cidade
+      GROUP BY ${groupKey}
+      ORDER BY ${groupKey}
     `, params);
 
     res.json(rows);
@@ -4019,6 +4033,124 @@ app.get('/api/eleicoes/perfil-eleitorado', auth, withTenant, allowAll(), async (
     res.json({ ok: true, data: [] });
   } catch (e) {
     console.error('[/api/eleicoes/perfil-eleitorado]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+/**
+ * GET /api/eleicoes/cidades
+ * Lista municípios com votos_validos para um UF/ano (sem candidato específico).
+ * Query params: uf (obrigatório), ano (obrigatório), turno (padrão 1)
+ */
+app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const { uf, ano, turno = '1' } = req.query;
+    if (!uf || !ano) return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: uf, ano' });
+
+    const sql = `
+      SELECT
+        UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
+        CAST(d.id_municipio AS STRING) AS id_municipio,
+        SUM(d.votos_validos) AS votos_validos
+      FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
+      LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
+        ON d.id_municipio = m.id_municipio
+      WHERE d.ano = @ano
+        AND d.turno = @turno
+        AND d.sigla_uf = @uf
+      GROUP BY municipio, d.id_municipio
+      ORDER BY votos_validos DESC
+    `;
+    const params = {
+      ano:   parseInt(ano),
+      turno: parseInt(turno),
+      uf:    uf.trim().toUpperCase()
+    };
+    const rows = await runBQ(sql, params);
+    res.json({ ok: true, data: rows.map(r => ({
+      municipio:     r.municipio,
+      id_municipio:  String(r.id_municipio),
+      votos_validos: Number(r.votos_validos) || 0
+    })) });
+  } catch (e) {
+    console.error('[/api/eleicoes/cidades]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+/**
+ * GET /api/eleicoes/ranking-cidade
+ * Ranking de todos os candidatos (eleitos e não-eleitos) de um município.
+ * Query params: uf, ano, id_municipio (obrigatórios), cargo (opcional), turno (padrão 1)
+ */
+app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req, res) => {
+  try {
+    const { uf, ano, id_municipio, cargo, turno = '1' } = req.query;
+    if (!uf || !ano || !id_municipio) {
+      return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: uf, ano, id_municipio' });
+    }
+
+    const sqlValidos = `
+      SELECT SUM(d.votos_validos) AS votos_validos
+      FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
+      WHERE d.ano = @ano AND d.turno = @turno AND d.sigla_uf = @uf
+        AND CAST(d.id_municipio AS STRING) = @id_municipio
+    `;
+    const sqlRanking = `
+      SELECT
+        UPPER(COALESCE(c.nome_urna, 'DESCONHECIDO'))                        AS nome_urna,
+        UPPER(COALESCE(c.sigla_partido, ''))                                 AS partido,
+        COALESCE(CAST(c.numero_urna AS STRING), '')                          AS numero,
+        UPPER(c.cargo)                                                        AS cargo,
+        UPPER(COALESCE(c.situacao_turno, c.resultado, c.situacao, ''))       AS situacao,
+        SUM(r.votos) AS votos
+      FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
+      JOIN \`basedosdados.br_tse_eleicoes.candidatos\` c
+        ON c.ano = r.ano
+        AND c.sigla_uf = r.sigla_uf
+        AND CAST(c.sequencial AS STRING) = CAST(r.sequencial_candidato AS STRING)
+      WHERE r.ano = @ano
+        AND r.turno = @turno
+        AND r.sigla_uf = @uf
+        AND CAST(r.id_municipio AS STRING) = @id_municipio
+        ${cargo ? 'AND UPPER(c.cargo) = @cargo' : ''}
+      GROUP BY nome_urna, partido, numero, cargo, situacao
+      ORDER BY votos DESC
+      LIMIT 300
+    `;
+    const params = {
+      ano:          parseInt(ano),
+      turno:        parseInt(turno),
+      uf:           uf.trim().toUpperCase(),
+      id_municipio: String(id_municipio).trim(),
+      ...(cargo ? { cargo: cargo.trim().toUpperCase() } : {})
+    };
+
+    const [rowsValidos, rowsRanking] = await Promise.all([
+      runBQ(sqlValidos, params),
+      runBQ(sqlRanking, params)
+    ]);
+
+    const votosValidos = Number(rowsValidos[0]?.votos_validos) || 0;
+    const eleitos = [], naoEleitos = [];
+
+    rowsRanking.forEach(r => {
+      const sit  = (r.situacao || '').toUpperCase();
+      const cand = {
+        nome_urna: r.nome_urna,
+        partido:   r.partido,
+        numero:    r.numero,
+        cargo:     r.cargo,
+        situacao:  r.situacao,
+        votos:     Number(r.votos) || 0
+      };
+      if (sit.startsWith('ELEITO') || sit === 'MÉDIA') eleitos.push(cand);
+      else naoEleitos.push(cand);
+    });
+
+    res.json({ ok: true, votos_validos: votosValidos, eleitos, nao_eleitos: naoEleitos });
+  } catch (e) {
+    console.error('[/api/eleicoes/ranking-cidade]', e.message);
     res.status(500).json({ ok: false, error: e.message });
   }
 });

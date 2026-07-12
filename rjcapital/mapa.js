@@ -717,7 +717,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         const fd = new FormData()
-        fd.append('cidade',           bairroAtual)
+        fd.append('cidade',           'Rio de Janeiro')
+        fd.append('bairro',           bairroAtual)
+        fd.append('mapa',             'rjcapital')
         fd.append('vinculo_politico', vinculo)
         fd.append('parceiro_nome',    parceiroNome)
         fd.append('responsavel',      responsavel)
@@ -1377,14 +1379,15 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
 
   if (!nome) { alert("Informe o nome da liderança."); return }
 
-  // Se bairro selecionado → vai ao submapa RJ Capital; caso contrário → mapa estadual (Rio de Janeiro)
-  const cidadeDestino = bairroAtual || 'Rio de Janeiro'
-  const mapaDestino   = bairroAtual ? 'rjcapital' : null
+  // Cidade sempre é "Rio de Janeiro"; o bairro selecionado vai no campo bairro
+  const cidadeDestino = 'Rio de Janeiro'
+  const bairroDestino = bairroAtual || null
 
   try {
     const formData = new FormData()
-    formData.append('cidade',            cidadeDestino)
-    if (mapaDestino) formData.append('mapa', mapaDestino)
+    formData.append('cidade', cidadeDestino)
+    formData.append('mapa',   'rjcapital')
+    if (bairroDestino) formData.append('bairro', bairroDestino)
     formData.append('nome',              nome)
     formData.append('contato',           contato)
     formData.append('vinculo_politico',  vinculo)

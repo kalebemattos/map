@@ -942,14 +942,15 @@ document.getElementById("add-lideranca").addEventListener("click", async () => {
 
   if (!nome) { alert("Informe o nome da liderança."); return }
 
-  // Se bairro selecionado → vai ao submapa de Angra; caso contrário → mapa estadual (Angra dos Reis)
-  const cidadeDestino = bairroAtual || 'Angra dos Reis'
-  const mapaDestino   = bairroAtual ? 'angra' : null
+  // Cidade sempre é "Angra dos Reis"; o bairro selecionado vai no campo bairro
+  const cidadeDestino = 'Angra dos Reis'
+  const bairroDestino = bairroAtual || null
 
   try {
     const formData = new FormData()
-    formData.append('cidade',            cidadeDestino)
-    if (mapaDestino) formData.append('mapa', mapaDestino)
+    formData.append('cidade', cidadeDestino)
+    formData.append('mapa',   'angra')
+    if (bairroDestino) formData.append('bairro', bairroDestino)
     formData.append('nome',              nome)
     formData.append('contato',           contato)
     formData.append('vinculo_politico',  vinculo)
