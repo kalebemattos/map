@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Exportar Planilha – Paralax</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="./assets/paralax-favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+<!-- SheetJS para gerar Excel no browser -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0a1628;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 40px 44px;
+    max-width: 520px;
+    width: 100%;
+    text-align: center;
+  }
+  .logo { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800;
+          color: #fff; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .sub  { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 36px; }
+  .status-box {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 28px;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: #1976D2;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .msg { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.5; }
+  .msg.erro  { color: #EF5350; }
+  .msg.ok    { color: #66BB6A; font-weight: 600; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #1565C0, #1976D2);
+    color: #fff; font-family: inherit; font-size: 14px; font-weight: 700;
+    border: none; border-radius: 12px; padding: 13px 28px;
+    cursor: pointer; transition: opacity .2s, transform .15s;
+    text-decoration: none;
+  }
+  .btn:hover { opacity: .88; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.secondary {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 13px; font-weight: 500; padding: 10px 20px;
+    margin-top: 12px;
+  }
+  .row-btns { display: flex; flex-direction: column; gap: 0; align-items: center; }
+  .check { font-size: 28px; }
+  .progress-bar {
+    width: 100%; height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px; overflow: hidden; margin-top: 8px;
+  }
+  .progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #1565C0, #42A5F5);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">📊 Exportar Planilha</div>
+  <div class="sub">Mapa Eleitoral por Região — Rio de Janeiro</div>
+
+  <div class="status-box" id="status-box">
+    <div class="spinner" id="spinner"></div>
+    <div class="msg" id="msg">Verificando autenticação…</div>
+    <div class="progress-bar" id="progress-bar" style="display:none">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <div class="row-btns" id="btns" style="display:none">
+    <button class="btn" onclick="gerarPlanilha()">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" width="16" height="16">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+      </svg>
+      Baixar Planilha Excel
+    </button>
+    <a class="btn secondary" href="./home.html">← Voltar ao início</a>
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://map-backend-j88s.onrender.com'
+
+// ── Estrutura de regiões ────────────────────────────────────
+const REGIOES = [
+  { nome: 'COSTA VERDE', cidades: [
+      'Angra dos Reis','Mangaratiba','Paraty'
+  ]},
+  { nome: 'BAIXADAS LITORÂNEAS', cidades: [
+      'Araruama','Arraial do Cabo','Cabo Frio','Casimiro de Abreu',
+      'Iguaba Grande','Rio das Ostras','São Pedro da Aldeia','Saquarema','Silva Jardim'
+  ]},
+  { nome: 'NORTE FLUMINENSE', cidades: [
+      'Campos dos Goytacazes','Carapebus','Conceição de Macabu',
+      'Macaé','Quissamã','São Francisco de Itabapoana','São João da Barra'
+  ]},
+  { nome: 'NOROESTE FLUMINENSE', cidades: [
+      'Aperibé','Bom Jesus do Itabapoana','Cambuci','Cardoso Moreira',
+      'Italva','Itaocara','Itaperuna','Laje do Muriaé','Miracema',
+      'Natividade','Porciúncula','Santo Antônio de Pádua','São José de Ubá','Varre-Sai'
+  ]},
+  { nome: 'SERRANA', cidades: [
+      'Bom Jardim','Cantagalo','Cordeiro','Macuco','Nova Friburgo',
+      'Petrópolis','Santa Maria Madalena','São Sebastião do Alto',
+      'Sumidouro','Teresópolis','Trajano de Moraes'
+  ]},
+  { nome: 'CENTRO-SUL FLUMINENSE', cidades: [
+      'Areal','Comendador Levy Gasparian','Engenheiro Paulo de Frontin',
+      'Mendes','Miguel Pereira','Paraíba do Sul','Paty do Alferes',
+      'Piraí','Rio Claro','Sapucaia','Três Rios','Vassouras'
+  ]},
+  { nome: 'MÉDIO PARAÍBA', cidades: [
+      'Barra do Piraí','Barra Mansa','Pinheiral','Piraí','Porto Real',
+      'Quatis','Resende','Rio das Flores','Valença','Volta Redonda'
+  ]},
+  { nome: 'METROPOLITANA', cidades: [
+      'Belford Roxo','Cachoeiras de Macacu','Duque de Caxias','Guapimirim',
+      'Itaboraí','Itaguaí','Japeri','Magé','Maricá','Mesquita','Nilópolis',
+      'Niterói','Nova Iguaçu','Queimados','Rio Bonito','Rio de Janeiro',
+      'São Gonçalo','São João de Meriti','Seropédica','Tanguá'
+  ]},
+]
+
+// Eleitores (TSE 2024 – dados fixos)
+const ELEITORES = {
+  'Angra dos Reis':134761,'Mangaratiba':45809,'Paraty':34910,
+  'Araruama':107917,'Arraial do Cabo':34499,'Cabo Frio':174007,
+  'Casimiro de Abreu':35492,'Iguaba Grande':29408,'Rio das Ostras':103383,
+  'São Pedro da Aldeia':73320,'Saquarema':89461,'Silva Jardim':18365,
+  'Campos dos Goytacazes':366028,'Carapebus':13432,'Conceição de Macabu':16514,
+  'Macaé':181733,'Quissamã':18985,'São Francisco de Itabapoana':39530,
+  'São João da Barra':42289,
+  'Aperibé':10084,'Bom Jesus do Itabapoana':28122,'Cambuci':12203,
+  'Cardoso Moreira':12395,'Italva':11511,'Itaocara':18879,'Itaperuna':75239,
+  'Laje do Muriaé':6998,'Miracema':20811,'Natividade':12302,'Porciúncula':13177,
+  'Santo Antônio de Pádua':33536,'São José de Ubá':7572,'Varre-Sai':8689,
+  'Bom Jardim':22315,'Cantagalo':15041,'Cordeiro':16583,'Macuco':7017,
+  'Nova Friburgo':153188,'Petrópolis':237426,'Santa Maria Madalena':8781,
+  'São Sebastião do Alto':7803,'Sumidouro':13982,'Teresópolis':131390,
+  'Trajano de Moraes':9209,
+  'Areal':10167,'Comendador Levy Gasparian':7965,'Engenheiro Paulo de Frontin':11053,
+  'Mendes':14651,'Miguel Pereira':24447,'Paraíba do Sul':33925,'Paty do Alferes':24044,
+  'Piraí':23505,'Rio Claro':14512,'Sapucaia':15669,'Três Rios':61950,'Vassouras':28964,
+  'Barra do Piraí':69082,'Barra Mansa':133042,'Pinheiral':18463,
+  'Porto Real':17684,'Quatis':10327,'Resende':97009,'Rio das Flores':8749,
+  'Valença':56512,'Volta Redonda':220852,
+  'Belford Roxo':344130,'Cachoeiras de Macacu':46313,'Duque de Caxias':622134,
+  'Guapimirim':44424,'Itaboraí':175198,'Itaguaí':99429,'Japeri':75576,
+  'Magé':189633,'Maricá':180233,'Mesquita':135377,'Nilópolis':128431,
+  'Niterói':404349,'Nova Iguaçu':609445,'Queimados':102930,'Rio Bonito':45005,
+  'Rio de Janeiro':4897324,'São Gonçalo':650974,'São João de Meriti':336787,
+  'Seropédica':60495,'Tanguá':26290,
+}
+
+// ── UI helpers ───────────────────────────────────────────────
+function setMsg(txt, cls='') {
+  const el = document.getElementById('msg')
+  el.textContent = txt
+  el.className = 'msg ' + cls
+}
+function setProgress(pct) {
+  document.getElementById('progress-bar').style.display = 'block'
+  document.getElementById('progress-fill').style.width = pct + '%'
+}
+
+// ── Verificar auth e iniciar ─────────────────────────────────
+async function init() {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    document.getElementById('spinner').style.display = 'none'
+    setMsg('Você precisa estar logado para exportar a planilha.', 'erro')
+    document.getElementById('btns').style.display = 'flex'
+    return
+  }
+
+  // Verificar se token é válido
+  try {
+    const r = await fetch(API_URL + '/api/config', {
+      headers: { Authorization: 'Bearer ' + token }
+    })
+    if (!r.ok) throw new Error('Token inválido')
+    const cfg = await r.json()
+
+    document.getElementById('spinner').style.display = 'none'
+    setMsg('Pronto! Clique para baixar a planilha com todos os dados do banco.', 'ok')
+    document.getElementById('btns').style.display = 'flex'
+  } catch (e) {
+    document.getElementById('spinner').style.display = 'none'
+    setMsg('Sessão expirada. Faça login novamente.', 'erro')
+    document.getElementById('btns').style.display = 'flex'
+  }
+}
+
+// ── Gerar e baixar planilha ───────────────────────────────────
+async function gerarPlanilha() {
+  const token = localStorage.getItem('token')
+  if (!token) { location.href = './home.html'; return }
+
+  document.getElementById('btns').style.display = 'none'
+  document.getElementById('spinner').style.display = 'block'
+  setMsg('Buscando dados do banco…')
+  setProgress(10)
+
+  try {
+    // Buscar dados do endpoint
+    const r = await fetch(API_URL + '/api/export-dados-regioes', {
+      headers: { Authorization: 'Bearer ' + token }
+    })
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}))
+      throw new Error(err.error || `Erro ${r.status}`)
+    }
+    const { cidades: cidadesDB } = await r.json()
+    setProgress(40)
+    setMsg('Montando planilha…')
+
+    // Indexar por nome normalizado (uppercase, sem acento extra)
+    const mapDB = {}
+    cidadesDB.forEach(c => {
+      mapDB[c.cidade.toUpperCase().trim()] = c
+    })
+
+    // ── Montar linhas ──────────────────────────────────────
+    const rows = []
+
+    // Cabeçalho
+    rows.push([
+      'Cidade', 'Eleitores',
+      'Meta Célia', 'Meta Fernando',
+      'Lid. + Dobradas Célia', 'Lid. + Dobradas Fernando',
+      'Nº Líderes'
+    ])
+
+    let totalEleit = 0, totalMetaC = 0, totalMetaF = 0
+    let totalLidC = 0, totalLidF = 0, totalLid = 0
+
+    for (const reg of REGIOES) {
+      // Linha de região
+      rows.push([reg.nome, '', '', '', '', '', ''])
+
+      let rEleit=0, rMetaC=0, rMetaF=0, rLidC=0, rLidF=0, rLid=0
+
+      for (const cidade of reg.cidades) {
+        const eleit = ELEITORES[cidade] || 0
+        const key   = cidade.toUpperCase()
+        const d     = mapDB[key] || {}
+
+        const metaC  = d.meta_celia       || 0
+        const metaF  = d.meta_fernando    || 0
+        const lidC   = d.lid_dob_celia    || 0
+        const lidF   = d.lid_dob_fernando || 0
+        const nLid   = d.num_lideres      || 0
+
+        rows.push([cidade, eleit, metaC, metaF, lidC, lidF, nLid])
+
+        rEleit += eleit; rMetaC += metaC; rMetaF += metaF
+        rLidC  += lidC;  rLidF  += lidF;  rLid   += nLid
+      }
+
+      // Linha total região
+      rows.push([
+        'Total ' + reg.nome.charAt(0) + reg.nome.slice(1).toLowerCase(),
+        rEleit, rMetaC, rMetaF, rLidC, rLidF, rLid
+      ])
+      rows.push(['', '', '', '', '', '', ''])  // espaço
+
+      totalEleit += rEleit; totalMetaC += rMetaC; totalMetaF += rMetaF
+      totalLidC  += rLidC;  totalLidF  += rLidF;  totalLid   += rLid
+    }
+
+    // Total geral
+    rows.push(['TOTAL GERAL', totalEleit, totalMetaC, totalMetaF, totalLidC, totalLidF, totalLid])
+
+    setProgress(70)
+    setMsg('Aplicando formatação…')
+
+    // ── Construir workbook ──────────────────────────────────
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.aoa_to_sheet(rows)
+
+    // Larguras de coluna
+    ws['!cols'] = [
+      { wch: 32 }, { wch: 13 }, { wch: 14 }, { wch: 14 },
+      { wch: 20 }, { wch: 20 }, { wch: 12 }
+    ]
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Mapa Eleitoral')
+
+    setProgress(90)
+    setMsg('Baixando arquivo…')
+
+    // Download
+    const data = new Date()
+    const dateStr = data.toLocaleDateString('pt-BR').replace(/\//g,'-')
+    XLSX.writeFile(wb, `mapa_eleitoral_${dateStr}.xlsx`)
+
+    setProgress(100)
+    document.getElementById('spinner').style.display = 'none'
+    document.getElementById('status-box').innerHTML =
+      '<div class="check">✅</div><div class="msg ok">Planilha baixada com sucesso!</div>'
+    document.getElementById('btns').style.display = 'flex'
+
+  } catch (e) {
+    document.getElementById('spinner').style.display = 'none'
+    setMsg('Erro: ' + e.message, 'erro')
+    document.getElementById('btns').style.display = 'flex'
+    console.error(e)
+  }
+}
+
+init()
+</script>
+</body>
+</html>
