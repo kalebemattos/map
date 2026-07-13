@@ -2254,6 +2254,15 @@ function injetarRegioes() {
     regs.map(r =>
       `<option value="${r.chave}">${r.label}</option>`
     ).join('');
+
+  // Hook: se o usuário logado é lider_regiao, popula "Minhas Cidades" imediatamente
+  try {
+    const _u = JSON.parse(localStorage.getItem('user') || 'null');
+    if (_u && _u.nivel === 'lider_regiao') {
+      const _reg = _u.regiao_vinculada || _u.regiao || _u.region;
+      if (_reg) inicializarMinhasCidades(_reg);
+    }
+  } catch (_) {}
 }
 
 // Carrega líderes de região da gestão de acesso e atualiza lideresRegiao
@@ -6292,13 +6301,32 @@ function inicializarMinhasCidades(regiaoKey) {
   const countEl = document.getElementById('minhas-cidades-count');
   if (!card || !lista) return;
 
-  const cidades = (regions[regiaoKey] || []).slice().sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  if (!cidades.length) return;
+  // 1) Tenta via regions (indexado por injetarRegioes)
+  let cidades = regions[regiaoKey] || [];
 
-  countEl.textContent = cidades.length;
+  // 2) Fallback: busca diretamente em configSistema.regioes (caso timing/chave diferente)
+  if (!cidades.length) {
+    const reg = (configSistema.regioes || []).find(r =>
+      r.chave === regiaoKey ||
+      (r.chave || '').toLowerCase() === (regiaoKey || '').toLowerCase()
+    );
+    cidades = reg ? (reg.cidades || []) : [];
+  }
 
-  lista.innerHTML = cidades.map(cidade => {
-    const esc = cidade.replace(/'/g, "\\'");
+  console.log('[MinhasCidades] key:', regiaoKey,
+    '| regions keys:', Object.keys(regions),
+    '| cidades:', cidades.length);
+
+  if (!cidades.length) {
+    console.warn('[MinhasCidades] Nenhuma cidade encontrada para a região:', regiaoKey);
+    return;
+  }
+
+  const sorted = cidades.slice().sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  countEl.textContent = sorted.length;
+
+  lista.innerHTML = sorted.map(cidade => {
+    const esc = cidade.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     return `<div class="minhas-cidades-item" onclick="navegarParaCidadeMinha('${esc}')">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13">
         <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
