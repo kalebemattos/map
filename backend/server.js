@@ -4098,15 +4098,16 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
       ...(cargo ? { cargo: cargo.trim().toUpperCase() } : {})
     };
 
-    // ── Votos válidos (query simples, sem colunas opcionais) ──────────────────
-    const sqlValidos = `
-      SELECT SUM(d.votos_validos) AS votos_validos
-      FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
-      WHERE d.ano = @ano AND d.turno = @turno AND d.sigla_uf = @uf
-        AND CAST(d.id_municipio AS STRING) = @id_municipio
-    `;
+    // ── Tipo de eleição determina o JOIN ─────────────────────────────────────
+    // Eleições municipais (Prefeito/Vereador): número é único por município
+    //   → JOIN precisa de id_municipio para não cruzar candidatos de outras cidades
+    // Eleições gerais (Dep. Fed/Est, Gov, Sen): número é único no estado
+    //   → JOIN SEM id_municipio (candidato não tem id_municipio da cidade onde recebeu votos)
+    const cargoNorm  = (cargo || '').trim().toUpperCase();
+    const isMunicipal = !cargo || cargoNorm === 'VEREADOR' || cargoNorm === 'PREFEITO' || cargoNorm === 'VICE-PREFEITO';
+    const joinMunicipio = isMunicipal ? 'AND r.id_municipio = c.id_municipio' : '';
 
-    // ── Candidatos — JOIN idêntico ao endpoint /historico que funciona ────────
+    // ── Candidatos ────────────────────────────────────────────────────────────
     const sqlRanking = `
       SELECT
         UPPER(COALESCE(c.nome_urna, 'DESCONHECIDO'))     AS nome_urna,
@@ -4116,9 +4117,9 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
         SUM(r.votos)                                      AS votos
       FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
       JOIN \`basedosdados.br_tse_eleicoes.candidatos\` c
-        ON  r.ano          = c.ano
-        AND r.sigla_uf     = c.sigla_uf
-        AND r.id_municipio = c.id_municipio
+        ON  r.ano      = c.ano
+        AND r.sigla_uf = c.sigla_uf
+        ${joinMunicipio}
         AND CAST(r.numero_candidato AS STRING) = CAST(c.numero AS STRING)
       WHERE r.ano      = @ano
         AND r.turno    = @turno
@@ -4130,13 +4131,11 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
       LIMIT 500
     `;
 
-    // Executa em paralelo; votos_validos nunca bloqueia o ranking
-    const [rowsValidos, rowsRanking] = await Promise.all([
-      runBQ(sqlValidos, params).catch(() => []),
-      runBQ(sqlRanking, params)
-    ]);
+    const rowsRanking = await runBQ(sqlRanking, params);
 
-    const votosValidos = Number(rowsValidos[0]?.votos_validos) || 0;
+    // votos_validos = soma dos votos de todos os candidatos neste cargo/município
+    // (evita inflação que ocorre na detalhes_votacao_municipio que soma todos os cargos)
+    const votosValidos = rowsRanking.reduce((s, r) => s + (Number(r.votos) || 0), 0);
 
     // ── Monta ranking + agrega por partido ───────────────────────────────────
     const candidatos = [];
