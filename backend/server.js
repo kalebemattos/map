@@ -4057,20 +4057,22 @@ app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) 
     // Tenta filtrar por cargo (coluna pode ou não existir na tabela).
     // Se filtrado por cargo → SUM correto para aquele cargo específico.
     // Fallback → MAX para evitar somar múltiplas linhas de cargos diferentes.
-    const sqlComCargo = `
+    // comparecimento = eleitores que foram votar, igual para todos os cargos
+    // → MAX resolve o problema de múltiplas linhas por cargo sem precisar filtrar por cargo
+    // Fallback para votos_validos se a coluna comparecimento não existir
+    const sqlComparecimento = `
       SELECT
         UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
         CAST(d.id_municipio AS STRING) AS id_municipio,
-        SUM(d.votos_validos) AS votos_validos
+        MAX(d.comparecimento) AS votos_validos
       FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
         ON d.id_municipio = m.id_municipio
       WHERE d.ano = @ano AND d.turno = @turno AND d.sigla_uf = @uf
-        AND UPPER(d.cargo) = @cargo
       GROUP BY municipio, d.id_municipio
       ORDER BY votos_validos DESC
     `;
-    const sqlSemCargo = `
+    const sqlFallback = `
       SELECT
         UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
         CAST(d.id_municipio AS STRING) AS id_municipio,
@@ -4084,17 +4086,10 @@ app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) 
     `;
 
     let rows = [];
-    if (cargo) {
-      try {
-        rows = await runBQ(sqlComCargo, params);
-        // Se cargo filtrou corretamente mas retornou vazio, tenta sem filtro de cargo
-        if (!rows.length) rows = await runBQ(sqlSemCargo, params);
-      } catch (_) {
-        // coluna cargo não existe na tabela — usa MAX sem filtro
-        rows = await runBQ(sqlSemCargo, params);
-      }
-    } else {
-      rows = await runBQ(sqlSemCargo, params);
+    try {
+      rows = await runBQ(sqlComparecimento, params);
+    } catch (_) {
+      rows = await runBQ(sqlFallback, params);
     }
 
     res.json({ ok: true, data: rows.map(r => ({
