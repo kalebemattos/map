@@ -4120,7 +4120,6 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
       SELECT
         UPPER(COALESCE(c.nome_urna, 'DESCONHECIDO'))                              AS nome_urna,
         UPPER(COALESCE(c.sigla_partido, ''))                                       AS partido,
-        UPPER(COALESCE(c.nome_partido, c.sigla_partido, ''))                       AS nome_partido,
         COALESCE(CAST(c.numero_urna AS STRING), '')                                AS numero,
         UPPER(c.cargo)                                                              AS cargo,
         UPPER(COALESCE(c.situacao_turno, c.resultado, c.situacao, ''))             AS situacao,
@@ -4135,7 +4134,7 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
         AND r.sigla_uf = @uf
         AND CAST(r.id_municipio AS STRING) = @id_municipio
         ${cargo ? 'AND UPPER(c.cargo) = @cargo' : ''}
-      GROUP BY nome_urna, partido, nome_partido, numero, cargo, situacao
+      GROUP BY nome_urna, partido, numero, cargo, situacao
       ORDER BY votos DESC
       LIMIT 500
     `;
@@ -4179,7 +4178,6 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
       const cand  = {
         nome_urna:    r.nome_urna,
         partido:      r.partido,
-        nome_partido: r.nome_partido,
         numero:       r.numero,
         cargo:        r.cargo,
         situacao:     r.situacao,
@@ -4197,10 +4195,9 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
       const pd = r.partido || 'OUTROS';
       if (!partidosMap[pd]) {
         partidosMap[pd] = {
-          partido:       pd,
-          nome_partido:  r.nome_partido || pd,
+          partido:        pd,
           votos_nominais: 0,
-          vagas:         0
+          vagas:          0
         };
       }
       partidosMap[pd].votos_nominais += votos;

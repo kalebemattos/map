@@ -2417,7 +2417,7 @@ function renderRankingCidade(json, conteudo) {
     json.partidos.forEach(p => {
       const pct = vv > 0 ? ((p.votos_nominais / vv) * 100).toFixed(1) : '0.0';
       html += `<tr>
-        <td><span class="pt-nome">${p.partido}</span> <span style="font-size:9px;color:#94a3b8;">${p.nome_partido !== p.partido ? p.nome_partido : ''}</span></td>
+        <td><span class="pt-nome">${p.partido}</span></td>
         <td class="right">${p.votos_nominais.toLocaleString('pt-BR')}</td>
         <td class="right" style="color:#64748b;font-size:10px;">${pct}%</td>
         <td class="right"><span class="pt-vag-badge${p.vagas === 0 ? ' zero' : ''}">${p.vagas}</span></td>
