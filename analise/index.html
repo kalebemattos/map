@@ -1236,7 +1236,7 @@ body.modal-aberto {
   display: flex; align-items: center; gap: 14px;
   background: linear-gradient(135deg,#eff6ff,#dbeafe);
   border: 1px solid #bfdbfe; border-radius: 14px;
-  padding: 14px 18px; margin-bottom: 16px;
+  padding: 14px 18px; margin-bottom: 12px;
 }
 .ranking-vv-num {
   font-size: 26px; font-weight: 800;
@@ -1246,6 +1246,84 @@ body.modal-aberto {
   font-size: 11px; font-weight: 700; color: #1e40af;
   text-transform: uppercase; letter-spacing: .5px;
 }
+
+/* ── Stats grid (brancos/nulos/vagas/QE) ─────────────────────────── */
+.ranking-stats-grid {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 8px; margin-bottom: 16px;
+}
+@media (max-width: 480px) { .ranking-stats-grid { grid-template-columns: repeat(2,1fr); } }
+.ranking-stat-box {
+  background: var(--slate-50); border: 1px solid var(--slate-100);
+  border-radius: 10px; padding: 10px 12px; text-align: center;
+}
+.ranking-stat-val {
+  font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 800;
+  color: var(--slate-800);
+}
+.ranking-stat-lbl {
+  font-size: 9px; font-weight: 700; color: var(--slate-500);
+  text-transform: uppercase; letter-spacing: .5px; margin-top: 2px;
+}
+
+/* ── Situação badge ──────────────────────────────────────────────── */
+.sit-badge {
+  display: inline-flex; align-items: center;
+  font-size: 9px; font-weight: 700; letter-spacing: .4px;
+  text-transform: uppercase; border-radius: 5px;
+  padding: 2px 5px; margin-left: 4px; vertical-align: middle;
+  white-space: nowrap;
+}
+.sit-qp   { background: #dcfce7; color: #15803d; }
+.sit-med  { background: #d1fae5; color: #065f46; }
+.sit-sup  { background: #fef9c3; color: #854d0e; }
+.sit-ne   { background: #f1f5f9; color: #475569; }
+
+/* ── Suplentes section ───────────────────────────────────────────── */
+.ranking-secao-titulo.suplentes { color: #92400e; }
+.ranking-row.row-sup { background: #fffbeb; border-color: #fde68a; }
+.ranking-row.row-sup:hover { background: #fef3c7; }
+.ranking-pos.pos-sup { background: linear-gradient(135deg,#d97706,#fbbf24); }
+.ranking-fill-sup { background: linear-gradient(90deg,#d97706,#fbbf24); }
+.ranking-votos.sup { color: #92400e; }
+
+/* ── Partidos table ──────────────────────────────────────────────── */
+.partidos-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 11px; margin-bottom: 8px;
+}
+.partidos-table th {
+  text-align: left; font-size: 9px; font-weight: 700;
+  color: var(--slate-500); text-transform: uppercase; letter-spacing: .5px;
+  padding: 5px 8px; border-bottom: 1px solid var(--slate-100);
+}
+.partidos-table th.right { text-align: right; }
+.partidos-table td {
+  padding: 6px 8px; border-bottom: 1px solid var(--slate-50);
+  color: var(--slate-700);
+}
+.partidos-table td.right { text-align: right; font-weight: 700; color: var(--slate-800); }
+.partidos-table tr:hover td { background: var(--slate-50); }
+.partidos-table .pt-nome { font-weight: 700; color: var(--slate-900); }
+.partidos-table .pt-vag-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #dcfce7; color: #15803d;
+  font-size: 10px; font-weight: 800;
+  border-radius: 5px; padding: 1px 6px; min-width: 20px;
+}
+.partidos-table .pt-vag-badge.zero { background: var(--slate-100); color: #94a3b8; }
+
+/* ── QE / vagas banner ───────────────────────────────────────────── */
+.ranking-qe-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: linear-gradient(90deg,#f0fdf4,#dcfce7);
+  border: 1px solid #bbf7d0; border-radius: 12px;
+  padding: 10px 14px; margin-bottom: 14px;
+}
+.ranking-qe-item { display: flex; flex-direction: column; align-items: center; }
+.ranking-qe-val { font-family:'Sora',sans-serif; font-size:16px; font-weight:800; color:#15803d; }
+.ranking-qe-lbl { font-size:9px; font-weight:700; color:#166534; text-transform:uppercase; letter-spacing:.4px; }
+.ranking-qe-sep { width:1px; height:30px; background:#bbf7d0; }
 </style>
 </head>
 <body>
@@ -2278,64 +2356,128 @@ async function carregarAbaCidade(aba) {
   }
 }
 
+function _sitBadge(situacao) {
+  const s = (situacao || '').toUpperCase();
+  if (s.includes('QP') || s === 'ELEITO')            return `<span class="sit-badge sit-qp">QP</span>`;
+  if (s.includes('MÉDIA') || s.includes('MEDIA'))    return `<span class="sit-badge sit-med">Média</span>`;
+  if (s.startsWith('SUPLENTE'))                       return `<span class="sit-badge sit-sup">Suplente</span>`;
+  if (s.startsWith('ELEITO'))                         return `<span class="sit-badge sit-qp">Eleito</span>`;
+  return `<span class="sit-badge sit-ne">Não eleito</span>`;
+}
+
 function renderRankingCidade(json, conteudo) {
-  const vv = json.votos_validos || 0;
+  const vv   = json.votos_validos        || 0;
+  const vb   = json.votos_brancos        || 0;
+  const vn   = json.votos_nulos          || 0;
+  const vagas = json.vagas               || 0;
+  const qe   = json.quociente_eleitoral  || 0;
+
   let html = '';
 
-  // votos válidos header
+  // ── Votos válidos + detalhes ────────────────────────────────────────────────
   html += `<div class="ranking-vv-box">
-    <div class="ranking-vv-num">${vv.toLocaleString('pt-BR')}</div>
-    <div class="ranking-vv-label">Votos válidos</div>
-  </div>`;
-
-  // Eleitos
-  if (json.eleitos && json.eleitos.length) {
-    html += `<div class="ranking-secao-titulo eleitos">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"/></svg>
-      Eleitos (${json.eleitos.length})
+    <div>
+      <div class="ranking-vv-num">${vv.toLocaleString('pt-BR')}</div>
+      <div class="ranking-vv-label">Votos válidos</div>
     </div>`;
-    const maxEl = json.eleitos[0]?.votos || 1;
-    json.eleitos.forEach((c, i) => {
+  if (vb || vn) {
+    html += `<div style="height:36px;width:1px;background:#bfdbfe;"></div>
+    <div style="display:flex;gap:14px;">
+      ${vb ? `<div><div style="font-size:14px;font-weight:800;color:#1e40af;">${vb.toLocaleString('pt-BR')}</div><div style="font-size:9px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.5px;">Brancos</div></div>` : ''}
+      ${vn ? `<div><div style="font-size:14px;font-weight:800;color:#1e40af;">${vn.toLocaleString('pt-BR')}</div><div style="font-size:9px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.5px;">Nulos</div></div>` : ''}
+    </div>`;
+  }
+  html += `</div>`;
+
+  // ── Vagas + QE banner ───────────────────────────────────────────────────────
+  if (vagas > 0 || qe > 0) {
+    html += `<div class="ranking-qe-bar">
+      ${vagas > 0 ? `<div class="ranking-qe-item"><div class="ranking-qe-val">${vagas}</div><div class="ranking-qe-lbl">Vagas</div></div>` : ''}
+      ${vagas > 0 && qe > 0 ? `<div class="ranking-qe-sep"></div>` : ''}
+      ${qe > 0    ? `<div class="ranking-qe-item"><div class="ranking-qe-val">${qe.toLocaleString('pt-BR')}</div><div class="ranking-qe-lbl">Quociente Eleitoral</div></div>` : ''}
+    </div>`;
+  }
+
+  // ── Partidos por votos nominais ─────────────────────────────────────────────
+  if (json.partidos && json.partidos.length > 0) {
+    html += `<div class="ranking-secao-titulo" style="margin-top:4px;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5"/></svg>
+      Votos por partido
+    </div>
+    <div style="overflow-x:auto;margin-bottom:4px;">
+    <table class="partidos-table">
+      <thead><tr>
+        <th>Partido</th>
+        <th class="right">Votos nominais</th>
+        <th class="right">% válidos</th>
+        <th class="right">Vagas</th>
+      </tr></thead>
+      <tbody>`;
+    const maxPV = json.partidos[0]?.votos_nominais || 1;
+    json.partidos.forEach(p => {
+      const pct = vv > 0 ? ((p.votos_nominais / vv) * 100).toFixed(1) : '0.0';
+      html += `<tr>
+        <td><span class="pt-nome">${p.partido}</span> <span style="font-size:9px;color:#94a3b8;">${p.nome_partido !== p.partido ? p.nome_partido : ''}</span></td>
+        <td class="right">${p.votos_nominais.toLocaleString('pt-BR')}</td>
+        <td class="right" style="color:#64748b;font-size:10px;">${pct}%</td>
+        <td class="right"><span class="pt-vag-badge${p.vagas === 0 ? ' zero' : ''}">${p.vagas}</span></td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  const svgStar   = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"/></svg>`;
+  const svgClock  = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>`;
+  const svgX      = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>`;
+
+  // helper: render a list of candidates
+  function renderSection(list, cssRow, cssPos, cssBar, cssVotos, label) {
+    if (!list || !list.length) return '';
+    const maxV = list[0]?.votos || 1;
+    let s = '';
+    list.forEach((c, i) => {
       const pct  = vv > 0 ? ((c.votos / vv) * 100).toFixed(1) : '0.0';
-      const barW = (c.votos / maxEl * 100).toFixed(1);
-      html += `<div class="ranking-row">
-        <div class="ranking-pos">${i+1}º</div>
+      const barW = (c.votos / maxV * 100).toFixed(1);
+      s += `<div class="ranking-row ${cssRow}">
+        <div class="ranking-pos ${cssPos}">${i+1}º</div>
         <div style="flex:1;min-width:0;">
-          <div class="ranking-nome">${c.nome_urna} <span class="ranking-partido">${c.partido}</span></div>
-          <div class="ranking-bar-wrap"><div class="ranking-bar-fill ranking-fill-el" style="width:${barW}%"></div></div>
+          <div class="ranking-nome">${c.nome_urna}${_sitBadge(c.situacao)} <span class="ranking-partido">${c.partido}</span></div>
+          <div class="ranking-bar-wrap"><div class="ranking-bar-fill ${cssBar}" style="width:${barW}%"></div></div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
-          <div class="ranking-votos">${c.votos.toLocaleString('pt-BR')}</div>
+          <div class="ranking-votos ${cssVotos}">${c.votos.toLocaleString('pt-BR')}</div>
           <div class="ranking-pct">${pct}%</div>
         </div>
       </div>`;
     });
+    return s;
   }
 
-  // Não-eleitos
+  // ── Eleitos ─────────────────────────────────────────────────────────────────
+  if (json.eleitos && json.eleitos.length) {
+    html += `<div class="ranking-secao-titulo eleitos" style="margin-top:18px;">
+      ${svgStar} Eleitos (${json.eleitos.length})
+    </div>`;
+    html += renderSection(json.eleitos, '', '', 'ranking-fill-el', '', '');
+  }
+
+  // ── Suplentes ───────────────────────────────────────────────────────────────
+  if (json.suplentes && json.suplentes.length) {
+    html += `<div class="ranking-secao-titulo suplentes" style="margin-top:18px;">
+      ${svgClock} Suplentes (${json.suplentes.length})
+    </div>`;
+    html += renderSection(json.suplentes, 'row-sup', 'pos-sup', 'ranking-fill-sup', 'sup', '');
+  }
+
+  // ── Não eleitos ─────────────────────────────────────────────────────────────
   if (json.nao_eleitos && json.nao_eleitos.length) {
     html += `<div class="ranking-secao-titulo" style="margin-top:18px;">
-      Não eleitos (${json.nao_eleitos.length})
+      ${svgX} Não eleitos (${json.nao_eleitos.length})
     </div>`;
-    const maxNE = json.nao_eleitos[0]?.votos || 1;
-    json.nao_eleitos.forEach((c, i) => {
-      const pct  = vv > 0 ? ((c.votos / vv) * 100).toFixed(1) : '0.0';
-      const barW = (c.votos / maxNE * 100).toFixed(1);
-      html += `<div class="ranking-row row-ne">
-        <div class="ranking-pos pos-ne">${i+1}º</div>
-        <div style="flex:1;min-width:0;">
-          <div class="ranking-nome">${c.nome_urna} <span class="ranking-partido">${c.partido}</span></div>
-          <div class="ranking-bar-wrap"><div class="ranking-bar-fill ranking-fill-ne" style="width:${barW}%"></div></div>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div class="ranking-votos ne">${c.votos.toLocaleString('pt-BR')}</div>
-          <div class="ranking-pct">${pct}%</div>
-        </div>
-      </div>`;
-    });
+    html += renderSection(json.nao_eleitos, 'row-ne', 'pos-ne', 'ranking-fill-ne', 'ne', '');
   }
 
-  if (!json.eleitos?.length && !json.nao_eleitos?.length) {
+  if (!json.eleitos?.length && !json.suplentes?.length && !json.nao_eleitos?.length) {
     html = '<div style="text-align:center;padding:40px;color:#94a3b8;">Sem dados de ranking disponíveis para este município.</div>';
   }
 
