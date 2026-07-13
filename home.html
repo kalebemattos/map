@@ -1377,6 +1377,24 @@ setTimeout(function() {
     </div>
   </div>
 
+  <!-- MINHAS CIDADES (apenas lider_regiao) -->
+  <div id="minhas-cidades-home" style="display:none;position:relative;z-index:1;max-width:1060px;width:100%;margin:0 auto;padding:0 24px 22px;animation:fadeUp 0.5s ease 0.09s both;">
+    <div style="background:rgba(8,22,58,0.62);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.13);border-radius:20px;padding:20px 24px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3);">
+      <div style="position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent 0%,rgba(96,165,250,.4) 30%,rgba(167,139,250,.35) 60%,transparent 100%);"></div>
+      <!-- Header colapsável -->
+      <div id="mc-toggle" onclick="toggleMinhasCidadesHome()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16" style="color:#60a5fa;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>
+          <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:rgba(255,255,255,0.88);letter-spacing:0.02em;">Minhas Cidades</span>
+          <span id="mc-count" style="font-size:11px;font-weight:700;color:#60a5fa;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.2);padding:2px 9px;border-radius:20px;"></span>
+        </div>
+        <svg id="mc-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="color:rgba(255,255,255,0.4);transition:transform .2s;"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+      </div>
+      <!-- Lista colapsável -->
+      <div id="mc-lista" style="display:none;margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;max-height:260px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
   <!-- CARDS — preenchido dinamicamente por renderizarCards() -->
   <section class="cards-section">
     <div class="cards-grid" id="cards-grid">
@@ -1802,9 +1820,18 @@ async function carregarIndicadorCampanha() {
     if (regiaoKey) {
       const regioes = cfg.regioes || []
       const reg = regioes.find(r => r.chave === regiaoKey)
-      if (reg && reg.cidades && reg.cidades.length) {
-        cidadesRegiao = new Set(reg.cidades)
-        regiaoInfo = { chave: regiaoKey, label: reg.label || regiaoKey }
+      if (reg) {
+        // cidades pode vir como string JSON do banco
+        let listaCidades = reg.cidades
+        if (typeof listaCidades === 'string') { try { listaCidades = JSON.parse(listaCidades) } catch { listaCidades = [] } }
+        if (Array.isArray(listaCidades) && listaCidades.length) {
+          cidadesRegiao = new Set(listaCidades)
+          regiaoInfo = { chave: regiaoKey, label: reg.label || regiaoKey }
+          // Popula "Minhas Cidades" se for lider_regiao
+          if (user.nivel === 'lider_regiao') {
+            renderMinhasCidadesHome(listaCidades, reg.label || regiaoKey)
+          }
+        }
       }
     }
 
@@ -2478,6 +2505,49 @@ inicializarTiltCards()
   }
   draw()
 })()
+</script>
+
+<script>
+// ===== MINHAS CIDADES HOME =====
+function renderMinhasCidadesHome(cidades, regiaoLabel) {
+  const wrap  = document.getElementById('minhas-cidades-home')
+  const lista = document.getElementById('mc-lista')
+  const count = document.getElementById('mc-count')
+  if (!wrap || !lista) return
+
+  const sorted = cidades.slice().sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  count.textContent = sorted.length
+
+  lista.innerHTML = sorted.map(c => {
+    const esc = c.replace(/'/g, "\\'")
+    return `<div onclick="irParaMapa('${esc}')" style="
+      display:flex;align-items:center;gap:7px;padding:8px 11px;
+      border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;
+      color:rgba(255,255,255,0.78);border:1px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.04);transition:background .15s,border-color .15s;">
+      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' width='12' height='12' style='flex-shrink:0;color:#60a5fa;'><path stroke-linecap='round' stroke-linejoin='round' d='M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'/><path stroke-linecap='round' stroke-linejoin='round' d='M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z'/></svg>
+      ${c}
+    </div>`
+  }).join('')
+
+  // Começa colapsado; mostra o container
+  lista.style.display = 'none'
+  wrap.style.display  = 'block'
+}
+
+function toggleMinhasCidadesHome() {
+  const lista   = document.getElementById('mc-lista')
+  const chevron = document.getElementById('mc-chevron')
+  if (!lista) return
+  const aberto = lista.style.display !== 'none'
+  lista.style.display = aberto ? 'none' : 'grid'
+  if (chevron) chevron.style.transform = aberto ? '' : 'rotate(180deg)'
+}
+
+function irParaMapa(cidade) {
+  // Redireciona para o mapa e tenta selecionar a cidade via hash
+  window.location.href = './index.html#cidade=' + encodeURIComponent(cidade)
+}
 </script>
 
 <script src="./assets/icons.js"></script>
