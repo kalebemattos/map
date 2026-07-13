@@ -4080,10 +4080,8 @@ app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) 
 
 /**
  * GET /api/eleicoes/ranking-cidade
- * Ranking de todos os candidatos de um município com dados TSE-style.
+ * Ranking TSE-style: eleitos / suplentes / não-eleitos + tabela de partidos.
  * Query params: uf, ano, id_municipio (obrigatórios), cargo (opcional), turno (padrão 1)
- * Retorna: eleitos, suplentes, nao_eleitos, partidos, vagas, quociente_eleitoral,
- *          votos_validos, votos_brancos, votos_nulos, comparecimento, aptos
  */
 app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req, res) => {
   try {
@@ -4100,29 +4098,22 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
       ...(cargo ? { cargo: cargo.trim().toUpperCase() } : {})
     };
 
-    // ── Votos válidos / brancos / nulos / comparecimento ──────────────────────
-    // Filtramos por cargo se informado (evita somar Prefeito + Vereador)
+    // ── Votos válidos (query simples, sem colunas opcionais) ──────────────────
     const sqlValidos = `
-      SELECT
-        SUM(d.votos_validos)                AS votos_validos,
-        SUM(d.votos_brancos)                AS votos_brancos,
-        SUM(d.votos_nulos)                  AS votos_nulos,
-        SUM(d.comparecimento)               AS comparecimento,
-        SUM(d.aptos)                        AS aptos
+      SELECT SUM(d.votos_validos) AS votos_validos
       FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
       WHERE d.ano = @ano AND d.turno = @turno AND d.sigla_uf = @uf
         AND CAST(d.id_municipio AS STRING) = @id_municipio
-        ${cargo ? 'AND UPPER(d.cargo) = @cargo' : ''}
     `;
 
-    // ── Candidatos com situação_turno + partido ────────────────────────────────
+    // ── Candidatos com situação_turno detalhada ───────────────────────────────
     const sqlRanking = `
       SELECT
-        UPPER(COALESCE(c.nome_urna, 'DESCONHECIDO'))                              AS nome_urna,
-        UPPER(COALESCE(c.sigla_partido, ''))                                       AS partido,
-        COALESCE(CAST(c.numero_urna AS STRING), '')                                AS numero,
-        UPPER(c.cargo)                                                              AS cargo,
-        UPPER(COALESCE(c.situacao_turno, c.resultado, c.situacao, ''))             AS situacao,
+        UPPER(COALESCE(c.nome_urna, 'DESCONHECIDO'))                        AS nome_urna,
+        UPPER(COALESCE(c.sigla_partido, ''))                                 AS partido,
+        COALESCE(CAST(c.numero_urna AS STRING), '')                          AS numero,
+        UPPER(c.cargo)                                                        AS cargo,
+        UPPER(COALESCE(c.situacao_turno, c.resultado, c.situacao, ''))       AS situacao,
         SUM(r.votos) AS votos
       FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
       JOIN \`basedosdados.br_tse_eleicoes.candidatos\` c
@@ -4139,36 +4130,15 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
       LIMIT 500
     `;
 
-    // Executa as duas queries em paralelo; sqlValidos pode falhar se colunas
-    // brancos/nulos não existirem — nesse caso usa fallback sem essas colunas
-    let rowsValidos = [], rowsRanking = [];
-    try {
-      [rowsValidos, rowsRanking] = await Promise.all([
-        runBQ(sqlValidos, params),
-        runBQ(sqlRanking, params)
-      ]);
-    } catch (_) {
-      // fallback sem brancos/nulos
-      const sqlValidosFallback = `
-        SELECT SUM(d.votos_validos) AS votos_validos
-        FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
-        WHERE d.ano = @ano AND d.turno = @turno AND d.sigla_uf = @uf
-          AND CAST(d.id_municipio AS STRING) = @id_municipio
-          ${cargo ? 'AND UPPER(d.cargo) = @cargo' : ''}
-      `;
-      [rowsValidos, rowsRanking] = await Promise.all([
-        runBQ(sqlValidosFallback, params),
-        runBQ(sqlRanking, params)
-      ]);
-    }
+    // Executa em paralelo; votos_validos nunca bloqueia o ranking
+    const [rowsValidos, rowsRanking] = await Promise.all([
+      runBQ(sqlValidos, params).catch(() => []),
+      runBQ(sqlRanking, params)
+    ]);
 
-    const votosValidos   = Number(rowsValidos[0]?.votos_validos)  || 0;
-    const votosBrancos   = Number(rowsValidos[0]?.votos_brancos)  || 0;
-    const votosNulos     = Number(rowsValidos[0]?.votos_nulos)    || 0;
-    const comparecimento = Number(rowsValidos[0]?.comparecimento) || 0;
-    const aptos          = Number(rowsValidos[0]?.aptos)          || 0;
+    const votosValidos = Number(rowsValidos[0]?.votos_validos) || 0;
 
-    // ── Classificação por situação ─────────────────────────────────────────────
+    // ── Classifica candidatos em 3 grupos ────────────────────────────────────
     const eleitos = [], suplentes = [], naoEleitos = [];
     const partidosMap = {};
 
@@ -4176,49 +4146,35 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
       const sit   = (r.situacao || '').toUpperCase();
       const votos = Number(r.votos) || 0;
       const cand  = {
-        nome_urna:    r.nome_urna,
-        partido:      r.partido,
-        numero:       r.numero,
-        cargo:        r.cargo,
-        situacao:     r.situacao,
+        nome_urna: r.nome_urna,
+        partido:   r.partido,
+        numero:    r.numero,
+        cargo:     r.cargo,
+        situacao:  r.situacao,
         votos
       };
 
-      const isEleito   = sit.startsWith('ELEITO') || sit === 'ELEITO POR QP' || sit === 'ELEITO POR MÉDIA' || sit === 'ELEITO POR MEDIA';
-      const isSuplente = sit === 'SUPLENTE' || sit.startsWith('SUPLENTE');
+      const isEleito   = sit.startsWith('ELEITO');
+      const isSuplente = sit.startsWith('SUPLENTE');
 
       if (isEleito)        eleitos.push(cand);
       else if (isSuplente) suplentes.push(cand);
       else                 naoEleitos.push(cand);
 
-      // Agrega votos nominais por partido
+      // Agrega votos por partido
       const pd = r.partido || 'OUTROS';
-      if (!partidosMap[pd]) {
-        partidosMap[pd] = {
-          partido:        pd,
-          votos_nominais: 0,
-          vagas:          0
-        };
-      }
+      if (!partidosMap[pd]) partidosMap[pd] = { partido: pd, votos_nominais: 0, vagas: 0 };
       partidosMap[pd].votos_nominais += votos;
       if (isEleito) partidosMap[pd].vagas += 1;
     });
 
-    // ── Métricas eleitorais ───────────────────────────────────────────────────
-    const vagas              = eleitos.length;
+    const vagas               = eleitos.length;
     const quociente_eleitoral = vagas > 0 ? Math.round(votosValidos / vagas) : null;
-
-    // Partidos ordenados por votos nominais DESC
-    const partidos = Object.values(partidosMap)
-      .sort((a, b) => b.votos_nominais - a.votos_nominais);
+    const partidos            = Object.values(partidosMap).sort((a, b) => b.votos_nominais - a.votos_nominais);
 
     res.json({
       ok: true,
-      votos_validos:        votosValidos,
-      votos_brancos:        votosBrancos,
-      votos_nulos:          votosNulos,
-      comparecimento,
-      aptos,
+      votos_validos: votosValidos,
       vagas,
       quociente_eleitoral,
       partidos,
