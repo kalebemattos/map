@@ -458,6 +458,65 @@ body.sidebar-closed #map {
   flex-shrink: 0;
 }
 
+/* ===== MINHAS CIDADES (lider_regiao) ===== */
+#minhas-cidades-card {
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f0fe 100%) !important;
+  border-color: rgba(21,101,192,0.2) !important;
+}
+#minhas-cidades-toggle {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  gap: 8px;
+}
+#minhas-cidades-toggle:hover .minhas-cidades-titulo { color: #1565c0; }
+.minhas-cidades-titulo {
+  font-weight: 700;
+  font-size: 13px;
+  color: #0d2d6b;
+  transition: color .15s;
+}
+#minhas-cidades-count {
+  font-size: 11px;
+  color: #1565c0;
+  background: rgba(21,101,192,0.12);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 700;
+}
+#minhas-cidades-lista {
+  margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+#minhas-cidades-lista::-webkit-scrollbar { width: 4px; }
+#minhas-cidades-lista::-webkit-scrollbar-thumb { background: rgba(21,101,192,0.25); border-radius: 4px; }
+.minhas-cidades-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1e3a5f;
+  transition: background .15s, color .15s;
+  border: 1px solid transparent;
+}
+.minhas-cidades-item:hover {
+  background: rgba(21,101,192,0.12);
+  border-color: rgba(21,101,192,0.2);
+  color: #0d2d6b;
+}
+.minhas-cidades-item svg { flex-shrink: 0; color: #4a80c0; }
+#minhas-cidades-chevron { transition: transform .2s; color: #64748b; flex-shrink: 0; }
+
 /* ===== CARDS DE VOTOS HISTÓRICOS POR CANDIDATO ===== */
 /* estilos gerados inline por injetarCandidatos() */
 
@@ -1841,6 +1900,19 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
 
   <!-- BODY -->
   <div class="sidebar-body">
+
+    <!-- MINHAS CIDADES (apenas lider_regiao) -->
+    <div id="minhas-cidades-card" class="city-card" style="display:none;">
+      <div id="minhas-cidades-toggle" onclick="toggleMinhasCidades()">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16" style="flex-shrink:0;color:#1565c0;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>
+          <span class="minhas-cidades-titulo">Minhas Cidades</span>
+          <span id="minhas-cidades-count"></span>
+        </div>
+        <svg id="minhas-cidades-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+      </div>
+      <div id="minhas-cidades-lista" style="display:none;"></div>
+    </div>
 
     <!-- LÍDER DA REGIÃO -->
     <div id="lider-regiao-card" class="city-card" style="display:none;">
@@ -5383,6 +5455,9 @@ window.iniciarAplicacao = async function () {
 
     }
 
+    // Popula a seção "Minhas Cidades" com as cidades da região do usuário
+    if (regiao) inicializarMinhasCidades(regiao);
+
   }
 
 };
@@ -6202,6 +6277,57 @@ function fecharModalPin() {
   document.getElementById('modal-pin').style.display = 'none';
   novoPinLatLng = null;
 }
+// ===== MINHAS CIDADES =====
+function toggleMinhasCidades() {
+  const lista    = document.getElementById('minhas-cidades-lista');
+  const chevron  = document.getElementById('minhas-cidades-chevron');
+  const aberto   = lista.style.display !== 'none';
+  lista.style.display    = aberto ? 'none' : 'flex';
+  if (chevron) chevron.style.transform = aberto ? '' : 'rotate(180deg)';
+}
+
+function inicializarMinhasCidades(regiaoKey) {
+  const card    = document.getElementById('minhas-cidades-card');
+  const lista   = document.getElementById('minhas-cidades-lista');
+  const countEl = document.getElementById('minhas-cidades-count');
+  if (!card || !lista) return;
+
+  const cidades = (regions[regiaoKey] || []).slice().sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  if (!cidades.length) return;
+
+  countEl.textContent = cidades.length;
+
+  lista.innerHTML = cidades.map(cidade => {
+    const esc = cidade.replace(/'/g, "\\'");
+    return `<div class="minhas-cidades-item" onclick="navegarParaCidadeMinha('${esc}')">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
+      </svg>
+      <span>${cidade}</span>
+    </div>`;
+  }).join('');
+
+  card.style.display = 'block';
+}
+
+function navegarParaCidadeMinha(cidade) {
+  const layer = layersPorCidade[cidade];
+  if (!layer) {
+    // Tenta nome case-insensitive
+    const key = Object.keys(layersPorCidade).find(k => normalizeCityName(k) === normalizeCityName(cidade));
+    if (!key) return;
+    const l = layersPorCidade[key];
+    map.fitBounds(l.getBounds(), { maxZoom: 9 });
+    selecionarCidade(key, l);
+    updateSidebar(key, votosValidos[key] || 0);
+    return;
+  }
+  map.fitBounds(layer.getBounds(), { maxZoom: 9 });
+  selecionarCidade(cidade, layer);
+  updateSidebar(cidade, votosValidos[cidade] || 0);
+}
+
 function mostrarLiderRegiao(regiaoKey) {
 
   const lideres = lideresRegiao[regiaoKey];
