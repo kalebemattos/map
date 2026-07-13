@@ -5005,7 +5005,19 @@ function initializeMapAndApp() {
   layerSelecionada = null;
 
   if (layerRJ) {
-    layerRJ.eachLayer(l => layerRJ.resetStyle(l));
+    // Re-aplica cores corretas
+    repaintMap();
+    // Se há região ativa, re-aplica o dim nas cidades fora dela
+    if (regiaoAtiva !== 'all') {
+      const _munNames = regions[regiaoAtiva];
+      const _munNorm  = _munNames ? _munNames.map(n => normalizeCityName(n)) : null;
+      layerRJ.eachLayer(l => {
+        const _n = l.feature.properties.NM_MUN || l.feature.properties.name;
+        if (_munNorm && !_munNorm.includes(normalizeCityName(_n))) {
+          l.setStyle({ fillOpacity: 0.12, opacity: 0.12 });
+        }
+      });
+    }
   }
 
   restoreSidebarDefault();
