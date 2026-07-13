@@ -1887,6 +1887,67 @@ app.get('/api/dashboard/expectativa-regioes', auth, withTenant, allow('dono', 'a
 /* ================= KEEP ALIVE (RENDER) ================= */
 
 
+/* ================= EXPORT DADOS REGIÕES (para planilha Excel) ================= */
+// GET /api/export-dados-regioes — retorna JSON com votos de lideranças,
+// dobradas e líderes de região por cidade. Admin/dono only.
+app.get('/api/export-dados-regioes', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
+  try {
+    const t = req.tenantId;
+
+    // 1. Votos de lideranças e nº de líderes por cidade
+    const liderRows = await dbAll(`
+      SELECT
+        UPPER(TRIM(cidade)) AS cidade,
+        COUNT(*)                                          AS num_lideres,
+        COALESCE(SUM(expectativa_votos), 0)              AS votos_liderancas,
+        COUNT(*) FILTER (WHERE status = 'ativa')         AS lideres_ativos
+      FROM liderancas
+      WHERE tenant_id = $1 AND cidade IS NOT NULL AND cidade <> ''
+      GROUP BY UPPER(TRIM(cidade))
+      ORDER BY cidade
+    `, [t]);
+
+    // 2. Dobradas por cidade
+    const dobRows = await dbAll(`
+      SELECT
+        UPPER(TRIM(cidade)) AS cidade,
+        COUNT(*)                                    AS num_dobradas,
+        COALESCE(SUM(votos_candidato), 0)           AS votos_dobradas,
+        COALESCE(SUM(votos_oferecidos), 0)          AS votos_oferecidos
+      FROM dobradas
+      WHERE tenant_id = $1 AND cidade IS NOT NULL AND cidade <> ''
+      GROUP BY UPPER(TRIM(cidade))
+      ORDER BY cidade
+    `, [t]);
+
+    // 3. Líderes de região (usuários com lider_principal = TRUE)
+    const lideresRegiao = await dbAll(`
+      SELECT nome, contato, regiao_vinculada
+      FROM usuarios
+      WHERE tenant_id = $1 AND lider_principal = TRUE
+      ORDER BY regiao_vinculada, nome
+    `, [t]);
+
+    // Montar mapas para lookup rápido
+    const mapLid = {};
+    liderRows.forEach(r => { mapLid[r.cidade] = r; });
+
+    const mapDob = {};
+    dobRows.forEach(r => { mapDob[r.cidade] = r; });
+
+    res.json({
+      liderancas_por_cidade: mapLid,
+      dobradas_por_cidade:   mapDob,
+      lideres_de_regiao:     lideresRegiao,
+      gerado_em:             new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('[GET /export-dados-regioes]', err);
+    res.status(500).json({ error: 'Erro ao exportar dados' });
+  }
+});
+
+
 /* ================= VIDEO CONFERÊNCIA (WebRTC via Socket.io) ================= */
 
 // Criar sala de vídeo
