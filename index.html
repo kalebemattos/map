@@ -2239,11 +2239,17 @@ function injetarRegioes() {
   if (!regs || !regs.length) return;
 
   // ── Reconstrói os objetos globais usados pelo mapa ──────────────
+  // cidades vem do banco como string JSON → garante que vira array
+  function _parseLista(v) {
+    if (Array.isArray(v)) return v;
+    if (typeof v === 'string' && v.trim()) { try { return JSON.parse(v); } catch { return []; } }
+    return [];
+  }
   regions = { all: null };
   lideresRegiao = {};
   regs.forEach(r => {
-    regions[r.chave]       = r.cidades;
-    lideresRegiao[r.chave] = r.lideres || [];
+    regions[r.chave]       = _parseLista(r.cidades);
+    lideresRegiao[r.chave] = _parseLista(r.lideres);
   });
 
   // ── Reconstrói o <select id="regionSelect"> ─────────────────────
@@ -6310,7 +6316,11 @@ function inicializarMinhasCidades(regiaoKey) {
       r.chave === regiaoKey ||
       (r.chave || '').toLowerCase() === (regiaoKey || '').toLowerCase()
     );
-    cidades = reg ? (reg.cidades || []) : [];
+    if (reg) {
+      const raw = reg.cidades;
+      cidades = Array.isArray(raw) ? raw
+        : (typeof raw === 'string' && raw.trim() ? (() => { try { return JSON.parse(raw); } catch { return []; } })() : []);
+    }
   }
 
   console.log('[MinhasCidades] key:', regiaoKey,
