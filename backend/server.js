@@ -4047,11 +4047,14 @@ app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) 
     const { uf, ano, turno = '1' } = req.query;
     if (!uf || !ano) return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: uf, ano' });
 
+    // MAX em vez de SUM: detalhes_votacao_municipio tem múltiplas linhas por município
+    // em eleições gerais (esfera federal + estadual separadas). MAX pega o maior valor
+    // entre as linhas sem somar duplicatas. Para municipais (1 linha) MAX = SUM.
     const sql = `
       SELECT
         UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
         CAST(d.id_municipio AS STRING) AS id_municipio,
-        SUM(d.votos_validos) AS votos_validos
+        MAX(d.votos_validos) AS votos_validos
       FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
         ON d.id_municipio = m.id_municipio
