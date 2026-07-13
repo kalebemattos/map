@@ -1888,59 +1888,86 @@ app.get('/api/dashboard/expectativa-regioes', auth, withTenant, allow('dono', 'a
 
 
 /* ================= EXPORT DADOS REGIÕES (para planilha Excel) ================= */
-// GET /api/export-dados-regioes — retorna JSON com votos de lideranças,
-// dobradas e líderes de região por cidade. Admin/dono only.
+// GET /api/export-dados-regioes — retorna JSON com metas por candidato,
+// lideranças + dobradas por candidato, e nº de líderes por cidade.
+// Admin/dono only.
 app.get('/api/export-dados-regioes', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
   try {
     const t = req.tenantId;
 
-    // 1. Votos de lideranças e nº de líderes por cidade
+    // 1. Metas por candidato por cidade
+    const metaRows = await dbAll(`
+      SELECT
+        UPPER(TRIM(cidade)) AS cidade,
+        expectativa_celia    AS meta_celia,
+        expectativa_fernando AS meta_fernando,
+        expectativas
+      FROM expectativa_cidade
+      WHERE tenant_id = $1
+      ORDER BY cidade
+    `, [t]);
+
+    // 2. Lideranças por cidade + candidato
     const liderRows = await dbAll(`
       SELECT
         UPPER(TRIM(cidade)) AS cidade,
-        COUNT(*)                                          AS num_lideres,
-        COALESCE(SUM(expectativa_votos), 0)              AS votos_liderancas,
-        COUNT(*) FILTER (WHERE status = 'ativa')         AS lideres_ativos
+        COUNT(*)                                                         AS num_lideres,
+        COALESCE(SUM(expectativa_votos) FILTER (
+          WHERE vinculo_politico = 'celia' OR vinculo_politico = 'ambos'), 0) AS lid_votos_celia,
+        COALESCE(SUM(expectativa_votos) FILTER (
+          WHERE vinculo_politico = 'fernando' OR vinculo_politico = 'ambos'), 0) AS lid_votos_fernando
       FROM liderancas
       WHERE tenant_id = $1 AND cidade IS NOT NULL AND cidade <> ''
       GROUP BY UPPER(TRIM(cidade))
-      ORDER BY cidade
     `, [t]);
 
-    // 2. Dobradas por cidade
+    // 3. Dobradas por cidade + candidato
     const dobRows = await dbAll(`
       SELECT
         UPPER(TRIM(cidade)) AS cidade,
-        COUNT(*)                                    AS num_dobradas,
-        COALESCE(SUM(votos_candidato), 0)           AS votos_dobradas,
-        COALESCE(SUM(votos_oferecidos), 0)          AS votos_oferecidos
+        COALESCE(SUM(votos_candidato) FILTER (
+          WHERE vinculo_politico = 'celia'), 0)    AS dob_votos_celia,
+        COALESCE(SUM(votos_candidato) FILTER (
+          WHERE vinculo_politico = 'fernando'), 0) AS dob_votos_fernando
       FROM dobradas
       WHERE tenant_id = $1 AND cidade IS NOT NULL AND cidade <> ''
       GROUP BY UPPER(TRIM(cidade))
-      ORDER BY cidade
     `, [t]);
 
-    // 3. Líderes de região (usuários com lider_principal = TRUE)
-    const lideresRegiao = await dbAll(`
-      SELECT nome, contato, regiao_vinculada
-      FROM usuarios
-      WHERE tenant_id = $1 AND lider_principal = TRUE
-      ORDER BY regiao_vinculada, nome
-    `, [t]);
-
-    // Montar mapas para lookup rápido
-    const mapLid = {};
-    liderRows.forEach(r => { mapLid[r.cidade] = r; });
-
-    const mapDob = {};
-    dobRows.forEach(r => { mapDob[r.cidade] = r; });
-
-    res.json({
-      liderancas_por_cidade: mapLid,
-      dobradas_por_cidade:   mapDob,
-      lideres_de_regiao:     lideresRegiao,
-      gerado_em:             new Date().toISOString(),
+    // Montar resultado por cidade
+    const map = {};
+    metaRows.forEach(r => {
+      map[r.cidade] = {
+        meta_celia: Number(r.meta_celia || 0),
+        meta_fernando: Number(r.meta_fernando || 0),
+        lid_celia: 0, lid_fernando: 0,
+        dob_celia: 0, dob_fernando: 0,
+        num_lideres: 0,
+      };
     });
+    liderRows.forEach(r => {
+      if (!map[r.cidade]) map[r.cidade] = { meta_celia:0, meta_fernando:0, lid_celia:0, lid_fernando:0, dob_celia:0, dob_fernando:0, num_lideres:0 };
+      map[r.cidade].lid_celia    = Number(r.lid_votos_celia || 0);
+      map[r.cidade].lid_fernando = Number(r.lid_votos_fernando || 0);
+      map[r.cidade].num_lideres  = Number(r.num_lideres || 0);
+    });
+    dobRows.forEach(r => {
+      if (!map[r.cidade]) map[r.cidade] = { meta_celia:0, meta_fernando:0, lid_celia:0, lid_fernando:0, dob_celia:0, dob_fernando:0, num_lideres:0 };
+      map[r.cidade].dob_celia    = Number(r.dob_votos_celia || 0);
+      map[r.cidade].dob_fernando = Number(r.dob_votos_fernando || 0);
+    });
+
+    // lid + dob por candidato
+    const resultado = Object.entries(map).map(([cidade, d]) => ({
+      cidade,
+      meta_celia:           d.meta_celia,
+      meta_fernando:        d.meta_fernando,
+      lid_dob_celia:        d.lid_celia + d.dob_celia,
+      lid_dob_fernando:     d.lid_fernando + d.dob_fernando,
+      num_lideres:          d.num_lideres,
+    }));
+
+    res.json({ cidades: resultado, gerado_em: new Date().toISOString() });
   } catch (err) {
     console.error('[GET /export-dados-regioes]', err);
     res.status(500).json({ error: 'Erro ao exportar dados' });
