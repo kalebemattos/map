@@ -4106,14 +4106,15 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
         AND CAST(d.id_municipio AS STRING) = @id_municipio
     `;
 
-    // ── Candidatos com situação_turno detalhada ───────────────────────────────
+    // ── Candidatos com resultado ──────────────────────────────────────────────
+    // Colunas confirmadas em candidatos: nome_urna, sigla_partido, numero, cargo, sequencial
     const sqlRanking = `
       SELECT
-        UPPER(COALESCE(c.nome_urna, 'DESCONHECIDO'))                        AS nome_urna,
-        UPPER(COALESCE(c.sigla_partido, ''))                                 AS partido,
-        COALESCE(CAST(c.numero_urna AS STRING), '')                          AS numero,
-        UPPER(c.cargo)                                                        AS cargo,
-        UPPER(COALESCE(c.situacao_turno, c.resultado, c.situacao, ''))       AS situacao,
+        UPPER(COALESCE(c.nome_urna, 'DESCONHECIDO'))     AS nome_urna,
+        UPPER(COALESCE(c.sigla_partido, ''))              AS partido,
+        COALESCE(CAST(c.numero AS STRING), '')            AS numero,
+        UPPER(c.cargo)                                    AS cargo,
+        UPPER(COALESCE(c.resultado, ''))                  AS situacao,
         SUM(r.votos) AS votos
       FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
       JOIN \`basedosdados.br_tse_eleicoes.candidatos\` c
