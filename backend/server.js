@@ -4106,7 +4106,7 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
         AND CAST(d.id_municipio AS STRING) = @id_municipio
     `;
 
-    // ── Candidatos — apenas colunas confirmadas na tabela candidatos ─────────
+    // ── Candidatos — JOIN idêntico ao endpoint /historico que funciona ────────
     const sqlRanking = `
       SELECT
         UPPER(COALESCE(c.nome_urna, 'DESCONHECIDO'))     AS nome_urna,
@@ -4116,11 +4116,12 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
         SUM(r.votos)                                      AS votos
       FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
       JOIN \`basedosdados.br_tse_eleicoes.candidatos\` c
-        ON c.ano = r.ano
-        AND c.sigla_uf = r.sigla_uf
-        AND CAST(c.sequencial AS STRING) = CAST(r.sequencial_candidato AS STRING)
-      WHERE r.ano = @ano
-        AND r.turno = @turno
+        ON  r.ano          = c.ano
+        AND r.sigla_uf     = c.sigla_uf
+        AND r.id_municipio = c.id_municipio
+        AND CAST(r.numero_candidato AS STRING) = CAST(c.numero AS STRING)
+      WHERE r.ano      = @ano
+        AND r.turno    = @turno
         AND r.sigla_uf = @uf
         AND CAST(r.id_municipio AS STRING) = @id_municipio
         ${cargo ? 'AND UPPER(c.cargo) = @cargo' : ''}
