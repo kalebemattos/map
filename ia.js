@@ -492,6 +492,36 @@ Gere um relatório estratégico detalhado com: panorama geral, pontos fortes, po
       }
       #ia-send:hover { opacity: .85; transform: scale(1.05); }
       #ia-send svg { width: 15px; height: 15px; }
+
+      /* ── Mobile: Alice vira círculo pequeno no canto inferior direito ── */
+      @media (max-width: 768px) {
+        #ia-cluster {
+          bottom: 20px;
+          left: auto !important;
+          right: 78px;
+          transform: none !important;
+          align-items: flex-end;
+        }
+        #ia-cidade-chip { display: none !important; }
+        #ia-btn-rel { display: none !important; }
+        #ia-fab {
+          width: 44px !important;
+          height: 44px !important;
+          border-radius: 50% !important;
+          padding: 0 !important;
+          justify-content: center;
+          gap: 0 !important;
+        }
+        #ia-fab span { display: none !important; }
+        #ia-fab.pulsing::after { border-radius: 50% !important; }
+        #ia-painel {
+          width: calc(100vw - 24px) !important;
+          left: 12px !important;
+          right: 12px !important;
+          transform: none !important;
+          bottom: 80px !important;
+        }
+      }
     `
     document.head.appendChild(st)
   }

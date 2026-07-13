@@ -1620,6 +1620,20 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
   #mobileControlsBtn { display: flex !important; }
   #map-controls { display: none; }
   #map-controls.mobile-open { display: flex; }
+
+  /* Esconder seletor Estratégico/Geográfico no mobile */
+  #modo-toggle-estado { display: none !important; }
+
+  /* Reduzir cobertura de cidades no mobile */
+  #cobertura-cidades {
+    padding: 5px 8px;
+    min-width: 110px;
+  }
+  #cobertura-cidades .cob-title { font-size: 7.5px; margin-bottom: 4px; }
+  #cobertura-cidades .cob-row { font-size: 9.5px; gap: 5px; padding: 1px 0; }
+  #cobertura-cidades .cob-label { font-size: 9.5px; }
+  #cobertura-cidades .cob-val { font-size: 10px; }
+  #cobertura-cidades .cob-dot { width: 6px; height: 6px; }
 }
 
 #mobileControlsBtn {
@@ -6192,6 +6206,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!toggleBtn || !sidebar) {
     console.error('Botão ou sidebar não encontrados');
     return;
+  }
+
+  // Mobile: começa com mapa visível (sidebar fechada)
+  if (window.innerWidth <= 768) {
+    sidebar.classList.add('closed');
+    document.body.classList.add('sidebar-closed');
   }
 
   toggleBtn.addEventListener('click', () => {
