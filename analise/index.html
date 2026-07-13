@@ -1991,7 +1991,9 @@ async function carregarCidades() {
     document.getElementById('result-footer').style.display = 'none';
   }
 
+  const cargo = document.getElementById('cargoSelect').value;
   const params = new URLSearchParams({ uf, ano, turno });
+  if (cargo) params.set('cargo', cargo);
   try {
     const res  = await apiFetch(`${API_BASE}/api/eleicoes/cidades?${params}`);
     const json = await res.json();

@@ -4044,13 +4044,33 @@ app.get('/api/eleicoes/perfil-eleitorado', auth, withTenant, allowAll(), async (
  */
 app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) => {
   try {
-    const { uf, ano, turno = '1' } = req.query;
+    const { uf, ano, turno = '1', cargo } = req.query;
     if (!uf || !ano) return res.status(400).json({ ok: false, error: 'Parâmetros obrigatórios: uf, ano' });
 
-    // MAX em vez de SUM: detalhes_votacao_municipio tem múltiplas linhas por município
-    // em eleições gerais (esfera federal + estadual separadas). MAX pega o maior valor
-    // entre as linhas sem somar duplicatas. Para municipais (1 linha) MAX = SUM.
-    const sql = `
+    const params = {
+      ano:   parseInt(ano),
+      turno: parseInt(turno),
+      uf:    uf.trim().toUpperCase(),
+      ...(cargo ? { cargo: cargo.trim().toUpperCase() } : {})
+    };
+
+    // Tenta filtrar por cargo (coluna pode ou não existir na tabela).
+    // Se filtrado por cargo → SUM correto para aquele cargo específico.
+    // Fallback → MAX para evitar somar múltiplas linhas de cargos diferentes.
+    const sqlComCargo = `
+      SELECT
+        UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
+        CAST(d.id_municipio AS STRING) AS id_municipio,
+        SUM(d.votos_validos) AS votos_validos
+      FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
+      LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
+        ON d.id_municipio = m.id_municipio
+      WHERE d.ano = @ano AND d.turno = @turno AND d.sigla_uf = @uf
+        AND UPPER(d.cargo) = @cargo
+      GROUP BY municipio, d.id_municipio
+      ORDER BY votos_validos DESC
+    `;
+    const sqlSemCargo = `
       SELECT
         UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
         CAST(d.id_municipio AS STRING) AS id_municipio,
@@ -4058,18 +4078,25 @@ app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) 
       FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
         ON d.id_municipio = m.id_municipio
-      WHERE d.ano = @ano
-        AND d.turno = @turno
-        AND d.sigla_uf = @uf
+      WHERE d.ano = @ano AND d.turno = @turno AND d.sigla_uf = @uf
       GROUP BY municipio, d.id_municipio
       ORDER BY votos_validos DESC
     `;
-    const params = {
-      ano:   parseInt(ano),
-      turno: parseInt(turno),
-      uf:    uf.trim().toUpperCase()
-    };
-    const rows = await runBQ(sql, params);
+
+    let rows = [];
+    if (cargo) {
+      try {
+        rows = await runBQ(sqlComCargo, params);
+        // Se cargo filtrou corretamente mas retornou vazio, tenta sem filtro de cargo
+        if (!rows.length) rows = await runBQ(sqlSemCargo, params);
+      } catch (_) {
+        // coluna cargo não existe na tabela — usa MAX sem filtro
+        rows = await runBQ(sqlSemCargo, params);
+      }
+    } else {
+      rows = await runBQ(sqlSemCargo, params);
+    }
+
     res.json({ ok: true, data: rows.map(r => ({
       municipio:     r.municipio,
       id_municipio:  String(r.id_municipio),
