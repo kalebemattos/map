@@ -4106,16 +4106,14 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
         AND CAST(d.id_municipio AS STRING) = @id_municipio
     `;
 
-    // ── Candidatos com resultado ──────────────────────────────────────────────
-    // Colunas confirmadas em candidatos: nome_urna, sigla_partido, numero, cargo, sequencial
+    // ── Candidatos — apenas colunas confirmadas na tabela candidatos ─────────
     const sqlRanking = `
       SELECT
         UPPER(COALESCE(c.nome_urna, 'DESCONHECIDO'))     AS nome_urna,
         UPPER(COALESCE(c.sigla_partido, ''))              AS partido,
         COALESCE(CAST(c.numero AS STRING), '')            AS numero,
         UPPER(c.cargo)                                    AS cargo,
-        UPPER(COALESCE(c.resultado, ''))                  AS situacao,
-        SUM(r.votos) AS votos
+        SUM(r.votos)                                      AS votos
       FROM \`basedosdados.br_tse_eleicoes.resultados_candidato_municipio\` r
       JOIN \`basedosdados.br_tse_eleicoes.candidatos\` c
         ON c.ano = r.ano
@@ -4126,7 +4124,7 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
         AND r.sigla_uf = @uf
         AND CAST(r.id_municipio AS STRING) = @id_municipio
         ${cargo ? 'AND UPPER(c.cargo) = @cargo' : ''}
-      GROUP BY nome_urna, partido, numero, cargo, situacao
+      GROUP BY nome_urna, partido, numero, cargo
       ORDER BY votos DESC
       LIMIT 500
     `;
@@ -4139,49 +4137,33 @@ app.get('/api/eleicoes/ranking-cidade', auth, withTenant, allowAll(), async (req
 
     const votosValidos = Number(rowsValidos[0]?.votos_validos) || 0;
 
-    // ── Classifica candidatos em 3 grupos ────────────────────────────────────
-    const eleitos = [], suplentes = [], naoEleitos = [];
+    // ── Monta ranking + agrega por partido ───────────────────────────────────
+    const candidatos = [];
     const partidosMap = {};
 
     rowsRanking.forEach(r => {
-      const sit   = (r.situacao || '').toUpperCase();
       const votos = Number(r.votos) || 0;
-      const cand  = {
+      candidatos.push({
         nome_urna: r.nome_urna,
         partido:   r.partido,
         numero:    r.numero,
         cargo:     r.cargo,
-        situacao:  r.situacao,
         votos
-      };
-
-      const isEleito   = sit.startsWith('ELEITO');
-      const isSuplente = sit.startsWith('SUPLENTE');
-
-      if (isEleito)        eleitos.push(cand);
-      else if (isSuplente) suplentes.push(cand);
-      else                 naoEleitos.push(cand);
+      });
 
       // Agrega votos por partido
       const pd = r.partido || 'OUTROS';
-      if (!partidosMap[pd]) partidosMap[pd] = { partido: pd, votos_nominais: 0, vagas: 0 };
+      if (!partidosMap[pd]) partidosMap[pd] = { partido: pd, votos_nominais: 0 };
       partidosMap[pd].votos_nominais += votos;
-      if (isEleito) partidosMap[pd].vagas += 1;
     });
 
-    const vagas               = eleitos.length;
-    const quociente_eleitoral = vagas > 0 ? Math.round(votosValidos / vagas) : null;
-    const partidos            = Object.values(partidosMap).sort((a, b) => b.votos_nominais - a.votos_nominais);
+    const partidos = Object.values(partidosMap).sort((a, b) => b.votos_nominais - a.votos_nominais);
 
     res.json({
       ok: true,
       votos_validos: votosValidos,
-      vagas,
-      quociente_eleitoral,
       partidos,
-      eleitos,
-      suplentes,
-      nao_eleitos: naoEleitos
+      candidatos
     });
   } catch (e) {
     console.error('[/api/eleicoes/ranking-cidade]', e.message);
