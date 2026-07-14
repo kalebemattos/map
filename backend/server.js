@@ -5655,7 +5655,7 @@ app.post('/api/notificacoes/token', auth, withTenant, async (req, res) => {
       VALUES ($1, $2, $3, $4, NOW())
       ON CONFLICT (tenant_id, usuario_id, token)
       DO UPDATE SET plataforma = EXCLUDED.plataforma, atualizado_em = NOW()
-    `, [req.tenantId, req.user.id, token, plataforma || 'unknown']);
+    `, [req.tenantId, String(req.user.id), token, plataforma || 'unknown']);
     res.json({ ok: true });
   } catch (err) {
     console.error('[POST /api/notificacoes/token]', err);
@@ -5681,7 +5681,7 @@ app.get('/api/notificacoes/lembretes', auth, withTenant, async (req, res) => {
         ORDER BY l.criado_em DESC
         LIMIT 50
       `;
-      params = [req.tenantId, req.user.regiao || null, req.user.nivel, req.user.id];
+      params = [req.tenantId, req.user.regiao || null, req.user.nivel, String(req.user.id)];
     } else {
       sql = `
         SELECT l.id, l.titulo, l.mensagem, l.regiao, l.nivel, l.criado_em
@@ -5713,13 +5713,13 @@ app.post('/api/notificacoes/lembretes', auth, withTenant, allow('dono', 'admin')
       INSERT INTO notificacao_lembretes (tenant_id, criado_por, titulo, mensagem, regiao, nivel)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
-    `, [req.tenantId, req.user.id, (titulo || 'Aviso da gestão').trim(), mensagem.trim(), regiao || null, nivel || null]);
+    `, [req.tenantId, String(req.user.id), (titulo || 'Aviso da gestão').trim(), mensagem.trim(), regiao || null, nivel || null]);
 
     // Busca tokens dos destinatários
     let tokensQuery = `
       SELECT DISTINCT nt.token
       FROM notificacao_tokens nt
-      JOIN usuarios u ON u.id = nt.usuario_id
+      JOIN usuarios u ON u.id::TEXT = nt.usuario_id
       WHERE nt.tenant_id = $1
     `;
     const tokensParams = [req.tenantId];
@@ -5755,7 +5755,7 @@ app.get('/api/notificacoes/lembretes/historico', auth, withTenant, allow('dono',
              u.nome AS enviado_por,
              (SELECT COUNT(*) FROM notificacao_leituras nl WHERE nl.lembrete_id = l.id) AS total_leituras
       FROM notificacao_lembretes l
-      LEFT JOIN usuarios u ON u.id = l.criado_por
+      LEFT JOIN usuarios u ON u.id::TEXT = l.criado_por
       WHERE l.tenant_id = $1
       ORDER BY l.criado_em DESC
       LIMIT 100
@@ -5774,7 +5774,7 @@ app.patch('/api/notificacoes/lembretes/:id/lido', auth, withTenant, async (req, 
       INSERT INTO notificacao_leituras (lembrete_id, usuario_id, lido_em)
       VALUES ($1, $2, NOW())
       ON CONFLICT (lembrete_id, usuario_id) DO NOTHING
-    `, [req.params.id, req.user.id]);
+    `, [parseInt(req.params.id, 10), String(req.user.id)]);
     res.json({ ok: true });
   } catch (err) {
     console.error('[PATCH /api/notificacoes/lembretes/:id/lido]', err);
@@ -6055,20 +6055,35 @@ server.listen(PORT, async () => {
   }
 
   // ── MÓDULO DE AVISOS / NOTIFICAÇÕES ──────────────────────────────────────
+  // ── MÓDULO DE AVISOS / NOTIFICAÇÕES ──────────────────────────────────────
+  // Usa TEXT para IDs de usuário — compatível com SERIAL, BIGSERIAL e UUID
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS notificacao_tokens (
-        id           SERIAL PRIMARY KEY,
-        tenant_id    INTEGER NOT NULL,
-        usuario_id   INTEGER NOT NULL,
-        token        TEXT NOT NULL,
-        plataforma   TEXT DEFAULT 'unknown',
+        id            SERIAL PRIMARY KEY,
+        tenant_id     INTEGER NOT NULL,
+        usuario_id    TEXT NOT NULL,
+        token         TEXT NOT NULL,
+        plataforma    TEXT DEFAULT 'unknown',
         atualizado_em TIMESTAMPTZ DEFAULT NOW(),
         UNIQUE (tenant_id, usuario_id, token)
       )
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_notif_tokens_tenant ON notificacao_tokens(tenant_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_notif_tokens_user   ON notificacao_tokens(usuario_id)`);
+    // Se a tabela já existia com usuario_id INTEGER, converte para TEXT
+    await pool.query(`
+      DO $$ BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'notificacao_tokens'
+            AND column_name = 'usuario_id'
+            AND data_type = 'integer'
+        ) THEN
+          ALTER TABLE notificacao_tokens ALTER COLUMN usuario_id TYPE TEXT USING usuario_id::TEXT;
+        END IF;
+      END $$
+    `);
     console.log('[migration] notificacao_tokens OK');
   } catch (e) {
     console.warn('[migration] notificacao_tokens:', e.message);
@@ -6079,7 +6094,7 @@ server.listen(PORT, async () => {
       CREATE TABLE IF NOT EXISTS notificacao_lembretes (
         id          SERIAL PRIMARY KEY,
         tenant_id   INTEGER NOT NULL,
-        criado_por  INTEGER,
+        criado_por  TEXT,
         titulo      TEXT NOT NULL,
         mensagem    TEXT NOT NULL,
         regiao      TEXT,
@@ -6089,6 +6104,19 @@ server.listen(PORT, async () => {
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_notif_lembretes_tenant ON notificacao_lembretes(tenant_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_notif_lembretes_criado ON notificacao_lembretes(tenant_id, criado_em DESC)`);
+    // Se a tabela já existia com criado_por INTEGER, converte para TEXT
+    await pool.query(`
+      DO $$ BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'notificacao_lembretes'
+            AND column_name = 'criado_por'
+            AND data_type = 'integer'
+        ) THEN
+          ALTER TABLE notificacao_lembretes ALTER COLUMN criado_por TYPE TEXT USING criado_por::TEXT;
+        END IF;
+      END $$
+    `);
     console.log('[migration] notificacao_lembretes OK');
   } catch (e) {
     console.warn('[migration] notificacao_lembretes:', e.message);
@@ -6098,12 +6126,25 @@ server.listen(PORT, async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS notificacao_leituras (
         lembrete_id  INTEGER NOT NULL REFERENCES notificacao_lembretes(id) ON DELETE CASCADE,
-        usuario_id   INTEGER NOT NULL,
+        usuario_id   TEXT NOT NULL,
         lido_em      TIMESTAMPTZ DEFAULT NOW(),
         PRIMARY KEY (lembrete_id, usuario_id)
       )
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_notif_leituras_user ON notificacao_leituras(usuario_id)`);
+    // Se a tabela já existia com usuario_id INTEGER, converte para TEXT
+    await pool.query(`
+      DO $$ BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'notificacao_leituras'
+            AND column_name = 'usuario_id'
+            AND data_type = 'integer'
+        ) THEN
+          ALTER TABLE notificacao_leituras ALTER COLUMN usuario_id TYPE TEXT USING usuario_id::TEXT;
+        END IF;
+      END $$
+    `);
     console.log('[migration] notificacao_leituras OK');
   } catch (e) {
     console.warn('[migration] notificacao_leituras:', e.message);
