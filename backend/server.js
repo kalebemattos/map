@@ -5611,6 +5611,179 @@ app.post('/api/organograma/foto', auth, withTenant, allow('dono', 'admin'), uplo
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════
+// MÓDULO DE AVISOS / NOTIFICAÇÕES
+// ═══════════════════════════════════════════════════════════════════
+
+// Helper: envia push via Expo Push API (sem SDK externo)
+async function enviarExpoPush(tokens, titulo, corpo) {
+  if (!tokens || tokens.length === 0) return;
+  // Divide em lotes de 100 (limite da Expo)
+  const lotes = [];
+  for (let i = 0; i < tokens.length; i += 100) lotes.push(tokens.slice(i, i + 100));
+  for (const lote of lotes) {
+    const mensagens = lote.map(t => ({
+      to: t,
+      sound: 'default',
+      title: titulo,
+      body: corpo,
+      data: { tipo: 'aviso' },
+    }));
+    try {
+      const resp = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(mensagens),
+      });
+      if (!resp.ok) {
+        const txt = await resp.text();
+        console.warn('[push] Expo respondeu com erro:', resp.status, txt);
+      }
+    } catch (e) {
+      console.warn('[push] Falha ao enviar push Expo:', e.message);
+    }
+  }
+}
+
+// POST /api/notificacoes/token — salva o push token do dispositivo
+app.post('/api/notificacoes/token', auth, withTenant, async (req, res) => {
+  try {
+    const { token, plataforma } = req.body;
+    if (!token || typeof token !== 'string') return res.status(400).json({ error: 'token inválido' });
+    await pool.query(`
+      INSERT INTO notificacao_tokens (tenant_id, usuario_id, token, plataforma, atualizado_em)
+      VALUES ($1, $2, $3, $4, NOW())
+      ON CONFLICT (tenant_id, usuario_id, token)
+      DO UPDATE SET plataforma = EXCLUDED.plataforma, atualizado_em = NOW()
+    `, [req.tenantId, req.user.id, token, plataforma || 'unknown']);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[POST /api/notificacoes/token]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/notificacoes/lembretes — lista lembretes pendentes (não lidos) para o usuário
+app.get('/api/notificacoes/lembretes', auth, withTenant, async (req, res) => {
+  try {
+    const { nao_lidos } = req.query;
+    let sql, params;
+    if (nao_lidos === 'true') {
+      sql = `
+        SELECT l.id, l.titulo, l.mensagem, l.regiao, l.nivel, l.criado_em
+        FROM notificacao_lembretes l
+        WHERE l.tenant_id = $1
+          AND (l.regiao IS NULL OR l.regiao = $2 OR $2 IS NULL)
+          AND (l.nivel  IS NULL OR l.nivel  = $3)
+          AND l.id NOT IN (
+            SELECT lembrete_id FROM notificacao_leituras WHERE usuario_id = $4
+          )
+        ORDER BY l.criado_em DESC
+        LIMIT 50
+      `;
+      params = [req.tenantId, req.user.regiao || null, req.user.nivel, req.user.id];
+    } else {
+      sql = `
+        SELECT l.id, l.titulo, l.mensagem, l.regiao, l.nivel, l.criado_em
+        FROM notificacao_lembretes l
+        WHERE l.tenant_id = $1
+        ORDER BY l.criado_em DESC
+        LIMIT 50
+      `;
+      params = [req.tenantId];
+    }
+    const rows = await dbAll(sql, params);
+    res.json(rows);
+  } catch (err) {
+    console.error('[GET /api/notificacoes/lembretes]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/notificacoes/lembretes — cria aviso e dispara push (dono/admin)
+app.post('/api/notificacoes/lembretes', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
+  try {
+    const { titulo, mensagem, regiao, nivel } = req.body;
+    if (!mensagem || typeof mensagem !== 'string' || !mensagem.trim()) {
+      return res.status(400).json({ error: 'mensagem é obrigatória' });
+    }
+
+    // Salva o lembrete
+    const row = await dbGet(`
+      INSERT INTO notificacao_lembretes (tenant_id, criado_por, titulo, mensagem, regiao, nivel)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `, [req.tenantId, req.user.id, (titulo || 'Aviso da gestão').trim(), mensagem.trim(), regiao || null, nivel || null]);
+
+    // Busca tokens dos destinatários
+    let tokensQuery = `
+      SELECT DISTINCT nt.token
+      FROM notificacao_tokens nt
+      JOIN usuarios u ON u.id = nt.usuario_id
+      WHERE nt.tenant_id = $1
+    `;
+    const tokensParams = [req.tenantId];
+    let idx = 2;
+    if (regiao && !nivel) {
+      tokensQuery += ` AND (u.regiao_vinculada = $${idx} OR u.regiao_vinculada IS NULL)`;
+      tokensParams.push(regiao);
+      idx++;
+    }
+    if (nivel) {
+      tokensQuery += ` AND u.nivel = $${idx}`;
+      tokensParams.push(nivel);
+      idx++;
+    }
+    const tokenRows = await dbAll(tokensQuery, tokensParams);
+    const tokens = tokenRows.map(r => r.token).filter(Boolean);
+
+    // Dispara push em background (não bloqueia a resposta)
+    enviarExpoPush(tokens, row.titulo, row.mensagem).catch(() => {});
+
+    res.json({ ok: true, id: row.id, total_tokens: tokens.length });
+  } catch (err) {
+    console.error('[POST /api/notificacoes/lembretes]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/notificacoes/lembretes/historico — histórico de avisos enviados (dono/admin)
+app.get('/api/notificacoes/lembretes/historico', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
+  try {
+    const rows = await dbAll(`
+      SELECT l.id, l.titulo, l.mensagem, l.regiao, l.nivel, l.criado_em,
+             u.nome AS enviado_por,
+             (SELECT COUNT(*) FROM notificacao_leituras nl WHERE nl.lembrete_id = l.id) AS total_leituras
+      FROM notificacao_lembretes l
+      LEFT JOIN usuarios u ON u.id = l.criado_por
+      WHERE l.tenant_id = $1
+      ORDER BY l.criado_em DESC
+      LIMIT 100
+    `, [req.tenantId]);
+    res.json(rows);
+  } catch (err) {
+    console.error('[GET /api/notificacoes/lembretes/historico]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/notificacoes/lembretes/:id/lido — marca como lido para este usuário
+app.patch('/api/notificacoes/lembretes/:id/lido', auth, withTenant, async (req, res) => {
+  try {
+    await pool.query(`
+      INSERT INTO notificacao_leituras (lembrete_id, usuario_id, lido_em)
+      VALUES ($1, $2, NOW())
+      ON CONFLICT (lembrete_id, usuario_id) DO NOTHING
+    `, [req.params.id, req.user.id]);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[PATCH /api/notificacoes/lembretes/:id/lido]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+
 server.listen(PORT, async () => {
   console.log("Backend rodando em http://localhost:" + PORT);
   // Migrations automáticas — seguras de rodar múltiplas vezes (IF NOT EXISTS)
@@ -5879,5 +6052,60 @@ server.listen(PORT, async () => {
     console.log('[migration] cadastro_tokens OK');
   } catch (e) {
     console.warn('[migration] cadastro_tokens:', e.message);
+  }
+
+  // ── MÓDULO DE AVISOS / NOTIFICAÇÕES ──────────────────────────────────────
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notificacao_tokens (
+        id           SERIAL PRIMARY KEY,
+        tenant_id    INTEGER NOT NULL,
+        usuario_id   INTEGER NOT NULL,
+        token        TEXT NOT NULL,
+        plataforma   TEXT DEFAULT 'unknown',
+        atualizado_em TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE (tenant_id, usuario_id, token)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_notif_tokens_tenant ON notificacao_tokens(tenant_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_notif_tokens_user   ON notificacao_tokens(usuario_id)`);
+    console.log('[migration] notificacao_tokens OK');
+  } catch (e) {
+    console.warn('[migration] notificacao_tokens:', e.message);
+  }
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notificacao_lembretes (
+        id          SERIAL PRIMARY KEY,
+        tenant_id   INTEGER NOT NULL,
+        criado_por  INTEGER,
+        titulo      TEXT NOT NULL,
+        mensagem    TEXT NOT NULL,
+        regiao      TEXT,
+        nivel       TEXT,
+        criado_em   TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_notif_lembretes_tenant ON notificacao_lembretes(tenant_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_notif_lembretes_criado ON notificacao_lembretes(tenant_id, criado_em DESC)`);
+    console.log('[migration] notificacao_lembretes OK');
+  } catch (e) {
+    console.warn('[migration] notificacao_lembretes:', e.message);
+  }
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notificacao_leituras (
+        lembrete_id  INTEGER NOT NULL REFERENCES notificacao_lembretes(id) ON DELETE CASCADE,
+        usuario_id   INTEGER NOT NULL,
+        lido_em      TIMESTAMPTZ DEFAULT NOW(),
+        PRIMARY KEY (lembrete_id, usuario_id)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_notif_leituras_user ON notificacao_leituras(usuario_id)`);
+    console.log('[migration] notificacao_leituras OK');
+  } catch (e) {
+    console.warn('[migration] notificacao_leituras:', e.message);
   }
 });
