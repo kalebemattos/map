@@ -14,7 +14,8 @@ const auth = require('./middleware/auth');
 const withTenant = require('./middleware/withTenant');
 const sharp = require('sharp');
 const helmet = require('helmet');
-const http = require('http');
+const http  = require('http');
+const https = require('https');
 const { Server: SocketServer } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
@@ -5615,33 +5616,53 @@ app.post('/api/organograma/foto', auth, withTenant, allow('dono', 'admin'), uplo
 // MÓDULO DE AVISOS / NOTIFICAÇÕES
 // ═══════════════════════════════════════════════════════════════════
 
-// Helper: envia push via Expo Push API (sem SDK externo)
+// GET /api/notificacoes/ping — diagnóstico (sem autenticação, para testar)
+app.get('/api/notificacoes/ping', async (req, res) => {
+  try {
+    const tabelas = await dbAll(`
+      SELECT table_name FROM information_schema.tables
+      WHERE table_schema = 'public'
+        AND table_name IN ('notificacao_tokens','notificacao_lembretes','notificacao_leituras')
+    `);
+    res.json({ ok: true, tabelas: tabelas.map(t => t.table_name) });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Helper: envia push via Expo Push API usando https nativo (compatível com qualquer Node)
 async function enviarExpoPush(tokens, titulo, corpo) {
   if (!tokens || tokens.length === 0) return;
-  // Divide em lotes de 100 (limite da Expo)
   const lotes = [];
   for (let i = 0; i < tokens.length; i += 100) lotes.push(tokens.slice(i, i + 100));
+
   for (const lote of lotes) {
-    const mensagens = lote.map(t => ({
-      to: t,
-      sound: 'default',
-      title: titulo,
-      body: corpo,
-      data: { tipo: 'aviso' },
-    }));
-    try {
-      const resp = await fetch('https://exp.host/--/api/v2/push/send', {
+    const payload = JSON.stringify(lote.map(t => ({
+      to: t, sound: 'default', title: titulo, body: corpo, data: { tipo: 'aviso' },
+    })));
+
+    await new Promise((resolve) => {
+      const opts = {
+        hostname: 'exp.host',
+        path: '/--/api/v2/push/send',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(mensagens),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+        },
+      };
+      const req = https.request(opts, (res) => {
+        res.resume(); // descarta a resposta
+        resolve();
       });
-      if (!resp.ok) {
-        const txt = await resp.text();
-        console.warn('[push] Expo respondeu com erro:', resp.status, txt);
-      }
-    } catch (e) {
-      console.warn('[push] Falha ao enviar push Expo:', e.message);
-    }
+      req.on('error', (e) => {
+        console.warn('[push] erro https:', e.message);
+        resolve();
+      });
+      req.write(payload);
+      req.end();
+    });
   }
 }
 
@@ -5702,48 +5723,79 @@ app.get('/api/notificacoes/lembretes', auth, withTenant, async (req, res) => {
 
 // POST /api/notificacoes/lembretes — cria aviso e dispara push (dono/admin)
 app.post('/api/notificacoes/lembretes', auth, withTenant, allow('dono', 'admin'), async (req, res) => {
+  const step = { atual: 'inicio' };
   try {
     const { titulo, mensagem, regiao, nivel } = req.body;
+
+    console.log('[aviso] body:', { titulo, mensagem: mensagem?.slice(0,30), regiao, nivel });
+    console.log('[aviso] user:', { id: req.user.id, nivel: req.user.nivel, tenantId: req.tenantId });
+
     if (!mensagem || typeof mensagem !== 'string' || !mensagem.trim()) {
       return res.status(400).json({ error: 'mensagem é obrigatória' });
     }
 
-    // Salva o lembrete
+    // ── 1. Salva o lembrete ──────────────────────────────────────────────────
+    step.atual = 'insert_lembrete';
+    const tituloFinal  = (titulo || 'Aviso da gestão').trim();
+    const mensagemFinal = mensagem.trim();
+    const criadoPor    = req.user.id != null ? String(req.user.id) : null;
+    const tenantId     = req.tenantId;
+
     const row = await dbGet(`
       INSERT INTO notificacao_lembretes (tenant_id, criado_por, titulo, mensagem, regiao, nivel)
       VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *
-    `, [req.tenantId, String(req.user.id), (titulo || 'Aviso da gestão').trim(), mensagem.trim(), regiao || null, nivel || null]);
+      RETURNING id, titulo, mensagem
+    `, [tenantId, criadoPor, tituloFinal, mensagemFinal, regiao || null, nivel || null]);
 
-    // Busca tokens dos destinatários
-    let tokensQuery = `
-      SELECT DISTINCT nt.token
-      FROM notificacao_tokens nt
-      JOIN usuarios u ON u.id::TEXT = nt.usuario_id
-      WHERE nt.tenant_id = $1
-    `;
-    const tokensParams = [req.tenantId];
-    let idx = 2;
-    if (regiao && !nivel) {
-      tokensQuery += ` AND (u.regiao_vinculada = $${idx} OR u.regiao_vinculada IS NULL)`;
-      tokensParams.push(regiao);
-      idx++;
-    }
-    if (nivel) {
-      tokensQuery += ` AND u.nivel = $${idx}`;
-      tokensParams.push(nivel);
-      idx++;
-    }
-    const tokenRows = await dbAll(tokensQuery, tokensParams);
-    const tokens = tokenRows.map(r => r.token).filter(Boolean);
+    console.log('[aviso] lembrete criado:', row?.id);
 
-    // Dispara push em background (não bloqueia a resposta)
-    enviarExpoPush(tokens, row.titulo, row.mensagem).catch(() => {});
+    // ── 2. Busca push tokens dos destinatários (sem JOIN — mais seguro) ──────
+    step.atual = 'buscar_tokens';
+    let tokens = [];
+    try {
+      // Busca todos os tokens do tenant
+      const allTokens = await dbAll(
+        `SELECT usuario_id, token FROM notificacao_tokens WHERE tenant_id = $1`,
+        [tenantId]
+      );
+
+      if (regiao || nivel) {
+        // Filtra por usuários com a região/nível correto
+        let usersWhere = `WHERE tenant_id = $1`;
+        const usersParams = [tenantId];
+        let i = 2;
+        if (regiao && !nivel) { usersWhere += ` AND regiao_vinculada = $${i++}`; usersParams.push(regiao); }
+        if (nivel)             { usersWhere += ` AND nivel = $${i++}`;            usersParams.push(nivel); }
+
+        const filteredUsers = await dbAll(
+          `SELECT id::TEXT AS id FROM usuarios ${usersWhere}`, usersParams
+        );
+        const userIds = new Set(filteredUsers.map(u => String(u.id)));
+        tokens = allTokens
+          .filter(t => userIds.has(String(t.usuario_id)))
+          .map(t => t.token)
+          .filter(Boolean);
+      } else {
+        tokens = allTokens.map(t => t.token).filter(Boolean);
+      }
+    } catch (tokenErr) {
+      // Tokens indisponíveis não impedem salvar o aviso
+      console.warn('[aviso] erro ao buscar tokens (ignorado):', tokenErr.message);
+    }
+
+    console.log('[aviso] tokens encontrados:', tokens.length);
+
+    // ── 3. Dispara push em background ────────────────────────────────────────
+    if (tokens.length > 0) {
+      enviarExpoPush(tokens, row.titulo, row.mensagem).catch(e =>
+        console.warn('[aviso] push falhou (ignorado):', e.message)
+      );
+    }
 
     res.json({ ok: true, id: row.id, total_tokens: tokens.length });
   } catch (err) {
-    console.error('[POST /api/notificacoes/lembretes]', err);
-    res.status(500).json({ error: err.message });
+    console.error(`[POST /api/notificacoes/lembretes] etapa=${step.atual}`, err.message);
+    res.status(500).json({ error: `[${step.atual}] ${err.message}` });
   }
 });
 
