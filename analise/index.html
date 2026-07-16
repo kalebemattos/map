@@ -2026,6 +2026,24 @@ async function carregarCidades() {
 function renderTabela() {
   const filtro = normalizarTexto(document.getElementById('buscarCidade').value);
 
+  // Modo sem candidato: filtra cidadesModoData e rerenderiza os cards de cidades
+  if (!candidatoAtual && useNewUI) {
+    const dadosFiltrados = filtro
+      ? cidadesModoData.filter(r => normalizarTexto(r.municipio).includes(filtro))
+      : cidadesModoData;
+    _renderCidadesCardsModo(dadosFiltrados);
+    const footer = document.getElementById('result-footer');
+    footer.style.display = 'flex';
+    footer.innerHTML = `
+      <span>${dadosFiltrados.length} municípios${filtro ? ' encontrados' : ' · clique para ver o ranking eleitoral'}</span>
+      <span style="font-size:11px;color:var(--slate-400);display:flex;align-items:center;gap:4px;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
+        Eleitores: dados mais recentes do TSE
+      </span>
+    `;
+    return;
+  }
+
   const dados = filtro
     ? resultadosAtual.filter(r => normalizarTexto(r.municipio).includes(filtro))
     : resultadosAtual;
