@@ -4143,17 +4143,24 @@ app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) 
       ...(cargo ? { cargo: cargo.trim().toUpperCase() } : {})
     };
 
-    // Usa perfil_eleitorado_municipio = cadastro eleitoral oficial (mesmos números do Politique)
-    // SUM(qtde_eleitores_perfil) por município e ano dá o total de eleitores registrados
+    // Usa perfil_eleitorado_municipio = cadastro eleitoral oficial do TSE.
+    // Sempre busca o ano mais recente disponível na tabela (independente do ano de eleição selecionado)
+    // para garantir que os dados sejam os mais atuais fornecidos pelo TSE.
     const sqlComparecimento = `
       SELECT
         UPPER(COALESCE(m.nome, CAST(p.id_municipio AS STRING))) AS municipio,
         CAST(p.id_municipio AS STRING) AS id_municipio,
-        SUM(p.qtde_eleitores_perfil) AS votos_validos
+        SUM(p.qtde_eleitores_perfil) AS votos_validos,
+        MAX(p.ano) AS ano_referencia
       FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_municipio\` p
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
         ON p.id_municipio = m.id_municipio
-      WHERE p.ano = @ano AND p.sigla_uf = @uf
+      WHERE p.sigla_uf = @uf
+        AND p.ano = (
+          SELECT MAX(ano)
+          FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_municipio\`
+          WHERE sigla_uf = @uf
+        )
       GROUP BY municipio, p.id_municipio
       ORDER BY votos_validos DESC
     `;
@@ -4161,7 +4168,8 @@ app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) 
       SELECT
         UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
         CAST(d.id_municipio AS STRING) AS id_municipio,
-        MAX(d.aptos) AS votos_validos
+        MAX(d.aptos) AS votos_validos,
+        @ano AS ano_referencia
       FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
         ON d.id_municipio = m.id_municipio
@@ -4177,11 +4185,16 @@ app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) 
       rows = await runBQ(sqlFallback, params);
     }
 
-    res.json({ ok: true, data: rows.map(r => ({
-      municipio:     r.municipio,
-      id_municipio:  String(r.id_municipio),
-      votos_validos: Number(r.votos_validos) || 0
-    })) });
+    const anoRef = rows.length > 0 ? Number(rows[0].ano_referencia) : parseInt(ano);
+    res.json({
+      ok: true,
+      ano_referencia: anoRef,
+      data: rows.map(r => ({
+        municipio:     r.municipio,
+        id_municipio:  String(r.id_municipio),
+        votos_validos: Number(r.votos_validos) || 0
+      }))
+    });
   } catch (e) {
     console.error('[/api/eleicoes/cidades]', e.message);
     res.status(500).json({ ok: false, error: e.message });
