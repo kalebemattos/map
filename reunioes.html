@@ -641,10 +641,12 @@ const ICE_FALLBACK = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun.cloudflare.com:3478' },
-  { urls: 'turn:openrelay.metered.ca:80',                username: 'openrelayproject', credential: 'openrelayproject' },
-  { urls: 'turn:openrelay.metered.ca:443',               username: 'openrelayproject', credential: 'openrelayproject' },
+  // TCP primeiro nas tentativas TURN: redes mobile bloqueiam UDP mas raramente TCP 443
   { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
   { urls: 'turns:openrelay.metered.ca:443',              username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443',               username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:80',                username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:80?transport=tcp',  username: 'openrelayproject', credential: 'openrelayproject' },
 ];
 let _iceCache = null, _iceCacheTs = 0;
 
@@ -851,8 +853,10 @@ function conectarSocket() {
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
       await flushIceCandidates(deId);
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
+      const answer    = await pc.createAnswer();
+      // Garante que o answer também prefere VP8 (pode não herdar a preferência do offer no Android antigo)
+      const sdpMod    = preferCodecInSdp(answer.sdp, 'VP8');
+      await pc.setLocalDescription({ type: 'answer', sdp: sdpMod });
       socket.emit('answer', { paraId: deId, answer: pc.localDescription });
     } catch (e) {
       console.error('[offer] erro:', e);
@@ -1365,10 +1369,12 @@ async function entrarSala(salaId, salaNome) {
     if (v && !v.srcObject) { v.muted = true; v.play().catch(() => {}); }
   });
   const audioC = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+  // Começa com resolução conservadora para compatibilidade com Android antigo.
+  // Androids antigos travam ou falham a negociação se o primeiro constraint for HD.
   const videoTentativas = [
-    { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 }, facingMode: 'user' },
-    { width: { ideal: 1280 }, height: { ideal: 720  }, frameRate: { ideal: 30 }, facingMode: 'user' },
-    { width: { ideal: 640  }, height: { ideal: 480  }, facingMode: 'user' },
+    { width: { ideal: 640, max: 1280 }, height: { ideal: 480, max: 720 }, frameRate: { ideal: 24, max: 30 }, facingMode: 'user' },
+    { width: { ideal: 480 }, height: { ideal: 360 }, frameRate: { ideal: 15 }, facingMode: 'user' },
+    { width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 15 }, facingMode: 'user' },
     true
   ];
   let capturou = false;
@@ -1418,6 +1424,42 @@ async function entrarSala(salaId, salaNome) {
 // Guard: impede reconexões paralelas para o mesmo peer
 const _reconectando = new Set();
 
+/**
+ * Reordena os codecs no SDP para que `codecName` fique em primeiro lugar.
+ * Melhora compatibilidade entre dois Androids antigos: VP8 tem suporte de
+ * hardware encoder/decoder em praticamente todos os Androids desde API 18,
+ * enquanto VP9 e AV1 podem falhar ou gerar tela preta em devices antigos.
+ * Remove também fmtp/rtcp-fb de codecs não preferidos quando desnecessários.
+ */
+function preferCodecInSdp(sdp, codecName) {
+  try {
+    const lines = sdp.split('\r\n');
+    const mVideoIdx = lines.findIndex(l => l.startsWith('m=video'));
+    if (mVideoIdx === -1) return sdp;
+
+    // Coleta todos os payload types que correspondem ao codec desejado
+    const preferredPts = [];
+    lines.forEach(l => {
+      const m = l.match(/^a=rtpmap:(\d+)\s+([^/\s]+)/i);
+      if (m && m[2].toLowerCase() === codecName.toLowerCase()) preferredPts.push(m[1]);
+    });
+    if (!preferredPts.length) return sdp;
+
+    // Reordena a linha m=video colocando os PTs do codec preferido primeiro
+    const mParts  = lines[mVideoIdx].split(' ');
+    const header  = mParts.slice(0, 3);
+    const allPts  = mParts.slice(3);
+    const first   = allPts.filter(pt => preferredPts.includes(pt));
+    const rest    = allPts.filter(pt => !preferredPts.includes(pt));
+    lines[mVideoIdx] = [...header, ...first, ...rest].join(' ');
+
+    return lines.join('\r\n');
+  } catch (e) {
+    console.warn('[preferCodecInSdp] erro, usando SDP original:', e.message);
+    return sdp;
+  }
+}
+
 // Trata track remoto — Android Chrome pode disparar ontrack com e.streams vazio
 function _handleTrack(peerId, e) {
   let stream = e.streams?.[0];
@@ -1449,7 +1491,12 @@ async function criarPC(peerId, ofertante) {
   peerRoles[peerId] = ofertante;
 
   const iceServers = await getIceServers();
-  const pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 0 });
+  const pc = new RTCPeerConnection({
+    iceServers,
+    iceCandidatePoolSize: 2,      // pré-coleta candidatos para conexão mais rápida
+    bundlePolicy:   'max-bundle', // minimiza portas: ajuda NAT/firewall em redes mobile
+    rtcpMuxPolicy:  'require',    // áudio+vídeo+RTCP na mesma porta; obrigatório para max-bundle
+  });
   peers[peerId] = pc;
 
   // Adiciona tracks locais
@@ -1478,8 +1525,12 @@ async function criarPC(peerId, ofertante) {
   };
 
   if (ofertante) {
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
+    // offerToReceiveAudio/Video: necessário em versões antigas do WebRTC Android
+    const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+    // Prefere VP8: suporte de hardware encoder/decoder em todos os Androids desde API 18.
+    // VP9/AV1 podem causar tela preta ou falha silenciosa em devices antigos.
+    const sdpMod = preferCodecInSdp(offer.sdp, 'VP8');
+    await pc.setLocalDescription({ type: 'offer', sdp: sdpMod });
     socket.emit('offer', { paraId: peerId, offer: pc.localDescription });
   }
 
