@@ -4143,17 +4143,13 @@ app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) 
       ...(cargo ? { cargo: cargo.trim().toUpperCase() } : {})
     };
 
-    // Tenta filtrar por cargo (coluna pode ou não existir na tabela).
-    // Se filtrado por cargo → SUM correto para aquele cargo específico.
-    // Fallback → MAX para evitar somar múltiplas linhas de cargos diferentes.
-    // comparecimento = eleitores que foram votar, igual para todos os cargos
-    // → MAX resolve o problema de múltiplas linhas por cargo sem precisar filtrar por cargo
-    // Fallback para votos_validos se a coluna comparecimento não existir
+    // Usa aptos = eleitores cadastrados (mesmo dado que o Politique mostra como "Eleitores")
+    // MAX evita duplicar linhas quando há múltiplos cargos por município
     const sqlComparecimento = `
       SELECT
         UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
         CAST(d.id_municipio AS STRING) AS id_municipio,
-        MAX(d.comparecimento) AS votos_validos
+        MAX(d.aptos) AS votos_validos
       FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
         ON d.id_municipio = m.id_municipio
@@ -4165,7 +4161,7 @@ app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) 
       SELECT
         UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
         CAST(d.id_municipio AS STRING) AS id_municipio,
-        MAX(d.votos_validos) AS votos_validos
+        MAX(d.comparecimento) AS votos_validos
       FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
         ON d.id_municipio = m.id_municipio
