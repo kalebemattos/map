@@ -4143,25 +4143,25 @@ app.get('/api/eleicoes/cidades', auth, withTenant, allowAll(), async (req, res) 
       ...(cargo ? { cargo: cargo.trim().toUpperCase() } : {})
     };
 
-    // Usa aptos = eleitores cadastrados (mesmo dado que o Politique mostra como "Eleitores")
-    // MAX evita duplicar linhas quando há múltiplos cargos por município
+    // Usa perfil_eleitorado_municipio = cadastro eleitoral oficial (mesmos números do Politique)
+    // SUM(qtde_eleitores_perfil) por município e ano dá o total de eleitores registrados
     const sqlComparecimento = `
       SELECT
-        UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
-        CAST(d.id_municipio AS STRING) AS id_municipio,
-        MAX(d.aptos) AS votos_validos
-      FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
+        UPPER(COALESCE(m.nome, CAST(p.id_municipio AS STRING))) AS municipio,
+        CAST(p.id_municipio AS STRING) AS id_municipio,
+        SUM(p.qtde_eleitores_perfil) AS votos_validos
+      FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_municipio\` p
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
-        ON d.id_municipio = m.id_municipio
-      WHERE d.ano = @ano AND d.turno = @turno AND d.sigla_uf = @uf
-      GROUP BY municipio, d.id_municipio
+        ON p.id_municipio = m.id_municipio
+      WHERE p.ano = @ano AND p.sigla_uf = @uf
+      GROUP BY municipio, p.id_municipio
       ORDER BY votos_validos DESC
     `;
     const sqlFallback = `
       SELECT
         UPPER(COALESCE(m.nome, CAST(d.id_municipio AS STRING))) AS municipio,
         CAST(d.id_municipio AS STRING) AS id_municipio,
-        MAX(d.comparecimento) AS votos_validos
+        MAX(d.aptos) AS votos_validos
       FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` d
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
         ON d.id_municipio = m.id_municipio
