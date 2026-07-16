@@ -1251,7 +1251,9 @@ function setSrcAndPlay(videoEl, stream, { muted = false } = {}) {
     const audioEl = document.getElementById('remote-audio');
     if (audioEl) {
       const audioStream = new MediaStream(stream.getAudioTracks());
-      audioEl.srcObject = audioStream;
+      audioEl.srcObject  = audioStream;
+      audioEl.volume     = 1.0;
+      audioEl.muted      = false;   // garante que não está muted por acidente
       audioEl.play().catch(() => {});
     }
   }
@@ -1368,7 +1370,27 @@ async function entrarSala(salaId, salaNome) {
     const v = document.getElementById(id);
     if (v && !v.srcObject) { v.muted = true; v.play().catch(() => {}); }
   });
-  const audioC = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+  // Constraints de áudio otimizadas para cancelar microfonia em Android antigo.
+  // Android Chrome < 64 ignora as constraints W3C padrão e precisa dos prefixos goog*.
+  // channelCount:1 (mono) melhora muito o AEC — stereo dobra o processamento e piora o eco.
+  // sampleRate:16000 é suficiente para voz e reduz carga no AEC do Android.
+  const audioC = {
+    echoCancellation:        { ideal: true },
+    noiseSuppression:        { ideal: true },
+    autoGainControl:         { ideal: true },
+    channelCount:            { ideal: 1 },   // mono: AEC mais eficaz, menos eco
+    sampleRate:              { ideal: 16000 }, // 16kHz suficiente para voz
+    latency:                 { ideal: 0 },   // latência mínima ajuda AEC a cancelar eco
+    // Constraints legadas: necessárias em Android Chrome antigo (prefixo goog*)
+    googEchoCancellation:    true,
+    googEchoCancellation2:   true,
+    googAutoGainControl:     true,
+    googAutoGainControl2:    true,
+    googNoiseSuppression:    true,
+    googNoiseSuppression2:   true,
+    googHighpassFilter:      true,
+    googTypingNoiseDetection: true,
+  };
   // Começa com resolução conservadora para compatibilidade com Android antigo.
   // Androids antigos travam ou falham a negociação se o primeiro constraint for HD.
   const videoTentativas = [
