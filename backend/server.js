@@ -762,9 +762,11 @@ app.post('/api/liderancas',
 
     if (!pessoaId) {
       // Cria ou recupera pessoa pelo nome normalizado
+      // cadastrado_por_id é preenchido automaticamente com o usuário logado;
+      // no ON CONFLICT preserva o valor original (quem criou primeiro).
       const upsert = await client.query(`
-        INSERT INTO pessoas (tenant_id, nome, nome_norm, contato, foto, perfil, data_nascimento, release, apelido, rede_social)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        INSERT INTO pessoas (tenant_id, nome, nome_norm, contato, foto, perfil, data_nascimento, release, apelido, rede_social, cadastrado_por_id)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
         ON CONFLICT (tenant_id, nome_norm) DO UPDATE
           SET contato         = COALESCE(EXCLUDED.contato,         pessoas.contato),
               foto            = COALESCE(EXCLUDED.foto,            pessoas.foto),
@@ -778,7 +780,8 @@ app.post('/api/liderancas',
       `, [req.tenantId, nome.trim(), normalizarNome(nome),
           contato || null, fotoUrl, perfil || null,
           data_nascimento || null, release || null,
-          apelido || null, rede_social || null]);
+          apelido || null, rede_social || null,
+          req.user.id]);  // $11 — usuário logado; preservado no ON CONFLICT
       pessoaId = upsert.rows[0].id;
     } else if (fotoUrl) {
       await client.query(
@@ -830,6 +833,37 @@ app.post('/api/liderancas',
     console.error('Erro ao salvar liderança:', err);
     res.status(500).json({ error: 'Erro ao salvar liderança: ' + err.message });
   } finally { client.release(); }
+});
+
+/* ================= RANKING DE CADASTROS POR USUÁRIO ================= */
+// GET /api/liderancas/ranking-cadastros
+// Retorna quantas pessoas cada usuário cadastrou, ordenado do maior para o menor.
+// Restrito a admin/dono para proteger dados internos.
+app.get('/api/liderancas/ranking-cadastros', auth, withTenant, allow('admin', 'dono'), async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT
+        u.id                                  AS usuario_id,
+        u.nome                                AS nome,
+        u.usuario                             AS login,
+        u.foto_url                            AS foto_url,
+        u.regiao_vinculada                    AS regiao,
+        COUNT(p.id)::int                      AS total_cadastros,
+        MAX(p.criado_em)                      AS ultimo_cadastro
+      FROM usuarios u
+      LEFT JOIN pessoas p
+        ON p.cadastrado_por_id = u.id
+        AND p.tenant_id = $1
+      WHERE u.tenant_id = $1
+      GROUP BY u.id, u.nome, u.usuario, u.foto_url, u.regiao_vinculada
+      ORDER BY total_cadastros DESC, u.nome ASC
+    `, [req.tenantId]);
+
+    res.json({ ok: true, data: rows });
+  } catch (e) {
+    console.error('[ranking-cadastros]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 /* ================= PINS GEOGRÁFICOS (lideranças com lat/lng) ================= */
@@ -3049,9 +3083,10 @@ app.post('/api/public/cadastro/:token', cadastroPublicLimiter, upload.single('fo
     const regiaoFinal = tk.regiao || (cidadeLimpa ? await resolverRegiao(tk.tenant_id, cidadeLimpa) : null);
 
     // 1) Cria ou recupera pessoa (upsert por nome normalizado) — mesmas tabelas do painel
+    // cadastrado_por_id usa tk.created_by (quem gerou o link de cadastro público).
     const upsert = await client.query(`
-      INSERT INTO pessoas (tenant_id, nome, nome_norm, contato, foto, apelido, rede_social, data_nascimento)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO pessoas (tenant_id, nome, nome_norm, contato, foto, apelido, rede_social, data_nascimento, cadastrado_por_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT (tenant_id, nome_norm) DO UPDATE
         SET contato         = COALESCE(EXCLUDED.contato,         pessoas.contato),
             foto            = COALESCE(EXCLUDED.foto,            pessoas.foto),
@@ -3061,7 +3096,8 @@ app.post('/api/public/cadastro/:token', cadastroPublicLimiter, upload.single('fo
             atualizado_em   = now()
       RETURNING id
     `, [tk.tenant_id, nomeLimpo, normalizarNome(nomeLimpo),
-        telLimpo, fotoUrl, apelidoLimpo, redeSocialLimpo, nascimento]);
+        telLimpo, fotoUrl, apelidoLimpo, redeSocialLimpo, nascimento,
+        tk.created_by || null]); // $9 — quem gerou o token; preservado no ON CONFLICT
     const pessoaId = upsert.rows[0].id;
 
     // 2) Cria vínculo pessoa ↔ cidade em liderancas (mesmas colunas do painel)
