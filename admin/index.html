@@ -1413,7 +1413,9 @@ async function carregarLiderancas() {
   const query = mapa ? `?mapa=${mapa}` : ''
   const res = await apiFetch('/api/liderancas' + query);
   const cidades = await res.json();
-  const blocoCidade = cidades.find(c => c.cidade === chave);
+  // Quando mapa=rjcapital/angra o backend agrupa por COALESCE(bairro, cidade) e retorna
+  // o campo como `bairro`; no mapa estadual retorna como `cidade`.
+  const blocoCidade = cidades.find(c => (c.bairro || c.cidade) === chave);
 
   let liderancas = blocoCidade ? (blocoCidade.liderancas || []) : [];
   const filtroValue = document.getElementById('filtro-status').value;

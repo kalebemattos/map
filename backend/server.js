@@ -1749,6 +1749,79 @@ app.delete('/api/usuarios/:id', auth, withTenant, allow('dono', 'admin'), async 
     res.status(500).json({ error: 'Erro ao excluir usuário.' });
   }
 });
+/* ================= PRESENÇA / USUÁRIOS ONLINE ================= */
+
+// POST /api/usuarios/heartbeat — marca o usuário como online (last_seen = agora)
+app.post('/api/usuarios/heartbeat', auth, withTenant, async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE usuarios SET last_seen = NOW() WHERE id = $1 AND tenant_id = $2',
+      [req.user.id, req.tenantId]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    // Silencioso: coluna pode não existir ainda
+    res.json({ ok: false });
+  }
+});
+
+// GET /api/usuarios/online — retorna contagem de usuários ativos nos últimos 5 min
+app.get('/api/usuarios/online', auth, withTenant, async (req, res) => {
+  try {
+    const row = await dbGet(
+      `SELECT COUNT(*) AS count FROM usuarios
+       WHERE tenant_id = $1 AND last_seen >= NOW() - INTERVAL '5 minutes'`,
+      [req.tenantId]
+    );
+    res.json({ count: parseInt(row?.count || '0', 10) });
+  } catch (err) {
+    res.json({ count: 0 });
+  }
+});
+
+// POST /api/usuarios/location — usuário envia sua posição GPS
+app.post('/api/usuarios/location', auth, withTenant, async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+    if (latitude == null || longitude == null) {
+      return res.status(400).json({ ok: false, error: 'latitude e longitude obrigatórios' });
+    }
+    await pool.query(
+      `UPDATE usuarios
+         SET latitude = $1, longitude = $2, location_updated_at = NOW(), last_seen = NOW()
+       WHERE id = $3 AND tenant_id = $4`,
+      [parseFloat(latitude), parseFloat(longitude), req.user.id, req.tenantId]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
+});
+
+// GET /api/usuarios/locations — admin/dono vê todos os usuários com localização recente
+app.get('/api/usuarios/locations', auth, withTenant, async (req, res) => {
+  try {
+    const nivel = req.user.nivel || '';
+    const isAdmin = nivel === 'dono' || nivel === 'admin';
+    if (!isAdmin) return res.status(403).json({ ok: false, error: 'Acesso restrito' });
+
+    const rows = await pool.query(
+      `SELECT id, nome, nivel, regiao_vinculada AS regiao,
+              latitude, longitude, location_updated_at
+         FROM usuarios
+        WHERE tenant_id = $1
+          AND latitude IS NOT NULL
+          AND longitude IS NOT NULL
+          AND location_updated_at >= NOW() - INTERVAL '15 minutes'
+        ORDER BY location_updated_at DESC`,
+      [req.tenantId]
+    );
+    res.json({ ok: true, data: rows.rows });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 /* ================= VALIDAR TOKEN ================= */
 app.get('/api/validar-token', auth, withTenant, async (req, res) => {
   try {
@@ -3214,8 +3287,12 @@ app.get('/api/eleicoes/candidatos', auth, withTenant, allowAll(), async (req, re
     const params = {};
 
     if (nome.trim()) {
-      conds.push('UPPER(c.nome_urna) LIKE @nome');
-      params.nome = `%${nome.trim().toUpperCase()}%`;
+      // Remove acentos dos dois lados: NORMALIZE(NFD) decompõe o caractere em
+      // base + combining marks, e o REGEXP_REPLACE remove os combining marks.
+      // Assim "celia" bate com "CÉLIA", "joao" bate com "JOÃO", etc.
+      conds.push(`REGEXP_REPLACE(NORMALIZE(UPPER(c.nome_urna), NFD), r'[\\u0300-\\u036f]', '') LIKE @nome`);
+      const nomeSemAcento = nome.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+      params.nome = `%${nomeSemAcento}%`;
     }
     if (ano) {
       conds.push('c.ano = @ano');
@@ -6127,6 +6204,24 @@ server.listen(PORT, async () => {
     console.log('[migration] organograma OK');
   } catch (e) {
     console.warn('[migration] organograma:', e.message);
+  }
+
+  // ── PRESENÇA: coluna last_seen em usuarios ────────────────────────────────
+  try {
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ`);
+    console.log('[migration] usuarios.last_seen OK');
+  } catch (e) {
+    console.warn('[migration] usuarios.last_seen:', e.message);
+  }
+
+  // ── LOCALIZAÇÃO: colunas lat/lng em usuarios ──────────────────────────────
+  try {
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS latitude  DOUBLE PRECISION`);
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION`);
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS location_updated_at TIMESTAMPTZ`);
+    console.log('[migration] usuarios.location OK');
+  } catch (e) {
+    console.warn('[migration] usuarios.location:', e.message);
   }
 
   // ── AUTO-CADASTRO TOKENS ──────────────────────────────────────────────────

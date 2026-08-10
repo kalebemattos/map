@@ -325,6 +325,10 @@ function injetarCandidatosRJ() {
       <div class="regiao-totais-row">
         <span class="regiao-totais-label" style="color:rgba(255,255,255,0.75);"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"/></svg> Exp. Lideranças ${c.nome}</span>
         <span class="regiao-totais-val" id="regiao-exp-lid-${c.chave}" style="color:#34d399;font-size:12px;">0</span>
+      </div>
+      <div class="regiao-totais-row">
+        <span class="regiao-totais-label" style="color:rgba(255,255,255,0.75);"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Exp. Dobradas ${c.nome}</span>
+        <span class="regiao-totais-val" id="regiao-exp-dob-${c.chave}" style="color:#a78bfa;font-size:12px;">0</span>
       </div>`
     ).join('')
   }
@@ -907,7 +911,7 @@ function getTotalExpectativa(bairro) {
     return d.vinculo_politico === filtroCampanha ? s + v : s
   }, 0)
 
-  return expCidade + somaLiderancas + somaDobradas
+  return somaLiderancas + somaDobradas
 }
 
 function calcularTotalGeral() {
@@ -1523,7 +1527,7 @@ function mostrarResumoDistrito(zona) {
   const cands       = configSistema.candidatos || []
 
   const porCand = {}
-  cands.forEach(c => { porCand[c.chave] = { votos: 0, expCid: 0, expLid: 0 } })
+  cands.forEach(c => { porCand[c.chave] = { votos: 0, expCid: 0, expLid: 0, expDob: 0 } })
   let totalVotos = 0
 
   bairrosZona.forEach(b => {
@@ -1547,9 +1551,19 @@ function mostrarResumoDistrito(zona) {
       const vp   = l.vinculo_politico
       const voto = Number(l.expectativa_votos || 0)
       if (vp === 'ambos') {
-        cands.forEach(c => { porCand[c.chave].expLid += voto / cands.length })
+        cands.forEach(c => { porCand[c.chave].expLid += voto })
       } else if (porCand[vp] !== undefined) {
         porCand[vp].expLid += voto
+      }
+    })
+    ;(dobradasCache || []).forEach(d => {
+      if (normalizar(d.cidade) !== normalizar(b)) return
+      const voto = Number(d.votos_oferecidos || 0)
+      const vp   = d.vinculo_politico
+      if (vp === 'ambos') {
+        cands.forEach(c => { porCand[c.chave].expDob += voto })
+      } else if (porCand[vp] !== undefined) {
+        porCand[vp].expDob += voto
       }
     })
   })
@@ -1568,9 +1582,11 @@ function mostrarResumoDistrito(zona) {
     const elVotos  = document.getElementById('regiao-votos-'    + c.chave)
     const elExpCid = document.getElementById('regiao-exp-'      + c.chave)
     const elExpLid = document.getElementById('regiao-exp-lid-'  + c.chave)
+    const elExpDob = document.getElementById('regiao-exp-dob-'  + c.chave)
     if (elVotos)  elVotos.textContent  = fmt(porCand[c.chave].votos)
     if (elExpCid) elExpCid.textContent = fmt(porCand[c.chave].expCid)
     if (elExpLid) elExpLid.textContent = fmt(porCand[c.chave].expLid)
+    if (elExpDob) elExpDob.textContent = fmt(porCand[c.chave].expDob)
   })
 
   const elTotalCid = document.getElementById('regiao-exp-total-cid')

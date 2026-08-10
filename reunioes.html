@@ -1246,14 +1246,16 @@ function playRobusto(videoEl, { muted = false } = {}) {
 function setSrcAndPlay(videoEl, stream, { muted = false } = {}) {
   if (!videoEl) return;
 
-  // Áudio: para o vídeo principal (vc-bg) com streams remotas
+  // Áudio: para o vídeo principal (vc-bg) com streams remotas.
+  // Usa o stream original diretamente (sem new MediaStream) para preservar a referência
+  // de AEC do browser — criar uma cópia quebra o cancelamento de eco.
+  // Elementos <audio> ignoram faixas de vídeo automaticamente.
   if (videoEl.id === 'vc-bg' && !muted) {
     const audioEl = document.getElementById('remote-audio');
     if (audioEl) {
-      const audioStream = new MediaStream(stream.getAudioTracks());
-      audioEl.srcObject  = audioStream;
+      audioEl.srcObject  = stream;  // stream original, não uma cópia
       audioEl.volume     = 1.0;
-      audioEl.muted      = false;   // garante que não está muted por acidente
+      audioEl.muted      = false;
       audioEl.play().catch(() => {});
     }
   }

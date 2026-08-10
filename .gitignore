@@ -33,3 +33,9 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Tabelas e relatórios gerados (não vão no commit)
+*.xlsx
+*.xls
+*.csv
+*.pdf

@@ -2083,7 +2083,7 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
     const cobRow = `
       <div style="margin-top:10px;position:relative;z-index:1;">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
-          <span style="font-size:9.5px;font-weight:600;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.4px;">👥 Lid. + 🤝 Dob.</span>
+          <span style="font-size:9.5px;font-weight:600;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.4px;">🎯 Meta</span>
           <span id="ci-votos-total-${escHome(cand.chave)}" style="font-size:12px;font-weight:800;color:rgba(255,255,255,.9);">0</span>
         </div>
         <div style="background:rgba(255,255,255,.12);border-radius:99px;height:5px;overflow:hidden;">
@@ -2258,16 +2258,14 @@ function renderIndicadorCampanha(candidatos, totaisGlobal, totaisRegiao = null, 
     candidatos.forEach((cand, i) => {
       const isRegional = (i >= 1 && totaisRegiao !== null && regiaoInfo !== null)
 
-      // Número principal = soma das expectativas das cidades
+      // Número principal = expectativa (lid + dob)
       const totaisAtivosAnim = isRegional ? totaisRegiao : totaisGlobal
       const expCidadesAnim = !isRegional ? (totaisAtivosAnim[cand.chave] || 0) : (dadosRegiao?.expCid?.[cand.chave] || 0)
-      animarContador(`ci-votos-${cand.chave}`, expCidadesAnim)
-
-      // Anima total lid+dob e barra de progresso
       const votosLid   = !isRegional ? (totaisLidGlobal[cand.chave] || 0) : (dadosRegiao?.expLid?.[cand.chave] || 0)
       const votosDob   = !isRegional ? (totaisDobGlobal[cand.chave] || 0) : 0
       const votosTotal = votosLid + votosDob
-      animarContador(`ci-votos-total-${cand.chave}`, votosTotal)
+      animarContador(`ci-votos-${cand.chave}`, votosTotal)       // grande = expectativa (lid+dob)
+      animarContador(`ci-votos-total-${cand.chave}`, expCidadesAnim) // pequeno = meta
 
       // Anima barra de cobertura
       const cobPct = expCidadesAnim > 0 ? Math.min(Math.round((votosTotal / expCidadesAnim) * 100), 100) : 0
