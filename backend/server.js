@@ -2175,10 +2175,11 @@ pool.query(`ALTER TABLE dobradas ADD COLUMN IF NOT EXISTS votos_candidato INTEGE
 // GET todas as dobradas (para mapa + sidebar)
 app.get('/api/dobradas', auth, withTenant, async (req, res) => {
   try {
-    const { cidade } = req.query;
+    const { cidade, mapa } = req.query;
     let sql = 'SELECT * FROM dobradas WHERE tenant_id = $1';
     const params = [req.tenantId];
-    if (cidade) { sql += ' AND LOWER(cidade) = LOWER($2)'; params.push(cidade); }
+    if (cidade) { sql += ` AND LOWER(cidade) = LOWER($${params.push(cidade)})`; }
+    if (mapa)   { sql += ` AND mapa = $${params.push(mapa)}`; }
     sql += ' ORDER BY cidade, id';
     const rows = await dbAll(sql, params);
     res.json(rows);
@@ -2190,7 +2191,7 @@ app.get('/api/dobradas', auth, withTenant, async (req, res) => {
 
 // POST nova dobrada (aceita foto via multipart)
 app.post('/api/dobradas', auth, withTenant, allowAll(), upload.single('foto'), async (req, res) => {
-  const { cidade, vinculo_politico, parceiro_nome, parceiro_cargo, responsavel, votos_oferecidos, votos_candidato } = req.body;
+  const { cidade, vinculo_politico, parceiro_nome, parceiro_cargo, responsavel, votos_oferecidos, votos_candidato, mapa } = req.body;
   if (!cidade || !vinculo_politico || !parceiro_nome) {
     return res.status(400).json({ error: 'Campos obrigatórios: cidade, vinculo_politico, parceiro_nome' });
   }
@@ -2207,11 +2208,11 @@ app.post('/api/dobradas', auth, withTenant, allowAll(), upload.single('foto'), a
       try { fs.unlinkSync(caminhoOtimizado); } catch (_) {}
     }
     const row = await dbGet(
-      `INSERT INTO dobradas (tenant_id, cidade, vinculo_politico, parceiro_nome, parceiro_foto, parceiro_cargo, responsavel, votos_oferecidos, votos_candidato)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      `INSERT INTO dobradas (tenant_id, cidade, vinculo_politico, parceiro_nome, parceiro_foto, parceiro_cargo, responsavel, votos_oferecidos, votos_candidato, mapa)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
       [req.tenantId, cidade.trim(), vinculo_politico.trim(), parceiro_nome.trim(),
        parceiro_foto, parceiro_cargo || null, responsavel?.trim() || null,
-       Number(votos_oferecidos) || 0, Number(votos_candidato) || 0]
+       Number(votos_oferecidos) || 0, Number(votos_candidato) || 0, mapa || null]
     );
     res.json(row);
   } catch (err) {
@@ -5993,6 +5994,12 @@ server.listen(PORT, async () => {
     console.log('[migration] liderancas.mapa OK');
   } catch (e) {
     console.warn('[migration] liderancas.mapa:', e.message);
+  }
+  try {
+    await pool.query(`ALTER TABLE dobradas ADD COLUMN IF NOT EXISTS mapa TEXT`);
+    console.log('[migration] dobradas.mapa OK');
+  } catch (e) {
+    console.warn('[migration] dobradas.mapa:', e.message);
   }
   try {
     await pool.query(`ALTER TABLE liderancas ADD COLUMN IF NOT EXISTS data_nascimento DATE`);

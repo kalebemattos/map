@@ -392,7 +392,7 @@ function iniciarDobradasLayer() {
 
 async function carregarDobradas() {
   try {
-    const res = await apiFetch('/dobradas')
+    const res = await apiFetch('/dobradas?mapa=rjcapital')
     dobradasCache = await res.json()
     if (!Array.isArray(dobradasCache)) dobradasCache = []
   } catch (e) {
@@ -729,6 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fd.append('responsavel',      responsavel)
         fd.append('parceiro_cargo',   parceiroCargo)
         fd.append('votos_oferecidos', String(Number(votos) || 0))
+        fd.append('mapa',             'rjcapital')
         if (fotoInput.files[0]) fd.append('foto', fotoInput.files[0])
 
         const token = localStorage.getItem('token')
