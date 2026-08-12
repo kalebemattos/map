@@ -3291,7 +3291,7 @@ app.get('/api/eleicoes/candidatos', auth, withTenant, allowAll(), async (req, re
       // Remove acentos dos dois lados: NORMALIZE(NFD) decompõe o caractere em
       // base + combining marks, e o REGEXP_REPLACE remove os combining marks.
       // Assim "celia" bate com "CÉLIA", "joao" bate com "JOÃO", etc.
-      conds.push(`REGEXP_REPLACE(NORMALIZE(UPPER(c.nome_urna), NFD), r'[\\u0300-\\u036f]', '') LIKE @nome`);
+      conds.push(`REGEXP_REPLACE(NORMALIZE(UPPER(c.nome_urna), NFD), r'\\p{Mn}', '') LIKE @nome`);
       const nomeSemAcento = nome.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
       params.nome = `%${nomeSemAcento}%`;
     }
