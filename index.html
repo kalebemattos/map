@@ -2007,6 +2007,14 @@ body.sidebar-closed #toggleSidebarBtn { right: 16px; }
       </div>
     </div>
 
+    <!-- CARD EXPECTATIVA CIDADE -->
+    <div id="expectativa-cidade-card" style="display:none;background:linear-gradient(135deg,#0d2d6b,#1565c0);border-radius:14px;padding:18px 20px;margin-bottom:10px;box-shadow:0 4px 16px rgba(13,45,107,0.25);">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.7);margin-bottom:4px;" id="exp-cidade-label">—</div>
+      <div style="font-size:36px;font-weight:800;color:#fff;line-height:1;letter-spacing:-1px;" id="exp-cidade-total">0</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:6px;">lideranças + dobradas</div>
+      <div style="margin-top:10px;display:flex;gap:10px;" id="exp-cidade-breakdown"></div>
+    </div>
+
     <!-- LIDERANÇAS -->
     <div id="liderancas-container" class="city-card">
       <div class="collapsible-header">
@@ -2550,6 +2558,61 @@ function getExpLiderancas(city) {
     if (filtroCampanha !== 'ambos' && l.vinculo_politico !== filtroCampanha && l.vinculo_politico !== 'ambos') return s;
     return s + Number(l.expectativa_votos || 0);
   }, 0);
+}
+
+// ── Card azul de expectativa por cidade (lideranças + dobradas)
+function atualizarCardExpectativaCidade(city) {
+  const card     = document.getElementById('expectativa-cidade-card');
+  const labelEl  = document.getElementById('exp-cidade-label');
+  const totalEl  = document.getElementById('exp-cidade-total');
+  const breakEl  = document.getElementById('exp-cidade-breakdown');
+  if (!card) return;
+
+  if (!city) { card.style.display = 'none'; return; }
+
+  const cands = configSistema.candidatos || [];
+  const c = getDataCache(city);
+
+  // Votos de lideranças por candidato
+  const lid = {};
+  cands.forEach(ca => { lid[ca.chave] = 0; });
+  (c.liderancas || []).forEach(l => {
+    const v = Number(l.expectativa_votos || 0);
+    if (l.vinculo_politico === 'ambos') {
+      cands.forEach(ca => { lid[ca.chave] += v; });
+    } else if (lid[l.vinculo_politico] !== undefined) {
+      lid[l.vinculo_politico] += v;
+    }
+  });
+
+  // Votos de dobradas por candidato
+  const dob = {};
+  cands.forEach(ca => { dob[ca.chave] = 0; });
+  (dobradasCache || []).filter(d => d.cidade === city).forEach(d => {
+    const v = Number(d.votos_oferecidos || 0);
+    if (d.vinculo_politico === 'ambos') {
+      cands.forEach(ca => { dob[ca.chave] += v; });
+    } else if (dob[d.vinculo_politico] !== undefined) {
+      dob[d.vinculo_politico] += v;
+    }
+  });
+
+  // Total geral
+  const total = cands.reduce((s, ca) => s + lid[ca.chave] + dob[ca.chave], 0);
+
+  labelEl.textContent = city;
+  totalEl.textContent = total.toLocaleString('pt-BR');
+
+  // Breakdown por candidato
+  breakEl.innerHTML = cands.map(ca => {
+    const t = lid[ca.chave] + dob[ca.chave];
+    return `<div style="flex:1;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 8px;">
+      <div style="font-size:10px;color:rgba(255,255,255,0.65);font-weight:600;text-transform:uppercase;">${ca.nome.split(' ')[0]}</div>
+      <div style="font-size:18px;font-weight:800;color:#fff;">${t.toLocaleString('pt-BR')}</div>
+    </div>`;
+  }).join('');
+
+  card.style.display = 'block';
 }
 
 // ── Soma expectativa de CIDADES para todos os municípios, filtrada por tipo de candidato
@@ -3481,6 +3544,9 @@ async function renderLiderancas(city) {
   // Quando seleciona cidade, esconde o resumo de região
   const summaryEl = document.getElementById('regiao-lid-summary');
   if (summaryEl && city) summaryEl.style.display = 'none';
+
+  // Atualiza card de expectativa da cidade
+  atualizarCardExpectativaCidade(city);
 
   // 1. Pega o usuário para saber se aplica a trava
   const user = JSON.parse(localStorage.getItem('user'));
