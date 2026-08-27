@@ -792,10 +792,27 @@ app.post('/api/liderancas',
 
     // Garante que a região sempre seja preenchida.
     // Para submapas (mapa != null), usa o mapa como fallback de região — evita rejeitar
+    // Auto-detectar bairro do rjcapital: se cidade enviada é um bairro do mapa capital,
+    // reescreve para mapa='rjcapital', bairro=cidade, cidade='Rio de Janeiro'
+    let mapaFinal  = mapa  || null;
+    let cidadeFinal = cidade;
+    let bairroFinal = bairro || null;
+    if (!mapaFinal) {
+      const bairroCheck = await pool.query(
+        `SELECT 1 FROM expectativa_cidade WHERE tenant_id=$1 AND mapa='rjcapital' AND LOWER(cidade)=LOWER($2) LIMIT 1`,
+        [req.tenantId, cidade]
+      );
+      if (bairroCheck.rows.length > 0) {
+        mapaFinal   = 'rjcapital';
+        bairroFinal = cidade;
+        cidadeFinal = 'Rio de Janeiro';
+      }
+    }
+
     // lideranças de bairros cujos nomes não constam em tenant_regioes.cidades.
     const regiaoFinal = regiaoBody || req.user.regiao
-      || await resolverRegiao(req.tenantId, cidade)
-      || mapa  // fallback: submapa como região (ex: 'angra', 'rjcapital')
+      || await resolverRegiao(req.tenantId, cidadeFinal)
+      || mapaFinal  // fallback: submapa como região (ex: 'angra', 'rjcapital')
       || null; // permite salvar sem região (não rejeita mais)
     // Não rejeita se regiaoFinal for null — salva sem região para não perder a liderança
 
@@ -816,11 +833,11 @@ app.post('/api/liderancas',
             bairro            = COALESCE(EXCLUDED.bairro, liderancas.bairro),
             lat               = COALESCE(EXCLUDED.lat,    liderancas.lat),
             lng               = COALESCE(EXCLUDED.lng,    liderancas.lng)
-    `, [pessoaId, req.tenantId, cidade,
+    `, [pessoaId, req.tenantId, cidadeFinal,
         regiaoFinal,
-        mapa || null, Number(expectativa_votos) || 0,
+        mapaFinal, Number(expectativa_votos) || 0,
         status || 'ativa', responsavel || null, vinculo_politico || null,
-        cep   || null, bairro || null,
+        cep   || null, bairroFinal,
         lat   ? Number(lat)  : null,
         lng   ? Number(lng)  : null]);
 
@@ -1031,15 +1048,11 @@ app.get('/api/liderancas', auth, withTenant, async (req, res) => {
     const params = mapaFiltro ? [req.tenantId, mapaFiltro] : [req.tenantId];
     const mapaClause = mapaFiltro ? 'AND l.mapa = $2' : '';
 
-    // Para submapas: agrupa pelo bairro (ou cidade se bairro for nulo) — compatível com
-    // dados antigos (bairro=NULL, cidade='CENTRO') e novos (bairro='CENTRO', cidade='Angra dos Reis').
-    // Para o mapa estadual: mantém agrupamento por cidade.
-    const groupKey = mapaFiltro
-      ? `COALESCE(l.bairro, l.cidade)`
-      : `l.cidade`;
-    const selectKey = mapaFiltro
-      ? `COALESCE(l.bairro, l.cidade) AS bairro`
-      : `l.cidade`;
+    // Sempre agrupa por COALESCE(bairro, cidade) para que lideranças de submapas
+    // (ex: rjcapital com bairro='Santa Cruz', cidade='Rio de Janeiro') apareçam
+    // sob o nome do bairro tanto no mapa quanto no painel administrativo.
+    const groupKey  = `COALESCE(l.bairro, l.cidade)`;
+    const selectKey = `COALESCE(l.bairro, l.cidade) AS cidade`;
 
     const { rows } = await pool.query(`
       SELECT
