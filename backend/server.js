@@ -853,6 +853,24 @@ app.post('/api/liderancas',
 });
 
 /* ================= RANKING DE CADASTROS POR USUÁRIO ================= */
+// GET /api/liderancas/por-regiao — contagem de lideranças ativas por região
+app.get('/api/liderancas/por-regiao', auth, withTenant, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT regiao, COUNT(*) AS total
+       FROM liderancas
+       WHERE tenant_id = $1 AND COALESCE(status,'ativo') != 'inativa' AND regiao IS NOT NULL
+       GROUP BY regiao
+       ORDER BY total DESC`,
+      [req.tenantId]
+    );
+    res.json(rows.map(r => ({ regiao: r.regiao, total: parseInt(r.total, 10) })));
+  } catch (err) {
+    console.error('[GET /liderancas/por-regiao]', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
 // GET /api/liderancas/ranking-cadastros
 // Retorna quantas pessoas cada usuário cadastrou, ordenado do maior para o menor.
 // Restrito a admin/dono para proteger dados internos.
