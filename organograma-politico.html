@@ -646,14 +646,6 @@ body.view-only .size-control { display:none !important; }
       <div class="total-val" id="total-celia" style="color:#a78bfa;">0</div>
       <div class="total-key">Célia '22</div>
     </div>
-    <div class="total-item">
-      <div class="total-val" id="total-meta" style="color:rgba(255,255,255,.35)">0</div>
-      <div class="total-key">Meta Total</div>
-    </div>
-    <div class="total-item">
-      <div class="total-val" id="total-pct">0%</div>
-      <div class="total-key">Atingido</div>
-    </div>
   </div>
 </div>
 
@@ -1292,18 +1284,15 @@ function duplicarBloco(id) {
 
 /* ── Totais ── */
 function atualizarTotais() {
-  let tv = 0, tc = 0, tm = 0;
+  let tv = 0, tc = 0;
+  // Soma apenas do bloco "ESTADO"
   sistema.blocos.forEach(b => {
-    if (b.tipo === 'slot')  (b.slots || []).forEach(s => { tv += s.votosValidos || 0; tc += s.votosCelia || 0; tm += s.meta || 0; });
-    if (b.tipo === 'lista') (b.zonas || []).forEach(z => { tv += z.votos || 0; tm += z.meta || 0; });
+    if (b.tipo === 'slot' && (b.titulo || '').trim().toUpperCase() === 'ESTADO') {
+      (b.slots || []).forEach(s => { tv += s.votosValidos || 0; tc += s.votosCelia || 0; });
+    }
   });
-  const p = pct(tv, tm);
   document.getElementById('total-votos').textContent = tv.toLocaleString('pt-BR');
   document.getElementById('total-celia').textContent  = tc.toLocaleString('pt-BR');
-  document.getElementById('total-meta').textContent   = tm.toLocaleString('pt-BR');
-  const pEl = document.getElementById('total-pct');
-  pEl.textContent = p + '%';
-  pEl.style.color = pctColor(p);
 }
 
 /* ── Salvar / Carregar ── */
