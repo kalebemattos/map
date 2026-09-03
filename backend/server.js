@@ -1059,7 +1059,10 @@ app.put('/api/liderancas/:id', auth, withTenant, allowAll(), upload.single('foto
 // e também que registros antigos (cidade='CENTRO', bairro=NULL) continuem funcionando.
 app.get('/api/liderancas', auth, withTenant, async (req, res) => {
   try {
-    const mapaFiltro = req.query.mapa || null;
+    // lider_capital só enxerga lideranças do mapa rjcapital
+    const mapaFiltro = req.user.nivel === 'lider_capital'
+      ? 'rjcapital'
+      : (req.query.mapa || null);
     // Com filtro de mapa → submapa específico (ex: angra, rjcapital)
     // Sem filtro de mapa → mapa estadual: retorna TODAS as lideranças da cidade,
     //   independente de qual mapa foram criadas (mapa = 'angra', null, etc.)
@@ -2207,7 +2210,9 @@ pool.query(`ALTER TABLE dobradas ADD COLUMN IF NOT EXISTS votos_candidato INTEGE
 // GET todas as dobradas (para mapa + sidebar)
 app.get('/api/dobradas', auth, withTenant, async (req, res) => {
   try {
-    const { cidade, mapa } = req.query;
+    const { cidade } = req.query;
+    // lider_capital só enxerga dobradas do mapa rjcapital
+    const mapa = req.user.nivel === 'lider_capital' ? 'rjcapital' : (req.query.mapa || null);
     let sql = 'SELECT * FROM dobradas WHERE tenant_id = $1';
     const params = [req.tenantId];
     if (cidade) { sql += ` AND LOWER(cidade) = LOWER($${params.push(cidade)})`; }
