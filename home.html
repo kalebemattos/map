@@ -1840,7 +1840,7 @@ async function carregarIndicadorCampanha() {
     const [expRes, lidRes, dobRes] = await Promise.all([
       fetch(API_URL + '/api/expectativa-cidade-todas', { headers: hdrs }),
       fetch(API_URL + '/api/liderancas',               { headers: hdrs }),
-      fetch(API_URL + '/api/dobradas',                 { headers: hdrs }),
+      fetch(API_URL + '/api/dobradas?mapa=rj',          { headers: hdrs }),
     ])
     if (!expRes.ok) return
     const expData = await expRes.json()  // [{ cidade, expectativas: { celia:N, ... } }]
@@ -1886,7 +1886,11 @@ async function carregarIndicadorCampanha() {
       dobDataGlobal.forEach(d => {
         const vp = d.vinculo_politico
         const vv = Number(d.votos_oferecidos || 0)
-        if (totaisDobGlobal[vp] !== undefined) totaisDobGlobal[vp] += vv
+        if (vp === 'ambos') {
+          candidatos.forEach(c => { totaisDobGlobal[c.chave] += vv })
+        } else if (totaisDobGlobal[vp] !== undefined) {
+          totaisDobGlobal[vp] += vv
+        }
       })
     }
 
