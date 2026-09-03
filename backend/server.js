@@ -1072,12 +1072,15 @@ app.get('/api/liderancas', auth, withTenant, async (req, res) => {
     // Mapa estadual (sem filtro de mapa): agrupa por cidade para que lideranças da capital
     // (rjcapital, com bairro='Santa Cruz', cidade='Rio de Janeiro') apareçam sob "Rio de Janeiro".
     // Submapas (rjcapital, angra): agrupa por COALESCE(bairro, cidade) para mostrar bairros.
+    // Submapa (rjcapital, angra): agrupa por COALESCE(bairro, cidade) para mostrar bairros.
+    // Mapa estadual: agrupa por cidade e devolve o valor original do banco (sem INITCAP)
+    // para evitar que "Rio de Janeiro" vire "Rio De Janeiro" e quebre o lookup do GeoJSON.
     const groupKey  = mapaFiltro
       ? `LOWER(COALESCE(l.bairro, l.cidade))`
       : `LOWER(l.cidade)`;
     const selectKey = mapaFiltro
       ? `INITCAP(LOWER(COALESCE(l.bairro, l.cidade))) AS cidade`
-      : `INITCAP(LOWER(l.cidade)) AS cidade`;
+      : `MIN(l.cidade) AS cidade`;
 
     const { rows } = await pool.query(`
       SELECT

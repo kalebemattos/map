@@ -3332,11 +3332,20 @@ try {
 
 function ensureCityData(city) {
     if (!dataCache[city]) {
-        dataCache[city] = {
-  liderancas: [],
-  observacoes: [],
-  temComite: false
-};
+        // Tenta encontrar pelo índice normalizado antes de criar entrada vazia
+        const norm = normalizeCityName(city);
+        const existing = _dataCacheNorm[norm];
+        if (existing) {
+            // Aponta a chave exata para o mesmo objeto já existente
+            dataCache[city] = existing;
+        } else {
+            dataCache[city] = {
+                liderancas: [],
+                observacoes: [],
+                temComite: false
+            };
+            _dataCacheNorm[norm] = dataCache[city];
+        }
     }
 }
 
