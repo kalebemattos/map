@@ -1069,12 +1069,15 @@ app.get('/api/liderancas', auth, withTenant, async (req, res) => {
     const params = mapaFiltro ? [req.tenantId, mapaFiltro] : [req.tenantId];
     const mapaClause = mapaFiltro ? 'AND l.mapa = $2' : '';
 
-    // Sempre agrupa por COALESCE(bairro, cidade) para que lideranças de submapas
-    // (ex: rjcapital com bairro='Santa Cruz', cidade='Rio de Janeiro') apareçam
-    // sob o nome do bairro tanto no mapa quanto no painel administrativo.
-    // LOWER() no groupKey evita duplicação por diferença de caixa (ex: 'SANTA CRUZ' vs 'Santa Cruz').
-    const groupKey  = `LOWER(COALESCE(l.bairro, l.cidade))`;
-    const selectKey = `INITCAP(LOWER(COALESCE(l.bairro, l.cidade))) AS cidade`;
+    // Mapa estadual (sem filtro de mapa): agrupa por cidade para que lideranças da capital
+    // (rjcapital, com bairro='Santa Cruz', cidade='Rio de Janeiro') apareçam sob "Rio de Janeiro".
+    // Submapas (rjcapital, angra): agrupa por COALESCE(bairro, cidade) para mostrar bairros.
+    const groupKey  = mapaFiltro
+      ? `LOWER(COALESCE(l.bairro, l.cidade))`
+      : `LOWER(l.cidade)`;
+    const selectKey = mapaFiltro
+      ? `INITCAP(LOWER(COALESCE(l.bairro, l.cidade))) AS cidade`
+      : `INITCAP(LOWER(l.cidade)) AS cidade`;
 
     const { rows } = await pool.query(`
       SELECT
