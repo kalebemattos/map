@@ -2471,12 +2471,12 @@ app.get('/api/dashboard/kpis', auth, withTenant, allow('dono', 'admin'), async (
       dbAll('SELECT expectativas FROM expectativa_cidade WHERE tenant_id = $1', [t]),
     ]);
 
-    // Expectativa das lideranças por candidato (match exato pelo chave de vinculo_politico)
+    // Expectativa das lideranças por candidato: inclui vínculos diretos + 'ambos'
     const liderancasPorCandidato = {};
     for (const c of candidatos) {
       const row = await dbGet(
         `SELECT COALESCE(SUM(expectativa_votos),0) as total FROM liderancas
-         WHERE tenant_id = $1 AND LOWER(vinculo_politico) = LOWER($2)`,
+         WHERE tenant_id = $1 AND (LOWER(vinculo_politico) = LOWER($2) OR LOWER(vinculo_politico) = 'ambos')`,
         [t, c.chave]
       );
       liderancasPorCandidato[c.chave] = parseInt(row.total);
@@ -2492,12 +2492,12 @@ app.get('/api/dashboard/kpis', auth, withTenant, allow('dono', 'admin'), async (
       }
     }
 
-    // Dobradas por candidato: contagem + votos_oferecidos
+    // Dobradas por candidato: contagem + votos_oferecidos (inclui 'ambos')
     const dobradasPorCandidato = {};
     for (const c of candidatos) {
       const row = await dbGet(
         `SELECT COUNT(*) as total, COALESCE(SUM(votos_oferecidos),0) as votos
-         FROM dobradas WHERE tenant_id = $1 AND LOWER(vinculo_politico) = LOWER($2)`,
+         FROM dobradas WHERE tenant_id = $1 AND (LOWER(vinculo_politico) = LOWER($2) OR LOWER(vinculo_politico) = 'ambos')`,
         [t, c.chave]
       );
       dobradasPorCandidato[c.chave] = {
