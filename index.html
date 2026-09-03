@@ -4539,8 +4539,10 @@ function iniciarDobradasLayer() {
 async function carregarDobradas() {
   try {
     const res = await apiFetch('/dobradas');
-    dobradasCache = await res.json();
-    if (!Array.isArray(dobradasCache)) dobradasCache = [];
+    const raw = await res.json();
+    if (!Array.isArray(raw)) { dobradasCache = []; return; }
+    // Dobradas rjcapital têm cidade=bairro; no mapa estadual devem aparecer sob "Rio de Janeiro"
+    dobradasCache = raw.map(d => d.mapa === 'rjcapital' ? { ...d, cidade: 'Rio de Janeiro' } : d);
   } catch (e) {
     console.error('Erro ao carregar dobradas:', e);
     dobradasCache = [];
