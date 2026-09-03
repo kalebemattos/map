@@ -1840,7 +1840,7 @@ async function carregarIndicadorCampanha() {
     const [expRes, lidRes, dobRes] = await Promise.all([
       fetch(API_URL + '/api/expectativa-cidade-todas', { headers: hdrs }),
       fetch(API_URL + '/api/liderancas',               { headers: hdrs }),
-      fetch(API_URL + '/api/dobradas?mapa=rj',          { headers: hdrs }),
+      fetch(API_URL + '/api/dobradas',                 { headers: hdrs }),
     ])
     if (!expRes.ok) return
     const expData = await expRes.json()  // [{ cidade, expectativas: { celia:N, ... } }]

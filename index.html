@@ -4529,7 +4529,7 @@ function iniciarDobradasLayer() {
 // ── Carregar do backend ──────────────────────────────────────
 async function carregarDobradas() {
   try {
-    const res = await apiFetch('/dobradas?mapa=rj');
+    const res = await apiFetch('/dobradas');
     dobradasCache = await res.json();
     if (!Array.isArray(dobradasCache)) dobradasCache = [];
   } catch (e) {
