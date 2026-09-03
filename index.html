@@ -5395,7 +5395,7 @@ function calcularTotaisRegiao(key) {
         const vp   = l.vinculo_politico;
         const voto = Number(l.expectativa_votos || 0);
         if (vp === 'ambos') {
-          cands.forEach(c => { porCand[c.chave].expLid += voto / cands.length; porCand[c.chave].countLid++; });
+          cands.forEach(c => { porCand[c.chave].expLid += voto; porCand[c.chave].countLid++; });
         } else if (porCand[vp] !== undefined) {
           porCand[vp].expLid   += voto;
           porCand[vp].countLid += 1;
