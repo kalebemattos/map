@@ -744,20 +744,18 @@ function renderLiderancas(bairro) {
   let totaisHtml = ''
 
   if (filtroCampanha === 'ambos') {
-    // Mostra cada candidato separadamente: expectativa cidade + lideranças
+    // Mostra lideranças por candidato separadamente
     totaisHtml = cands.map(cand => {
-      const expCid = Number(c.expectativaCidade?.[cand.chave] || 0)
       const expLid = (c.liderancas || []).reduce((s, l) => {
         const v = Number(l.expectativa_votos || 0)
         return (l.vinculo_politico === cand.chave || l.vinculo_politico === 'ambos') ? s + v : s
       }, 0)
-      const total = expCid + expLid
       return `<div class="total-row">
         <span style="display:flex;align-items:center;gap:5px;">
           <span style="width:8px;height:8px;border-radius:50%;background:${cand.cor_texto};flex-shrink:0;display:inline-block;"></span>
           ${cand.nome.split(' ')[0]}
         </span>
-        <strong style="color:${cand.cor_texto};">${total.toLocaleString('pt-BR')}</strong>
+        <strong style="color:${cand.cor_texto};">${expLid.toLocaleString('pt-BR')}</strong>
       </div>`
     }).join('')
   } else {
