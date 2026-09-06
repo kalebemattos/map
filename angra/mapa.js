@@ -736,24 +736,52 @@ function renderLiderancas(bairro) {
   liderancas = [...liderancas].sort((a, b) => (b.expectativa_votos||0) - (a.expectativa_votos||0))
 
   // Totais do painel
-  const somaLider  = (c.liderancas || []).reduce((s, l) => s + Number(l.expectativa_votos||0), 0)
   const totalGeral = getTotalExpectativa(bairro)
 
   totaisEl.style.display = "block"
-  const rowsCands = (configSistema.candidatos || []).map(cand => {
-    const exp = c.expectativaCidade?.[cand.chave] || 0
-    return `<div class="total-row">
-      <span>Expectativa ${cand.nome.split(' ')[0]}</span>
-      <strong style="color:${cand.cor_texto};">${exp.toLocaleString('pt-BR')}</strong>
-    </div>`
-  }).join('')
+
+  const cands = configSistema.candidatos || []
+  let totaisHtml = ''
+
+  if (filtroCampanha === 'ambos') {
+    // Mostra cada candidato separadamente: expectativa cidade + lideranças
+    totaisHtml = cands.map(cand => {
+      const expCid = Number(c.expectativaCidade?.[cand.chave] || 0)
+      const expLid = (c.liderancas || []).reduce((s, l) => {
+        const v = Number(l.expectativa_votos || 0)
+        return (l.vinculo_politico === cand.chave || l.vinculo_politico === 'ambos') ? s + v : s
+      }, 0)
+      const total = expCid + expLid
+      return `<div class="total-row">
+        <span style="display:flex;align-items:center;gap:5px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:${cand.cor_texto};flex-shrink:0;display:inline-block;"></span>
+          ${cand.nome.split(' ')[0]}
+        </span>
+        <strong style="color:${cand.cor_texto};">${total.toLocaleString('pt-BR')}</strong>
+      </div>`
+    }).join('')
+  } else {
+    // Candidato único: mostra expectativa cidade + lideranças separadas
+    const cand = cands.find(c => c.chave === filtroCampanha)
+    const expCid = cand ? Number(c.expectativaCidade?.[cand.chave] || 0) : 0
+    const somaLider = (c.liderancas || []).reduce((s, l) => {
+      const v = Number(l.expectativa_votos || 0)
+      return (l.vinculo_politico === filtroCampanha || l.vinculo_politico === 'ambos') ? s + v : s
+    }, 0)
+    totaisHtml = `
+      <div class="total-row">
+        <span>Expectativa cidade</span>
+        <strong>${expCid.toLocaleString('pt-BR')}</strong>
+      </div>
+      <div class="total-row">
+        <span>Soma das lideranças</span>
+        <strong>${somaLider.toLocaleString('pt-BR')}</strong>
+      </div>`
+  }
+
   totaisEl.innerHTML = `
-    <div class="total-title">Total filtrado: ${totalGeral.toLocaleString("pt-BR")} votos</div>
-    ${rowsCands}
-    <div class="total-row">
-      <span>Soma das lideranças</span>
-      <strong>${somaLider.toLocaleString("pt-BR")}</strong>
-    </div>
+    <div class="total-title">Total: ${totalGeral.toLocaleString("pt-BR")} votos</div>
+    ${totaisHtml}
   `
 
   countEl.textContent = liderancas.length
