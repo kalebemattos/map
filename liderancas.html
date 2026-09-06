@@ -1574,7 +1574,7 @@
                 const cidade = item.cidade || item.bairro || null;
                 // Usa a região ATUAL da cidade (do banco via API), não o valor antigo gravado no registro
                 const regiaoAtual = resolverRegiaoAtual(cidade) || l.regiao || item.regiao || cidade;
-                todasLiderancas.push({ ...l, cidade, bairro: item.bairro || null, regiao: regiaoAtual });
+                todasLiderancas.push({ ...l, cidade, bairro: l.bairro || null, regiao: regiaoAtual });
               });
             }
           });
