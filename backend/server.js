@@ -822,7 +822,7 @@ app.post('/api/liderancas',
         (pessoa_id, tenant_id, cidade, regiao, mapa, expectativa_votos, status, responsavel, vinculo_politico,
          cep, bairro, lat, lng)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-      ON CONFLICT (pessoa_id, cidade, tenant_id) DO UPDATE
+      ON CONFLICT (pessoa_id, cidade, bairro, tenant_id) DO UPDATE
         SET expectativa_votos = EXCLUDED.expectativa_votos,
             status            = EXCLUDED.status,
             responsavel       = EXCLUDED.responsavel,
@@ -3219,9 +3219,9 @@ app.post('/api/public/cadastro/:token', cadastroPublicLimiter, upload.single('fo
 
     // 2) Cria vínculo pessoa ↔ cidade em liderancas (mesmas colunas do painel)
     await client.query(`
-      INSERT INTO liderancas (pessoa_id, tenant_id, cidade, regiao, vinculo_politico, responsavel, status)
-      VALUES ($1, $2, $3, $4, $5, $6, 'ativa')
-      ON CONFLICT (pessoa_id, cidade, tenant_id) DO NOTHING
+      INSERT INTO liderancas (pessoa_id, tenant_id, cidade, regiao, vinculo_politico, responsavel, status, bairro)
+      VALUES ($1, $2, $3, $4, $5, $6, 'ativa', NULL)
+      ON CONFLICT ON CONSTRAINT uq_lideranca_pessoa_cidade DO NOTHING
     `, [pessoaId, tk.tenant_id, cidadeLimpa, regiaoFinal, vinculoLimpo, responsavelLimpo]);
 
     // Marca token como usado
