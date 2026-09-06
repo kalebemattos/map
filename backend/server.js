@@ -1077,17 +1077,28 @@ app.get('/api/liderancas', auth, withTenant, async (req, res) => {
     // para evitar que "Rio de Janeiro" vire "Rio De Janeiro" e quebre o lookup do GeoJSON.
     const groupKey  = mapaFiltro
       ? `LOWER(COALESCE(l.bairro, l.cidade))`
-      : `LOWER(l.cidade)`;
+      : `LOWER(CASE WHEN l.mapa = 'angra' THEN 'Angra dos Reis' ELSE l.cidade END)`;
     const selectKey = mapaFiltro
       ? `INITCAP(LOWER(COALESCE(l.bairro, l.cidade))) AS cidade`
-      : `MIN(l.cidade) AS cidade`;
+      : `MIN(CASE WHEN l.mapa = 'angra' THEN 'Angra dos Reis' ELSE l.cidade END) AS cidade`;
+
+    // Para o painel admin (sem filtro de mapa), normaliza lideranças legadas do Angra
+    // que tinham cidade=bairro (ex: 'CENTRO') para aparecerem sob 'Angra dos Reis'.
+    // O campo bairro individual também é normalizado: para registros legados onde
+    // cidade=bairro e bairro=null, expõe a cidade original como bairro.
+    const bairroExpr = mapaFiltro
+      ? `l.bairro`
+      : `CASE WHEN l.mapa = 'angra' THEN COALESCE(l.bairro, l.cidade) ELSE l.bairro END`;
+    const cidadeExpr = mapaFiltro
+      ? `l.cidade`
+      : `CASE WHEN l.mapa = 'angra' THEN 'Angra dos Reis' ELSE l.cidade END`;
 
     const { rows } = await pool.query(`
       SELECT
         ${selectKey},
         json_agg(json_build_object(
           'id',               l.id,
-          'cidade',           l.cidade,
+          'cidade',           ${cidadeExpr},
           'regiao',           l.regiao,
           'mapa',             l.mapa,
           'expectativa_votos',l.expectativa_votos,
@@ -1105,7 +1116,7 @@ app.get('/api/liderancas', auth, withTenant, async (req, res) => {
           'data_nascimento',  p.data_nascimento,
           'release',          p.release,
           'cep',              l.cep,
-          'bairro',           l.bairro,
+          'bairro',           ${bairroExpr},
           'lat',              l.lat,
           'lng',              l.lng
         ) ORDER BY p.nome) AS liderancas
