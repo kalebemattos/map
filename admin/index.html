@@ -1585,7 +1585,7 @@ function cancelarEdicao() {
   const adminCepStatus = document.getElementById('admin-cep-status')
   if (adminCepStatus) adminCepStatus.textContent = ''
   const cands = configSistema.candidatos || [];
-  document.getElementById('vinculo_politico').value = cands.length === 1 ? cands[0].chave : (cands[0]?.chave || 'ambos');
+  document.getElementById('vinculo_politico').value = cands.length === 1 ? cands[0].chave : 'ambos';
   formTitle.textContent = 'Nova Liderança';
   document.getElementById('form-icon').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>';
   cancelarBtn.classList.add('hidden');
