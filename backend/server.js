@@ -3694,7 +3694,7 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
             const sqlEleit = `
               SELECT
                 UPPER(COALESCE(NULLIF(TRIM(CAST(bairro AS STRING)),''), CONCAT('Zona ', CAST(zona AS STRING)))) AS bairro,
-                SUM(qtd_eleitores) AS eleitores
+                SUM(qtde_eleitores_perfil) AS eleitores
               FROM \`${PERFIL_TABLE}\`
               WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
               GROUP BY bairro
@@ -3703,7 +3703,7 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
             for (const e of rowsEleit) {
               eleitoresBairroMap[String(e.bairro)] = Number(e.eleitores) || 0;
             }
-          } catch (_) { /* coluna pode não existir — ignora */ }
+          } catch (_) { /* ignora se coluna não existir */ }
 
           const data = rows.map(r => ({
             bairro:         String(r.bairro),
@@ -3759,7 +3759,7 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
       try {
         const sqlEleit2 = `
           SELECT CAST(zona AS STRING) AS zona, CAST(secao AS STRING) AS secao,
-                 ANY_VALUE(qtd_eleitores) AS qtd_eleitores
+                 SUM(qtde_eleitores_perfil) AS qtd_eleitores
           FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_local_votacao\`
           WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
           GROUP BY zona, secao
@@ -3929,7 +3929,7 @@ app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) =
           try {
             const sqlEleitLocal = `
               SELECT UPPER(TRIM(CAST(nome AS STRING))) AS nome_local,
-                     SUM(qtd_eleitores) AS eleitores
+                     SUM(qtde_eleitores_perfil) AS eleitores
               FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_local_votacao\`
               WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
               GROUP BY nome_local
@@ -3938,7 +3938,7 @@ app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) =
             for (const e of rowsEleit) {
               eleitoresLocalMap[String(e.nome_local)] = Number(e.eleitores) || 0;
             }
-          } catch (_) { /* coluna pode não existir — ignora */ }
+          } catch (_) { /* ignora se coluna não existir */ }
 
           const data = rows.map(r => ({
             nome_local:     String(r.nome_local     || '—'),
