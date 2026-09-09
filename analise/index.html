@@ -1468,7 +1468,7 @@ body.modal-aberto {
             <tr>
               <th>Cidade</th>
               <th>Votos</th>
-              <th>Válidos</th>
+              <th>Eleitores</th>
               <th>% Cidade</th>
               <th>% do Total</th>
               <th></th>
@@ -1682,7 +1682,7 @@ function _renderCidadesCards(dados, totalVotos, maxVotos) {
       <div class="crc-sub">votos${r.percentual !== null ? ' · ' + r.percentual + '% dos válidos' : ''} · ${pctTotal}% do total</div>
       <div class="crc-bar"><div class="crc-bar-fill" style="width:${barW}%"></div></div>
       <div class="crc-footer">
-        <span style="font-size:11px;color:#94a3b8;">${(r.votos_validos||0).toLocaleString('pt-BR')} válidos</span>
+        <span style="font-size:11px;color:#94a3b8;">${(r.eleitores||0).toLocaleString('pt-BR')} eleitores</span>
         <button class="crc-btn"
           onclick="event.stopPropagation();abrirModalDetalhe('${municipioEsc}','${r.id_municipio}')">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" class="hi" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>️ Bairros
@@ -2081,7 +2081,7 @@ function renderTabela() {
       tr.innerHTML = `
         <td data-label="Cidade"><span class="city-name">${r.municipio}</span></td>
         <td data-label="Votos"><span class="votos-num">${r.votos.toLocaleString('pt-BR')}</span></td>
-        <td data-label="Válidos">${(r.votos_validos || 0).toLocaleString('pt-BR')}</td>
+        <td data-label="Eleitores">${(r.eleitores || 0).toLocaleString('pt-BR')}</td>
         <td data-label="% Cidade">
           <div class="pct-bar-wrap">
             <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
@@ -2183,6 +2183,7 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
             ${temLocais ? `onclick="toggleLocais('${bairroId}', '${idx}', ${JSON.stringify(b.bairro).replace(/"/g,"'")})"` : ''}>
           <td><span class="b-nome">${chevron}${b.bairro}</span></td>
           <td><span class="b-votos">${b.votos.toLocaleString('pt-BR')}</span></td>
+          <td><span style="font-size:12px;color:#64748b;">${b.eleitores ? b.eleitores.toLocaleString('pt-BR') : '—'}</span></td>
           <td>
             <div class="pct-bar-wrap">
               <div class="pct-bar"><div class="pct-bar-fill" style="width:${barW}%"></div></div>
@@ -2212,7 +2213,7 @@ async function abrirModalDetalhe(municipio, idMunicipio) {
         .b-local-meta { font-size:11px; color:#64748b; margin-top:2px; }
       </style>` +
       '<table class="tb"><thead><tr>' +
-        `<th>${rotulo}${temLocais ? ' <span style="font-size:10px;font-weight:400;color:#94a3b8;">(clique para ver locais)</span>' : ''}</th><th>Votos</th><th>% Nominais</th>` +
+        `<th>${rotulo}${temLocais ? ' <span style="font-size:10px;font-weight:400;color:#94a3b8;">(clique para ver locais)</span>' : ''}</th><th>Votos</th><th>Eleitores</th><th>% Nominais</th>` +
       '</tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div class="tb-footer">' +
         `<span>${lista.length} ${rotulo.toLowerCase()}s</span>` +
@@ -2292,6 +2293,7 @@ function renderLocais(lista) {
         ${endHtml}
         <div class="b-local-meta" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:3px;">
           <span>🗳️ <b>${Number(l.votos).toLocaleString('pt-BR')}</b> votos</span>
+          ${l.eleitores ? `<span>· 👤 ${Number(l.eleitores).toLocaleString('pt-BR')} eleitores</span>` : ''}
           ${l.num_secoes ? `<span>· ${l.num_secoes} ${l.num_secoes !== 1 ? 'seções' : 'seção'}</span>` : ''}
           ${pct ? `<span>· ${pct}</span>` : ''}
         </div>

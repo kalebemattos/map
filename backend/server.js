@@ -3429,7 +3429,8 @@ app.get('/api/eleicoes/resultados', auth, withTenant, allowAll(), async (req, re
       SELECT
         UPPER(COALESCE(m.nome, CAST(p.id_municipio AS STRING))) AS municipio,
         p.id_municipio,
-        SUM(p.votos_validos) AS votos_validos
+        SUM(p.votos_validos) AS votos_validos,
+        MAX(p.aptos)         AS aptos
       FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio\` p
       LEFT JOIN \`basedosdados.br_bd_diretorios_brasil.municipio\` m
         ON p.id_municipio = m.id_municipio
@@ -3451,20 +3452,25 @@ app.get('/api/eleicoes/resultados', auth, withTenant, allowAll(), async (req, re
       runBQ(sqlValidos, params)
     ]);
 
-    // Monta mapa de votos válidos por id_municipio
+    // Monta mapa de votos válidos e eleitores aptos por id_municipio
     const validosMap = {};
     for (const r of rowsValidos) {
-      validosMap[String(r.id_municipio)] = Number(r.votos_validos) || 0;
+      validosMap[String(r.id_municipio)] = {
+        votos_validos: Number(r.votos_validos) || 0,
+        aptos: Number(r.aptos) || 0
+      };
     }
 
     const data = rowsVotos.map(r => {
       const votos = Number(r.votos) || 0;
-      const validos = validosMap[String(r.id_municipio)] || 0;
+      const vm = validosMap[String(r.id_municipio)] || {};
+      const validos = vm.votos_validos || 0;
       return {
         municipio: r.municipio,
         id_municipio: String(r.id_municipio),
         votos,
         votos_validos: validos,
+        eleitores: vm.aptos || 0,
         percentual: validos > 0 ? ((votos / validos) * 100).toFixed(2) : null
       };
     });
@@ -3632,15 +3638,17 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
           NULLIF(TRIM(CAST(loc.bairro AS STRING)), ''),
           CONCAT('Zona ', CAST(r.zona AS STRING))
         )) AS bairro,
-        SUM(r.votos)          AS votos,
-        SUM(d.votos_nominais) AS votos_nominais
+        SUM(r.votos)              AS votos,
+        SUM(d.votos_nominais)     AS votos_nominais,
+        SUM(loc.qtd_eleitores)    AS eleitores
       FROM \`basedosdados.br_tse_eleicoes.${resultTbl}\` r
       LEFT JOIN (
         SELECT
           ano, sigla_uf, id_municipio,
           CAST(zona  AS STRING) AS zona,
           CAST(secao AS STRING) AS secao,
-          ANY_VALUE(bairro)     AS bairro
+          ANY_VALUE(bairro)         AS bairro,
+          ANY_VALUE(qtd_eleitores)  AS qtd_eleitores
         FROM \`${PERFIL_TABLE}\`
         WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
         GROUP BY ano, sigla_uf, id_municipio, zona, secao
@@ -3686,6 +3694,7 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
             bairro:         String(r.bairro),
             votos:          Number(r.votos) || 0,
             votos_nominais: Number(r.votos_nominais) || 0,
+            eleitores:      Number(r.eleitores) || 0,
             percentual:     r.votos_nominais > 0
               ? ((Number(r.votos) / Number(r.votos_nominais)) * 100).toFixed(2)
               : null
@@ -3718,10 +3727,18 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
         AND p.id_municipio = @id_municipio
       GROUP BY p.zona, p.secao
     `;
+    const sqlPerfil2 = `
+      SELECT CAST(zona AS STRING) AS zona, CAST(secao AS STRING) AS secao,
+             ANY_VALUE(qtd_eleitores) AS qtd_eleitores
+      FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_local_votacao\`
+      WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
+      GROUP BY zona, secao
+    `;
 
-    const [resSecoes, resTotal] = await Promise.all([
+    const [resSecoes, resTotal, resPerfil2] = await Promise.all([
       tryTables(sqlSecoes, '{{T}}', resultTablesSecao, params),
-      tryTables(sqlTotal,  '{{T}}', detalheTablesSecao, params)
+      tryTables(sqlTotal,  '{{T}}', detalheTablesSecao, params),
+      runBQ(sqlPerfil2, params).catch(() => [])
     ]);
 
     if (resSecoes) {
@@ -3731,21 +3748,27 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
           totalMap[`${r.zona}_${r.secao}`] = Number(r.votos_nominais) || 0;
         }
       }
+      const eleitoresMap = {};
+      for (const r of resPerfil2) {
+        eleitoresMap[`${r.zona}_${r.secao}`] = Number(r.qtd_eleitores) || 0;
+      }
       const munLookup = bairrosLookup[String(id_municipio).trim()] || {};
       const temBairro = Object.keys(munLookup).length > 0;
       const agg = {};
       for (const r of resSecoes.rows) {
         const chave  = `${r.zona}_${r.secao}`;
         const bairro = temBairro ? (munLookup[chave] || `Zona ${r.zona}`) : `Zona ${r.zona}`;
-        if (!agg[bairro]) agg[bairro] = { votos: 0, votos_nominais: 0 };
+        if (!agg[bairro]) agg[bairro] = { votos: 0, votos_nominais: 0, eleitores: 0 };
         agg[bairro].votos          += Number(r.votos) || 0;
-        agg[bairro].votos_nominais += totalMap[chave] || 0;
+        agg[bairro].votos_nominais += totalMap[chave]    || 0;
+        agg[bairro].eleitores      += eleitoresMap[chave] || 0;
       }
       const data = Object.entries(agg)
         .map(([bairro, d]) => ({
           bairro,
           votos:          d.votos,
           votos_nominais: d.votos_nominais,
+          eleitores:      d.eleitores,
           percentual:     d.votos_nominais > 0
             ? ((d.votos / d.votos_nominais) * 100).toFixed(2)
             : null
@@ -3766,7 +3789,8 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
       GROUP BY r.zona ORDER BY r.zona
     `;
     const sqlZonaPart = `
-      SELECT p.zona, SUM(p.votos_nominais) AS votos_nominais, SUM(p.comparecimento) AS comparecimento
+      SELECT p.zona, SUM(p.votos_nominais) AS votos_nominais, SUM(p.comparecimento) AS comparecimento,
+             MAX(p.aptos) AS aptos
       FROM \`basedosdados.br_tse_eleicoes.detalhes_votacao_municipio_zona\` p
       WHERE p.ano = @ano AND p.turno = @turno AND p.sigla_uf = @uf
         AND p.id_municipio = @id_municipio
@@ -3781,7 +3805,8 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
     for (const r of rowsPart) {
       partMap[String(r.zona)] = {
         votos_nominais: Number(r.votos_nominais) || 0,
-        comparecimento: Number(r.comparecimento) || 0
+        comparecimento: Number(r.comparecimento) || 0,
+        aptos:          Number(r.aptos)          || 0
       };
     }
 
@@ -3793,6 +3818,7 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
         bairro:         `Zona ${r.zona}`,
         votos,
         votos_nominais: nominais,
+        eleitores:      part.aptos || 0,
         comparecimento: part.comparecimento || 0,
         percentual:     nominais > 0 ? ((votos / nominais) * 100).toFixed(2) : null
       };
@@ -3841,15 +3867,17 @@ app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) =
         ANY_VALUE(UPPER(TRIM(CAST(loc.endereco AS STRING)))) AS endereco,
         SUM(r.votos)          AS votos,
         SUM(d.votos_nominais) AS votos_nominais,
+        SUM(loc.qtd_eleitores) AS eleitores,
         COUNT(DISTINCT CONCAT(CAST(r.zona AS STRING), '_', CAST(r.secao AS STRING))) AS num_secoes
       FROM \`basedosdados.br_tse_eleicoes.${rTbl}\` r
       LEFT JOIN (
         SELECT
           CAST(zona  AS STRING) AS zona,
           CAST(secao AS STRING) AS secao,
-          ANY_VALUE(CAST(nome     AS STRING)) AS nome,
-          ANY_VALUE(CAST(bairro   AS STRING)) AS bairro,
-          ANY_VALUE(CAST(endereco AS STRING)) AS endereco
+          ANY_VALUE(CAST(nome         AS STRING)) AS nome,
+          ANY_VALUE(CAST(bairro       AS STRING)) AS bairro,
+          ANY_VALUE(CAST(endereco     AS STRING)) AS endereco,
+          ANY_VALUE(qtd_eleitores)                AS qtd_eleitores
         FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_local_votacao\`
         WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
         GROUP BY zona, secao
@@ -3885,6 +3913,7 @@ app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) =
             endereco:       r.endereco ? String(r.endereco) : null,
             votos:          Number(r.votos)          || 0,
             votos_nominais: Number(r.votos_nominais) || 0,
+            eleitores:      Number(r.eleitores)      || 0,
             num_secoes:     Number(r.num_secoes)     || 0,
             percentual:     r.votos_nominais > 0
               ? ((Number(r.votos) / Number(r.votos_nominais)) * 100).toFixed(1)
