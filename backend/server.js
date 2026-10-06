@@ -3639,7 +3639,8 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
           CONCAT('Zona ', CAST(r.zona AS STRING))
         )) AS bairro,
         SUM(r.votos)          AS votos,
-        SUM(d.votos_nominais) AS votos_nominais
+        SUM(d.votos_nominais) AS votos_nominais,
+        SUM(d.aptos)          AS eleitores
       FROM \`basedosdados.br_tse_eleicoes.${resultTbl}\` r
       LEFT JOIN (
         SELECT
@@ -3661,7 +3662,8 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
           ano, turno, sigla_uf, id_municipio,
           CAST(zona  AS STRING) AS zona,
           CAST(secao AS STRING) AS secao,
-          SUM(votos_nominais)   AS votos_nominais
+          SUM(votos_nominais)   AS votos_nominais,
+          SUM(aptos)            AS aptos
         FROM \`basedosdados.br_tse_eleicoes.${detalheTbl}\`
         WHERE ano = @ano AND turno = @turno AND sigla_uf = @uf AND id_municipio = @id_municipio
         GROUP BY ano, turno, sigla_uf, id_municipio, zona, secao
@@ -3688,28 +3690,11 @@ app.get('/api/eleicoes/bairros', auth, withTenant, allowAll(), async (req, res) 
         try {
           const rows = await runBQ(makeSqlJoin(rTbl, dTbl), params);
           console.log(`[bairros] JOIN ok: ${rTbl} + perfil_local + ${dTbl}`);
-          // Tenta buscar eleitores por bairro separadamente (não quebra se falhar)
-          let eleitoresBairroMap = {};
-          try {
-            const sqlEleit = `
-              SELECT
-                UPPER(COALESCE(NULLIF(TRIM(CAST(bairro AS STRING)),''), CONCAT('Zona ', CAST(zona AS STRING)))) AS bairro,
-                SUM(qtde_eleitores_perfil) AS eleitores
-              FROM \`${PERFIL_TABLE}\`
-              WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
-              GROUP BY bairro
-            `;
-            const rowsEleit = await runBQ(sqlEleit, params);
-            for (const e of rowsEleit) {
-              eleitoresBairroMap[String(e.bairro)] = Number(e.eleitores) || 0;
-            }
-          } catch (_) { /* ignora se coluna não existir */ }
-
           const data = rows.map(r => ({
             bairro:         String(r.bairro),
             votos:          Number(r.votos) || 0,
             votos_nominais: Number(r.votos_nominais) || 0,
-            eleitores:      eleitoresBairroMap[String(r.bairro)] || 0,
+            eleitores:      Number(r.eleitores) || 0,
             percentual:     r.votos_nominais > 0
               ? ((Number(r.votos) / Number(r.votos_nominais)) * 100).toFixed(2)
               : null
@@ -3885,6 +3870,7 @@ app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) =
         ANY_VALUE(UPPER(TRIM(CAST(loc.endereco AS STRING)))) AS endereco,
         SUM(r.votos)          AS votos,
         SUM(d.votos_nominais) AS votos_nominais,
+        SUM(d.aptos)          AS eleitores,
         COUNT(DISTINCT CONCAT(CAST(r.zona AS STRING), '_', CAST(r.secao AS STRING))) AS num_secoes
       FROM \`basedosdados.br_tse_eleicoes.${rTbl}\` r
       LEFT JOIN (
@@ -3902,7 +3888,8 @@ app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) =
         SELECT
           CAST(zona  AS STRING) AS zona,
           CAST(secao AS STRING) AS secao,
-          SUM(votos_nominais)   AS votos_nominais
+          SUM(votos_nominais)   AS votos_nominais,
+          SUM(aptos)            AS aptos
         FROM \`basedosdados.br_tse_eleicoes.${dTbl}\`
         WHERE ano = @ano AND turno = @turno AND sigla_uf = @uf AND id_municipio = @id_municipio
         GROUP BY zona, secao
@@ -3924,28 +3911,12 @@ app.get('/api/eleicoes/locais', auth, withTenant, allowAll(), async (req, res) =
         try {
           const rows = await runBQ(makeSql(rTbl, dTbl), p);
           console.log(`[locais] ok: ${rTbl}+${dTbl}: ${rows.length} locais`);
-          // Tenta buscar eleitores por local separadamente
-          let eleitoresLocalMap = {};
-          try {
-            const sqlEleitLocal = `
-              SELECT UPPER(TRIM(CAST(nome AS STRING))) AS nome_local,
-                     SUM(qtde_eleitores_perfil) AS eleitores
-              FROM \`basedosdados.br_tse_eleicoes.perfil_eleitorado_local_votacao\`
-              WHERE ano = @ano AND sigla_uf = @uf AND id_municipio = @id_municipio
-              GROUP BY nome_local
-            `;
-            const rowsEleit = await runBQ(sqlEleitLocal, p);
-            for (const e of rowsEleit) {
-              eleitoresLocalMap[String(e.nome_local)] = Number(e.eleitores) || 0;
-            }
-          } catch (_) { /* ignora se coluna não existir */ }
-
           const data = rows.map(r => ({
             nome_local:     String(r.nome_local     || '—'),
             endereco:       r.endereco ? String(r.endereco) : null,
             votos:          Number(r.votos)          || 0,
             votos_nominais: Number(r.votos_nominais) || 0,
-            eleitores:      eleitoresLocalMap[String(r.nome_local || '—')] || 0,
+            eleitores:      Number(r.eleitores)      || 0,
             num_secoes:     Number(r.num_secoes)     || 0,
             percentual:     r.votos_nominais > 0
               ? ((Number(r.votos) / Number(r.votos_nominais)) * 100).toFixed(1)
